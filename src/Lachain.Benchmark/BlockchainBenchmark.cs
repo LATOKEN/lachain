@@ -282,8 +282,8 @@ namespace Lachain.Benchmark
                 Money.Parse("200000"));
 
             var txReceipts = new List<TransactionReceipt>();
-            var currentTime = TimeUtils.CurrentTimeMillis();
-
+            
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             _Benchmark("Building TXs: ", i =>
             {
                 var randomValue = new Random().Next(1, 100);
@@ -306,26 +306,35 @@ namespace Lachain.Benchmark
                 txReceipts.Add(transactionSigner.Sign(tx, keyPair));
                 return i;
             }, txGenerate);
+            watch.Stop();
+            Console.WriteLine($"Building TXs Time: {watch.ElapsedMilliseconds} ms");
 
             Block block = null!;
-
-            _Benchmark("Building Block ", i =>
+            watch.Restart();
+            // _Benchmark("Building Block ", i =>
+            // {
+            //     block = BuildBlock(txReceipts.ToArray());
+            //     return i;
+            // }, txGenerate / txPerBlock);
+            for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
-                block = BuildBlock(txReceipts.ToArray());
-                return i;
-            }, txGenerate / txPerBlock);
-            var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Console.WriteLine($"Building Block Time: {elapsedTime / 1000} sec");
+                block = BuildBlock(txReceipts.ToArray());    
+            }
+            watch.Stop();
+            Console.WriteLine($"Building Block Time: {watch.ElapsedMilliseconds} ms");
 
-            currentTime = TimeUtils.CurrentTimeMillis();
-            _Benchmark("Block Emulation ", i =>
+            watch.Restart();
+            // _Benchmark("Block Emulation ", i =>
+            // {
+            //     EmulateBlock(block, txReceipts.ToArray());
+            //     return i;
+            // }, txGenerate / txPerBlock);
+            for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
                 EmulateBlock(block, txReceipts.ToArray());
-                return i;
-            }, txGenerate / txPerBlock);
-
-            elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Console.WriteLine($"Block Emulation Time: {elapsedTime / 1000} sec");
+            }
+            watch.Stop();
+            Console.WriteLine($"Block Emulation Time: {watch.ElapsedMilliseconds} ms");
         }
         
         private void _Bench_Emulate_Execute_Tx(
@@ -341,8 +350,8 @@ namespace Lachain.Benchmark
                 Money.Parse("200000"));
 
             var txReceipts = new List<TransactionReceipt>();
-            var currentTime = TimeUtils.CurrentTimeMillis();
-
+            
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             _Benchmark("Building TXs: ", i =>
             {
                 var randomValue = new Random().Next(1, 100);
@@ -365,26 +374,37 @@ namespace Lachain.Benchmark
                 txReceipts.Add(transactionSigner.Sign(tx, keyPair));
                 return i;
             }, txGenerate);
-
+            watch.Stop();
+            Console.WriteLine($"Building TXs Time: {watch.ElapsedMilliseconds} ms");
+            
             Block block = null!;
+            watch.Restart();
+            // _Benchmark("Building Block ", i =>
+            // {
+            //     block = BuildBlock(txReceipts.ToArray());
+            //     return i;
+            // }, txGenerate / txPerBlock);
 
-            _Benchmark("Building Block ", i =>
+            for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
-                block = BuildBlock(txReceipts.ToArray());
-                return i;
-            }, txGenerate / txPerBlock);
-            var elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Console.WriteLine($"Building Block Time: {elapsedTime / 1000} sec");
+                block = BuildBlock(txReceipts.ToArray());    
+            }
+            watch.Stop();
+            Console.WriteLine($"Building Block Time: {watch.ElapsedMilliseconds} ms");
 
-            currentTime = TimeUtils.CurrentTimeMillis();
-            _Benchmark("Block Emulation + Execution ", i =>
+            watch.Restart();
+            // _Benchmark("Block Emulation + Execution ", i =>
+            // {
+            //     ExecuteBlock(block, txReceipts.ToArray());
+            //     return i;
+            // }, txGenerate / txPerBlock);
+            
+            for (int i = 0; i < txGenerate / txPerBlock; i++)
             {
                 ExecuteBlock(block, txReceipts.ToArray());
-                return i;
-            }, txGenerate / txPerBlock);
-
-            elapsedTime = TimeUtils.CurrentTimeMillis() - currentTime;
-            Console.WriteLine($"Block Emulation + Execution Time: {elapsedTime / 1000} sec");
+            }
+            watch.Stop();
+            Console.WriteLine($"Block Emulation + Execution Time: {watch.ElapsedMilliseconds} ms");
 
             var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block!.Header.Index);
             Console.WriteLine($"Executed Transactions: {executedBlock!.TransactionHashes.Count}");
