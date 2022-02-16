@@ -9,7 +9,6 @@ using Newtonsoft.Json.Linq;
 using Lachain.Logger;
 using Lachain.Utility.Utils;
 using Secp256k1Net;
-using Newtonsoft.Json;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -26,7 +25,7 @@ namespace Lachain.Core.RPC.HTTP
                 {
                     _Worker(rpcConfig);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.Error.WriteLine(e);
                 }
@@ -97,12 +96,6 @@ namespace Lachain.Core.RPC.HTTP
                 timestamp = timestamps[0];
             }
 
-            // If unix timestamp diff is longer than 30 minutes, we dont handle it
-            long.TryParse(timestamp.Trim(), out long unixTimestamp);
-            TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
-            if(timeSpan.TotalMinutes >= 30)
-                return false;
-
             Logger.LogInformation($"{request.HttpMethod}");
 
             var response = context.Response;
@@ -159,7 +152,7 @@ namespace Lachain.Core.RPC.HTTP
                 var requestObj = (JObject)item;
                 if(requestObj == null) return false;
 
-                if(!_CheckAuth(requestObj, context, signature, body))
+                if(!_CheckAuth(requestObj, signature, timestamp))
                 {
                     var error = new JObject
                     {
@@ -185,32 +178,43 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        private bool _CheckAuth(JObject body, HttpListenerContext context, string sig, string bodyPlainText)
+        private bool _CheckAuth(JObject body, string signature, string timestamp)
         {
-            if(context.Request.IsLocal) return true;
+            //if(context.Request.IsLocal) return true;
 
             if(_privateMethods.Contains(body["method"]!.ToString()))
             {
-                if(string.IsNullOrEmpty(sig))
-                {
+                if(string.IsNullOrEmpty(signature)) return false;
+                if(string.IsNullOrEmpty(timestamp)) return false;
+                // If unix timestamp diff is longer than 30 minutes, we dont handle it
+                if(!long.TryParse(timestamp.Trim(), out long unixTimestamp)) return false;
+                TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
+                if(timeSpan.TotalMinutes >= 30)
                     return false;
+
+                // Serialize params (format: key1value1key2value2...)
+                string serializedParams = string.Empty;
+                if(body["params"] != null && !string.IsNullOrEmpty(body["params"]!.ToString()))
+                {
+                    var paramsObject = (JObject)body["params"]!;
+                    if(paramsObject != null)
+                    {
+                        foreach(var param in paramsObject)
+                        {
+                            serializedParams += param.Key + param.Value?.ToString();
+                        }
+                    }
                 }
 
-                string[] bodyParams = bodyPlainText.Split(";");
-                if(bodyParams.Length != 2)
-                {
-                    return false;
-                }
-                // bodyParams[0] is inlineParams
-                // bodyParams[1] is message without inlineParams
-                var messageBytes = Encoding.UTF8.GetBytes(bodyParams[1]);
+                var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
+                var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
                 var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
 
-                var signature = sig.HexToBytes();
-                var public_key = _apiKey!.HexToBytes();
+                var signatureBytes = signature.HexToBytes();
+                var publicKey = _apiKey!.HexToBytes();
 
                 var secp256K1 = new Secp256k1();
-                return secp256K1.Verify(signature, messageHash, public_key);
+                return secp256K1.Verify(signatureBytes, messageHash, publicKey);
             }
 
             return true;
