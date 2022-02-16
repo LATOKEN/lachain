@@ -59,6 +59,55 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return Web3DataFormatUtils.Web3UnsignedTransaction(tx);
         }
 
+
+        // opts["from"] = from must be the validator or the staker address in hex format
+        // opts["validatorPublicKey"] = validator public key in hex format
+
+        [JsonRpcMethod("la_getRequestStakeWithdrawalTransaction")]
+        public JObject GetRequestStakeWithdrawalTransaction(JObject opts) 
+        {
+            var from = opts["from"]?.ToString().HexToBytes().ToUInt160() ?? 
+                    throw new Exception($"\"from\" {opts["from"]} is not valid");
+
+            var validatorPubKey = opts["validatorPublicKey"]?.ToString().HexToBytes() ??
+                    throw new Exception($"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
+
+            var tx = _transactionBuilder.InvokeTransaction(
+                from,
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodRequestStakeWithdrawal,
+                validatorPubKey
+            );
+
+            return Web3DataFormatUtils.Web3UnsignedTransaction(tx);
+        }
+
+
+        // opts["from"] = from must be the validator or the staker address in hex format
+        // opts["validatorPublicKey"] = validator public key in hex format
+
+        [JsonRpcMethod("la_getWithdrawStakeTransaction")]
+        public JObject GetWithdrawStakeTransaction(JObject opts) 
+        {
+            var from = opts["from"]?.ToString().HexToBytes().ToUInt160() ?? 
+                    throw new Exception($"\"from\" {opts["from"]} is not valid");
+
+            var validatorPubKey = opts["validatorPublicKey"]?.ToString().HexToBytes() ??
+                    throw new Exception($"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
+
+            var tx = _transactionBuilder.InvokeTransaction(
+                from,
+                ContractRegisterer.StakingContract,
+                Money.Zero,
+                StakingInterface.MethodWithdrawStake,
+                validatorPubKey
+            );
+
+            return Web3DataFormatUtils.Web3UnsignedTransaction(tx);
+        }
+
+
         [JsonRpcMethod("validator_start")]
         public string StartValidator()
         {
