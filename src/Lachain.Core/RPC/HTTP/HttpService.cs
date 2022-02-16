@@ -152,7 +152,7 @@ namespace Lachain.Core.RPC.HTTP
                 var requestObj = (JObject)item;
                 if(requestObj == null) return false;
 
-                if(!_CheckAuth(requestObj, signature, timestamp))
+                if(!_CheckAuth(requestObj, context, signature, timestamp))
                 {
                     var error = new JObject
                     {
@@ -178,7 +178,7 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        private bool _CheckAuth(JObject body, string signature, string timestamp)
+        private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
         {
             if(context.Request.IsLocal) return true;
 
