@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using Lachain.Logger;
 using Lachain.Utility.Utils;
 using Secp256k1Net;
+using Newtonsoft.Json;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -139,7 +140,23 @@ namespace Lachain.Core.RPC.HTTP
             foreach(var item in requests)
             {
                 var requestObj = (JObject)item;
-                if(!_CheckAuth(requestObj, context, sig, body))
+
+                string inlineParams = string.Empty;
+                // From @Sergey Gladkov: requestObj contains 'params' item
+                // ??? I cant find it. There are just id, method and jsonrpc parameters, I cant find parameter named 'params'
+                // Console.WriteLine(requestObj["params"]!.ToString()); // This is null
+                //foreach (var obj in requestObj["params"]!)
+                //{
+                //    inlineParams += obj.Key + obj.Value?.ToString();
+                //}
+                // I will just serialize body for now... please give me advice
+                foreach(var obj in requestObj)
+                {
+                    inlineParams += obj.Key + obj.Value?.ToString();
+                }
+
+                if(!_CheckAuth(requestObj, context, sig, string.Join(";", new string[] { 
+                    inlineParams, body, DateTimeOffset.Now.ToUnixTimeSeconds().ToString() })))
                 {
                     var error = new JObject
                     {
@@ -176,9 +193,24 @@ namespace Lachain.Core.RPC.HTTP
                     return false;
                 }
 
-                string method = body["method"]!.ToString();
+                string[] bodyParams = bodyPlainText.Split(";");
+                // do we need this? @Sergey Gladkov
+                if(bodyParams.Length != 3)
+                {
+                    return false;
+                }
 
-                var messageBytes = Encoding.UTF8.GetBytes(string.Join(",", new string[] { method, bodyPlainText }));
+                // bodyParams[0] is inlineParams
+
+                // bodyParams[bodyParams.Length - 1] is unix timestamp
+                long.TryParse(bodyParams[bodyParams.Length - 1].Trim(), out long unixTimestamp);
+                DateTimeOffset date = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp);
+                TimeSpan timeSpan = DateTimeOffset.Now.Subtract(date);
+                // if unix timestamp of plain body text is longer than 30 minutes, auth will fail.
+                if (timeSpan.TotalMinutes >= 30)
+                    return false;
+
+                var messageBytes = Encoding.UTF8.GetBytes(bodyPlainText);
                 var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
 
                 var signature = sig.HexToBytes();
