@@ -117,9 +117,17 @@ namespace Lachain.Benchmark
             // _BenchTxProcessing(_transactionBuilder, _transactionSigner, keyPair);
             // _BenchOneTxInBlock(_transactionBuilder, _transactionSigner, keyPair);
             
-            _Bench_Emulate_Block(_transactionBuilder, _transactionSigner, keyPair);
-            _Bench_Emulate_Execute_Tx(_transactionBuilder, _transactionSigner, keyPair);
+            Console.WriteLine("---------------START - TX POOL BENCHMARK----------------");
             _Bench_Tx_Pool(_transactionBuilder, _transactionSigner, keyPair);
+            Console.WriteLine("---------------END - TX POOL BENCHMARK----------------");
+            
+            Console.WriteLine("---------------START - BLOCK EMULATE BENCHMARK----------------");
+            _Bench_Emulate_Block(_transactionBuilder, _transactionSigner, keyPair);
+            Console.WriteLine("---------------END - BLOCK EMULATE BENCHMARK----------------");
+            
+            Console.WriteLine("---------------START - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
+            _Bench_Emulate_Execute_Tx(_transactionBuilder, _transactionSigner, keyPair);
+            Console.WriteLine("---------------END - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
 
             Environment.Exit(0);
         }
@@ -403,8 +411,8 @@ namespace Lachain.Benchmark
             Logger.LogInformation($"Setting initial balance for the 'From' address");
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
                 Money.Parse("200000"));
-
-            var txReceipts = new List<TransactionReceipt>();
+            
+            ITransactionPool transactionPool = _container.Resolve<ITransactionPool>();
             
             var watch = System.Diagnostics.Stopwatch.StartNew();
             for (int i = 0; i < txGenerate; i++)
@@ -425,14 +433,14 @@ namespace Lachain.Benchmark
                     Nonce = (ulong)i,
                     Value = amount
                 };
-                
-                _transactionPool.Add(transactionSigner.Sign(tx, keyPair), false);
+
+                transactionPool.Add(transactionSigner.Sign(tx, keyPair), false);
             }
             watch.Stop();
-            Console.WriteLine($"Time to Add {_transactionPool.Transactions.Count} Tx to pool: {watch.ElapsedMilliseconds} ms");
+            Console.WriteLine($"Time to Add {transactionPool.Transactions.Count} Tx to pool: {watch.ElapsedMilliseconds} ms");
             
             watch.Restart();
-            var txs = _transactionPool.Peek(txGenerate, txGenerate);
+            var txs = transactionPool.Peek(txGenerate, txGenerate);
             watch.Stop();
             Console.WriteLine($"Time to Peek {txs.Count} Tx from pool: {watch.ElapsedMilliseconds} ms");
         }
