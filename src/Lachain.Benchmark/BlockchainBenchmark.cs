@@ -116,8 +116,12 @@ namespace Lachain.Benchmark
             
             // _BenchTxProcessing(_transactionBuilder, _transactionSigner, keyPair);
             // _BenchOneTxInBlock(_transactionBuilder, _transactionSigner, keyPair);
+            
             _Bench_Emulate_Block(_transactionBuilder, _transactionSigner, keyPair);
             _Bench_Emulate_Execute_Tx(_transactionBuilder, _transactionSigner, keyPair);
+            _Bench_Tx_Pool(_transactionBuilder, _transactionSigner, keyPair);
+
+            Environment.Exit(0);
         }
 
         private static void _Benchmark(string text, Func<int, int> action, uint tries)
@@ -386,6 +390,51 @@ namespace Lachain.Benchmark
             Console.WriteLine($"Executed Transactions: {executedBlock!.TransactionHashes.Count}");
             Console.WriteLine(
                 $"Balance After Transaction {_stateManager.LastApprovedSnapshot.Balances.GetBalance(keyPair.PublicKey.GetAddress())}");
+        }
+        
+        private void _Bench_Tx_Pool(
+            ITransactionBuilder transactionBuilder,
+            ITransactionSigner transactionSigner,
+            EcdsaKeyPair keyPair)
+        {
+            const int txGenerate = 1000;
+            const int txPerBlock = 1000;
+
+            Logger.LogInformation($"Setting initial balance for the 'From' address");
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
+                Money.Parse("200000"));
+
+            var txReceipts = new List<TransactionReceipt>();
+            
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 0; i < txGenerate; i++)
+            {
+                var randomValue = new Random().Next(1, 100);
+                var amount = Money.Parse($"{randomValue}.0").ToUInt256();
+
+                byte[] random = new byte[32];
+                RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+                rng.GetBytes(random);
+
+                var tx = new Transaction
+                {
+                    To = random.Slice(0, 20).ToUInt160(),
+                    From = keyPair.PublicKey.GetAddress(),
+                    GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
+                    GasLimit = 100000000,
+                    Nonce = (ulong)i,
+                    Value = amount
+                };
+                
+                _transactionPool.Add(transactionSigner.Sign(tx, keyPair), false);
+            }
+            watch.Stop();
+            Console.WriteLine($"Time to Add {_transactionPool.Transactions.Count} Tx to pool: {watch.ElapsedMilliseconds} ms");
+            
+            watch.Restart();
+            var txs = _transactionPool.Peek(txGenerate, txGenerate);
+            watch.Stop();
+            Console.WriteLine($"Time to Peek {txs.Count} Tx from pool: {watch.ElapsedMilliseconds} ms");
         }
 
         private Block BuildBlock(TransactionReceipt[]? receipts = null)
