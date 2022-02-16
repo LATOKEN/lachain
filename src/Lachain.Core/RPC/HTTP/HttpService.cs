@@ -180,7 +180,7 @@ namespace Lachain.Core.RPC.HTTP
 
         private bool _CheckAuth(JObject body, string signature, string timestamp)
         {
-            //if(context.Request.IsLocal) return true;
+            if(context.Request.IsLocal) return true;
 
             if(_privateMethods.Contains(body["method"]!.ToString()))
             {
