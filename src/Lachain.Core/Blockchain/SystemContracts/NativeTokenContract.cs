@@ -266,17 +266,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var value = new byte[32];
             if(HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
+                // from and to address is in 2nd and 3rd topic, value transferred is in data
                 topics = new List<UInt256>();
                 if(Lrc20Interface.EventTransfer == eventSignature)
                 {
-                    Logger.LogInformation($"event data of {eventData.Length}  bytes: {eventData.ToHex()}");
                     byte[] from = new byte[32], to = new byte[32];
                     Buffer.BlockCopy(eventData, 0, from, 0, 32);
                     Buffer.BlockCopy(eventData, 32, to, 0, 32);
                     Buffer.BlockCopy(eventData, 64, value, 0, 32);
-                    Logger.LogInformation($"from address of {from.Length}  bytes: {from.ToHex()}");
-                    Logger.LogInformation($"to address of {to.Length}  bytes: {to.ToHex()}");
-                    Logger.LogInformation($"value of {value.Length}  bytes: {value.ToHex()}");
                     topics.Add(from.ToUInt256());
                     topics.Add(to.ToUInt256());
                 }

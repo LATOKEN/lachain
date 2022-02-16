@@ -48,16 +48,8 @@ namespace Lachain.Core.BlockchainFilter{
                 }
                 allTopics.Add(topics);
             }
+            
             while(allTopics.Count < 4) allTopics.Add(new List<UInt256>());
-
-            Console.WriteLine("printing topics");
-            for (int i = 0; i < allTopics.Count; i++){
-                Console.WriteLine($"topic: {i + 1} of size: {allTopics[i].Count}");
-                foreach(var topic in allTopics[i]){
-                    Console.WriteLine(topic.ToHex());
-                }
-            }
-
             return allTopics;
         }
 
