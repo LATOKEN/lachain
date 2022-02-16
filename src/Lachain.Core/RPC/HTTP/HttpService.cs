@@ -81,15 +81,30 @@ namespace Lachain.Core.RPC.HTTP
         {
             var request = context.Request;
 
-            var sigs = request.Headers.GetValues("Signature");
-            var sig = string.Empty;
-
-            if(sigs != null && sigs.Length > 0)
+            // Get signature from request header
+            var signatures = request.Headers.GetValues("Signature");
+            var signature = string.Empty;
+            if(signatures != null && signatures.Length > 0)
             {
-                sig = sigs[0];
+                signature = signatures[0];
             }
 
+            // Get timestamp from request header
+            var timestamps = request.Headers.GetValues("Timestamp");
+            var timestamp = string.Empty;
+            if(timestamps != null && timestamps.Length > 0)
+            {
+                timestamp = timestamps[0];
+            }
+
+            // If unix timestamp diff is longer than 30 minutes, we dont handle it
+            long.TryParse(timestamp.Trim(), out long unixTimestamp);
+            TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
+            if(timeSpan.TotalMinutes >= 30)
+                return false;
+
             Logger.LogInformation($"{request.HttpMethod}");
+
             var response = context.Response;
             /* check is request options pre-flight */
             if(request.HttpMethod == "OPTIONS")
@@ -105,6 +120,7 @@ namespace Lachain.Core.RPC.HTTP
                 response.Close();
                 return true;
             }
+
             using var reader = new StreamReader(request.InputStream);
             var body = reader.ReadToEnd();
             Logger.LogInformation($"Body: [{body}]");
@@ -114,6 +130,7 @@ namespace Lachain.Core.RPC.HTTP
                 response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]!);
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
             response.Headers.Add("Access-Control-Allow-Credentials", "true");
+
             var rpcResultHandler = new AsyncCallback(result =>
             {
                 if(!(result is JsonRpcStateAsync jsonRpcStateAsync))
@@ -130,33 +147,19 @@ namespace Lachain.Core.RPC.HTTP
                 response.OutputStream.Flush();
                 response.Close();
             });
+
             var async = new JsonRpcStateAsync(rpcResultHandler, null)
             {
                 JsonRpc = body
             };
 
             var requests = isArray ? JArray.Parse(body) : new JArray { JObject.Parse(body) };
-
             foreach(var item in requests)
             {
                 var requestObj = (JObject)item;
+                if(requestObj == null) return false;
 
-                string inlineParams = string.Empty;
-                // From @Sergey Gladkov: requestObj contains 'params' item
-                // ??? I cant find it. There are just id, method and jsonrpc parameters, I cant find parameter named 'params'
-                // Console.WriteLine(requestObj["params"]!.ToString()); // This is null
-                //foreach (var obj in requestObj["params"]!)
-                //{
-                //    inlineParams += obj.Key + obj.Value?.ToString();
-                //}
-                // I will just serialize body for now... please give me advice
-                foreach(var obj in requestObj)
-                {
-                    inlineParams += obj.Key + obj.Value?.ToString();
-                }
-
-                if(!_CheckAuth(requestObj, context, sig, string.Join(";", new string[] { 
-                    inlineParams, body, DateTimeOffset.Now.ToUnixTimeSeconds().ToString() })))
+                if(!_CheckAuth(requestObj, context, signature, body))
                 {
                     var error = new JObject
                     {
@@ -194,23 +197,13 @@ namespace Lachain.Core.RPC.HTTP
                 }
 
                 string[] bodyParams = bodyPlainText.Split(";");
-                // do we need this? @Sergey Gladkov
-                if(bodyParams.Length != 3)
+                if(bodyParams.Length != 2)
                 {
                     return false;
                 }
-
                 // bodyParams[0] is inlineParams
-
-                // bodyParams[bodyParams.Length - 1] is unix timestamp
-                long.TryParse(bodyParams[bodyParams.Length - 1].Trim(), out long unixTimestamp);
-                DateTimeOffset date = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp);
-                TimeSpan timeSpan = DateTimeOffset.Now.Subtract(date);
-                // if unix timestamp of plain body text is longer than 30 minutes, auth will fail.
-                if (timeSpan.TotalMinutes >= 30)
-                    return false;
-
-                var messageBytes = Encoding.UTF8.GetBytes(bodyPlainText);
+                // bodyParams[1] is message without inlineParams
+                var messageBytes = Encoding.UTF8.GetBytes(bodyParams[1]);
                 var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
 
                 var signature = sig.HexToBytes();
