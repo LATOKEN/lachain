@@ -11,3 +11,7 @@
 ```
 As result `Lachain.Console` file will be placed in `/src/Lachain.Console/bin/Release/net5.0/linux-x64/publish/`
 After that place `Lachain.Console` file in the same folder with appropriate config.json and start it
+
+### Config files
+Use `config_mainnet.json` template to connect to the LACHAIN mainnet or `config_testnet.json` to connect to the testnet.
+Rename required template to the `config.json` and change `rpc/apiKey` to the real hex dump of the ECDSA public key and `vault/password` to the real password you want to use to encode your wallet,  after that place resulting `config.json` to the folder where `Lachain.Console` is placed, 
