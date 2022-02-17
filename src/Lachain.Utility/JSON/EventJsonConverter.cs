@@ -12,7 +12,6 @@ namespace Lachain.Utility.JSON
             var ev = evObj._event;
             if(ev is null) throw new Exception("event is null");
             var topics = new JArray();
-            topics.Add(ev.SignatureHash.ToHex());
             var topicList = evObj._topics;
             if(topicList != null)
             {
@@ -27,6 +26,7 @@ namespace Lachain.Utility.JSON
                 ["data"] = ev.Data.ToHex(),
                 ["transactionHash"] = ev.TransactionHash.ToHex(),
                 ["index"] = ev.Index,
+                ["signatureHash"] = ev.SignatureHash.ToHex(),
                 ["topics"] = topics
             };
             return json;
