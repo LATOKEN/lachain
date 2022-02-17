@@ -191,7 +191,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 totalSupply + amountMoney > _context.Snapshot.Balances.GetAllowedSupply())
                 return ExecutionStatus.ExecutionHalted;
 
-            var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney);
+            var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney,  true);
             if (newBalance is null) 
                 return ExecutionStatus.ExecutionHalted;
             Emit(Lrc20Interface.EventMinted, address, amount);
@@ -202,10 +202,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(Lrc20Interface.MethodSetMinter)]
         public ExecutionStatus SetMinter(UInt160 minterAddress, SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation($"SetMinter, Sender {frame.InvocationContext.Sender.ToHex()}, minterController {_mintCntrlAdd.ToHex()}.  minter {minterAddress.ToHex()}");
             frame.UseGas(GasMetering.NativeTokenApproveCost);
             if (!frame.InvocationContext.Sender.Equals(_mintCntrlAdd))
+            {
                 return ExecutionStatus.ExecutionHalted;
-            
+            }
+
             _context.Snapshot.Balances.SetMinter(minterAddress);
             frame.ReturnValue = ContractEncoder.Encode(null, _context.Snapshot.Balances.GetMinter().ToUInt256());
             return ExecutionStatus.Ok;
