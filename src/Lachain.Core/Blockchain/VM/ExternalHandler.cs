@@ -38,7 +38,7 @@ namespace Lachain.Core.Blockchain.VM
             context.Message = message;
             return ContractInvoker.Invoke(address, context, input, gasLimit);
         }
-
+        
         private static ulong GetDeployHeight(UInt160 contract, UInt160 caller, ulong gasLimit, InvocationMessage message)
         {
             var input = ContractEncoder.Encode(DeployInterface.MethodGetDeployHeight, contract);
