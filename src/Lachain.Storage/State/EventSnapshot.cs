@@ -45,7 +45,7 @@ namespace Lachain.Storage.State
 
         public void AddEvent(EventObject eventObj)
         {
-            var @event = eventObj._event;
+            var @event = eventObj.Event;
             var total = GetTotalTransactionEvents(@event!.TransactionHash ?? UInt256Utils.Zero);
             @event.Index = total;
             _state.AddOrUpdate(
@@ -54,10 +54,10 @@ namespace Lachain.Storage.State
             );
             var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash?? UInt256Utils.Zero, total);
             _state.AddOrUpdate(prefix, @event.ToByteArray());
-            if(eventObj._topics != null)
+            if(eventObj.Topics != null && eventObj.Topics.Count > 0)
             {
                 prefix = EntryPrefix.EventTopicsByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash?? UInt256Utils.Zero, total);
-                _state.AddOrUpdate(prefix, eventObj._topics.TransactionHashListToByteArray());
+                _state.AddOrUpdate(prefix, eventObj.Topics.TransactionHashListToByteArray());
             }
         }
 
