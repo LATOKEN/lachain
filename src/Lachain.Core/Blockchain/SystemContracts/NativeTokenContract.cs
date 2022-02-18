@@ -261,7 +261,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void Emit(string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
-            
+            EventObject eventObj;
             if (Lrc20Interface.EventTransfer == eventSignature && HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
                 // from and to address is in 2nd and 3rd topic, value transferred is in data
@@ -273,7 +273,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 topics.Add(from.ToUInt256());
                 topics.Add(to.ToUInt256());
                 
-                var eventObj = new EventObject(
+                eventObj = new EventObject(
                     new Event
                     {
                         Contract = ContractRegisterer.LatokenContract,
@@ -283,13 +283,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     },
                     topics
                 );
-                _context.Snapshot.Events.AddEvent(eventObj);
-                Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.Event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
-                Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
             }
             else
             {
-                var eventObj = new EventObject(
+                eventObj = new EventObject(
                     new Event
                     {
                         Contract = ContractRegisterer.LatokenContract,
@@ -298,11 +295,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
                         SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
                     }
                 );
-                _context.Snapshot.Events.AddEvent(eventObj);
-                Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.Event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
-                Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
             }
-            
+            _context.Snapshot.Events.AddEvent(eventObj);
+            Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.Event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
+            Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
         }
     }
 }

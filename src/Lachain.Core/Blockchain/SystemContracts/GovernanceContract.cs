@@ -19,7 +19,6 @@ using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
-using Lachain.Core.Blockchain.Hardfork;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -513,7 +512,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void Emit(string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
-            
             var eventObj = new EventObject(
                 new Event
                 {
@@ -524,7 +522,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 }
             );
             _context.Snapshot.Events.AddEvent(eventObj);
-            
             Logger.LogTrace($"Event: {eventSignature}, params: {string.Join(", ", values.Select(PrettyParam))}");
         }
     }
