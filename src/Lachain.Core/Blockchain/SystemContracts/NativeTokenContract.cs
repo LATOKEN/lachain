@@ -262,36 +262,47 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             var eventData = ContractEncoder.Encode(null, values);
             
-            List<UInt256>? topics = null;
-            var value = new byte[32];
-            if(HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
+            if (Lrc20Interface.EventTransfer == eventSignature && HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
                 // from and to address is in 2nd and 3rd topic, value transferred is in data
-                topics = new List<UInt256>();
-                if(Lrc20Interface.EventTransfer == eventSignature)
-                {
-                    byte[] from = new byte[32], to = new byte[32];
-                    Buffer.BlockCopy(eventData, 0, from, 0, 32);
-                    Buffer.BlockCopy(eventData, 32, to, 0, 32);
-                    Buffer.BlockCopy(eventData, 64, value, 0, 32);
-                    topics.Add(from.ToUInt256());
-                    topics.Add(to.ToUInt256());
-                }
+                var topics = new List<UInt256>();
+                byte[] from = new byte[32], to = new byte[32], value = new byte[32];
+                Buffer.BlockCopy(eventData, 0, from, 0, 32);
+                Buffer.BlockCopy(eventData, 32, to, 0, 32);
+                Buffer.BlockCopy(eventData, 64, value, 0, 32);
+                topics.Add(from.ToUInt256());
+                topics.Add(to.ToUInt256());
+                
+                var eventObj = new EventObject(
+                    new Event
+                    {
+                        Contract = ContractRegisterer.LatokenContract,
+                        Data = ByteString.CopyFrom(value),
+                        TransactionHash = _context.Receipt.Hash,
+                        SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                    },
+                    topics
+                );
+                _context.Snapshot.Events.AddEvent(eventObj);
+                Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.Event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
+                Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
             }
-            var eventObj = new EventObject(
-                new Event
-                {
-                    Contract = ContractRegisterer.LatokenContract,
-                    Data = (Lrc20Interface.EventTransfer == eventSignature && HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight())) ? 
-                        ByteString.CopyFrom(value) : ByteString.CopyFrom(eventData),
-                    TransactionHash = _context.Receipt.Hash,
-                    SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
-                },
-                topics
-            );
-            _context.Snapshot.Events.AddEvent(eventObj);
-            Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj._event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
-            Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
+            else
+            {
+                var eventObj = new EventObject(
+                    new Event
+                    {
+                        Contract = ContractRegisterer.LatokenContract,
+                        Data = ByteString.CopyFrom(eventData),
+                        TransactionHash = _context.Receipt.Hash,
+                        SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                    }
+                );
+                _context.Snapshot.Events.AddEvent(eventObj);
+                Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.Event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
+                Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
+            }
+            
         }
     }
 }
