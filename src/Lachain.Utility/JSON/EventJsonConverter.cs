@@ -9,10 +9,10 @@ namespace Lachain.Utility.JSON
     {
         public static JObject ToJson(this EventObject evObj)
         {
-            var ev = evObj._event;
+            var ev = evObj.Event;
             if(ev is null) throw new Exception("event is null");
             var topics = new JArray();
-            var topicList = evObj._topics;
+            var topicList = evObj.Topics;
             if(topicList != null)
             {
                 foreach(var topic in topicList)

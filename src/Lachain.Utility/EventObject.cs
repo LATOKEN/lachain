@@ -6,16 +6,16 @@ namespace Lachain.Utility
 {
     public class EventObject
     {
-        public Event? _event = null; // = new Event();
-        public List<UInt256>? _topics = null;// = new List<UInt256>();
+        public Event? Event { get; set; } = null; 
+        public List<UInt256>? Topics { get; set; } = null;
 
         public EventObject(Event? ev){
-            _event = ev;
+            Event = ev;
         }
 
         public EventObject(Event? ev, List<UInt256>? topics){
-            _event = ev;
-            _topics = topics;
+            Event = ev;
+            Topics = topics;
         }
 
     }

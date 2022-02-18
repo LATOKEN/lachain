@@ -119,7 +119,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var eventLog = _stateManager.LastApprovedSnapshot.Events
                     .GetEventByTransactionHashAndIndex(receipt.Hash, i)!;
-                if(eventLog._event is null) continue;
+                if(eventLog.Event is null) continue;
                 events.Add(eventLog);
             }
             
