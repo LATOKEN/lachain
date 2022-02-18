@@ -94,7 +94,7 @@ namespace Lachain.Core.RPC.HTTP
             {
                 var evObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
                     (uint) i);
-                var ev = evObj._event;
+                var ev = evObj.Event;
                 if (ev is null)
                     continue;
                 jArray.Add(evObj.ToJson());

@@ -181,7 +181,7 @@ namespace Lachain.Core.BlockchainFilter
                     {
                         var txEventObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
                             (uint)i);
-                        var txEvent = txEventObj._event;
+                        var txEvent = txEventObj.Event;
                         if (txEvent is null)
                             continue;
                         
@@ -189,8 +189,8 @@ namespace Lachain.Core.BlockchainFilter
 
                         var txTopics = new List<UInt256>();
                         txTopics.Add(txEvent.SignatureHash);
-                        if(txEventObj._topics != null){
-                            foreach(var topic in txEventObj._topics) 
+                        if(txEventObj.Topics != null){
+                            foreach(var topic in txEventObj.Topics) 
                             {
                                 txTopics.Add(topic);
                             }

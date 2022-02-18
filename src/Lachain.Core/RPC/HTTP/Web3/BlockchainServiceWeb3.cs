@@ -525,7 +525,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var evObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
                     (uint)i);
-                var ev = evObj._event;
+                var ev = evObj.Event;
                 if (ev is null)
                     continue;
                 jArray.Add(Web3DataFormatUtils.Web3Event(evObj, receipt!.Block, block!.Hash));
@@ -714,7 +714,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     {
                         var txEventObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
                             (uint)i);
-                        var txEvent = txEventObj._event;
+                        var txEvent = txEventObj.Event;
                         if (txEvent is null)
                             continue;
                         
@@ -722,8 +722,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
                         var txTopics = new List<UInt256>();
                         txTopics.Add(txEvent.SignatureHash);
-                        if(txEventObj._topics != null){
-                            foreach(var topic in txEventObj._topics) 
+                        if(txEventObj.Topics != null){
+                            foreach(var topic in txEventObj.Topics) 
                             {
                                 txTopics.Add(topic);
                             }
