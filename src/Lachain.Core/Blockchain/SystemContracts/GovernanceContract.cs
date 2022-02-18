@@ -513,11 +513,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void Emit(string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
-            List<UInt256>? topics = null;
-            if(HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
-            {
-                topics = new List<UInt256>();
-            }
             
             var eventObj = new EventObject(
                 new Event
@@ -526,8 +521,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     Data = ByteString.CopyFrom(eventData),
                     TransactionHash = _context.Receipt.Hash,
                     SignatureHash =  ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
-                },
-                topics
+                }
             );
             _context.Snapshot.Events.AddEvent(eventObj);
             

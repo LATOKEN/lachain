@@ -1057,11 +1057,6 @@ namespace Lachain.Core.Blockchain.VM
             var value = SafeCopyFromMemory(frame.Memory, valueOffset, valueLength) ??
                         throw new InvalidOperationException();
             
-            List<UInt256>? topics = null;
-            if (HardforkHeights.IsHardfork_4Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
-            {
-                topics = new List<UInt256>();
-            }
             var ev = new EventObject(
                 new Event
                 {
@@ -1070,8 +1065,7 @@ namespace Lachain.Core.Blockchain.VM
                     TransactionHash = frame.InvocationContext.TransactionHash,
                     Index = 0, /* will be replaced in (IEventSnapshot::AddEvent) method */
                     SignatureHash = signature.ToUInt256()
-                },
-                topics
+                }
             );
             frame.InvocationContext.Snapshot.Events.AddEvent(ev);
         }
