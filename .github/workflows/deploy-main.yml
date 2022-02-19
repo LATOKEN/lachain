@@ -1,0 +1,23 @@
+name: Deploy Mainnet
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - v*-main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: rlespinasse/github-slug-action@v4
+    - name: Rancher Deploy
+      uses: sekassel-research/actions-rancher-update@1.1.4
+      with:
+        rancher_url: ${{ secrets.RANCHER_URL_API }}
+        rancher_access: ${{ secrets.RANCHER_ACCESS_KEY}}
+        rancher_key: ${{ secrets.RANCHER_SECRET_KEY }}
+        project_id: 1a21
+        stack_name: lachain-mainnet
+        service_name: lachain
+        docker_image: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}:${{ env.GITHUB_REF_SLUG_URL }}
