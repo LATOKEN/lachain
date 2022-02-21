@@ -169,7 +169,7 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
 
-        // version 3 of config should contain hardfork height for second hardfork,
+        // version 6 of config should contain hardfork height for hardfork_4,
         private void _UpdateConfigToV6()
         {
             var network = GetConfig<NetworkConfig>("network") ??
