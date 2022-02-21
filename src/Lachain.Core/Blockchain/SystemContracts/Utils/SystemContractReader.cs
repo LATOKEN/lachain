@@ -61,20 +61,29 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return (ulong) rawValue.ToUInt256().ToBigInteger();
         }
 
-        public UInt256 GetStake(UInt160? stakerAddress = null)
+        public UInt256 GetStake(UInt160? stakedAddress = null)
+        {
+            stakedAddress ??= _nodeAddress;
+            var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
+                stakedAddress);
+
+            return invResult.ToUInt256();
+        }
+
+        public UInt256 GetStakerTotalStake(UInt160? stakerAddress = null)
         {
             stakerAddress ??= _nodeAddress;
-            var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
+            var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetStakerTotalStake,
                 stakerAddress);
 
             return invResult.ToUInt256();
         }
 
-        public UInt256 GetPenalty(UInt160? stakerAddress = null)
+        public UInt256 GetPenalty(UInt160? stakedAddress = null)
         {
-            stakerAddress ??= _nodeAddress;
+            stakedAddress ??= _nodeAddress;
             var invResult = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetPenalty,
-                stakerAddress);
+                stakedAddress);
 
             return invResult.ToUInt256();
         }
@@ -90,27 +99,27 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
             return ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetVrfSeed);
         }
 
-        public int GetWithdrawRequestCycle(UInt160? stakerAddress = null)
+        public int GetWithdrawRequestCycle(UInt160? stakedAddress = null)
         {
-            stakerAddress ??= _nodeAddress;
+            stakedAddress ??= _nodeAddress;
             var res = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodGetWithdrawRequestCycle,
-                stakerAddress);
+                stakedAddress);
             return res.Length > 0 ? BitConverter.ToInt32(res): 0;
         }
 
 
 
-        public bool IsNextValidator(byte[]? stakerPublicKey = null)
+        public bool IsNextValidator(byte[]? stakedPublicKey = null)
         {
-            stakerPublicKey ??= _nodePublicKey;
+            stakedPublicKey ??= _nodePublicKey;
             if (IsVrfSubmissionPhase())
             {
                 var isNextValidatorStaking = ReadSystemContractData(ContractRegisterer.StakingContract, StakingInterface.MethodIsNextValidator,
-                    stakerPublicKey);
+                    stakedPublicKey);
                 return !isNextValidatorStaking.ToUInt256().IsZero();
             }
             var isNextValidatorGovernance = ReadSystemContractData(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodIsNextValidator,
-                stakerPublicKey);
+                stakedPublicKey);
             
             return !isNextValidatorGovernance.ToUInt256().IsZero();
         }
