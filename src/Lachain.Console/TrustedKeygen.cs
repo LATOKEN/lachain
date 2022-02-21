@@ -180,6 +180,7 @@ namespace Lachain.Console
                     Hardfork_1 = hardforkHeights[0],
                     Hardfork_2 = hardforkHeights[1],
                     Hardfork_3 = hardforkHeights[2],
+                    Hardfork_4 = hardforkHeights[3],
                 };
                 var version = new VersionConfig
                 {
@@ -349,6 +350,7 @@ namespace Lachain.Console
                     Hardfork_1 = hardforkHeights[0],
                     Hardfork_2 = hardforkHeights[1],
                     Hardfork_3 = hardforkHeights[2],
+                    Hardfork_4 = hardforkHeights[3],
                 };
                 var version = new VersionConfig
                 {

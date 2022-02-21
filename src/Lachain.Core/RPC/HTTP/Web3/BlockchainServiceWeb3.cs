@@ -529,7 +529,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var evObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(transactionHash,
                     (uint)i);
-                var ev = evObj._event;
+                var ev = evObj.Event;
                 if (ev is null)
                     continue;
                 jArray.Add(Web3DataFormatUtils.Web3Event(evObj, receipt!.Block, block!.Hash));
@@ -576,11 +576,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             Logger.LogInformation($"Check blocks from {start} to {finish}");
             
-            var topics = new List<UInt256>();
+            var allTopics = new List<List<UInt256>>();
             if (!(topicsJson is null))
             {
-                topics = BlockchainFilterUtils.GetTopics(topicsJson);
+                allTopics = BlockchainFilterUtils.GetTopics(topicsJson);
             }
+            while(allTopics.Count < 4) allTopics.Add(new List<UInt256>());
 
             var addresses = new List<UInt160>();
             if (!(address is null))
@@ -591,7 +592,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             if((start is null) || (finish is null)) return new JArray();
 
-            return GetLogs((ulong)start , (ulong)finish , addresses , topics);
+            return GetLogs((ulong)start , (ulong)finish , addresses , allTopics);
         }
 
 
@@ -723,7 +724,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return blockchainSnapshot.StateHash;
         }
 
-        public JArray GetLogs(ulong start, ulong finish, List<UInt160> addresses, List<UInt256> topics)
+        public JArray GetLogs(ulong start, ulong finish, List<UInt160> addresses, List<List<UInt256>> allTopics)
         {
             var jArray = new JArray();
             for (var blockNumber = start; blockNumber <= finish; blockNumber++)
@@ -741,19 +742,25 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     {
                         var txEventObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
                             (uint)i);
-                        var txEvent = txEventObj._event;
+                        var txEvent = txEventObj.Event;
                         if (txEvent is null)
                             continue;
                         
                         if(!addresses.Any(a => txEvent.Contract.Equals(a))) continue;
 
-                        if (topics.Count > 0)
-                        {
-                            if (!topics.Any(t => txEvent.SignatureHash.Equals(t)))
+                        var txTopics = new List<UInt256>();
+                        txTopics.Add(txEvent.SignatureHash);
+                        if(txEventObj.Topics != null){
+                            foreach(var topic in txEventObj.Topics) 
                             {
-                                Logger.LogInformation($"Skip event with signature [{txEvent.SignatureHash.ToHex()}]");
-                                continue;
+                                txTopics.Add(topic);
                             }
+                        }
+
+                        if (!MatchTopics(allTopics, txTopics))
+                        {
+                            Logger.LogInformation($"Skip event with signature [{txEvent.SignatureHash.ToHex()}]");
+                            continue;
                         }
 
                         if (txEvent.BlockHash is null || txEvent.BlockHash.IsZero())
@@ -767,6 +774,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             return jArray;
+        }
+
+        public bool MatchTopics(List<List<UInt256>> allTopics, List<UInt256> txTopics)
+        {
+            for(int i = 0 ; i < 4 ; i++){
+                if(allTopics[i].Count > 0){
+                    if(txTopics.Count <= i) return false;
+                    if(!allTopics[i].Any(t => txTopics[i].Equals(t))) return false;
+                }
+            }
+            return true;
         }
     }
 }

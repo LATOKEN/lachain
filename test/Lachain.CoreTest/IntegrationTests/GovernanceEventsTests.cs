@@ -108,7 +108,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     for (uint j = 0; j < eventCount; j++)
                     {
                         var eventObj = _stateManager.CurrentSnapshot.Events.GetEventByTransactionHashAndIndex(tx, j);
-                        var ev = eventObj._event;
+                        var ev = eventObj.Event;
                         if(ev is null) throw new Exception($"No event {j} in {tx.ToHex()}");
                         Assert.AreEqual(ev.TransactionHash, tx);
                         if (_eventData.TryGetValue(ev.TransactionHash, out var storedData))

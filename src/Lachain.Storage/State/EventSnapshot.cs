@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Google.Protobuf;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
@@ -42,9 +43,9 @@ namespace Lachain.Storage.State
 
         public UInt256 Hash => _state.Hash;
 
-        public void AddEvent(EventObject @eventObj)
+        public void AddEvent(EventObject eventObj)
         {
-            var @event = @eventObj._event;
+            var @event = eventObj.Event;
             var total = GetTotalTransactionEvents(@event!.TransactionHash ?? UInt256Utils.Zero);
             @event.Index = total;
             _state.AddOrUpdate(
@@ -53,13 +54,24 @@ namespace Lachain.Storage.State
             );
             var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash?? UInt256Utils.Zero, total);
             _state.AddOrUpdate(prefix, @event.ToByteArray());
+            if(eventObj.Topics != null && eventObj.Topics.Count > 0)
+            {
+                prefix = EntryPrefix.EventTopicsByTransactionHashAndIndex.BuildPrefix(@event.TransactionHash?? UInt256Utils.Zero, total);
+                _state.AddOrUpdate(prefix, eventObj.Topics.TransactionHashListToByteArray());
+            }
         }
 
         public EventObject GetEventByTransactionHashAndIndex(UInt256 transactionHash, uint eventIndex)
         {
             var prefix = EntryPrefix.EventByTransactionHashAndIndex.BuildPrefix(transactionHash, eventIndex);
             var raw = _state.Get(prefix);
-            return new EventObject( raw is null ? null : Event.Parser.ParseFrom(raw) );
+            
+            prefix = EntryPrefix.EventTopicsByTransactionHashAndIndex.BuildPrefix(transactionHash, eventIndex);
+            var topics = _state.Get(prefix);
+            return new EventObject(
+                raw is null ? null : Event.Parser.ParseFrom(raw),
+                topics is null ? null : topics.ByteArrayToTransactionHashList().ToList()
+            );
         }
 
         public uint GetTotalTransactionEvents(UInt256 transactionHash)

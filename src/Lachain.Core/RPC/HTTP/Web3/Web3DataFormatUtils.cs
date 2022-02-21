@@ -243,7 +243,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
         public static JObject Web3Event(EventObject evObj, ulong? blockNumber = null, UInt256? blockHash = null)
         {
-            var e = evObj._event;
+            var e = evObj.Event;
             if (e!.Contract is null || e.Data is null || e.TransactionHash is null || e.BlockHash is null)
             {
                 Logger.LogWarning($"event lacks one of important fields: {e}");
@@ -251,6 +251,12 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             var topics = new JArray();
             topics.Add(Web3Data(e.SignatureHash));
+            var topicList = evObj.Topics;
+            if(topicList != null){
+                foreach(var topic in topicList){
+                    topics.Add(Web3Data(topic));
+                }
+            }
             return new JObject
             {
                 ["address"] = Web3Data(e.Contract),
