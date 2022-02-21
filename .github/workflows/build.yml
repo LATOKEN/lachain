@@ -5,8 +5,8 @@ on:
     tags:
       - v.*
   push:
-    tags:
-      - v.*
+    tags: 
+      - v* 
 
 jobs:
   build:
