@@ -23,8 +23,4 @@ RUN apt update && apt install -y libc6-dev
 WORKDIR /lachain
 COPY --from=build-env /lachain/Lachain.Console/out .
 RUN rm -rf /lachain/wallet.json /lachain/config.json
-ARG CONFIG=src/Lachain.Console/config0.json
-ARG WALLET=src/Lachain.Console/wallet0.json
-COPY $CONFIG /lachain/config.json
-COPY $WALLET /lachain/wallet.json
 ENTRYPOINT ["dotnet", "/lachain/Lachain.Console.dll"]

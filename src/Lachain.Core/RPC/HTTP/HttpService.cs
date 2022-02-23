@@ -9,7 +9,6 @@ using Newtonsoft.Json.Linq;
 using Lachain.Logger;
 using Lachain.Utility.Utils;
 using Secp256k1Net;
-using Newtonsoft.Json;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -55,21 +54,21 @@ namespace Lachain.Core.RPC.HTTP
 
         private void _Worker(RpcConfig rpcConfig)
         {
-            if (!HttpListener.IsSupported)
+            if(!HttpListener.IsSupported)
                 throw new Exception("Your platform doesn't support [HttpListener]");
             _httpListener = new HttpListener();
-            foreach (var host in rpcConfig.Hosts ?? throw new InvalidOperationException())
+            foreach(var host in rpcConfig.Hosts ?? throw new InvalidOperationException())
                 _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             _apiKey = rpcConfig.ApiKey ?? throw new InvalidOperationException();
             _httpListener.Start();
-            while (_httpListener.IsListening)
+            while(_httpListener.IsListening)
             {
                 try
                 {
                     _Handle(_httpListener.GetContext());
                 }
-                catch (Exception e)
+                catch(Exception e)
                 {
                     Console.Error.WriteLine(e);
                 }
@@ -82,23 +81,31 @@ namespace Lachain.Core.RPC.HTTP
         {
             var request = context.Request;
 
-            var sigs = request.Headers.GetValues("Signature");
-            var sig = string.Empty;
-
-            if (sigs != null && sigs.Length > 0)
+            // Get signature from request header
+            var signatures = request.Headers.GetValues("Signature");
+            var signature = string.Empty;
+            if(signatures != null && signatures.Length > 0)
             {
-                sig = sigs[0];
+                signature = signatures[0];
+            }
+
+            // Get timestamp from request header
+            var timestamps = request.Headers.GetValues("Timestamp");
+            var timestamp = string.Empty;
+            if(timestamps != null && timestamps.Length > 0)
+            {
+                timestamp = timestamps[0];
             }
 
             Logger.LogInformation($"{request.HttpMethod}");
+
             var response = context.Response;
             /* check is request options pre-flight */
-            if (request.HttpMethod == "OPTIONS")
+            if(request.HttpMethod == "OPTIONS")
             {
-
-                if (request.Headers["Origin"] != null)
+                if(request.Headers["Origin"] != null)
                 {
-                    response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
+                    response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]!);
                 }
                 response.AddHeader("Access-Control-Allow-Headers", "*");
                 response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
@@ -107,23 +114,25 @@ namespace Lachain.Core.RPC.HTTP
                 response.Close();
                 return true;
             }
+
             using var reader = new StreamReader(request.InputStream);
             var body = reader.ReadToEnd();
             Logger.LogInformation($"Body: [{body}]");
             var isArray = body.StartsWith("[");
 
-            if (request.Headers["Origin"] != null)
-                response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]);
+            if(request.Headers["Origin"] != null)
+                response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]!);
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
             response.Headers.Add("Access-Control-Allow-Credentials", "true");
+
             var rpcResultHandler = new AsyncCallback(result =>
             {
-                if (!(result is JsonRpcStateAsync jsonRpcStateAsync))
+                if(!(result is JsonRpcStateAsync jsonRpcStateAsync))
                     return;
 
                 var resultString = jsonRpcStateAsync.Result;
 
-                if (isArray && !jsonRpcStateAsync.Result.StartsWith("["))
+                if(isArray && !jsonRpcStateAsync.Result.StartsWith("["))
                     resultString = "[" + resultString + "]";
 
                 var output = Encoding.UTF8.GetBytes(resultString);
@@ -132,17 +141,19 @@ namespace Lachain.Core.RPC.HTTP
                 response.OutputStream.Flush();
                 response.Close();
             });
+
             var async = new JsonRpcStateAsync(rpcResultHandler, null)
             {
                 JsonRpc = body
             };
 
             var requests = isArray ? JArray.Parse(body) : new JArray { JObject.Parse(body) };
-
-            foreach (var item in requests)
+            foreach(var item in requests)
             {
                 var requestObj = (JObject)item;
-                if (!_CheckAuth(requestObj, context, sig, body))
+                if(requestObj == null) return false;
+
+                if(!_CheckAuth(requestObj, context, signature, timestamp))
                 {
                     var error = new JObject
                     {
@@ -156,7 +167,7 @@ namespace Lachain.Core.RPC.HTTP
                         ["id"] = ulong.Parse(requestObj["id"]!.ToString()),
                     };
                     var output = Encoding.UTF8.GetBytes(res.ToString());
-                    Logger.LogInformation($"output: [{res.ToString()}]");
+                    Logger.LogInformation($"output: [{res}]");
                     response.OutputStream.Write(output, 0, output.Length);
                     response.OutputStream.Flush();
                     response.Close();
@@ -168,25 +179,43 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        private bool _CheckAuth(JObject body, HttpListenerContext context, string sig, string bodyPlainText)
+        private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
         {
-            if (context.Request.IsLocal) return true;
+            if(context.Request.IsLocal) return true;
 
-            if (_privateMethods.Contains(body["method"]!.ToString()))
+            if(_privateMethods.Contains(body["method"]!.ToString()))
             {
-                if (string.IsNullOrEmpty(sig))
-                {
+                if(string.IsNullOrEmpty(signature)) return false;
+                if(string.IsNullOrEmpty(timestamp)) return false;
+                // If unix timestamp diff is longer than 30 minutes, we dont handle it
+                if(!long.TryParse(timestamp.Trim(), out long unixTimestamp)) return false;
+                TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
+                if(timeSpan.TotalMinutes >= 30)
                     return false;
+
+                // Serialize params (format: key1value1key2value2...)
+                string serializedParams = string.Empty;
+                if(body["params"] != null && !string.IsNullOrEmpty(body["params"]!.ToString()))
+                {
+                    var paramsObject = (JObject)body["params"]!;
+                    if(paramsObject != null)
+                    {
+                        foreach(var param in paramsObject)
+                        {
+                            serializedParams += param.Key + param.Value?.ToString();
+                        }
+                    }
                 }
 
-                var messageBytes = Encoding.UTF8.GetBytes(bodyPlainText);
+                var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
+                var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
                 var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
 
-                var signature = sig.HexToBytes();
-                var public_key = _apiKey.HexToBytes();
+                var signatureBytes = signature.HexToBytes();
+                var publicKey = _apiKey!.HexToBytes();
 
                 var secp256K1 = new Secp256k1();
-                return secp256K1.Verify(signature, messageHash, public_key);
+                return secp256K1.Verify(signatureBytes, messageHash, publicKey);
             }
 
             return true;

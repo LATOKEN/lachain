@@ -55,7 +55,7 @@ namespace Lachain.Core.BlockchainFilter
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public ulong Create(BlockchainEvent eventType, ulong? fromBlock, ulong? toBlock,  List<UInt160> addresses, List<UInt256> topics)
+        public ulong Create(BlockchainEvent eventType, ulong? fromBlock, ulong? toBlock,  List<UInt160> addresses, List<List<UInt256>> topics)
         {
             RemoveUnusedFilters();
             _currentId++;
@@ -163,7 +163,7 @@ namespace Lachain.Core.BlockchainFilter
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public JArray GetLogs(ulong start, ulong finish, List<UInt160> addresses, List<UInt256> topics)
+        public JArray GetLogs(ulong start, ulong finish, List<UInt160> addresses, List<List<UInt256>> allTopics)
         {
             var jArray = new JArray();
             for (var blockNumber = start; blockNumber <= finish; blockNumber++)
@@ -181,19 +181,25 @@ namespace Lachain.Core.BlockchainFilter
                     {
                         var txEventObj = _stateManager.LastApprovedSnapshot.Events.GetEventByTransactionHashAndIndex(tx,
                             (uint)i);
-                        var txEvent = txEventObj._event;
+                        var txEvent = txEventObj.Event;
                         if (txEvent is null)
                             continue;
                         
                         if(!addresses.Any(a => txEvent.Contract.Equals(a))) continue;
 
-                        if (topics.Count > 0)
-                        {
-                            if (!topics.Any(t => txEvent.SignatureHash.Equals(t)))
+                        var txTopics = new List<UInt256>();
+                        txTopics.Add(txEvent.SignatureHash);
+                        if(txEventObj.Topics != null){
+                            foreach(var topic in txEventObj.Topics) 
                             {
-                                Logger.LogInformation($"Skip event with signature [{txEvent.SignatureHash.ToHex()}]");
-                                continue;
+                                txTopics.Add(topic);
                             }
+                        }
+
+                        if (!MatchTopics(allTopics, txTopics))
+                        {
+                            Logger.LogInformation($"Skip event with signature [{txEvent.SignatureHash.ToHex()}]");
+                            continue;
                         }
 
                         if (txEvent.BlockHash is null || txEvent.BlockHash.IsZero())
@@ -233,6 +239,17 @@ namespace Lachain.Core.BlockchainFilter
                 Logger.LogTrace($"Filter: {id} not found, possibly removed after timeout.");
             }
             return results;
+        }
+
+        public bool MatchTopics(List<List<UInt256>> allTopics, List<UInt256> txTopics)
+        {
+            for(int i = 0 ; i < 4 ; i++){
+                if(allTopics[i].Count > 0){
+                    if(txTopics.Count <= i) return false;
+                    if(!allTopics[i].Any(t => txTopics[i].Equals(t))) return false;
+                }
+            }
+            return true;
         }
     }
 }

@@ -57,14 +57,16 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var balance =
                 _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
 
-            var stake = _systemContractReader.GetStake(addressUint160).ToMoney();
+            var staked = _systemContractReader.GetStake(addressUint160).ToMoney();
+            var staking = _systemContractReader.GetStakerTotalStake(addressUint160).ToMoney();
             var penalty = _systemContractReader.GetPenalty(addressUint160).ToMoney();
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(
                 addressUint160);
             return new JObject
             {
                 ["balance"] = balance.ToString(),
-                ["stake"] = stake.ToString(),
+                ["staked"] = staked.ToString(),
+                ["staking"] = staking.ToString(),
                 ["penalty"] = penalty.ToString(),
                 ["nonce"] = nonce,
             };
@@ -85,8 +87,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var balance =
                 _stateManager.LastApprovedSnapshot.Balances.GetBalance(addressUint160);
 
-            var stake = _systemContractReader.GetStake(addressUint160).ToMoney().ToWei() /
-                        StakingContract.TokenUnitsInRoll;
+            var staked = _systemContractReader.GetStake(addressUint160).ToMoney();
+            var staking = _systemContractReader.GetStakerTotalStake(addressUint160).ToMoney();
             var penalty = _systemContractReader.GetPenalty(addressUint160).ToMoney();
             var isCurrentValidator = _stateManager.CurrentSnapshot.Validators
                 .GetValidatorsPublicKeys().Any(pk =>
@@ -134,7 +136,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["address"] = address,
                 ["publicKey"] = publicKey,
                 ["balance"] = balance.ToString(),
-                ["stake"] = stake.ToString(),
+                ["staked"] = staked.ToString(),
+                ["staking"] = staking.ToString(),
                 ["penalty"] = penalty.ToString(),
                 ["state"] = state,
                 ["online"] = isStaker,

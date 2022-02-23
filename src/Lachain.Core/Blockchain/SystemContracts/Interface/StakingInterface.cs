@@ -22,6 +22,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodGetPreviousValidators = "getPreviousValidators()";
         public const string MethodIsPreviousValidator = "isPreviousValidator(bytes)";
         public const string MethodIsCheckedInAttendanceDetection = "isCheckedInAttendanceDetection(bytes)";
+        public const string MethodGetStakerTotalStake = "getStakerTotalStake(address)";
         
         public string[] Methods { get; } =
         {
@@ -40,6 +41,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodSubmitAttendanceDetection,
             MethodGetPreviousValidators,
             MethodIsPreviousValidator,
+            MethodGetStakerTotalStake
         };
 
         public string[] Properties { get; } =

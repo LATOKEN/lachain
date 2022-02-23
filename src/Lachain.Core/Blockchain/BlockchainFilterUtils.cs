@@ -8,15 +8,15 @@ namespace Lachain.Core.BlockchainFilter{
 
     public static class BlockchainFilterUtils
     {
-        public static List<UInt256> GetTopics(JToken topicsJson)
+
+        public static List<List<UInt256>> GetTopics(JToken topicsJson)
         {
-            // We handle only first topic for now. Change the implementation when other topics are supported
-            var topics = new List<UInt256>();
+            var allTopics = new List<List<UInt256>>();
             try{
                 var topicArray = (JArray)topicsJson;
                 foreach(var topic in topicArray)
                 {
-
+                    var topics = new List<UInt256>();
                     try{
                         JArray topicList = (JArray)topic;
                         foreach (var t in topicList)
@@ -35,19 +35,22 @@ namespace Lachain.Core.BlockchainFilter{
                         }
                     
                     }
-                    break; // Only first topic is supported now.
-                    // TODO: change implementation when other topics are supported
+                    allTopics.Add(topics);
                 }
 
             }
             catch(InvalidCastException _){
+                var topics = new List<UInt256>();
                 var topicString = (string)topicsJson!;
                 if(!(topicString is null)){
                     var topicBuffer = topicString.HexToUInt256();
                     topics.Add(topicBuffer);
                 }
+                allTopics.Add(topics);
             }
-            return topics;
+            
+            while(allTopics.Count < 4) allTopics.Add(new List<UInt256>());
+            return allTopics;
         }
 
         public static List<UInt160> GetAddresses(JArray address){

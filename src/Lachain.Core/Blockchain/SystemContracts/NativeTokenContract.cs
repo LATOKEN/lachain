@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
@@ -16,6 +17,7 @@ using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Lachain.Core.Blockchain.Hardfork;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
@@ -191,7 +193,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 totalSupply + amountMoney > _context.Snapshot.Balances.GetAllowedSupply())
                 return ExecutionStatus.ExecutionHalted;
 
-            var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney);
+            var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney,  true);
             if (newBalance is null) 
                 return ExecutionStatus.ExecutionHalted;
             Emit(Lrc20Interface.EventMinted, address, amount);
@@ -202,10 +204,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
         [ContractMethod(Lrc20Interface.MethodSetMinter)]
         public ExecutionStatus SetMinter(UInt160 minterAddress, SystemContractExecutionFrame frame)
         {
+            Logger.LogInformation($"SetMinter, Sender {frame.InvocationContext.Sender.ToHex()}, minterController {_mintCntrlAdd.ToHex()}.  minter {minterAddress.ToHex()}");
             frame.UseGas(GasMetering.NativeTokenApproveCost);
             if (!frame.InvocationContext.Sender.Equals(_mintCntrlAdd))
+            {
                 return ExecutionStatus.ExecutionHalted;
-            
+            }
+
             _context.Snapshot.Balances.SetMinter(minterAddress);
             frame.ReturnValue = ContractEncoder.Encode(null, _context.Snapshot.Balances.GetMinter().ToUInt256());
             return ExecutionStatus.Ok;
@@ -259,17 +264,43 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void Emit(string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
-            var eventObj = new EventObject(
-                new Event
-                {
-                    Contract = ContractRegisterer.LatokenContract,
-                    Data = ByteString.CopyFrom(eventData),
-                    TransactionHash = _context.Receipt.Hash,
-                    SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
-                }
-            );
+            EventObject eventObj;
+            if (Lrc20Interface.EventTransfer == eventSignature && HardforkHeights.IsHardfork_4Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                // from and to address is in 2nd and 3rd topic, value transferred is in data
+                var topics = new List<UInt256>();
+                byte[] from = new byte[32], to = new byte[32], value = new byte[32];
+                Buffer.BlockCopy(eventData, 0, from, 0, 32);
+                Buffer.BlockCopy(eventData, 32, to, 0, 32);
+                Buffer.BlockCopy(eventData, 64, value, 0, 32);
+                topics.Add(from.ToUInt256());
+                topics.Add(to.ToUInt256());
+                
+                eventObj = new EventObject(
+                    new Event
+                    {
+                        Contract = ContractRegisterer.LatokenContract,
+                        Data = ByteString.CopyFrom(value),
+                        TransactionHash = _context.Receipt.Hash,
+                        SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                    },
+                    topics
+                );
+            }
+            else
+            {
+                eventObj = new EventObject(
+                    new Event
+                    {
+                        Contract = ContractRegisterer.LatokenContract,
+                        Data = ByteString.CopyFrom(eventData),
+                        TransactionHash = _context.Receipt.Hash,
+                        SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                    }
+                );
+            }
             _context.Snapshot.Events.AddEvent(eventObj);
-            Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj._event.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
+            Logger.LogDebug($"Event: {eventSignature}, sighash: {eventObj.Event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
             Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
         }
     }

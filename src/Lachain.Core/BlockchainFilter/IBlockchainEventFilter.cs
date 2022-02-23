@@ -9,7 +9,7 @@ namespace Lachain.Core.BlockchainFilter
         ulong Create(BlockchainEvent eventType);
 
         ulong Create(
-            BlockchainEvent eventType, ulong? fromBlock, ulong? toBlock,  List<UInt160> addresses, List<UInt256> topics
+            BlockchainEvent eventType, ulong? fromBlock, ulong? toBlock,  List<UInt160> addresses, List<List<UInt256>> topics
         );
 
         bool Remove(ulong id);

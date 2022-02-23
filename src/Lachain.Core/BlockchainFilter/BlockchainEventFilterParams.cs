@@ -18,7 +18,7 @@ namespace Lachain.Core.BlockchainFilter
         public ulong? FromBlock, ToBlock;
 
         public List<UInt160> AddressList = new List<UInt160>();
-        public List<UInt256> TopicLists = new List<UInt256>();
+        public List<List<UInt256>> TopicLists = new List<List<UInt256>>();
         public List<UInt256> PendingTransactionList = new List<UInt256>();
 
         public BlockchainEventFilterParams(BlockchainEvent eventType, ulong lastSyncedBlock)
@@ -28,13 +28,13 @@ namespace Lachain.Core.BlockchainFilter
             PollingTime = TimeUtils.CurrentTimeMillis();
         }
 
-        public BlockchainEventFilterParams(BlockchainEvent eventType, ulong? fromBlock, ulong? toBlock, List<UInt160> addresses, List<UInt256> topics)
+        public BlockchainEventFilterParams(BlockchainEvent eventType, ulong? fromBlock, ulong? toBlock, List<UInt160> addresses, List<List<UInt256>> topics)
         {
             EventType = eventType;
             FromBlock = fromBlock;
             ToBlock = toBlock;
             AddressList = new List<UInt160>(addresses);
-            TopicLists = new List<UInt256>(topics);
+            TopicLists = new List<List<UInt256>>(topics);
             PollingTime = TimeUtils.CurrentTimeMillis();
         }
 

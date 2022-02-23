@@ -128,6 +128,10 @@ namespace Lachain.Benchmark
             Console.WriteLine("---------------START - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
             _Bench_Emulate_Execute_Tx(_transactionBuilder, _transactionSigner, keyPair);
             Console.WriteLine("---------------END - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
+            
+            Console.WriteLine("---------------START - MULTIPLE BLOCKS EMULATE + EXECUTE BENCHMARK----------------");
+            _Bench_Execute_Blocks(_transactionBuilder, _transactionSigner, keyPair);
+            Console.WriteLine("---------------END - MULTIPLE BLOCKS EMULATE + EXECUTE BENCHMARK----------------");
 
             Environment.Exit(0);
         }
@@ -412,9 +416,7 @@ namespace Lachain.Benchmark
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
                 Money.Parse("200000"));
             
-            ITransactionPool transactionPool = _container.Resolve<ITransactionPool>();
-            
-            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var txReceipts = new List<TransactionReceipt>();
             for (int i = 0; i < txGenerate; i++)
             {
                 var randomValue = new Random().Next(1, 100);
@@ -433,8 +435,14 @@ namespace Lachain.Benchmark
                     Nonce = (ulong)i,
                     Value = amount
                 };
-
-                transactionPool.Add(transactionSigner.Sign(tx, keyPair), false);
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair));
+            }
+            
+            ITransactionPool transactionPool = _container.Resolve<ITransactionPool>();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            foreach (var txr in txReceipts)
+            {
+                transactionPool.Add(txr, false);
             }
             watch.Stop();
             Console.WriteLine($"Time to Add {transactionPool.Transactions.Count} Tx to pool: {watch.ElapsedMilliseconds} ms");
@@ -443,6 +451,66 @@ namespace Lachain.Benchmark
             var txs = transactionPool.Peek(txGenerate, txGenerate);
             watch.Stop();
             Console.WriteLine($"Time to Peek {txs.Count} Tx from pool: {watch.ElapsedMilliseconds} ms");
+        }
+
+        private void _Bench_Execute_Blocks(
+            ITransactionBuilder transactionBuilder,
+            ITransactionSigner transactionSigner,
+            EcdsaKeyPair keyPair)
+        {
+            const int txGenerate = 50;
+            const int txPerBlock = 10;
+
+            Logger.LogInformation($"Setting initial balance for the 'From' address");
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
+                Money.Parse("2000000"));
+
+            for (var k = 0; k < txGenerate / txPerBlock; k++)
+            {
+                var txReceipts = new List<TransactionReceipt>();
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                for (int i = 0; i < txPerBlock; i++)
+                {
+                    var randomValue = new Random().Next(1, 100);
+                    var amount = Money.Parse($"{randomValue}.0").ToUInt256();
+
+                    byte[] random = new byte[32];
+                    RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+                    rng.GetBytes(random);
+                    
+                    var tx = new Transaction
+                    {
+                        To = random.Slice(0, 20).ToUInt160(),
+                        From = keyPair.PublicKey.GetAddress(),
+                        GasPrice = (ulong)Money.Parse("0.0000001").ToWei(),
+                        GasLimit = 100000000,
+                        Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()) + (ulong)i,
+                        Value = amount
+                    };
+                    
+                    txReceipts.Add(transactionSigner.Sign(tx, keyPair));
+                }
+
+                watch.Stop();
+                Console.WriteLine($"Building TXs Time: {watch.ElapsedMilliseconds} ms");
+
+                Block block = null!;
+                watch.Restart();
+                block = BuildBlock(txReceipts.ToArray());
+                watch.Stop();
+                Console.WriteLine($"Building Block Time: {watch.ElapsedMilliseconds} ms");
+
+                watch.Restart();
+                ExecuteBlock(block, txReceipts.ToArray());
+                watch.Stop();
+                Console.WriteLine($"Block Emulation + Execution Time: {watch.ElapsedMilliseconds} ms");
+                
+                var executedBlock =
+                    _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block!.Header.Index);
+                Console.WriteLine($"Executed Transactions: {executedBlock!.TransactionHashes.Count}");
+                Console.WriteLine(
+                    $"Balance After Transaction {_stateManager.LastApprovedSnapshot.Balances.GetBalance(keyPair.PublicKey.GetAddress())}");
+            }
         }
 
         private Block BuildBlock(TransactionReceipt[]? receipts = null)
