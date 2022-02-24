@@ -6,6 +6,7 @@ using Lachain.Logger;
 using Lachain.Consensus.Messages;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Nethereum.RLP;
 
 namespace Lachain.Consensus.BinaryAgreement
 {
@@ -292,6 +293,26 @@ namespace Lachain.Consensus.BinaryAgreement
             Broadcaster.InternalResponse(
                 new ProtocolResult<BinaryBroadcastId, BoolSet>(_broadcastId, _result.Value));
             _requested = ResultStatus.Sent;
+        }
+
+        public byte[] ToBytes()
+        {
+            var bytesArray = new List<byte[]>
+            {
+                _broadcastId.ToBytes().ToArray(),
+                Wallet.ToBytes().ToArray()
+            };
+
+            return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public BinaryBroadcast FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
+            var broadcastId = BinaryBroadcastId.FromBytes(decoded[0].RLPData);
+            var wallet = PublicConsensusKeySet.FromBytes(decoded[1].RLPData);
+
+            return new BinaryBroadcast(broadcastId, wallet, Broadcaster);
         }
     }
 }

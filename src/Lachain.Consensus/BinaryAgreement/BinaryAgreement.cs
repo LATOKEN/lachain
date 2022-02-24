@@ -6,6 +6,9 @@ using Lachain.Logger;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.Messages;
 using Lachain.Utility.Utils;
+using Nethereum.RLP;
+using Lachain.Utility.Serialization;
+using Lachain.Crypto;
 
 namespace Lachain.Consensus.BinaryAgreement
 {
@@ -206,6 +209,26 @@ namespace Lachain.Consensus.BinaryAgreement
                     _lastMessage = $"Cannot handle message of type {message.GetType()}";
                     throw new InvalidOperationException($"Cannot handle message of type {message.GetType()}");
             }
+        }
+
+        public byte[] ToBytes()
+        {
+            var bytesArray = new List<byte[]>
+            {
+                _agreementId.ToBytes().ToArray(),
+                Wallet.ToBytes().ToArray()
+            };
+
+            return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public BinaryAgreement FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
+            var binaryAgreementId = BinaryAgreementId.FromBytes(decoded[0].RLPData);
+            var wallet = PublicConsensusKeySet.FromBytes(decoded[1].RLPData);
+
+            return new BinaryAgreement(binaryAgreementId, wallet, Broadcaster);
         }
     }
 }
