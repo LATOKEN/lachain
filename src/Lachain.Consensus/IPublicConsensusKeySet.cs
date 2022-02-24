@@ -14,6 +14,5 @@ namespace Lachain.Consensus
         IList<ECDSAPublicKey> EcdsaPublicKeySet { get; }
         public int GetValidatorIndex(ECDSAPublicKey publicKey);
         public byte[] ToBytes();
-        public IPublicConsensusKeySet FromBytes(byte[] bytes);
     }
 }
