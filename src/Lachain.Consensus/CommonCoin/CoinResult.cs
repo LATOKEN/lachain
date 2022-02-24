@@ -19,15 +19,15 @@ namespace Lachain.Consensus.CommonCoin
             return BitsUtils.Popcount(p) % 2 == 1;
         }
 
-        public bool Equals(CoinResult other)
+        public bool Equals(CoinResult? other)
         {
-            if (ReferenceEquals(null, other)) return false;
+            if (other is null) return false;
             return ReferenceEquals(this, other) || RawBytes.SequenceEqual(other.RawBytes);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            if (obj is null) return false;
             if (ReferenceEquals(this, obj)) return true;
             return obj.GetType() == GetType() && Equals((CoinResult) obj);
         }
