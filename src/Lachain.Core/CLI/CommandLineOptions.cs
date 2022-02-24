@@ -106,6 +106,9 @@ namespace Lachain.Core.CLI
     {
         [Option('c', "compact", Required = false, HelpText = "Compact Database")]
         public string? type { get; set; }
+
+        [Option('d', "compactDepth", Required = false, HelpText = "Compact Database Depth")]
+        public ulong depth { get; set; } = 100;
         // type should either be "soft" or "hard" 
         // "soft" -> only compact the db 
         // "hard" -> keep only recent snapshots. Be cautious before this clean-up. 

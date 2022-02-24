@@ -30,6 +30,7 @@
         QueueBatch = 0x0605,
 
         NodesDownloadedTillNow = 0x0606,
+        KeepRecentSnapshot = 0x0607,
 
         /* contract */
         ContractByHash = 0x0801,

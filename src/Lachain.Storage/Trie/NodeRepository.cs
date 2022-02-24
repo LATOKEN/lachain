@@ -44,5 +44,20 @@ namespace Lachain.Storage.Trie
         {
             _rocksDbContext.SaveBatch(batch);
         }
+
+        public bool NodeIdExist(ulong id)
+        {
+            var prefix =  EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
+            if(_rocksDbContext.Get(prefix) is null) return false;
+            return true;
+        }
+
+        public void WriteNodeId(ulong id , RocksDbAtomicWrite batch)
+        {
+            // saving nodes that are reachable from recent snapshots
+            // so that all other nodes can be deleted. 
+            var prefix = EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
+            batch.Put(prefix, new byte[1]);
+        }
     }
 }

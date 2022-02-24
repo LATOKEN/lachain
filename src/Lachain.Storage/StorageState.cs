@@ -123,5 +123,10 @@ namespace Lachain.Storage
             _trieMap.ClearCaches();
             return _initialVersion;
         }
+
+        public void SaveNodeId(RocksDbAtomicWrite batch)
+        {
+            _trieMap.SaveNodeId(CurrentVersion, batch);
+        }
     }
 }

@@ -186,5 +186,16 @@ namespace Lachain.Storage.State
             _validatorManager.RollbackTo(snapshot.Validators);
             LastApprovedSnapshot = snapshot;
         }
+
+        public void DeleteOldSnapshot(ulong depth)
+        {
+            if (LastApprovedSnapshot.Blocks.GetTotalBlockHeight() < depth)
+            {
+                Console.WriteLine("Nothing to delete");
+                return;
+            }
+            Console.WriteLine($"Keeping latest {depth} snapshots from last approved snapshot");
+            var batch = new RocksDbAtomicWrite(_dbContext);
+        }
     }
 }

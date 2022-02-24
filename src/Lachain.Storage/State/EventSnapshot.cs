@@ -76,5 +76,10 @@ namespace Lachain.Storage.State
         {
             _state.ClearCache();
         }
+
+        public void SaveNodeId(RocksDbAtomicWrite batch)
+        {
+            _state.SaveNodeId(batch);
+        }
     }
 }

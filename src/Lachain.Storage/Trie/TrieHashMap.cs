@@ -441,5 +441,17 @@ namespace Lachain.Storage.Trie
                 }
             }
         }
+
+        public void SaveNodeId(ulong root, RocksDbAtomicWrite batch)
+        {
+            if(_repository.NodeIdExist(root)) return;
+            var node = GetNodeById(root);
+            if (node is null) return;
+            if (node.Type == NodeType.Internal)
+            {
+                // recursion;
+            }
+            
+        }
     }
 }

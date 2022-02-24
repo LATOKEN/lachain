@@ -17,5 +17,7 @@ namespace Lachain.Storage.State
         void SetCurrentVersion(ulong root);
 
         void ClearCache();
+
+        void SaveNodeId(RocksDbAtomicWrite batch);
     }
 }

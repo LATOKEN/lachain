@@ -13,5 +13,7 @@ namespace Lachain.Storage.State
         void Release();
 
         void Commit();
+
+        void DeleteOldSnapshot(ulong depth);
     }
 }
