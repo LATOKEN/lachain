@@ -201,21 +201,20 @@ namespace Lachain.Consensus.HoneyBadger
             {
                 _honeyBadgerId.ToBytes().ToArray(),
                 Wallet.ToBytes().ToArray(),
-                _privateKey.ToBytes().ToArray(),
-                //Broadcaster.ToBytes().ToArray()
+                _privateKey.ToBytes().ToArray()
             };
 
             return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
         }
 
-        public static HoneyBadger FromBytes(ReadOnlyMemory<byte> bytes)
+        public HoneyBadger FromBytes(ReadOnlyMemory<byte> bytes)
         {
             var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
             var honeyBadgerId = HoneyBadgerId.FromBytes(decoded[0].RLPData);
             var wallet = PublicConsensusKeySet.FromBytes(decoded[1].RLPData);
             var privateKey = PrivateKey.FromBytes(decoded[2].RLPData);
-            //var broadcaster = EraBroadcaster.
-            return new HoneyBadger(honeyBadgerId, wallet, privateKey, broadcaster);
+
+            return new HoneyBadger(honeyBadgerId, wallet, privateKey, Broadcaster);
         }
     }
 }
