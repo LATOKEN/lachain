@@ -61,7 +61,7 @@ namespace Lachain.Consensus
             return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
         }
 
-        public IPublicConsensusKeySet FromBytes(byte[] bytes)
+        public static IPublicConsensusKeySet FromBytes(byte[] bytes)
         {
             var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
             var n = decoded[0].RLPData.AsReadOnlySpan().ToInt32();
