@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
@@ -49,14 +50,9 @@ namespace Lachain.Consensus
                 N.ToBytes().ToArray(),
                 F.ToBytes().ToArray(),
                 TpkePublicKey.ToBytes().ToArray(),
-                ThresholdSignaturePublicKeySet.ToBytes().ToArray()
+                ThresholdSignaturePublicKeySet.ToBytes().ToArray(),
+                _ecdsaPublicKeys.ToByteArray()
             };
-
-            bytesArray.Add(_ecdsaPublicKeys.Count.ToBytes().ToArray());
-            foreach(var publicKey in _ecdsaPublicKeys)
-            {
-                bytesArray.Add(publicKey.ToHex().HexToBytes());
-            }
 
             return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
         }
@@ -68,10 +64,8 @@ namespace Lachain.Consensus
             var f = decoded[1].RLPData.AsReadOnlySpan().ToInt32();
             var tpkePublicKey = PublicKey.FromBytes(decoded[2].RLPData);
             var thresholdSignaturePublicKeySet = PublicKeySet.FromBytes(decoded[3].RLPData);
-            var ecdsaPublicKeysCount = decoded[4].RLPData.AsReadOnlySpan().ToInt32();
-            var ecdsaPublicKeys = Enumerable.Range(0, ecdsaPublicKeysCount)
-                .Select(i => 2 * decoded[4 + i].RLPData).ToList();
-            // How to deserialize 
+            var ecdsaPublicKeys = ProtoUtils.ToEcdsaPublicKeys(decoded[4].RLPData);
+            
             return new PublicConsensusKeySet(n, f, tpkePublicKey, thresholdSignaturePublicKeySet, ecdsaPublicKeys);
         }
     }
