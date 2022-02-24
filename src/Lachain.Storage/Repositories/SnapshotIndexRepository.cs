@@ -91,7 +91,7 @@ namespace Lachain.Storage.Repositories
 
         public void DeleteOldSnapshot(ulong depth, ulong totalBlocks)
         {
-            System.Console.WriteLine($"Keeping latest {depth+1} snapshots from last approved snapshot");
+            System.Console.WriteLine($"Keeping latest {depth+1} snapshots from block: {totalBlocks - depth} to {totalBlocks}");
 
             // saving nodes for recent (depth + 1) snapshots temporarily
             // so that all remaining nodes can be deleted
@@ -115,7 +115,7 @@ namespace Lachain.Storage.Repositories
                 foreach(var snapshot in snapshots)
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    snapshot.DeleteSnapshot(batch);
+                    snapshot.DeleteSnapshot(block, batch);
                     batch.Commit();
                 }
             }

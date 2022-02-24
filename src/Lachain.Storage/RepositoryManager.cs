@@ -1,6 +1,8 @@
-﻿using Lachain.Storage.Repositories;
+﻿using System.Linq;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage
 {
@@ -51,9 +53,11 @@ namespace Lachain.Storage
             _versionRepository.SetVersion((uint) RepositoryType.MetaRepository, _versionFactory.CurrentVersion + 1, tx);
         }
 
-        public void DeleteState(ulong version, RocksDbAtomicWrite batch)
+        public void DeleteStateForBlock(ulong block, RocksDbAtomicWrite batch)
         {
-            batch.Delete(EntryPrefix.StorageVersionIndex.BuildPrefix(_repositoryId));
+            var prefix = EntryPrefix.SnapshotIndex.BuildPrefix(_repositoryId.ToBytes().Concat(block.ToBytes()).ToArray());
+            batch.Delete(prefix);
         }
+
     }
 }

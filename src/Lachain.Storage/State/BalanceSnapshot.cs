@@ -159,9 +159,9 @@ namespace Lachain.Storage.State
             _state.UpdateNodeIdToBatch(save, batch);
         }
 
-        public void DeleteSnapshot(RocksDbAtomicWrite batch)
+        public void DeleteSnapshot(ulong block, RocksDbAtomicWrite batch)
         {
-            _state.DeleteOldNodes(batch);
+            _state.DeleteOldNodes(block, batch);
         }
     }
 }

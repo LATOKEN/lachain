@@ -129,10 +129,10 @@ namespace Lachain.Storage
             _trieMap.UpdateNodeIdToBatch(CurrentVersion, save, batch);
         }
 
-        public void DeleteOldNodes(RocksDbAtomicWrite batch)
+        public void DeleteOldNodes(ulong block, RocksDbAtomicWrite batch)
         {
             _trieMap.DeleteOldNodes(CurrentVersion, batch);
-            _repositoryManager.DeleteState(CurrentVersion, batch);
+            _repositoryManager.DeleteStateForBlock(block, batch);
         }
     }
 }

@@ -97,7 +97,7 @@ namespace Lachain.Console
             {
                 
                 if(options.depth < 0) throw new ArgumentException("depth cannot be negative");
-                System.Console.WriteLine($"Staring hard db optimization");
+                System.Console.WriteLine("Starting hard db optimization");
                 var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                         "./config.json",
                         new RunOptions()
@@ -114,9 +114,9 @@ namespace Lachain.Console
                 if(stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() < options.depth)
                 {
                     System.Console.WriteLine($"Have less blocks than {options.depth}, nothing to delete");
+                    return;
                 }
                 snapshotIndexRepository.DeleteOldSnapshot(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
-                // TO DO
             }
             else 
             {
