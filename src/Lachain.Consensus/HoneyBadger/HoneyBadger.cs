@@ -7,6 +7,8 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Nethereum.RLP;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Consensus.HoneyBadger
 {
@@ -191,6 +193,29 @@ namespace Lachain.Consensus.HoneyBadger
                 .ToHashSet();
 
             CheckResult();
+        }
+
+        public byte[] ToBytes()
+        {
+            var bytesArray = new List<byte[]>
+            {
+                _honeyBadgerId.ToBytes().ToArray(),
+                Wallet.ToBytes().ToArray(),
+                _privateKey.ToBytes().ToArray(),
+                //Broadcaster.ToBytes().ToArray()
+            };
+
+            return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public static HoneyBadger FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
+            var honeyBadgerId = HoneyBadgerId.FromBytes(decoded[0].RLPData);
+            var wallet = PublicConsensusKeySet.FromBytes(decoded[1].RLPData);
+            var privateKey = PrivateKey.FromBytes(decoded[2].RLPData);
+            //var broadcaster = EraBroadcaster.
+            return new HoneyBadger(honeyBadgerId, wallet, privateKey, broadcaster);
         }
     }
 }
