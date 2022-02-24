@@ -90,7 +90,10 @@ namespace Lachain.Storage.Repositories
 
         public void DeleteOldSnapshot(ulong depth, ulong totalBlocks)
         {
-            System.Console.WriteLine($"Keeping latest {depth} snapshots from last approved snapshot");
+            System.Console.WriteLine($"Keeping latest {depth+1} snapshots from last approved snapshot");
+
+            // saving nodes for recent (depth + 1) snapshots temporarily
+            // so that all remaining nodes can be deleted
             for(var block = totalBlocks - depth; block <= totalBlocks; block++)
             {
                 var blockchainSnapshot = GetSnapshotForBlock(block);
@@ -98,12 +101,29 @@ namespace Lachain.Storage.Repositories
                 foreach(var snapshot in snapshots)
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    snapshot.SaveNodeId(batch);
+                    snapshot.UpdateNodeId(true, batch);
                     batch.Commit();
                 }
-                
             }
-            
+
+            // deleting all nodes that are not reachable from recent (depth+1) snapshots
+            for(ulong block = 0 ; block < totalBlocks - depth; block++)
+            {
+                // TODO
+            }
+
+            // delete temporary nodes
+            for(var block = totalBlocks - depth; block <= totalBlocks; block++)
+            {
+                var blockchainSnapshot = GetSnapshotForBlock(block);
+                var snapshots = blockchainSnapshot.GetAllSnapshot();
+                foreach(var snapshot in snapshots)
+                {
+                    var batch = new RocksDbAtomicWrite(_dbContext);
+                    snapshot.UpdateNodeId(false, batch);
+                    batch.Commit();
+                }
+            }
         }
     }
 }

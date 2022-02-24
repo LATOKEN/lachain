@@ -54,10 +54,17 @@ namespace Lachain.Storage.Trie
 
         public void WriteNodeId(ulong id , RocksDbAtomicWrite batch)
         {
-            // saving nodes that are reachable from recent snapshots
+            // saving nodes that are reachable from recent snapshots temporarily
             // so that all other nodes can be deleted. 
             var prefix = EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
             batch.Put(prefix, new byte[1]);
+        }
+
+        public void DeleteNodeId(ulong id , RocksDbAtomicWrite batch)
+        {
+            // Deleting temporary nodes
+            var prefix = EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
+            batch.Delete(prefix);
         }
     }
 }

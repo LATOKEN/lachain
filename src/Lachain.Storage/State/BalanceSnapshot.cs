@@ -154,9 +154,9 @@ namespace Lachain.Storage.State
         }
         public UInt256 Hash => _state.Hash;
 
-        public void SaveNodeId(RocksDbAtomicWrite batch)
+        public void UpdateNodeId(bool save, RocksDbAtomicWrite batch)
         {
-            _state.SaveNodeId(batch);
+            _state.UpdateNodeId(save, batch);
         }
     }
 }

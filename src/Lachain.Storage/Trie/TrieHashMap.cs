@@ -442,9 +442,9 @@ namespace Lachain.Storage.Trie
             }
         }
 
-        public void SaveNodeId(ulong root, RocksDbAtomicWrite batch)
+        public void UpdateNodeId(ulong root, bool save, RocksDbAtomicWrite batch)
         {
-            if(_repository.NodeIdExist(root)) return;
+            if (_repository.NodeIdExist(root) == save) return;
             var node = GetNodeById(root);
             if (node is null) return;
             if (node.Type == NodeType.Internal)
@@ -454,11 +454,12 @@ namespace Lachain.Storage.Trie
                     var childId = node.GetChildByHash(child);
                     if(childId != 0)
                     {
-                        SaveNodeId(childId, batch);
+                        UpdateNodeId(childId, save, batch);
                     }
                 }
             }
-            _repository.WriteNodeId(root, batch);
+            if (save) _repository.WriteNodeId(root, batch);
+            else _repository.DeleteNodeId(root, batch);
         }
     }
 }

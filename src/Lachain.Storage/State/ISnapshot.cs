@@ -18,6 +18,6 @@ namespace Lachain.Storage.State
 
         void ClearCache();
 
-        void SaveNodeId(RocksDbAtomicWrite batch);
+        void UpdateNodeId(bool save, RocksDbAtomicWrite batch);
     }
 }
