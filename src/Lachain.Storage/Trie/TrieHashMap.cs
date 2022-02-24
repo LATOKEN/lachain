@@ -449,9 +449,16 @@ namespace Lachain.Storage.Trie
             if (node is null) return;
             if (node.Type == NodeType.Internal)
             {
-                // recursion;
+                for(byte child = 0 ; child < 32 ; child++)
+                {
+                    var childId = node.GetChildByHash(child);
+                    if(childId != 0)
+                    {
+                        SaveNodeId(childId, batch);
+                    }
+                }
             }
-            
+            _repository.WriteNodeId(root, batch);
         }
     }
 }

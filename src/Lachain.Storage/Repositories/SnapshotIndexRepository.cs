@@ -87,5 +87,23 @@ namespace Lachain.Storage.Repositories
                 version.ToBytes()
             );
         }
+
+        public void DeleteOldSnapshot(ulong depth, ulong totalBlocks)
+        {
+            System.Console.WriteLine($"Keeping latest {depth} snapshots from last approved snapshot");
+            for(var block = totalBlocks - depth; block <= totalBlocks; block++)
+            {
+                var blockchainSnapshot = GetSnapshotForBlock(block);
+                var snapshots = blockchainSnapshot.GetAllSnapshot();
+                foreach(var snapshot in snapshots)
+                {
+                    var batch = new RocksDbAtomicWrite(_dbContext);
+                    snapshot.SaveNodeId(batch);
+                    batch.Commit();
+                }
+                
+            }
+            
+        }
     }
 }

@@ -6,6 +6,13 @@ using Lachain.Core.CLI;
 using Lachain.Crypto;
 using System.Linq;
 using Lachain.Storage;
+using Lachain.Storage.State;
+using Lachain.Core.DI;
+using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.Config;
+using System.Reflection;
+using Lachain.Core.DI.Modules;
+using  Lachain.Storage.Repositories;
 
 namespace Lachain.Console
 {
@@ -74,6 +81,7 @@ namespace Lachain.Console
 
         private static void RunNode(RunOptions options)
         {
+            System.Console.WriteLine($"RunOptions ConfigPath: {options.ConfigPath}");
             using var app = new Application(options.ConfigPath, options);
             app.Start(options);
         }
@@ -87,6 +95,27 @@ namespace Lachain.Console
             }
             else if(options.type == "hard")
             {
+                
+                if(options.depth < 0) throw new ArgumentException("depth cannot be negative");
+                System.Console.WriteLine($"Staring hard db optimization");
+                var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                        "./config.json",
+                        new RunOptions()
+                    ));
+                System.Console.WriteLine("Done container declaration");
+                containerBuilder.RegisterModule<BlockchainModule>();
+                containerBuilder.RegisterModule<ConfigModule>();
+                containerBuilder.RegisterModule<StorageModule>();
+                IContainer _container = containerBuilder.Build();
+                System.Console.WriteLine("Done container building");
+                var stateManager = _container.Resolve<IStateManager>();
+                var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
+
+                if(stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() < options.depth)
+                {
+                    System.Console.WriteLine($"Have less blocks than {options.depth}, nothing to delete");
+                }
+                snapshotIndexRepository.DeleteOldSnapshot(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
                 // TO DO
             }
             else 

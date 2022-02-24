@@ -6,5 +6,6 @@ namespace Lachain.Storage.Repositories
     {
         IBlockchainSnapshot GetSnapshotForBlock(ulong block);
         void SaveSnapshotForBlock(ulong block, IBlockchainSnapshot snapshot);
+        void DeleteOldSnapshot(ulong depth, ulong totalBlocks);
     }
 }
