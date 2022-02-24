@@ -73,6 +73,7 @@ namespace Lachain.Storage.Repositories
             var rawVersion = _dbContext.Get(EntryPrefix.SnapshotIndex.BuildPrefix(
                 repository.ToBytes().Concat(block.ToBytes()).ToArray()
             ));
+            if (rawVersion is null) throw new System.Exception($"snapshot for block: {block} is not found");
             return rawVersion.AsReadOnlySpan().ToUInt64();
         }
 
@@ -101,7 +102,7 @@ namespace Lachain.Storage.Repositories
                 foreach(var snapshot in snapshots)
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    snapshot.UpdateNodeId(true, batch);
+                    snapshot.UpdateNodeIdToBatch(true, batch);
                     batch.Commit();
                 }
             }
@@ -109,7 +110,14 @@ namespace Lachain.Storage.Repositories
             // deleting all nodes that are not reachable from recent (depth+1) snapshots
             for(ulong block = 0 ; block < totalBlocks - depth; block++)
             {
-                // TODO
+                var blockchainSnapshot = GetSnapshotForBlock(block);
+                var snapshots = blockchainSnapshot.GetAllSnapshot();
+                foreach(var snapshot in snapshots)
+                {
+                    var batch = new RocksDbAtomicWrite(_dbContext);
+                    snapshot.DeleteSnapshot(batch);
+                    batch.Commit();
+                }
             }
 
             // delete temporary nodes
@@ -120,7 +128,7 @@ namespace Lachain.Storage.Repositories
                 foreach(var snapshot in snapshots)
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    snapshot.UpdateNodeId(false, batch);
+                    snapshot.UpdateNodeIdToBatch(false, batch);
                     batch.Commit();
                 }
             }

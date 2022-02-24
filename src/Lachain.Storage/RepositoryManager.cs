@@ -50,5 +50,10 @@ namespace Lachain.Storage
             _versionRepository.SetVersion(_repositoryId, LatestVersion, tx);
             _versionRepository.SetVersion((uint) RepositoryType.MetaRepository, _versionFactory.CurrentVersion + 1, tx);
         }
+
+        public void DeleteState(ulong version, RocksDbAtomicWrite batch)
+        {
+            batch.Delete(EntryPrefix.StorageVersionIndex.BuildPrefix(_repositoryId));
+        }
     }
 }

@@ -442,24 +442,39 @@ namespace Lachain.Storage.Trie
             }
         }
 
-        public void UpdateNodeId(ulong root, bool save, RocksDbAtomicWrite batch)
+        public void UpdateNodeIdToBatch(ulong root, bool save, RocksDbAtomicWrite batch)
         {
             if (_repository.NodeIdExist(root) == save) return;
             var node = GetNodeById(root);
             if (node is null) return;
-            if (node.Type == NodeType.Internal)
+
+            foreach (var childId in node.Children)
             {
-                for(byte child = 0 ; child < 32 ; child++)
+                if (childId != 0)
                 {
-                    var childId = node.GetChildByHash(child);
-                    if(childId != 0)
-                    {
-                        UpdateNodeId(childId, save, batch);
-                    }
+                    UpdateNodeIdToBatch(childId, save, batch);
                 }
             }
+            
             if (save) _repository.WriteNodeId(root, batch);
             else _repository.DeleteNodeId(root, batch);
+        }
+
+        public void DeleteOldNodes(ulong root, RocksDbAtomicWrite batch)
+        {
+            if (_repository.NodeIdExist(root)) return;
+            var node = GetNodeById(root);
+            if (node is null) return;
+            
+            foreach (var childId in node.Children)
+            {
+                if (childId != 0)
+                {
+                    DeleteOldNodes(childId , batch);
+                }
+            }
+
+            _repository.DeleteNode(root , node , batch);
         }
     }
 }

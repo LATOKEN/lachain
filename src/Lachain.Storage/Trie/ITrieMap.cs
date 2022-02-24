@@ -19,6 +19,7 @@ namespace Lachain.Storage.Trie
         public bool CheckAllNodeHashes(ulong root);
         public ulong InsertAllNodes(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
         UInt256 GetHash(ulong root);
-        void UpdateNodeId(ulong root, bool save, RocksDbAtomicWrite batch);
+        void UpdateNodeIdToBatch(ulong root, bool save, RocksDbAtomicWrite batch);
+        void DeleteOldNodes(ulong root, RocksDbAtomicWrite batch);
     }
 }

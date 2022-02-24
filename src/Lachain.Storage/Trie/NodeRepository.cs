@@ -66,5 +66,13 @@ namespace Lachain.Storage.Trie
             var prefix = EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
             batch.Delete(prefix);
         }
+
+        public void DeleteNode(ulong id , IHashTrieNode node , RocksDbAtomicWrite batch)
+        {
+            var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+            batch.Delete(prefix);
+            prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
+            batch.Delete(prefix);
+        }
     }
 }
