@@ -55,7 +55,9 @@ namespace Lachain.Storage
 
         public void DeleteStateForBlock(ulong block, RocksDbAtomicWrite batch)
         {
-            var prefix = EntryPrefix.SnapshotIndex.BuildPrefix(_repositoryId.ToBytes().Concat(block.ToBytes()).ToArray());
+            // this snapshot is deleted from db, so its version is deleted as well
+            var prefix = EntryPrefix.SnapshotIndex.BuildPrefix(
+                _repositoryId.ToBytes().Concat(block.ToBytes()).ToArray());
             batch.Delete(prefix);
         }
 
