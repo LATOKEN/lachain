@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Crypto;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
@@ -18,7 +17,6 @@ namespace Lachain.Consensus
         public PublicKeySet ThresholdSignaturePublicKeySet { get; }
         private readonly List<ECDSAPublicKey> _ecdsaPublicKeys;
         public IList<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
-        //public byte[] SerializableByteObject { get; }
 
         public PublicConsensusKeySet(int n, int f,
             PublicKey tpkePublicKey,
