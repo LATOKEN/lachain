@@ -36,6 +36,8 @@ namespace Lachain.Storage
 
         public ulong CurrentVersion { get; private set; }
 
+        public uint RepositoryId => _repositoryManager.RepositoryId;
+
         public void SetCurrentVersion(ulong root)
         {
             CurrentVersion = root;
@@ -132,7 +134,6 @@ namespace Lachain.Storage
         public void DeleteOldNodes(ulong block, RocksDbAtomicWrite batch)
         {
             _trieMap.DeleteOldNodes(CurrentVersion, batch);
-            _repositoryManager.DeleteStateForBlock(block, batch);
         }
     }
 }

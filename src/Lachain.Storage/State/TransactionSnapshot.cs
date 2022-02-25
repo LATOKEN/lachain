@@ -15,6 +15,8 @@ namespace Lachain.Storage.State
 
         public ulong Version => _state.CurrentVersion;
 
+        public uint RepositoryId => _state.RepositoryId;
+
         public TransactionSnapshot(IStorageState state)
         {
             _state = state;

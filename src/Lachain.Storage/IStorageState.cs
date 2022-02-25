@@ -7,7 +7,8 @@ namespace Lachain.Storage
     public interface IStorageState
     {
         ulong CurrentVersion { get; }
-        
+
+        uint RepositoryId { get; }
         byte[]? Get(byte[] key);
         ulong Add(byte[] key, byte[] value);
         ulong AddOrUpdate(byte[] key, byte[] value);

@@ -13,6 +13,8 @@ namespace Lachain.Storage
         private readonly VersionFactory _versionFactory;
         private readonly VersionRepository _versionRepository;
         public readonly ITrieMap TrieMap;
+
+        public uint RepositoryId => _repositoryId;
         public ulong LatestVersion { get; private set; }
         
         public RepositoryManager(
@@ -51,14 +53,6 @@ namespace Lachain.Storage
             LatestVersion = version;
             _versionRepository.SetVersion(_repositoryId, LatestVersion, tx);
             _versionRepository.SetVersion((uint) RepositoryType.MetaRepository, _versionFactory.CurrentVersion + 1, tx);
-        }
-
-        public void DeleteStateForBlock(ulong block, RocksDbAtomicWrite batch)
-        {
-            // this snapshot is deleted from db, so its version is deleted as well
-            var prefix = EntryPrefix.SnapshotIndex.BuildPrefix(
-                _repositoryId.ToBytes().Concat(block.ToBytes()).ToArray());
-            batch.Delete(prefix);
         }
 
     }

@@ -103,8 +103,8 @@ namespace Lachain.Console
                         new RunOptions()
                     ));
                 System.Console.WriteLine("Done container declaration");
-                containerBuilder.RegisterModule<BlockchainModule>();
-                containerBuilder.RegisterModule<ConfigModule>();
+                //containerBuilder.RegisterModule<BlockchainModule>();
+                //containerBuilder.RegisterModule<ConfigModule>();
                 containerBuilder.RegisterModule<StorageModule>();
                 IContainer _container = containerBuilder.Build();
                 System.Console.WriteLine("Done container building");

@@ -89,6 +89,14 @@ namespace Lachain.Storage.Repositories
             );
         }
 
+        private void DeleteVersion(uint repository, ulong block, ulong version, RocksDbAtomicWrite batch)
+        {
+            System.Console.WriteLine($"Deleting version {version} for {(RepositoryType) repository}");
+            batch.Delete(
+                EntryPrefix.SnapshotIndex.BuildPrefix(
+                    repository.ToBytes().Concat(block.ToBytes()).ToArray()));
+        }
+
         public void DeleteOldSnapshot(ulong depth, ulong totalBlocks)
         {
             System.Console.WriteLine($"Keeping latest {depth+1} snapshots from block: {totalBlocks - depth} to {totalBlocks}");
@@ -116,6 +124,7 @@ namespace Lachain.Storage.Repositories
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
                     snapshot.DeleteSnapshot(block, batch);
+                    DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, batch);
                     batch.Commit();
                 }
             }
