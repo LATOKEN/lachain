@@ -7,6 +7,9 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Operations
 {
+    /*
+        This class signs a transaction given ecdsa public and private key
+    */
     public class TransactionSigner : ITransactionSigner
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
