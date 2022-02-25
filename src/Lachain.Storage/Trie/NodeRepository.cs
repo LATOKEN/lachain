@@ -47,7 +47,7 @@ namespace Lachain.Storage.Trie
 
         public bool NodeIdExist(ulong id)
         {
-            var prefix =  EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
+            var prefix =  EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
             if(_rocksDbContext.Get(prefix) is null) return false;
             return true;
         }
@@ -56,14 +56,14 @@ namespace Lachain.Storage.Trie
         {
             // saving nodes that are reachable from recent snapshots temporarily
             // so that all other nodes can be deleted. 
-            var prefix = EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
             batch.Put(prefix, new byte[1]);
         }
 
         public void DeleteNodeId(ulong id , RocksDbAtomicWrite batch)
         {
             // Deleting temporary nodes
-            var prefix = EntryPrefix.KeepRecentSnapshot.BuildPrefix(id);
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
             batch.Delete(prefix);
         }
 
