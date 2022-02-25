@@ -126,14 +126,14 @@ namespace Lachain.Storage
             return _initialVersion;
         }
 
-        public void UpdateNodeIdToBatch(bool save, RocksDbAtomicWrite batch)
+        public ulong UpdateNodeIdToBatch(bool save, RocksDbAtomicWrite batch)
         {
-            _trieMap.UpdateNodeIdToBatch(CurrentVersion, save, batch);
+            return _trieMap.UpdateNodeIdToBatch(CurrentVersion, save, batch);
         }
 
-        public void DeleteOldNodes(ulong block, RocksDbAtomicWrite batch)
+        public ulong DeleteOldNodes(ulong block, RocksDbAtomicWrite batch)
         {
-            _trieMap.DeleteOldNodes(CurrentVersion, batch);
+            return _trieMap.DeleteOldNodes(CurrentVersion, batch);
         }
     }
 }

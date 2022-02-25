@@ -103,6 +103,7 @@ namespace Lachain.Storage.Repositories
 
             // saving nodes for recent (depth + 1) snapshots temporarily
             // so that all remaining nodes can be deleted
+            ulong usefulNodes = 0;
             for(var block = totalBlocks - depth; block <= totalBlocks; block++)
             {
                 var blockchainSnapshot = GetSnapshotForBlock(block);
@@ -110,12 +111,13 @@ namespace Lachain.Storage.Repositories
                 foreach(var snapshot in snapshots)
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    snapshot.UpdateNodeIdToBatch(true, batch);
+                    usefulNodes += snapshot.UpdateNodeIdToBatch(true, batch);
                     batch.Commit();
                 }
             }
 
             // deleting all nodes that are not reachable from recent (depth+1) snapshots
+            ulong deletedNodes = 0;
             for(ulong block = 0 ; block < totalBlocks - depth; block++)
             {
                 var blockchainSnapshot = GetSnapshotForBlock(block);
@@ -123,7 +125,7 @@ namespace Lachain.Storage.Repositories
                 foreach(var snapshot in snapshots)
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    snapshot.DeleteSnapshot(block, batch);
+                    deletedNodes += snapshot.DeleteSnapshot(block, batch);
                     DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, batch);
                     batch.Commit();
                 }
@@ -137,10 +139,12 @@ namespace Lachain.Storage.Repositories
                 foreach(var snapshot in snapshots)
                 {
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    snapshot.UpdateNodeIdToBatch(false, batch);
+                    usefulNodes -= snapshot.UpdateNodeIdToBatch(false, batch);
                     batch.Commit();
                 }
             }
+            // If this happens that means there is bug in implementation
+            if(usefulNodes != 0) throw new System.Exception("Bug in implementation");
         }
     }
 }
