@@ -90,7 +90,7 @@ namespace Lachain.Storage.State
 
         public ulong DeleteSnapshot(ulong block, RocksDbAtomicWrite batch)
         {
-            return _state.DeleteOldNodes(block, batch);
+            return _state.DeleteNodes(block, batch);
         }
     }
 }

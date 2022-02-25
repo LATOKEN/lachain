@@ -186,6 +186,5 @@ namespace Lachain.Storage.State
             _validatorManager.RollbackTo(snapshot.Validators);
             LastApprovedSnapshot = snapshot;
         }
-
     }
 }

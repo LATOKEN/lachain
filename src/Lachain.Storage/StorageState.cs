@@ -131,9 +131,9 @@ namespace Lachain.Storage
             return _trieMap.UpdateNodeIdToBatch(CurrentVersion, save, batch);
         }
 
-        public ulong DeleteOldNodes(ulong block, RocksDbAtomicWrite batch)
+        public ulong DeleteNodes(ulong block, RocksDbAtomicWrite batch)
         {
-            return _trieMap.DeleteOldNodes(CurrentVersion, batch);
+            return _trieMap.DeleteNodes(CurrentVersion, batch);
         }
     }
 }

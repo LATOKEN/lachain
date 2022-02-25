@@ -74,7 +74,7 @@ namespace Lachain.Storage.Repositories
             var rawVersion = _dbContext.Get(EntryPrefix.SnapshotIndex.BuildPrefix(
                 repository.ToBytes().Concat(block.ToBytes()).ToArray()
             ));
-            if (rawVersion is null) throw new System.Exception($"snapshot for block: {block} is not found");
+            if (rawVersion is null) throw new Exception($"snapshot for block: {block} is not found");
             return rawVersion.AsReadOnlySpan().ToUInt64();
         }
 
@@ -129,7 +129,7 @@ namespace Lachain.Storage.Repositories
                 }
             }
             Console.WriteLine($"Deleted {deletedNodes} nodes from DB in total");
-            
+
             // deleting temporary nodes
             UpdateNodeIdToBatch(totalBlocks, depth, false);
         }

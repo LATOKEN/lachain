@@ -463,7 +463,7 @@ namespace Lachain.Storage.Trie
             return nodesUpdated + 1;
         }
 
-        public ulong DeleteOldNodes(ulong root, RocksDbAtomicWrite batch)
+        public ulong DeleteNodes(ulong root, RocksDbAtomicWrite batch)
         {
             if (_repository.NodeIdExist(root)) return 0;
             var node = GetNodeById(root);
@@ -474,7 +474,7 @@ namespace Lachain.Storage.Trie
             {
                 if (childId != 0)
                 {
-                    nodesDeleted += DeleteOldNodes(childId , batch);
+                    nodesDeleted += DeleteNodes(childId , batch);
                 }
             }
 

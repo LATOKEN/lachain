@@ -81,7 +81,6 @@ namespace Lachain.Console
 
         private static void RunNode(RunOptions options)
         {
-            System.Console.WriteLine($"RunOptions ConfigPath: {options.ConfigPath}");
             using var app = new Application(options.ConfigPath, options);
             app.Start(options);
         }
@@ -98,14 +97,14 @@ namespace Lachain.Console
                 
                 if(options.depth < 0) throw new ArgumentException("depth cannot be negative");
                 System.Console.WriteLine("Starting hard db optimization");
+
                 var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                         "./config.json",
                         new RunOptions()
                     ));
-                System.Console.WriteLine("Done container declaration");
                 containerBuilder.RegisterModule<StorageModule>();
                 IContainer _container = containerBuilder.Build();
-                System.Console.WriteLine("Done container building");
+
                 var stateManager = _container.Resolve<IStateManager>();
                 var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
 
@@ -115,6 +114,7 @@ namespace Lachain.Console
                     return;
                 }
                 snapshotIndexRepository.DeleteOldSnapshot(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+                
             }
             else 
             {

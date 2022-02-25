@@ -1,8 +1,6 @@
-﻿using System.Linq;
-using Lachain.Storage.Repositories;
+﻿using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
-using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage
 {
@@ -54,6 +52,5 @@ namespace Lachain.Storage
             _versionRepository.SetVersion(_repositoryId, LatestVersion, tx);
             _versionRepository.SetVersion((uint) RepositoryType.MetaRepository, _versionFactory.CurrentVersion + 1, tx);
         }
-
     }
 }
