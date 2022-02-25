@@ -58,7 +58,7 @@ namespace Lachain.Storage.Trie
             // so that all other nodes can be deleted. 
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
             batch.Put(prefix, new byte[1]);
-            System.Console.WriteLine($"node id: {id} is saved temporarily");
+            //System.Console.WriteLine($"node id: {id} is saved temporarily");
         }
 
         public void DeleteNodeId(ulong id , RocksDbAtomicWrite batch)
@@ -66,7 +66,7 @@ namespace Lachain.Storage.Trie
             // Deleting temporary nodes
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
             batch.Delete(prefix);
-            System.Console.WriteLine($"node id: {id} is deleted from temporary storage");
+            //System.Console.WriteLine($"node id: {id} is deleted from temporary storage");
         }
 
         public void DeleteNode(ulong id , IHashTrieNode node , RocksDbAtomicWrite batch)
@@ -75,7 +75,7 @@ namespace Lachain.Storage.Trie
             batch.Delete(prefix);
             prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
             batch.Delete(prefix);
-            System.Console.WriteLine($"node with id: {id} and hash: {node.Hash.ToHex()} is deleted from DB");
+            //System.Console.WriteLine($"node with id: {id} and hash: {node.Hash.ToHex()} is deleted from DB");
         }
     }
 }
