@@ -117,17 +117,17 @@ namespace Lachain.Benchmark
             // _BenchTxProcessing(_transactionBuilder, _transactionSigner, keyPair);
             // _BenchOneTxInBlock(_transactionBuilder, _transactionSigner, keyPair);
             
-            Console.WriteLine("---------------START - TX POOL BENCHMARK----------------");
-            _Bench_Tx_Pool(_transactionBuilder, _transactionSigner, keyPair);
-            Console.WriteLine("---------------END - TX POOL BENCHMARK----------------");
+            // Console.WriteLine("---------------START - TX POOL BENCHMARK----------------");
+            // _Bench_Tx_Pool(_transactionBuilder, _transactionSigner, keyPair);
+            // Console.WriteLine("---------------END - TX POOL BENCHMARK----------------");
             
-            Console.WriteLine("---------------START - BLOCK EMULATE BENCHMARK----------------");
-            _Bench_Emulate_Block(_transactionBuilder, _transactionSigner, keyPair);
-            Console.WriteLine("---------------END - BLOCK EMULATE BENCHMARK----------------");
+            // Console.WriteLine("---------------START - BLOCK EMULATE BENCHMARK----------------");
+            // _Bench_Emulate_Block(_transactionBuilder, _transactionSigner, keyPair);
+            // Console.WriteLine("---------------END - BLOCK EMULATE BENCHMARK----------------");
             
-            Console.WriteLine("---------------START - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
-            _Bench_Emulate_Execute_Tx(_transactionBuilder, _transactionSigner, keyPair);
-            Console.WriteLine("---------------END - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
+            // Console.WriteLine("---------------START - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
+            // _Bench_Emulate_Execute_Tx(_transactionBuilder, _transactionSigner, keyPair);
+            // Console.WriteLine("---------------END - BLOCK EMULATE + EXECUTE BENCHMARK----------------");
             
             Console.WriteLine("---------------START - MULTIPLE BLOCKS EMULATE + EXECUTE BENCHMARK----------------");
             _Bench_Execute_Blocks(_transactionBuilder, _transactionSigner, keyPair);
@@ -458,12 +458,12 @@ namespace Lachain.Benchmark
             ITransactionSigner transactionSigner,
             EcdsaKeyPair keyPair)
         {
-            const int txGenerate = 50;
-            const int txPerBlock = 10;
+            const int txGenerate = 1000*1000;
+            const int txPerBlock = 1000;
 
             Logger.LogInformation($"Setting initial balance for the 'From' address");
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
-                Money.Parse("2000000"));
+                Money.Parse("20000000000"));
 
             for (var k = 0; k < txGenerate / txPerBlock; k++)
             {
@@ -471,7 +471,7 @@ namespace Lachain.Benchmark
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 for (int i = 0; i < txPerBlock; i++)
                 {
-                    var randomValue = new Random().Next(1, 100);
+                    var randomValue = new Random().Next(1, 5);
                     var amount = Money.Parse($"{randomValue}.0").ToUInt256();
 
                     byte[] random = new byte[32];
