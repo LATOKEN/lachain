@@ -1,7 +1,7 @@
 name: Deploy Testnet
 on:
   workflow_dispatch:
-concurrency: deploy-testnet
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

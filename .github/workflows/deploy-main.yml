@@ -1,12 +1,6 @@
 name: Deploy Mainnet
 on:
   workflow_dispatch:
-<<<<<<< HEAD
-=======
-  push:
-    tags:
-      - v*-main
->>>>>>> 4d443cb1 (add deploy)
 
 jobs:
   deploy:
