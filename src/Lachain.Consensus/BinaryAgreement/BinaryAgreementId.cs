@@ -22,7 +22,7 @@ namespace Lachain.Consensus.BinaryAgreement
             return Era == other.Era && AssociatedValidatorId == other.AssociatedValidatorId;
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (obj is null) return false;
             if (ReferenceEquals(this, obj)) return true;
@@ -30,9 +30,9 @@ namespace Lachain.Consensus.BinaryAgreement
             return Equals((BinaryAgreementId) obj);
         }
         
-        public bool Equals(IProtocolIdentifier? other)
+        public bool Equals(IProtocolIdentifier other)
         {
-            return Equals((object) other!);
+            return Equals((object) other);
         }
 
         public override int GetHashCode()
