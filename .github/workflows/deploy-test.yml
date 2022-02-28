@@ -4,7 +4,9 @@ on:
     workflows: [Build Lachain]
     types: [completed]
   workflow_dispatch:
-
+  push:
+    tags:
+      - v*
 jobs:
   deploy:
     runs-on: ubuntu-latest
