@@ -16,15 +16,11 @@ namespace Lachain.Core.Blockchain.Operations
     {
         private static readonly ILogger<SystemTransactionBuilder> Logger =
             LoggerFactory.GetLoggerForClass<SystemTransactionBuilder>();
-
-        private readonly ITransactionBuilder _transactionBuilder;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
 
-        public SystemTransactionBuilder(ITransactionBuilder transactionBuilder, 
-            IBlockManager blockManager, IStateManager stateManager)
+        public SystemTransactionBuilder(IBlockManager blockManager, IStateManager stateManager)
         {
-            _transactionBuilder = transactionBuilder;
             _blockManager = blockManager;
             _stateManager = stateManager;
         }
@@ -32,21 +28,8 @@ namespace Lachain.Core.Blockchain.Operations
         
         public TransactionReceipt BuildDistributeCycleRewardsAndPenaltiesTxReceipt()
         {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                UInt160Utils.Zero,
-                ContractRegisterer.GovernanceContract,
-                Utility.Money.Zero,
-                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties,
-                0,
-                UInt256Utils.ToUInt256((GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())))
-            );
-            return new TransactionReceipt
-            {
-                Hash = tx.FullHash(SignatureUtils.Zero),
-                Status = TransactionStatus.Pool,
-                Transaction = tx,
-                Signature = SignatureUtils.Zero,
-            };
+            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodDistributeCycleRewardsAndPenalties, 
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())));
         }
         public bool VerifyDistributeCycleRewardsAndPenaltiesTxReceipt(TransactionReceipt receipt)
         {
@@ -66,21 +49,8 @@ namespace Lachain.Core.Blockchain.Operations
 
         public TransactionReceipt BuildFinishCycleTxReceipt()
         {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                UInt160Utils.Zero,
-                ContractRegisterer.GovernanceContract,
-                Utility.Money.Zero,
-                GovernanceInterface.MethodFinishCycle,
-                0,
-                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight()))
-            );
-            return new TransactionReceipt
-            {
-                Hash = tx.FullHash(SignatureUtils.Zero),
-                Status = TransactionStatus.Pool,
-                Transaction = tx,
-                Signature = SignatureUtils.Zero,
-            };
+            return BuildSystemContractTxReceipt(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodFinishCycle, 
+                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())));
         }
 
         public bool VerifyFinishCycleTxReceipt(TransactionReceipt receipt)
@@ -88,10 +58,10 @@ namespace Lachain.Core.Blockchain.Operations
             return receipt.Equals(BuildFinishCycleTxReceipt());
         }
 
-        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)
+        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature, params dynamic[] values)
         {
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
-            var abi = ContractEncoder.Encode(mehodSignature);
+            var abi = ContractEncoder.Encode(mehodSignature, values);
             var transaction = new Transaction
             {
                 To = contractAddress,
