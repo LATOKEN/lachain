@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Nethereum.RLP;
 
 namespace Lachain.Consensus.CommonCoin
 {
@@ -35,6 +37,19 @@ namespace Lachain.Consensus.CommonCoin
         public override int GetHashCode()
         {
             return RawBytes.Aggregate(0, (i, b) => i * 31 + b);
+        }
+
+        public byte[] ToBytes()
+        {
+            return RLP.EncodeList(RawBytes);
+        }
+
+        public static CoinResult FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
+            var rawBytes = decoded[0].RLPData.AsReadOnlySpan().ToArray();
+
+            return new CoinResult(rawBytes);
         }
     }
 }
