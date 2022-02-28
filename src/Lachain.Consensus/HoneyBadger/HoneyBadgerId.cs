@@ -19,12 +19,12 @@ namespace Lachain.Consensus.HoneyBadger
             return Era == other.Era;
         }
 
-        public bool Equals(IProtocolIdentifier? other)
+        public bool Equals(IProtocolIdentifier other)
         {
-            return Equals((object) other!);
+            return Equals((object) other);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals(object obj)
         {
             if (obj is null) return false;
             if (ReferenceEquals(this, obj)) return true;
@@ -58,6 +58,7 @@ namespace Lachain.Consensus.HoneyBadger
         {
             var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
             var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
+
             return new HoneyBadgerId(era);
         }
     }
