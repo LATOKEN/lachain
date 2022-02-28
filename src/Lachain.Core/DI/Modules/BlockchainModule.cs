@@ -17,6 +17,7 @@ namespace Lachain.Core.DI.Modules
             /* global */
             containerBuilder.RegisterSingleton<ITransactionVerifier, TransactionVerifier>();
             containerBuilder.RegisterSingleton<ITransactionBuilder, TransactionBuilder>();
+            containerBuilder.RegisterSingleton<ISystemTransactionBuilder, SystemTransactionBuilder>();
             containerBuilder.RegisterSingleton<IMultisigVerifier, MultisigVerifier>();
             containerBuilder.RegisterSingleton<IPrivateWallet, PrivateWallet>();
             /* genesis */

@@ -8,10 +8,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Core.Network;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -29,6 +26,7 @@ namespace Lachain.Core.Consensus
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly ITransactionBuilder _transactionBuilder;
+        private readonly ISystemTransactionBuilder _systemTransactionBuilder;
         private const int BatchSize = 1000; // TODO: calculate batch size
 
         public BlockProducer(
@@ -37,7 +35,8 @@ namespace Lachain.Core.Consensus
             IBlockSynchronizer blockSynchronizer,
             IBlockManager blockManager,
             IStateManager stateManager, 
-            ITransactionBuilder transactionBuilder
+            ITransactionBuilder transactionBuilder,
+            ISystemTransactionBuilder systemTransactionBuilder
         )
         {
             _transactionPool = transactionPool;
@@ -46,6 +45,7 @@ namespace Lachain.Core.Consensus
             _blockManager = blockManager;
             _stateManager = stateManager;
             _transactionBuilder = transactionBuilder;
+            _systemTransactionBuilder = systemTransactionBuilder;
         }
 
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
@@ -85,21 +85,21 @@ namespace Lachain.Core.Consensus
             var indexInCycle = index % StakingContract.CycleDuration;
             if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration)
             {
-                var txToAdd = DistributeCycleRewardsAndPenaltiesTxReceipt();
+                var txToAdd = _systemTransactionBuilder.BuildDistributeCycleRewardsAndPenaltiesTxReceipt();
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
                     Logger.LogDebug("DistributeCycleRewardsAndPenaltiesTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
             else if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration)
             {
-                var txToAdd = FinishVrfLotteryTxReceipt();
+                var txToAdd = _systemTransactionBuilder.BuildFinishVrfLotteryTxReceipt();
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
                     Logger.LogDebug("FinishVrfLotteryTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
             else if (cycle > 0 && indexInCycle == 0)
             {
-                var txToAdd = FinishCycleTxReceipt();
+                var txToAdd = _systemTransactionBuilder.BuildFinishCycleTxReceipt();
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
                     Logger.LogDebug("FinishCycleTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
@@ -175,74 +175,6 @@ namespace Lachain.Core.Consensus
                 Logger.LogTrace($"Block raw data: {blockWithTransactions.Block.ToByteArray().ToHex()}");
                 Logger.LogTrace($"Block transactions data: {string.Join(", ", blockWithTransactions.Transactions.Select(tx => tx.ToByteArray().ToHex()))}");
             }
-        }
-
-        private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt()
-        {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                UInt160Utils.Zero,
-                ContractRegisterer.GovernanceContract,
-                Utility.Money.Zero,
-                GovernanceInterface.MethodDistributeCycleRewardsAndPenalties,
-                0,
-                UInt256Utils.ToUInt256((GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())))
-            );
-            return new TransactionReceipt
-            {
-                Hash = tx.FullHash(SignatureUtils.Zero),
-                Status = TransactionStatus.Pool,
-                Transaction = tx,
-                Signature = SignatureUtils.Zero,
-            };
-        }
-
-        private TransactionReceipt FinishVrfLotteryTxReceipt()
-        {
-            return BuildSystemContractTxReceipt(ContractRegisterer.StakingContract,
-                StakingInterface.MethodFinishVrfLottery);
-        }
-
-        private TransactionReceipt FinishCycleTxReceipt()
-        {
-            var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
-                UInt160Utils.Zero,
-                ContractRegisterer.GovernanceContract,
-                Utility.Money.Zero,
-                GovernanceInterface.MethodFinishCycle,
-                0,
-                UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight()))
-            );
-            return new TransactionReceipt
-            {
-                Hash = tx.FullHash(SignatureUtils.Zero),
-                Status = TransactionStatus.Pool,
-                Transaction = tx,
-                Signature = SignatureUtils.Zero,
-            };
-        }
-
-        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)
-        {
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
-            var abi = ContractEncoder.Encode(mehodSignature);
-            var transaction = new Transaction
-            {
-                To = contractAddress,
-                Value = UInt256Utils.Zero,
-                From = UInt160Utils.Zero,
-                Nonce = nonce,
-                GasPrice = 0,
-                /* TODO: gas estimation */
-                GasLimit = 100000000,
-                Invocation = ByteString.CopyFrom(abi),
-            };
-            return new TransactionReceipt
-            {
-                Hash = transaction.FullHash(SignatureUtils.Zero),
-                Status = TransactionStatus.Pool,
-                Transaction = transaction,
-                Signature = SignatureUtils.Zero,
-            };
         }
     }
 }
