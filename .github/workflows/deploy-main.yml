@@ -1,9 +1,6 @@
 name: Deploy Mainnet
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - v*-main
 
 jobs:
   deploy:
