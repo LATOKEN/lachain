@@ -10,7 +10,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: rlespinasse/github-slug-action@v4
     - name: Rancher Deploy
-      uses: sekassel-research/actions-rancher-update@1.1.4
+      uses: LATOKEN/actions-rancher-update@1.1.5
       with:
         rancher_url: ${{ secrets.TEST_RANCHER_URL_API }}
         rancher_access: ${{ secrets.TEST_RANCHER_ACCESS_KEY}}
@@ -19,3 +19,5 @@ jobs:
         stack_name: lachain-testnet
         service_name: lachain
         docker_image: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}:${{ env.GITHUB_REF_SLUG_URL }}
+        retry: 3
+        timeout: 30
