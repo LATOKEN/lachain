@@ -18,3 +18,5 @@ jobs:
         stack_name: lachain-mainnet
         service_name: lachain
         docker_image: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}:${{ env.GITHUB_REF_SLUG_URL }}
+        retry: 240
+        timeout: 1
