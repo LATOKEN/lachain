@@ -19,8 +19,8 @@ namespace Lachain.Storage.State
 
         void ClearCache();
 
-        ulong UpdateNodeIdToBatch(bool save, RocksDbAtomicWrite batch);
+        ulong UpdateNodeIdToBatch(bool save);
 
-        ulong DeleteSnapshot(ulong block, RocksDbAtomicWrite batch);
+        ulong DeleteSnapshot(ulong block);
     }
 }

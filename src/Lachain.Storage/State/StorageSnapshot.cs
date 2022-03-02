@@ -95,14 +95,14 @@ namespace Lachain.Storage.State
             _state.ClearCache();
         }
 
-        public ulong UpdateNodeIdToBatch(bool save, RocksDbAtomicWrite batch)
+        public ulong UpdateNodeIdToBatch(bool save)
         {
-            return _state.UpdateNodeIdToBatch(save, batch);
+            return _state.UpdateNodeIdToBatch(save);
         }
 
-        public ulong DeleteSnapshot(ulong block, RocksDbAtomicWrite batch)
+        public ulong DeleteSnapshot(ulong block)
         {
-            return _state.DeleteNodes(block, batch);
+            return _state.DeleteNodes(block);
         }
     }
 }

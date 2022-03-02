@@ -52,29 +52,29 @@ namespace Lachain.Storage.Trie
             return true;
         }
 
-        public void WriteNodeId(ulong id , RocksDbAtomicWrite batch)
+        public void WriteNodeId(ulong id)
         {
             // saving nodes that are reachable from recent snapshots temporarily
             // so that all other nodes can be deleted. 
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            batch.Put(prefix, new byte[1]);
+            _rocksDbContext.Save(prefix, new byte[1]);
             //System.Console.WriteLine($"node id: {id} is saved temporarily");
         }
 
-        public void DeleteNodeId(ulong id , RocksDbAtomicWrite batch)
+        public void DeleteNodeId(ulong id)
         {
             // Deleting temporary nodes
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            batch.Delete(prefix);
+            _rocksDbContext.Delete(prefix);
             //System.Console.WriteLine($"node id: {id} is deleted from temporary storage");
         }
 
-        public void DeleteNode(ulong id , IHashTrieNode node , RocksDbAtomicWrite batch)
+        public void DeleteNode(ulong id , IHashTrieNode node)
         {
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-            batch.Delete(prefix);
+            _rocksDbContext.Delete(prefix);
             prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
-            batch.Delete(prefix);
+            _rocksDbContext.Delete(prefix);
             //System.Console.WriteLine($"node with id: {id} and hash: {node.Hash.ToHex()} is deleted from DB");
         }
     }

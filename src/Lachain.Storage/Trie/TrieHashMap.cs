@@ -442,7 +442,7 @@ namespace Lachain.Storage.Trie
             }
         }
 
-        public ulong UpdateNodeIdToBatch(ulong root, bool save, RocksDbAtomicWrite batch)
+        public ulong UpdateNodeIdToBatch(ulong root, bool save)
         {
             if (_repository.NodeIdExist(root) == save) return 0;
             var node = GetNodeById(root);
@@ -453,17 +453,17 @@ namespace Lachain.Storage.Trie
             {
                 if (childId != 0)
                 {
-                    nodesUpdated += UpdateNodeIdToBatch(childId, save, batch);
+                    nodesUpdated += UpdateNodeIdToBatch(childId, save);
                 }
             }
             
-            if (save) _repository.WriteNodeId(root, batch);
-            else _repository.DeleteNodeId(root, batch);
+            if (save) _repository.WriteNodeId(root);
+            else _repository.DeleteNodeId(root);
 
             return nodesUpdated + 1;
         }
 
-        public ulong DeleteNodes(ulong root, RocksDbAtomicWrite batch)
+        public ulong DeleteNodes(ulong root)
         {
             if (_repository.NodeIdExist(root)) return 0;
             var node = GetNodeById(root);
@@ -474,11 +474,11 @@ namespace Lachain.Storage.Trie
             {
                 if (childId != 0)
                 {
-                    nodesDeleted += DeleteNodes(childId , batch);
+                    nodesDeleted += DeleteNodes(childId);
                 }
             }
 
-            _repository.DeleteNode(root , node , batch);
+            _repository.DeleteNode(root , node);
             return nodesDeleted + 1;
         }
     }

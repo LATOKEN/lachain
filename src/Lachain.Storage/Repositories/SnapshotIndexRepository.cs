@@ -97,11 +97,11 @@ namespace Lachain.Storage.Repositories
             );
         }
 
-        private void DeleteVersion(uint repository, ulong block, ulong version, RocksDbAtomicWrite batch)
+        private void DeleteVersion(uint repository, ulong block, ulong version)
         {
             Console.WriteLine($"Deleting version {version} for "
                 + $"{(RepositoryType) repository} for block {block}");
-            batch.Delete(
+            _dbContext.Delete(
                 EntryPrefix.SnapshotIndex.BuildPrefix(
                     repository.ToBytes().Concat(block.ToBytes()).ToArray()));
         }
@@ -144,11 +144,11 @@ namespace Lachain.Storage.Repositories
                     {
                         Console.WriteLine($"Deleting nodes of "
                             + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
-                        var batch = new RocksDbAtomicWrite(_dbContext);
-                        var count = snapshot.DeleteSnapshot(block, batch);
+                        //var batch = new RocksDbAtomicWrite(_dbContext);
+                        var count = snapshot.DeleteSnapshot(block);
                         deletedNodes += count;
-                        DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, batch);
-                        batch.Commit();
+                        DeleteVersion(snapshot.RepositoryId, block, snapshot.Version);
+                        //batch.Commit();
                         Console.WriteLine($"Deleted {count} nodes of "
                             + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
                     }
@@ -181,7 +181,7 @@ namespace Lachain.Storage.Repositories
                     Console.WriteLine($"{action.Doing} nodeId of "
                          + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
                     var batch = new RocksDbAtomicWrite(_dbContext);
-                    var count = snapshot.UpdateNodeIdToBatch(save, batch);
+                    var count = snapshot.UpdateNodeIdToBatch(save);
                     usefulNodes += count;
                     batch.Commit();
                     Console.WriteLine($"{action.Done} {count} nodeId of "
