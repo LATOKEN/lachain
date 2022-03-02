@@ -138,20 +138,27 @@ namespace Lachain.Storage.Repositories
                 Console.WriteLine("Deleting nodes from DB that are not reachable from recent snapshots");
                 for(ulong block = 0 ; block < totalBlocks - depth; block++)
                 {
-                    var blockchainSnapshot = GetSnapshotForBlock(block);
-                    var snapshots = blockchainSnapshot.GetAllSnapshot();
-                    foreach(var snapshot in snapshots)
+                    try
                     {
-                        Console.WriteLine($"Deleting nodes of "
-                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
-                        //var batch = new RocksDbAtomicWrite(_dbContext);
-                        var count = snapshot.DeleteSnapshot(block);
-                        deletedNodes += count;
-                        DeleteVersion(snapshot.RepositoryId, block, snapshot.Version);
-                        //batch.Commit();
-                        Console.WriteLine($"Deleted {count} nodes of "
-                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                        var blockchainSnapshot = GetSnapshotForBlock(block);
+                        var snapshots = blockchainSnapshot.GetAllSnapshot();
+                        foreach(var snapshot in snapshots)
+                        {
+                            Console.WriteLine($"Deleting nodes of "
+                                + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                            //var batch = new RocksDbAtomicWrite(_dbContext);
+                            var count = snapshot.DeleteSnapshot(block);
+                            deletedNodes += count;
+                            DeleteVersion(snapshot.RepositoryId, block, snapshot.Version);
+                            //batch.Commit();
+                            Console.WriteLine($"Deleted {count} nodes of "
+                                + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                        }
                     }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine($"Got exception trying to fetch snapshot for block {block}: {exception}");
+                    } 
                 }
                 Console.WriteLine($"Deleted {deletedNodes} nodes from DB in total");
             }
@@ -174,18 +181,25 @@ namespace Lachain.Storage.Repositories
             ulong usefulNodes = 0;
             for(var block = totalBlocks - depth; block <= totalBlocks; block++)
             {
-                var blockchainSnapshot = GetSnapshotForBlock(block);
-                var snapshots = blockchainSnapshot.GetAllSnapshot();
-                foreach(var snapshot in snapshots)
+                try
                 {
-                    Console.WriteLine($"{action.Doing} nodeId of "
-                         + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
-                    var batch = new RocksDbAtomicWrite(_dbContext);
-                    var count = snapshot.UpdateNodeIdToBatch(save);
-                    usefulNodes += count;
-                    batch.Commit();
-                    Console.WriteLine($"{action.Done} {count} nodeId of "
-                         + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                    var blockchainSnapshot = GetSnapshotForBlock(block);
+                    var snapshots = blockchainSnapshot.GetAllSnapshot();
+                    foreach(var snapshot in snapshots)
+                    {
+                        Console.WriteLine($"{action.Doing} nodeId of "
+                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                        var batch = new RocksDbAtomicWrite(_dbContext);
+                        var count = snapshot.UpdateNodeIdToBatch(save);
+                        usefulNodes += count;
+                        batch.Commit();
+                        Console.WriteLine($"{action.Done} {count} nodeId of "
+                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine($"Got exception trying to fetch snapshot for block {block}: {exception}");
                 }
             }
             Console.WriteLine($"{action.Done} {usefulNodes} nodeId in total");
