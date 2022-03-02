@@ -99,8 +99,8 @@ namespace Lachain.Storage.Repositories
 
         private void DeleteVersion(uint repository, ulong block, ulong version)
         {
-            Console.WriteLine($"Deleting version {version} for "
-                + $"{(RepositoryType) repository} for block {block}");
+            //Console.WriteLine($"Deleting version {version} for "
+            //    + $"{(RepositoryType) repository} for block {block}");
             _dbContext.Delete(
                 EntryPrefix.SnapshotIndex.BuildPrefix(
                     repository.ToBytes().Concat(block.ToBytes()).ToArray()));
@@ -144,20 +144,19 @@ namespace Lachain.Storage.Repositories
                         var snapshots = blockchainSnapshot.GetAllSnapshot();
                         foreach(var snapshot in snapshots)
                         {
-                            Console.WriteLine($"Deleting nodes of "
-                                + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
-                            //var batch = new RocksDbAtomicWrite(_dbContext);
+                            //Console.WriteLine($"Deleting nodes of "
+                            //    + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
                             var count = snapshot.DeleteSnapshot(block);
                             deletedNodes += count;
                             DeleteVersion(snapshot.RepositoryId, block, snapshot.Version);
-                            //batch.Commit();
-                            Console.WriteLine($"Deleted {count} nodes of "
-                                + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                            //Console.WriteLine($"Deleted {count} nodes of "
+                            //    + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
                         }
                     }
-                    catch (Exception exception)
+                    catch (Exception _)
                     {
-                        Console.WriteLine($"Got exception trying to fetch snapshot for block {block}: {exception}");
+                        // this means the snapshot is already deleted by a previous call
+                        //Console.WriteLine($"Got exception trying to fetch snapshot for block {block}: {exception}");
                     } 
                 }
                 Console.WriteLine($"Deleted {deletedNodes} nodes from DB in total");
@@ -187,19 +186,20 @@ namespace Lachain.Storage.Repositories
                     var snapshots = blockchainSnapshot.GetAllSnapshot();
                     foreach(var snapshot in snapshots)
                     {
-                        Console.WriteLine($"{action.Doing} nodeId of "
-                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                        //Console.WriteLine($"{action.Doing} nodeId of "
+                        //    + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
                         var batch = new RocksDbAtomicWrite(_dbContext);
                         var count = snapshot.UpdateNodeIdToBatch(save);
                         usefulNodes += count;
                         batch.Commit();
-                        Console.WriteLine($"{action.Done} {count} nodeId of "
-                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                        //Console.WriteLine($"{action.Done} {count} nodeId of "
+                        //    + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
                     }
                 }
-                catch (Exception exception)
+                catch (Exception _)
                 {
-                    Console.WriteLine($"Got exception trying to fetch snapshot for block {block}: {exception}");
+                    // this means the snapshot is already deleted by a previous call
+                    //Console.WriteLine($"Got exception trying to fetch snapshot for block {block}: {exception}");
                 }
             }
             Console.WriteLine($"{action.Done} {usefulNodes} nodeId in total");
