@@ -85,6 +85,10 @@ namespace Lachain.Console
             var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
 
+            // check if compacting db was started but not finished
+            if(snapshotIndexRepository.DeleteOldSnapshotStatus > 0) throw new Exception("Compacting db was started "
+                 + "by deleting nodes from old snapshot but was not finished.");
+
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
             if (chainId == null || chainId == 0) throw new Exception("chainId is not defined in the config file");

@@ -8,5 +8,6 @@ namespace Lachain.Storage.Repositories
         void SaveSnapshotForBlock(ulong block, IBlockchainSnapshot snapshot);
         void DeleteOldSnapshot(ulong depth, ulong totalBlocks);
         void UpdateNodeIdToBatch(ulong totalBlocks, ulong depth, bool save);
+        byte DeleteOldSnapshotStatus { get; }
     }
 }

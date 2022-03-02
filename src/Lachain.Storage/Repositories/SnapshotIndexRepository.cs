@@ -11,6 +11,9 @@ namespace Lachain.Storage.Repositories
     {
         private readonly IRocksDbContext _dbContext;
         private readonly IStorageManager _storageManager;
+        private byte deleteOldSnapshotStatus;
+
+        public byte DeleteOldSnapshotStatus => deleteOldSnapshotStatus;
 
         private static readonly ILogger<SnapshotIndexRepository> Logger =
             LoggerFactory.GetLoggerForClass<SnapshotIndexRepository>();
@@ -19,6 +22,10 @@ namespace Lachain.Storage.Repositories
         {
             _dbContext = dbContext;
             _storageManager = storageManager;
+            var prefix = EntryPrefix.DeleteOldSnapshotStatus.BuildPrefix();
+            var content = dbContext.Get(prefix);
+            if(content is null) SetDeleteOldSnapshotStatus(0);
+            else deleteOldSnapshotStatus = content[0];
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -99,39 +106,65 @@ namespace Lachain.Storage.Repositories
                     repository.ToBytes().Concat(block.ToBytes()).ToArray()));
         }
 
+        private void SetDeleteOldSnapshotStatus(byte status)
+        {
+            deleteOldSnapshotStatus = status;
+            var prefix = EntryPrefix.DeleteOldSnapshotStatus.BuildPrefix();
+            var content = new byte[1];
+            content[0] = status;
+            _dbContext.Save(prefix, content);
+        }
+
         public void DeleteOldSnapshot(ulong depth, ulong totalBlocks)
         {
-            Console.WriteLine($"Keeping latest {depth+1} snapshots from last approved snapshot" 
-                + $"for blocks: {totalBlocks - depth} to {totalBlocks}");
-
-            // saving nodes for recent (depth + 1) snapshots temporarily
-            // so that all remaining nodes can be deleted
-            UpdateNodeIdToBatch(totalBlocks, depth, true);
-
-            // deleting all nodes that are not reachable from recent (depth+1) snapshots
-            ulong deletedNodes = 0;
-            Console.WriteLine("Deleting nodes from DB that are not reachable from recent snapshots");
-            for(ulong block = 0 ; block < totalBlocks - depth; block++)
+            if (DeleteOldSnapshotStatus <= 1)
             {
-                var blockchainSnapshot = GetSnapshotForBlock(block);
-                var snapshots = blockchainSnapshot.GetAllSnapshot();
-                foreach(var snapshot in snapshots)
-                {
-                    Console.WriteLine($"Deleting nodes of "
-                         + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
-                    var batch = new RocksDbAtomicWrite(_dbContext);
-                    var count = snapshot.DeleteSnapshot(block, batch);
-                    deletedNodes += count;
-                    DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, batch);
-                    batch.Commit();
-                    Console.WriteLine($"Deleted {count} nodes of "
-                         + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
-                }
-            }
-            Console.WriteLine($"Deleted {deletedNodes} nodes from DB in total");
+                // set deletingOldSnapshot = 1 when the process starts
+                SetDeleteOldSnapshotStatus(1);
+                Console.WriteLine($"Keeping latest {depth+1} snapshots from last approved snapshot" 
+                    + $"for blocks: {totalBlocks - depth} to {totalBlocks}");
 
-            // deleting temporary nodes
-            UpdateNodeIdToBatch(totalBlocks, depth, false);
+                // saving nodes for recent (depth + 1) snapshots temporarily
+                // so that all remaining nodes can be deleted
+                UpdateNodeIdToBatch(totalBlocks, depth, true);
+            }
+
+            if (DeleteOldSnapshotStatus <= 2)
+            {
+                // set deletingOldSnapshot = 2 when deleting old nodes
+                SetDeleteOldSnapshotStatus(2);
+                // deleting all nodes that are not reachable from recent (depth+1) snapshots
+                ulong deletedNodes = 0;
+                Console.WriteLine("Deleting nodes from DB that are not reachable from recent snapshots");
+                for(ulong block = 0 ; block < totalBlocks - depth; block++)
+                {
+                    var blockchainSnapshot = GetSnapshotForBlock(block);
+                    var snapshots = blockchainSnapshot.GetAllSnapshot();
+                    foreach(var snapshot in snapshots)
+                    {
+                        Console.WriteLine($"Deleting nodes of "
+                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                        var batch = new RocksDbAtomicWrite(_dbContext);
+                        var count = snapshot.DeleteSnapshot(block, batch);
+                        deletedNodes += count;
+                        DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, batch);
+                        batch.Commit();
+                        Console.WriteLine($"Deleted {count} nodes of "
+                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
+                    }
+                }
+                Console.WriteLine($"Deleted {deletedNodes} nodes from DB in total");
+            }
+
+            if (DeleteOldSnapshotStatus <= 3)
+            {
+                // set deletingOldSnapshot = 3 when deleting old nodes are deleted
+                SetDeleteOldSnapshotStatus(3);
+                // deleting temporary nodes
+                UpdateNodeIdToBatch(totalBlocks, depth, false);
+            }
+
+            SetDeleteOldSnapshotStatus(0);
         }
 
         public void UpdateNodeIdToBatch(ulong totalBlocks, ulong depth, bool save)

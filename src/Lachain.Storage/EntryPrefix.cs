@@ -31,6 +31,7 @@
 
         NodesDownloadedTillNow = 0x0606,
         NodeIdForRecentSnapshot = 0x0607,
+        DeleteOldSnapshotStatus = 0x0608,
 
         /* contract */
         ContractByHash = 0x0801,
