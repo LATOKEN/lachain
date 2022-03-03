@@ -11,6 +11,10 @@ using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Google.Protobuf;
+using Lachain.Core.Blockchain.SystemContracts.Interface;
+
+
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -55,17 +59,19 @@ namespace Lachain.Core.Blockchain.Operations
             if (transactionRepository.GetTransactionByHash(receipt.Hash) != null)
                 return OperatingError.AlreadyExists;
             /* verify transaction */
+
+            /* find if verification should be skipped for this transaction */
             var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
             var cycle = block.Header.Index / StakingContract.CycleDuration;
 
-            var canTransactionMissVerification =
-                block.Header.Index == 0 ||
-                cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration &&
-                receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) ||
-                indexInCycle == StakingContract.VrfSubmissionPhaseDuration &&
-                receipt.Transaction.To.Equals(ContractRegisterer.StakingContract) ||
-                cycle > 0 && indexInCycle == 0 && receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract);
+            var isGenesisBlock = block.Header.Index == 0;
+            var isDistributeCycleRewardsAndPenaltiesTx = IsDistributeCycleRewardsAndPenaltiesTx(block, receipt.Transaction);
+            var isFinishVrfLotteryTx = IsFinishVrfLotteryTx(block, receipt.Transaction);
+            var isFinishCycleTx = IsFinishCycleTx(block, receipt.Transaction);
 
+            var canTransactionMissVerification = isGenesisBlock || 
+                isDistributeCycleRewardsAndPenaltiesTx || isFinishVrfLotteryTx || isFinishCycleTx;
+            
             var verifyError = VerifyInternal(receipt, canTransactionMissVerification);
             if (verifyError != OperatingError.Ok)
                 return verifyError;
@@ -147,6 +153,65 @@ namespace Lachain.Core.Blockchain.Operations
         public ulong CalcNextTxNonce(UInt160 from)
         {
             return _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+        }
+
+        private bool IsDistributeCycleRewardsAndPenaltiesTx(Block block, Transaction tx) 
+        {
+            var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
+            var cycle = block.Header.Index / StakingContract.CycleDuration;
+            if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration)
+            {
+                var expectedTx = BuildSystemContractTx(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodDistributeCycleRewardsAndPenalties, 
+                    UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(block.Header.Index - 1)));
+                return expectedTx.Equals(tx);
+            }
+            return false;
+        }
+
+        private bool IsFinishVrfLotteryTx(Block block, Transaction tx) 
+        {
+            var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
+            var cycle = block.Header.Index / StakingContract.CycleDuration;
+            if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration)
+            {
+                var expectedTx = BuildSystemContractTx(ContractRegisterer.StakingContract,
+                    StakingInterface.MethodFinishVrfLottery);
+                return expectedTx.Equals(tx);
+            }
+            return false;
+        }
+
+
+        private bool IsFinishCycleTx(Block block, Transaction tx) 
+        {
+            var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
+            var cycle = block.Header.Index / StakingContract.CycleDuration;
+            if (cycle > 0 && indexInCycle == 0)
+            {
+                var expectedTx = BuildSystemContractTx(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodFinishCycle, 
+                    UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(block.Header.Index - 1)));
+                return expectedTx.Equals(tx);
+            }
+            return false;
+        }
+
+
+        private Transaction BuildSystemContractTx(UInt160 contractAddress, string mehodSignature, params dynamic[] values)
+        {
+            var transactionRepository = _stateManager.CurrentSnapshot.Transactions;
+            var from = UInt160Utils.Zero;
+            var nonce = transactionRepository.GetTotalTransactionCount(from);
+            var abi = ContractEncoder.Encode(mehodSignature, values);
+            return new Transaction
+            {
+                To = contractAddress,
+                Value = UInt256Utils.Zero,
+                From = UInt160Utils.Zero,
+                Nonce = nonce,
+                GasPrice = 0,
+                GasLimit = 100000000,
+                Invocation = ByteString.CopyFrom(abi),
+            };
         }
     }
 }
