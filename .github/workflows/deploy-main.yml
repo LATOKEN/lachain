@@ -18,5 +18,25 @@ jobs:
         stack_name: lachain-mainnet
         service_name: lachain
         docker_image: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}:${{ env.GITHUB_REF_SLUG_URL }}
-        retry: 3
-        timeout: 60
+        retry: 240
+        timeout: 1
+    - name: Send release message to slack chat
+      id: slack
+      uses: slackapi/slack-github-action@v1.18.0
+      with:
+        payload: |
+          {
+            "text": "New release lachain:${{ github.ref }} deployed to Mainnet by ${{ github.actor }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "New release lachain:${{ github.ref }} deployed to Mainnet by ${{ github.actor }}"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.RELAYERS_SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

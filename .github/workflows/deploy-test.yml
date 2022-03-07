@@ -21,5 +21,25 @@ jobs:
         stack_name: lachain-testnet
         service_name: lachain
         docker_image: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}:${{ env.GITHUB_REF_SLUG_URL }}
-        retry: 3
-        timeout: 30
+        retry: 1 
+        timeout: 90
+    - name: Send release message to slack chat
+      id: slack
+      uses: slackapi/slack-github-action@v1.18.0
+      with:
+        payload: |
+          {
+            "text": "New release lachain:${{ github.ref }} deployed to Testnet by ${{ github.actor }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "New release lachain:${{ github.ref }} deployed to Testnet by ${{ github.actor }}"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.TEST_RELAYERS_SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
