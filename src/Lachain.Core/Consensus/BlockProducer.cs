@@ -78,6 +78,10 @@ namespace Lachain.Core.Consensus
             // we don't need to verify receipts here
             // verfification will be done during emulation
 
+            // But we need to verify the hash as we map the receipts with its hash
+            // we skip the transactions with hash mismatch
+            receipts = receipts.Where(receipt => receipt.Transaction.FullHash(receipt.Signature).Equals(receipt.Hash)).ToList();
+
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
 
