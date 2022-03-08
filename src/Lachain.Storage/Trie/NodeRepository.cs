@@ -1,6 +1,7 @@
 ﻿using RocksDbSharp;
 using System;
 using Lachain.Utility.Utils;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.Trie
 {
@@ -52,30 +53,28 @@ namespace Lachain.Storage.Trie
             return true;
         }
 
-        public void WriteNodeId(ulong id)
+        public void WriteNodeId(ulong id, RocksDbAtomicWrite batch)
         {
             // saving nodes that are reachable from recent snapshots temporarily
             // so that all other nodes can be deleted. 
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            _rocksDbContext.Save(prefix, new byte[1]);
-            //System.Console.WriteLine($"node id: {id} is saved temporarily");
+            DbShrinkUtils.Save(batch, prefix, new byte[1]);
         }
 
-        public void DeleteNodeId(ulong id)
+        public void DeleteNodeId(ulong id, RocksDbAtomicWrite batch)
         {
             // Deleting temporary nodes
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            _rocksDbContext.Delete(prefix);
-            //System.Console.WriteLine($"node id: {id} is deleted from temporary storage");
+            DbShrinkUtils.Delete(batch, prefix);
         }
 
-        public void DeleteNode(ulong id , IHashTrieNode node)
+        public void DeleteNode(ulong id , IHashTrieNode node, RocksDbAtomicWrite batch)
         {
-            var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-            _rocksDbContext.Delete(prefix);
-            prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
-            _rocksDbContext.Delete(prefix);
-            //System.Console.WriteLine($"node with id: {id} and hash: {node.Hash.ToHex()} is deleted from DB");
+            // first delete the version by hash and then delete the node.
+            var prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
+            DbShrinkUtils.Delete(batch, prefix);
+            prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+            DbShrinkUtils.Delete(batch, prefix);
         }
     }
 }

@@ -13,6 +13,7 @@ using Lachain.Core.Config;
 using System.Reflection;
 using Lachain.Core.DI.Modules;
 using  Lachain.Storage.Repositories;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Console
 {
@@ -95,7 +96,7 @@ namespace Lachain.Console
             else if(options.type == "hard")
             {
                 
-                if(options.depth < 0) throw new ArgumentException("depth cannot be negative");
+                if(options.depth <= 0) throw new ArgumentException("depth must be positive integer");
                 System.Console.WriteLine("Starting hard db optimization");
 
                 var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
@@ -107,13 +108,16 @@ namespace Lachain.Console
 
                 var stateManager = _container.Resolve<IStateManager>();
                 var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
+                var dbContext = _container.Resolve<IRocksDbContext>();
 
                 if(stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() < options.depth)
                 {
                     System.Console.WriteLine($"Have less blocks than {options.depth}, nothing to delete");
                     return;
                 }
-                snapshotIndexRepository.DeleteOldSnapshot(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+
+                var dbShrink = new DbShrink(snapshotIndexRepository , dbContext);
+                dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
                 
             }
             else 

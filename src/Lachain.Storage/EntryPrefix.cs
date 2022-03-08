@@ -31,7 +31,9 @@
 
         NodesDownloadedTillNow = 0x0606,
         NodeIdForRecentSnapshot = 0x0607,
-        DeleteOldSnapshotStatus = 0x0608,
+        DbShrinkStatus = 0x0608,
+        DbShrinkDepth = 0x0609,
+        OldestSnapshotInDb = 0x060a,
 
         /* contract */
         ContractByHash = 0x0801,

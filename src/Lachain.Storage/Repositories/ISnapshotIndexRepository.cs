@@ -6,8 +6,6 @@ namespace Lachain.Storage.Repositories
     {
         IBlockchainSnapshot GetSnapshotForBlock(ulong block);
         void SaveSnapshotForBlock(ulong block, IBlockchainSnapshot snapshot);
-        void DeleteOldSnapshot(ulong depth, ulong totalBlocks);
-        void UpdateNodeIdToBatch(ulong totalBlocks, ulong depth, bool save);
-        byte DeleteOldSnapshotStatus { get; }
+        void DeleteVersion(uint repository, ulong block, ulong version, RocksDbAtomicWrite batch);
     }
 }

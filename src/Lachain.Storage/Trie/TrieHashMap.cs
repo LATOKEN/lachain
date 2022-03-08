@@ -9,11 +9,13 @@ using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 using RocksDbSharp;
 using Newtonsoft.Json.Linq;
+using Lachain.Logger;
 
 namespace Lachain.Storage.Trie
 {
     internal class TrieHashMap : ITrieMap
     {
+        private static readonly ILogger<TrieHashMap> Logger = LoggerFactory.GetLoggerForClass<TrieHashMap>();
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
         private readonly IList<ulong> _toBeDeleted = new List<ulong>();
@@ -257,7 +259,7 @@ namespace Lachain.Storage.Trie
                 _node = _repository.GetNode(id);
                 _lruCache.Add(id, _node);
             }
-            if(_node is null) System.Console.WriteLine($"Get Node By id: {id} not found");
+            if(_node is null) Logger.LogDebug($"Get Node By id: {id} not found");
             return _node;
         }
 
@@ -442,7 +444,7 @@ namespace Lachain.Storage.Trie
             }
         }
 
-        public ulong UpdateNodeIdToBatch(ulong root, bool save)
+        public ulong UpdateNodeIdToBatch(ulong root, bool save, RocksDbAtomicWrite batch)
         {
             if (_repository.NodeIdExist(root) == save) return 0;
             var node = GetNodeById(root);
@@ -453,17 +455,17 @@ namespace Lachain.Storage.Trie
             {
                 if (childId != 0)
                 {
-                    nodesUpdated += UpdateNodeIdToBatch(childId, save);
+                    nodesUpdated += UpdateNodeIdToBatch(childId, save, batch);
                 }
             }
             
-            if (save) _repository.WriteNodeId(root);
-            else _repository.DeleteNodeId(root);
+            if (save) _repository.WriteNodeId(root, batch);
+            else _repository.DeleteNodeId(root, batch);
 
             return nodesUpdated + 1;
         }
 
-        public ulong DeleteNodes(ulong root)
+        public ulong DeleteNodes(ulong root, RocksDbAtomicWrite batch)
         {
             if (_repository.NodeIdExist(root)) return 0;
             var node = GetNodeById(root);
@@ -474,11 +476,11 @@ namespace Lachain.Storage.Trie
             {
                 if (childId != 0)
                 {
-                    nodesDeleted += DeleteNodes(childId);
+                    nodesDeleted += DeleteNodes(childId, batch);
                 }
             }
 
-            _repository.DeleteNode(root , node);
+            _repository.DeleteNode(root , node, batch);
             return nodesDeleted + 1;
         }
     }
