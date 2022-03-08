@@ -26,13 +26,13 @@ jobs:
       with:
         payload: |
           {
-            "text": "New release lachain:${{ github.ref }} deployed to Mainnet by ${{ github.actor }}",
+            "text": "New release lachain:${{ github.ref_name }} deployed to Mainnet by ${{ github.actor }}",
             "blocks": [
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "New release lachain:${{ github.ref }} deployed to Mainnet by ${{ github.actor }}"
+                  "text": "New release lachain:${{ github.ref_name }} deployed to Mainnet by ${{ github.actor }}"
                 }
               }
             ]
