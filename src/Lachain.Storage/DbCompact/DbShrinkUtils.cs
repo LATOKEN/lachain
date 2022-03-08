@@ -1,3 +1,6 @@
+using System;
+using Lachain.Logger;
+
 namespace Lachain.Storage.DbCompact
 {
     public static class DbShrinkUtils
@@ -46,7 +49,14 @@ namespace Lachain.Storage.DbCompact
 
         public static void Commit(RocksDbAtomicWrite batch)
         {
-            batch.Commit();
+            try
+            {
+                batch.Commit();
+            }
+            catch(Exception exception)
+            {
+                Console.WriteLine($"Got exception tying to commit in db: {exception}");
+            }
             ResetCounter();
         }
     }
