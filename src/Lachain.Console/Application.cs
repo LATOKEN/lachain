@@ -87,7 +87,7 @@ namespace Lachain.Console
             var transactionPool = _container.Resolve<ITransactionPool>();
 
             // check if compacting db was started but not finished
-            var dbShrink = new DbShrink(snapshotIndexRepository , dbContext);
+            var dbShrink = _container.Resolve<IDbShrink>();
             if(!dbShrink.IsStopped()) throw new Exception($"Compacting db was started with depth: {dbShrink.GetDbShrinkDepth()}"
                  + " by deleting nodes from old snapshot but was not finished.");
 

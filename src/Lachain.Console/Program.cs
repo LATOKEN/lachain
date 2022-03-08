@@ -107,8 +107,6 @@ namespace Lachain.Console
                 IContainer _container = containerBuilder.Build();
 
                 var stateManager = _container.Resolve<IStateManager>();
-                var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
-                var dbContext = _container.Resolve<IRocksDbContext>();
 
                 if(stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() < options.depth)
                 {
@@ -116,7 +114,7 @@ namespace Lachain.Console
                     return;
                 }
 
-                var dbShrink = new DbShrink(snapshotIndexRepository , dbContext);
+                var dbShrink = _container.Resolve<IDbShrink>();
                 dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
                 
             }

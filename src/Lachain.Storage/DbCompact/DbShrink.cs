@@ -5,7 +5,7 @@ using Lachain.Logger;
 
 namespace Lachain.Storage.DbCompact
 {
-    public class DbShrink
+    public class DbShrink : IDbShrink
     {
         private static readonly ILogger<DbShrink> Logger =
             LoggerFactory.GetLoggerForClass<DbShrink>();
@@ -173,7 +173,7 @@ namespace Lachain.Storage.DbCompact
             Logger.LogTrace($"Deleted {deletedNodes} nodes from DB in total");
         }
 
-        public void UpdateNodeIdToBatch(ulong depth, ulong totalBlocks, bool save)
+        private void UpdateNodeIdToBatch(ulong depth, ulong totalBlocks, bool save)
         {
             DbShrinkUtils.ResetCounter();
             (string Doing, string Done) action = save ? ("Saving" , "Saved") : ("Deleting" , "Deleted");
