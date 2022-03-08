@@ -88,8 +88,8 @@ namespace Lachain.Console
 
             // check if compacting db was started but not finished
             var dbShrink = new DbShrink(snapshotIndexRepository , dbContext);
-            if(!dbShrink.IsStopped()) throw new Exception("Compacting db was started "
-                 + "by deleting nodes from old snapshot but was not finished.");
+            if(!dbShrink.IsStopped()) throw new Exception($"Compacting db was started with depth: {dbShrink.GetDbShrinkDepth()}"
+                 + " by deleting nodes from old snapshot but was not finished.");
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;

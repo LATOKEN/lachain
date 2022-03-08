@@ -36,7 +36,7 @@ namespace Lachain.Storage.DbCompact
             _dbContext.Save(prefix, content);
         }
 
-        private DbShrinkStatus GetDbShrinkStatus()
+        public DbShrinkStatus GetDbShrinkStatus()
         {
             var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
             var status = _dbContext.Get(prefix);
@@ -54,7 +54,7 @@ namespace Lachain.Storage.DbCompact
             _dbContext.Save(prefix, UInt64Utils.ToBytes(depth));
         }
 
-        private ulong? GetDbShrinkDepth()
+        public ulong? GetDbShrinkDepth()
         {
             var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
             var depth = _dbContext.Get(prefix);
