@@ -13,6 +13,7 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
+using Lachain.Logger;
 
 
 
@@ -20,6 +21,9 @@ namespace Lachain.Core.Blockchain.Operations
 {
     public class TransactionManager : ITransactionManager
     {
+        private static readonly ILogger<TransactionManager> Logger =
+            LoggerFactory.GetLoggerForClass<TransactionManager>();
+
         private readonly ITransactionVerifier _transactionVerifier;
         private readonly IStateManager _stateManager;
         private readonly TransactionExecuter _transactionExecuter;
@@ -159,11 +163,12 @@ namespace Lachain.Core.Blockchain.Operations
         {
             var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
             var cycle = block.Header.Index / StakingContract.CycleDuration;
-            if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration)
+            if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration
+                && tx.To.Equals(ContractRegisterer.GovernanceContract))
             {
                 var expectedTx = BuildSystemContractTx(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodDistributeCycleRewardsAndPenalties, 
                     UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(block.Header.Index - 1)));
-                return expectedTx.Equals(tx);
+                return CheckSystemTxEquality(expectedTx, tx);
             }
             return false;
         }
@@ -172,11 +177,12 @@ namespace Lachain.Core.Blockchain.Operations
         {
             var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
             var cycle = block.Header.Index / StakingContract.CycleDuration;
-            if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration)
+            if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration
+                && tx.To.Equals(ContractRegisterer.StakingContract))
             {
                 var expectedTx = BuildSystemContractTx(ContractRegisterer.StakingContract,
                     StakingInterface.MethodFinishVrfLottery);
-                return expectedTx.Equals(tx);
+                return CheckSystemTxEquality(expectedTx, tx);
             }
             return false;
         }
@@ -186,11 +192,11 @@ namespace Lachain.Core.Blockchain.Operations
         {
             var indexInCycle = block.Header.Index % StakingContract.CycleDuration;
             var cycle = block.Header.Index / StakingContract.CycleDuration;
-            if (cycle > 0 && indexInCycle == 0)
+            if (cycle > 0 && indexInCycle == 0 && tx.To.Equals(ContractRegisterer.GovernanceContract))
             {
                 var expectedTx = BuildSystemContractTx(ContractRegisterer.GovernanceContract, GovernanceInterface.MethodFinishCycle, 
                     UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(block.Header.Index - 1)));
-                return expectedTx.Equals(tx);
+                return CheckSystemTxEquality(expectedTx, tx);
             }
             return false;
         }
@@ -212,6 +218,15 @@ namespace Lachain.Core.Blockchain.Operations
                 GasLimit = 100000000,
                 Invocation = ByteString.CopyFrom(abi),
             };
+        }
+
+        private bool CheckSystemTxEquality(Transaction expectedTx, Transaction tx)
+        {
+            if(expectedTx.Equals(tx)) return true;
+            Logger.LogWarning($"System Transactions should match with the expected transaction.");
+            Logger.LogDebug($"expected tx: {expectedTx.ToString()}");
+            Logger.LogDebug($"Got tx: {tx.ToString()}");
+            return false;
         }
     }
 }
