@@ -352,18 +352,18 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         private void GenerateBlocks(ulong blockNum)
         {
-            for (ulong i = 0; i < blockNum; i++)
+            for (ulong i = 1; i <= blockNum; i++)
             {
-                var txes = GetCurrentPoolTxes();
+                var txes = GetCurrentPoolTxes(i);
                 var block = BuildNextBlock(txes);
                 var result = ExecuteBlock(block, txes);
                 Assert.AreEqual(OperatingError.Ok, result);
             }
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxes()
+        private TransactionReceipt[] GetCurrentPoolTxes(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
         // from BlockTest.cs
