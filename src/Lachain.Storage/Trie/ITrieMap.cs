@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Lachain.Proto;
 using RocksDbSharp;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.Trie
 {
@@ -19,7 +20,7 @@ namespace Lachain.Storage.Trie
         public bool CheckAllNodeHashes(ulong root);
         public ulong InsertAllNodes(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
         UInt256 GetHash(ulong root);
-        ulong UpdateNodeIdToBatch(ulong root, bool save, RocksDbAtomicWrite batch);
-        ulong DeleteNodes(ulong root, RocksDbAtomicWrite batch);
+        ulong UpdateNodeIdToBatch(ulong root, bool save, IDbShrinkRepository _repo);
+        ulong DeleteNodes(ulong root, IDbShrinkRepository _repo);
     }
 }

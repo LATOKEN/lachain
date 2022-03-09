@@ -26,38 +26,6 @@ namespace Lachain.Storage.DbCompact
         {
             return counter <= 0;
         }
-
-        public static void Save(RocksDbAtomicWrite batch, byte[] key, byte[] content, bool tryCommit = true)
-        {
-            batch.Put(key,content);
-            UpdateCounter();
-            if (tryCommit && CycleEnded())
-            {
-                Commit(batch);
-            }
-        }
-
-        public static void Delete(RocksDbAtomicWrite batch, byte[] key, bool tryCommit = true)
-        {
-            batch.Delete(key);
-            UpdateCounter();
-            if (tryCommit && CycleEnded())
-            {
-                Commit(batch);
-            }
-        }
-
-        public static void Commit(RocksDbAtomicWrite batch)
-        {
-            try
-            {
-                batch.Commit();
-            }
-            catch(Exception exception)
-            {
-                Console.WriteLine($"Got exception tying to commit in db: {exception}");
-            }
-            ResetCounter();
-        }
+        
     }
 }

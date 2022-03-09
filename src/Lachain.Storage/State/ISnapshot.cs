@@ -1,6 +1,7 @@
 ﻿using Lachain.Proto;
 using Lachain.Storage.Trie;
 using System.Collections.Generic;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
@@ -19,8 +20,8 @@ namespace Lachain.Storage.State
 
         void ClearCache();
 
-        ulong UpdateNodeIdToBatch(bool save, RocksDbAtomicWrite batch);
+        ulong UpdateNodeIdToBatch(bool save, IDbShrinkRepository _repo);
 
-        ulong DeleteSnapshot(ulong block, RocksDbAtomicWrite batch);
+        ulong DeleteSnapshot(IDbShrinkRepository _repo);
     }
 }

@@ -7,6 +7,7 @@ using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 using Lachain.Storage.Trie;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
@@ -84,14 +85,14 @@ namespace Lachain.Storage.State
             _state.ClearCache();
         }
 
-        public ulong UpdateNodeIdToBatch(bool save, RocksDbAtomicWrite batch)
+        public ulong UpdateNodeIdToBatch(bool save, IDbShrinkRepository _repo)
         {
-            return _state.UpdateNodeIdToBatch(save, batch);
+            return _state.UpdateNodeIdToBatch(save, _repo);
         }
 
-        public ulong DeleteSnapshot(ulong block, RocksDbAtomicWrite batch)
+        public ulong DeleteSnapshot(IDbShrinkRepository _repo)
         {
-            return _state.DeleteNodes(batch);
+            return _state.DeleteNodes(_repo);
         }
     }
 

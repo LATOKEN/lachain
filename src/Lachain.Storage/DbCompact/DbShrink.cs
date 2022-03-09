@@ -10,14 +10,14 @@ namespace Lachain.Storage.DbCompact
         private static readonly ILogger<DbShrink> Logger =
             LoggerFactory.GetLoggerForClass<DbShrink>();
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
-        private IRocksDbContext _dbContext;
+        private IDbShrinkRepository _repository;
         private ulong? dbShrinkDepth;
         private DbShrinkStatus dbShrinkStatus;
         
-        public DbShrink(ISnapshotIndexRepository snapshotIndexRepository, IRocksDbContext dbContext)
+        public DbShrink(ISnapshotIndexRepository snapshotIndexRepository, IDbShrinkRepository repository)
         {
             _snapshotIndexRepository = snapshotIndexRepository;
-            _dbContext = dbContext;
+            _repository = repository;
             dbShrinkStatus = GetDbShrinkStatus();
             dbShrinkDepth = GetDbShrinkDepth();
         }
@@ -33,13 +33,14 @@ namespace Lachain.Storage.DbCompact
             var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
             var content = new byte[1];
             content[0] = (byte) status;
-            _dbContext.Save(prefix, content);
+            _repository.Save(prefix, content, false);
+            _repository.Commit();
         }
 
         public DbShrinkStatus GetDbShrinkStatus()
         {
             var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
-            var status = _dbContext.Get(prefix);
+            var status = _repository.Get(prefix);
             if (status is null) 
             {
                 return DbShrinkStatus.Stopped;
@@ -51,13 +52,14 @@ namespace Lachain.Storage.DbCompact
         {
             dbShrinkDepth = depth;
             var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
-            _dbContext.Save(prefix, UInt64Utils.ToBytes(depth));
+            _repository.Save(prefix, UInt64Utils.ToBytes(depth), false);
+            _repository.Commit();
         }
 
         public ulong? GetDbShrinkDepth()
         {
             var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
-            var depth = _dbContext.Get(prefix);
+            var depth = _repository.Get(prefix);
             if (depth is null) return null;
             return UInt64Utils.FromBytes(depth);
         }
@@ -70,29 +72,28 @@ namespace Lachain.Storage.DbCompact
         private ulong GetOldestSnapshotInDb()
         {
             var prefix = EntryPrefix.OldestSnapshotInDb.BuildPrefix();
-            var block = _dbContext.Get(prefix);
+            var block = _repository.Get(prefix);
             if (block is null) return 0;
             return UInt64Utils.FromBytes(block);
         }
 
-        private void SetOldestSnapshotInDb(ulong block, RocksDbAtomicWrite batch)
+        private void SetOldestSnapshotInDb(ulong block)
         {
             var currentBlock = GetOldestSnapshotInDb();
             if(block > currentBlock)
             {
                 var prefix = EntryPrefix.OldestSnapshotInDb.BuildPrefix();
-                DbShrinkUtils.Save(batch, prefix, UInt64Utils.ToBytes(block));
+                _repository.Save(prefix, UInt64Utils.ToBytes(block));
             }
         }
 
         private void Stop()
         {
-            var batch = new RocksDbAtomicWrite(_dbContext);
             var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
-            batch.Delete(prefix);
+            _repository.Delete(prefix, false);
             prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
-            batch.Delete(prefix);
-            batch.Commit();
+            _repository.Delete(prefix, false);
+            _repository.Commit();
         }
 
         public void ShrinkDb(ulong depth, ulong totalBlocks)
@@ -112,6 +113,7 @@ namespace Lachain.Storage.DbCompact
                 }
                 return;
             }
+            DbShrinkUtils.ResetCounter();
             switch (dbShrinkStatus)
             {
                 case DbShrinkStatus.Stopped:
@@ -143,9 +145,7 @@ namespace Lachain.Storage.DbCompact
 
         private void DeleteOldSnapshot(ulong fromBlock, ulong toBlock)
         {
-            DbShrinkUtils.ResetCounter();
             ulong deletedNodes = 0;
-            var batch = new RocksDbAtomicWrite(_dbContext);
             for(ulong block = fromBlock ; block <= toBlock; block++)
             {
                 try
@@ -154,14 +154,14 @@ namespace Lachain.Storage.DbCompact
                     var snapshots = blockchainSnapshot.GetAllSnapshot();
                     foreach(var snapshot in snapshots)
                     {
-                        var count = snapshot.DeleteSnapshot(block, batch);
+                        var count = snapshot.DeleteSnapshot(_repository);
                         deletedNodes += count;
                     }
                     foreach(var snapshot in snapshots)
                     {
-                        _snapshotIndexRepository.DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, batch);
+                        _snapshotIndexRepository.DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, _repository);
                     }
-                    SetOldestSnapshotInDb(block + 1, batch);
+                    SetOldestSnapshotInDb(block + 1);
                 }
                 catch (Exception exception)
                 {
@@ -169,17 +169,14 @@ namespace Lachain.Storage.DbCompact
                         + "probable reason: last non deleted block is not written in db.");
                 }
             }
-            DbShrinkUtils.Commit(batch);
             Logger.LogTrace($"Deleted {deletedNodes} nodes from DB in total");
         }
 
         private void UpdateNodeIdToBatch(ulong depth, ulong totalBlocks, bool save)
         {
-            DbShrinkUtils.ResetCounter();
             (string Doing, string Done) action = save ? ("Saving" , "Saved") : ("Deleting" , "Deleted");
             Logger.LogTrace($"{action.Doing} nodeId");
             ulong usefulNodes = 0, fromBlock = StartingBlockToKeep(depth, totalBlocks);
-            var batch = new RocksDbAtomicWrite(_dbContext);
             for(var block = fromBlock; block <= totalBlocks; block++)
             {
                 try
@@ -188,7 +185,7 @@ namespace Lachain.Storage.DbCompact
                     var snapshots = blockchainSnapshot.GetAllSnapshot();
                     foreach(var snapshot in snapshots)
                     {
-                        var count = snapshot.UpdateNodeIdToBatch(save, batch);
+                        var count = snapshot.UpdateNodeIdToBatch(save, _repository);
                         usefulNodes += count;
                     }
                 }
@@ -198,7 +195,6 @@ namespace Lachain.Storage.DbCompact
                         + "probable reason: the snapshots were deleted by a previous call");
                 }
             }
-            DbShrinkUtils.Commit(batch);
             Logger.LogTrace($"{action.Done} {usefulNodes} nodeId in total");
         }
     }

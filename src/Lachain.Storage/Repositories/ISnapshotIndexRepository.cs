@@ -1,4 +1,5 @@
 using Lachain.Storage.State;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.Repositories
 {
@@ -6,6 +7,6 @@ namespace Lachain.Storage.Repositories
     {
         IBlockchainSnapshot GetSnapshotForBlock(ulong block);
         void SaveSnapshotForBlock(ulong block, IBlockchainSnapshot snapshot);
-        void DeleteVersion(uint repository, ulong block, ulong version, RocksDbAtomicWrite batch);
+        void DeleteVersion(uint repository, ulong block, ulong version, IDbShrinkRepository _repo);
     }
 }

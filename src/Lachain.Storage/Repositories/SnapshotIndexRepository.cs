@@ -94,14 +94,13 @@ namespace Lachain.Storage.Repositories
             );
         }
 
-        public void DeleteVersion(uint repository, ulong block, ulong version, RocksDbAtomicWrite batch)
+        public void DeleteVersion(uint repository, ulong block, ulong version, IDbShrinkRepository _repo)
         {
             // this method is used to delete old snapshot. Don't use it for other purpose.
             // we need to delete all seven snapshots. If some are deleted and some are not then
             // later we cannot access non deleted snapshots using available methods.
             // so set the third optional parameter as false
-            DbShrinkUtils.Delete(
-                batch,
+            _repo.Delete(
                 EntryPrefix.SnapshotIndex.BuildPrefix(
                     repository.ToBytes().Concat(block.ToBytes()).ToArray()),
                 false

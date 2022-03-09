@@ -6,6 +6,7 @@ using Lachain.Proto;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using RocksDbSharp;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage
 {
@@ -126,14 +127,14 @@ namespace Lachain.Storage
             return _initialVersion;
         }
 
-        public ulong UpdateNodeIdToBatch(bool save, RocksDbAtomicWrite batch)
+        public ulong UpdateNodeIdToBatch(bool save, IDbShrinkRepository _repo)
         {
-            return _trieMap.UpdateNodeIdToBatch(CurrentVersion, save, batch);
+            return _trieMap.UpdateNodeIdToBatch(CurrentVersion, save, _repo);
         }
 
-        public ulong DeleteNodes(RocksDbAtomicWrite batch)
+        public ulong DeleteNodes(IDbShrinkRepository _repo)
         {
-            return _trieMap.DeleteNodes(CurrentVersion, batch);
+            return _trieMap.DeleteNodes(CurrentVersion, _repo);
         }
     }
 }

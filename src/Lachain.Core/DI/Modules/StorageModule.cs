@@ -36,6 +36,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<INodeRetrieval, NodeRetrieval>();
 
             /* Db Compact */
+            containerBuilder.RegisterSingleton<IDbShrinkRepository, DbShrinkRepository>();
             containerBuilder.RegisterSingleton<IDbShrink, DbShrink>();
         }
     }
