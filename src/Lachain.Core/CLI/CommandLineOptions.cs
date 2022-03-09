@@ -114,8 +114,5 @@ namespace Lachain.Core.CLI
         // "hard" -> keep only recent snapshots. Be cautious before this clean-up. 
         //           Node will lose the ability to rollback and emulate in old snapshots and
         //           might lose some other ability as well
-
-        [Option('l', "log", Required = false, HelpText = "Log level: TRACE, DEBUG, INFO, WARN, ERROR")]
-        public string? logLevel { get; set; }
     }
 }

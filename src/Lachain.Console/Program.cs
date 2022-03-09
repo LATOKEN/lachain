@@ -102,7 +102,7 @@ namespace Lachain.Console
 
                 if(!LogManager.IsLoggingEnabled())
                 {
-                    var logLevel = options.logLevel ?? Environment.GetEnvironmentVariable("LOG_LEVEL");
+                    var logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL");
                     if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
                     if (!new[] {"Trace", "Debug", "Info", "Warn", "Error", "Fatal"}.Contains(logLevel))
                         logLevel = "Trace";
