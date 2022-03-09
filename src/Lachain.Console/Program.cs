@@ -14,6 +14,7 @@ using System.Reflection;
 using Lachain.Core.DI.Modules;
 using  Lachain.Storage.Repositories;
 using Lachain.Storage.DbCompact;
+using NLog;
 
 namespace Lachain.Console
 {
@@ -98,6 +99,9 @@ namespace Lachain.Console
                 
                 if(options.depth <= 0) throw new ArgumentException("depth must be positive integer");
                 System.Console.WriteLine("Starting hard db optimization");
+
+                LogManager.Configuration.Variables["consoleLogLevel"] = "Trace";
+                LogManager.ReconfigExistingLoggers();
 
                 var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                         "./config.json",
