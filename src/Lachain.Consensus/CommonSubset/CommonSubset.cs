@@ -7,22 +7,32 @@ using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Crypto.TPKE;
+using System.IO;
+using System.Runtime.Serialization;
 
 namespace Lachain.Consensus.CommonSubset
 {
+    [DataContract]
     public class CommonSubset : AbstractProtocol
     {
+        [DataMember]
         private static readonly ILogger<CommonSubset> Logger = LoggerFactory.GetLoggerForClass<CommonSubset>();
 
+        [DataMember]
         private readonly CommonSubsetId _commonSubsetId;
+        [DataMember]
         private ResultStatus _requested;
+        [DataMember]
         private ISet<EncryptedShare>? _result;
-
+        [DataMember]
         private readonly bool?[] _binaryAgreementInput;
+        [DataMember]
         private readonly bool?[] _binaryAgreementResult;
+        [DataMember]
         private bool _filledBinaryAgreements;
+        [DataMember]
         private int _cntBinaryAgreementsCompleted;
-
+        [DataMember]
         private readonly EncryptedShare?[] _reliableBroadcastResult;
 
         public CommonSubset(
@@ -199,6 +209,29 @@ namespace Lachain.Consensus.CommonSubset
             // Logger.LogDebug($"{GetMyId()} ACS terminated.");
             Broadcaster.InternalResponse(
                 new ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>(_commonSubsetId, _result));
+        }
+
+        public byte[] ToBytes()
+        {
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(CommonSubset));
+            serializer.WriteObject(ms, this);
+
+            return ms.ToArray();
+        }
+
+        public static CommonSubset? FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
+
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(CommonSubset));
+            var obj = (CommonSubset?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }
