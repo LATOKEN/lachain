@@ -64,7 +64,7 @@ namespace Lachain.Consensus.CommonSubset
             var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
             var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
 
-            return new CommonSubsetId(era);
+            return new CommonSubsetId((int)era);
         }
     }
 }
