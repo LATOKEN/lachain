@@ -9,16 +9,25 @@ using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Signature = Lachain.Crypto.ThresholdSignature.Signature;
+using System.Runtime.Serialization;
+using System.IO;
 
 namespace Lachain.Consensus.CommonCoin
 {
+    [DataContract]
     public class CommonCoin : AbstractProtocol
     {
-        private readonly CoinId _coinId;
-        private readonly IThresholdSigner _thresholdSigner;
-        private CoinResult? _result;
-        private ResultStatus _requested = ResultStatus.NotRequested;
+        [DataMember()]
         private static readonly ILogger<CommonCoin> Logger = LoggerFactory.GetLoggerForClass<CommonCoin>();
+
+        [DataMember()]
+        private readonly CoinId _coinId;
+        [DataMember()]
+        private readonly IThresholdSigner _thresholdSigner;
+        [DataMember()]
+        private CoinResult? _result;
+        [DataMember()]
+        private ResultStatus _requested = ResultStatus.NotRequested;
 
         public CommonCoin(
             CoinId coinId, IPublicConsensusKeySet wallet, PrivateKeyShare privateKeyShare,
@@ -131,6 +140,29 @@ namespace Lachain.Consensus.CommonCoin
                 }
             };
             return new ConsensusMessage(message);
+        }
+
+        public byte[] ToBytes()
+        {
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(CommonCoin));
+            serializer.WriteObject(ms, this);
+
+            return ms.ToArray();
+        }
+
+        public static CommonCoin? FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
+
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(CommonCoin));
+            var obj = (CommonCoin?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }
