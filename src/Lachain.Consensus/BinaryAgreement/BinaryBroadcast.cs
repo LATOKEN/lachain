@@ -6,25 +6,40 @@ using Lachain.Logger;
 using Lachain.Consensus.Messages;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
-using Nethereum.RLP;
+using System.IO;
+using System.Runtime.Serialization;
 
 namespace Lachain.Consensus.BinaryAgreement
 {
+    [DataContract]
     public class BinaryBroadcast : AbstractProtocol
     {
+        [DataMember]
         private static readonly ILogger<BinaryBroadcast> Logger = LoggerFactory.GetLoggerForClass<BinaryBroadcast>();
 
+        [DataMember]
         private readonly BinaryBroadcastId _broadcastId;
+        [DataMember]
         private BoolSet _binValues;
+        [DataMember]
         private readonly BoolSet[] _receivedValues;
+        [DataMember]
         private readonly int[] _receivedCount;
+        [DataMember]
         private readonly bool[] _playerSentAux;
+        [DataMember]
         private readonly bool[] _validatorSentConf;
+        [DataMember]
         private readonly int[] _receivedAux;
+        [DataMember]
         private readonly bool[] _wasBvalBroadcasted;
+        [DataMember]
         private readonly List<BoolSet> _confReceived;
+        [DataMember]
         private bool _confSent;
+        [DataMember]
         private ResultStatus _requested;
+        [DataMember]
         private BoolSet? _result;
         
 
@@ -297,22 +312,25 @@ namespace Lachain.Consensus.BinaryAgreement
 
         public byte[] ToBytes()
         {
-            var bytesArray = new List<byte[]>
-            {
-                _broadcastId.ToBytes().ToArray(),
-                Wallet.ToBytes().ToArray()
-            };
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(BinaryBroadcast));
+            serializer.WriteObject(ms, this);
 
-            return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
+            return ms.ToArray();
         }
 
-        public BinaryBroadcast FromBytes(ReadOnlyMemory<byte> bytes)
+        public static BinaryBroadcast? FromBytes(ReadOnlyMemory<byte> bytes)
         {
-            var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
-            var broadcastId = BinaryBroadcastId.FromBytes(decoded[0].RLPData);
-            var wallet = PublicConsensusKeySet.FromBytes(decoded[1].RLPData);
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
 
-            return new BinaryBroadcast(broadcastId, wallet, Broadcaster);
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(BinaryBroadcast));
+            var obj = (BinaryBroadcast?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }

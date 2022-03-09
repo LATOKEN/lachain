@@ -6,25 +6,36 @@ using Lachain.Logger;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.Messages;
 using Lachain.Utility.Utils;
-using Nethereum.RLP;
-using Lachain.Utility.Serialization;
-using Lachain.Crypto;
+using System.IO;
+using System.Runtime.Serialization;
 
 namespace Lachain.Consensus.BinaryAgreement
 {
+    [DataContract]
     public class BinaryAgreement : AbstractProtocol
     {
+        [DataMember]
         private static readonly ILogger<BinaryAgreement> Logger = LoggerFactory.GetLoggerForClass<BinaryAgreement>();
 
+        [DataMember]
         private readonly BinaryAgreementId _agreementId;
+        [DataMember]
         private bool? _result;
+        [DataMember]
         private ResultStatus _requested;
+        [DataMember]
         private long _currentEpoch;
+        [DataMember]
         private bool _estimate;
+        [DataMember]
         private BoolSet _currentValues;
+        [DataMember]
         private bool _wasRepeat;
+        [DataMember]
         private long _resultEpoch;
+        [DataMember]
         private readonly Dictionary<long, bool> _coins = new Dictionary<long, bool>();
+        [DataMember]
         private readonly Dictionary<long, BoolSet> _binaryBroadcastsResults = new Dictionary<long, BoolSet>();
 
         public BinaryAgreement(
@@ -213,22 +224,25 @@ namespace Lachain.Consensus.BinaryAgreement
 
         public byte[] ToBytes()
         {
-            var bytesArray = new List<byte[]>
-            {
-                _agreementId.ToBytes().ToArray(),
-                Wallet.ToBytes().ToArray()
-            };
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(BinaryAgreement));
+            serializer.WriteObject(ms, this);
 
-            return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
+            return ms.ToArray();
         }
 
-        public BinaryAgreement FromBytes(ReadOnlyMemory<byte> bytes)
+        public static BinaryAgreement? FromBytes(ReadOnlyMemory<byte> bytes)
         {
-            var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
-            var binaryAgreementId = BinaryAgreementId.FromBytes(decoded[0].RLPData);
-            var wallet = PublicConsensusKeySet.FromBytes(decoded[1].RLPData);
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
 
-            return new BinaryAgreement(binaryAgreementId, wallet, Broadcaster);
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(BinaryAgreement));
+            var obj = (BinaryAgreement?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }
