@@ -7,25 +7,38 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
-using Nethereum.RLP;
-using Lachain.Utility.Serialization;
+using System.IO;
+using System.Runtime.Serialization;
 
 namespace Lachain.Consensus.HoneyBadger
 {
+    [DataContract]
     public class HoneyBadger : AbstractProtocol
     {
+        [DataMember]
         private static readonly ILogger<HoneyBadger> Logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
 
+        [DataMember]
         private readonly HoneyBadgerId _honeyBadgerId;
+        [DataMember]
         private readonly PrivateKey _privateKey;
+        [DataMember]
         private readonly EncryptedShare?[] _receivedShares;
+        [DataMember]
         private readonly IRawShare?[] _shares;
+        [DataMember]
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
+        [DataMember]
         private readonly bool[] _taken;
+        [DataMember]
         private ResultStatus _requested;
+        [DataMember]
         private IRawShare? _rawShare;
+        [DataMember]
         private EncryptedShare? _encryptedShare;
+        [DataMember]
         private ISet<IRawShare>? _result;
+        [DataMember]
         private bool _takenSet;
 
         public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet,
@@ -197,24 +210,25 @@ namespace Lachain.Consensus.HoneyBadger
 
         public byte[] ToBytes()
         {
-            var bytesArray = new List<byte[]>
-            {
-                _honeyBadgerId.ToBytes().ToArray(),
-                Wallet.ToBytes().ToArray(),
-                _privateKey.ToBytes().ToArray()
-            };
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(HoneyBadger));
+            serializer.WriteObject(ms, this);
 
-            return RLP.EncodeList(bytesArray.Select(RLP.EncodeElement).ToArray());
+            return ms.ToArray();
         }
 
-        public HoneyBadger FromBytes(ReadOnlyMemory<byte> bytes)
+        public static HoneyBadger? FromBytes(ReadOnlyMemory<byte> bytes)
         {
-            var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
-            var honeyBadgerId = HoneyBadgerId.FromBytes(decoded[0].RLPData);
-            var wallet = PublicConsensusKeySet.FromBytes(decoded[1].RLPData);
-            var privateKey = PrivateKey.FromBytes(decoded[2].RLPData);
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
 
-            return new HoneyBadger(honeyBadgerId, wallet, privateKey, Broadcaster);
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(HoneyBadger));
+            var obj = (HoneyBadger?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }
