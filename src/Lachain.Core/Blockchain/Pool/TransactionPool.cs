@@ -279,6 +279,11 @@ namespace Lachain.Core.Blockchain.Pool
             // try sanitizing mempool ...
             SanitizeMemPool(era - 1);
 
+            // it's possible that block for this era is already persisted, 
+            // so we should return an empty set of transactions in this case
+
+            if(era <= _lastSanitized) return new List<TransactionReceipt>();
+
             var rnd = new Random();
             HashSet<UInt256> takenTxHashes = new HashSet<UInt256>();
 
