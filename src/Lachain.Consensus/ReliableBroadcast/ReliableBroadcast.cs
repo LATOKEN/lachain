@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Google.Protobuf;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto;
@@ -14,19 +16,26 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.ReliableBroadcast
 {
+    [DataContract]
     public class ReliableBroadcast : AbstractProtocol
     {
+        [DataMember]
         private static readonly ILogger<ReliableBroadcast>
             Logger = LoggerFactory.GetLoggerForClass<ReliableBroadcast>();
 
+        [DataMember]
         private readonly ReliableBroadcastId _broadcastId;
-
+        [DataMember]
         private ResultStatus _requested;
-
+        [DataMember]
         private readonly ECHOMessage?[] _echoMessages;
+        [DataMember]
         private readonly ReadyMessage?[] _readyMessages;
+        [DataMember]
         private readonly bool[] _sentValMessage;
+        [DataMember]
         private readonly int _merkleTreeSize;
+        [DataMember]
         private bool _readySent;
 
         public ReliableBroadcast(
@@ -404,6 +413,29 @@ namespace Lachain.Consensus.ReliableBroadcast
             }
 
             return result;
+        }
+
+        public byte[] ToBytes()
+        {
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(ReliableBroadcast));
+            serializer.WriteObject(ms, this);
+
+            return ms.ToArray();
+        }
+
+        public static ReliableBroadcast? FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
+
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(ReliableBroadcast));
+            var obj = (ReliableBroadcast?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }
