@@ -74,6 +74,7 @@ namespace Lachain.Storage.DbCompact
             var prefix = EntryPrefix.OldestSnapshotInDb.BuildPrefix();
             var block = _repository.Get(prefix);
             if (block is null) return 0;
+            Logger.LogTrace($"Found oldest snapshot block in db: {UInt64Utils.FromBytes(block)}");
             return UInt64Utils.FromBytes(block);
         }
 
@@ -107,11 +108,10 @@ namespace Lachain.Storage.DbCompact
                 }
                 if (dbShrinkDepth != depth)
                 {
-                    Logger.LogDebug($"Process was started before with depth {dbShrinkDepth} but was not finished."
+                    throw new Exception($"Process was started before with depth {dbShrinkDepth} but was not finished."
                         + $" Got new depth {depth}. Use depth {dbShrinkDepth} and finish the process before "
                         + "using new depth.");
                 }
-                return;
             }
             DbShrinkUtils.ResetCounter();
             switch (dbShrinkStatus)
@@ -165,8 +165,8 @@ namespace Lachain.Storage.DbCompact
                 }
                 catch (Exception exception)
                 {
-                    Logger.LogDebug($"Got exception trying to fetch snapshots for block {block}: {exception}, "
-                        + "probable reason: last non deleted block is not written in db.");
+                    throw new Exception($"Got exception trying to fetch snapshots for block {block}, probable"
+                        + $" reason: last non deleted block is not written in db. Exception:\n{exception}");
                 }
             }
             Logger.LogTrace($"Deleted {deletedNodes} nodes from DB in total");
@@ -191,8 +191,8 @@ namespace Lachain.Storage.DbCompact
                 }
                 catch (Exception exception)
                 {
-                    Logger.LogDebug($"Got exception trying to fetch snapshots for block {block}: {exception}, "
-                        + "probable reason: the snapshots were deleted by a previous call");
+                    throw new Exception($"Got exception trying to fetch snapshots for block {block}, probable"
+                        + $" reason: the snapshots were deleted by a previous call. Exception:\n{exception}");
                 }
             }
             Logger.LogTrace($"{action.Done} {usefulNodes} nodeId in total");
