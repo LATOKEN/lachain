@@ -100,15 +100,12 @@ namespace Lachain.Console
                 if(options.depth <= 0) throw new ArgumentException("depth must be positive integer");
                 System.Console.WriteLine("Starting hard db optimization");
 
-                if(!LogManager.IsLoggingEnabled())
-                {
-                    var logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL");
-                    if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
-                    if (!new[] {"Trace", "Debug", "Info", "Warn", "Error", "Fatal"}.Contains(logLevel))
-                        logLevel = "Trace";
-                    LogManager.Configuration.Variables["consoleLogLevel"] = logLevel;
-                    LogManager.ReconfigExistingLoggers();
-                }
+                var logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL");
+                if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
+                if (!new[] {"Trace", "Debug", "Info", "Warn", "Error", "Fatal"}.Contains(logLevel))
+                    logLevel = "Trace";
+                LogManager.Configuration.Variables["consoleLogLevel"] = logLevel;
+                LogManager.ReconfigExistingLoggers();
 
                 var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
                         "./config.json",
