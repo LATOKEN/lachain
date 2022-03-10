@@ -25,6 +25,14 @@ namespace Lachain.Core.Blockchain.VM
         private static readonly ILogger<ExternalHandler> Logger = LoggerFactory.GetLoggerForClass<ExternalHandler>();
         private const string EnvModule = "env";
 
+
+        private static UInt160 GetHardfork_5CurrentAddressOrDelegate(IExecutionFrame frame)
+        {
+            if (HardforkHeights.IsHardfork_5Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                return frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress;
+            return frame.CurrentAddress;
+        }
+        
         private static InvocationResult DoInternalCall(
             UInt160 caller,
             UInt160 address,
@@ -122,7 +130,7 @@ namespace Lachain.Core.Blockchain.VM
                 }
 
                 frame.UseGas(GasMetering.TransferFundsGasCost);
-                var result = snapshot.Balances.TransferBalance(frame.CurrentAddress, address, value);
+                var result = snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
                 if (!result)
                     throw new InsufficientFundsException();
             }
@@ -160,7 +168,7 @@ namespace Lachain.Core.Blockchain.VM
                     break;
             }
             Logger.LogInformation($"invocationMessage.Sender: {invocationMessage.Sender.ToHex()}");
-            var callResult = DoInternalCall(frame.CurrentAddress, address, inputBuffer, gasLimit, invocationMessage);
+            var callResult = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), address, inputBuffer, gasLimit, invocationMessage);
             if (callResult.Status != ExecutionStatus.Ok)
             {
                 throw new InvalidContractException($"Cannot invoke call: {callResult.Status}, {callResult.ReturnValue}");
@@ -259,7 +267,7 @@ namespace Lachain.Core.Blockchain.VM
             var eventObj = new EventObject(
                 new Event
                 {
-                    Contract = frame.CurrentAddress,
+                    Contract = GetHardfork_5CurrentAddressOrDelegate(frame),
                     Data = ByteString.CopyFrom(data),
                     TransactionHash = frame.InvocationContext.Receipt.Hash,
                     SignatureHash =  topic0.ToUInt256()
@@ -311,7 +319,7 @@ namespace Lachain.Core.Blockchain.VM
             if (value > Money.Zero)
             {
                 frame.UseGas(GasMetering.TransferFundsGasCost);
-                var result = snapshot.Balances.TransferBalance(frame.CurrentAddress, address, value);
+                var result = snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
                 if (!result)
                     throw new InsufficientFundsException();
             }
@@ -353,7 +361,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create function");
-            if (snapshot.Balances.GetBalance(frame.CurrentAddress) < value)
+            if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
             }
@@ -399,7 +407,7 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(frame.CurrentAddress, hash, value);
+            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -424,7 +432,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create function");
-            if (snapshot.Balances.GetBalance(frame.CurrentAddress) < value)
+            if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
             }
@@ -464,7 +472,7 @@ namespace Lachain.Core.Blockchain.VM
                 Value = msgValue,
                 Type = InvocationType.Regular,
             };
-            var status = DoInternalCall(frame.CurrentAddress, hash, Array.Empty<byte>(), frame.GasLimit, invocationMessage);
+            var status = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), hash, Array.Empty<byte>(), frame.GasLimit, invocationMessage);
 
             if (status.Status != ExecutionStatus.Ok || status.ReturnValue is null)
             {
@@ -495,7 +503,7 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(frame.CurrentAddress, hash, value);
+            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -539,7 +547,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create2 function");
-            if (snapshot.Balances.GetBalance(frame.CurrentAddress) < value)
+            if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
             }
@@ -583,7 +591,7 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(frame.CurrentAddress, hash, value);
+            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -609,7 +617,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create2 function");
-            if (snapshot.Balances.GetBalance(frame.CurrentAddress) < value)
+            if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
             }
@@ -647,7 +655,7 @@ namespace Lachain.Core.Blockchain.VM
                 Value = msgValue,
                 Type = InvocationType.Regular,
             };
-            var status = DoInternalCall(frame.CurrentAddress, hash, Array.Empty<byte>(), frame.GasLimit, invocationMessage);
+            var status = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), hash, Array.Empty<byte>(), frame.GasLimit, invocationMessage);
 
             if (status.Status != ExecutionStatus.Ok || status.ReturnValue is null)
             {
@@ -678,7 +686,7 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(frame.CurrentAddress, hash, value);
+            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 

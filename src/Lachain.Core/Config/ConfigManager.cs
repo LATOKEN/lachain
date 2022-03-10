@@ -11,7 +11,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 6;
+        private const ulong _CurrentVersion = 7;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -51,6 +51,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV5();
             if (version < 6)
                 _UpdateConfigToV6();
+            if (version < 7)
+                _UpdateConfigToV7();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -188,6 +190,30 @@ namespace Lachain.Core.Config
             var version = GetConfig<VersionConfig>("version") ??
                           throw new ApplicationException("No version section in config");
             version.Version = 6;
+            _config["version"] = JObject.FromObject(version);
+            
+            _SaveCurrentConfig();
+        }
+
+        // version 7 of config should contain hardfork height for hardfork_5,
+        private void _UpdateConfigToV7()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_5 ??= network.NetworkName switch
+            {
+                "mainnet" => 2450000,
+                "testnet" => 2190000,
+                "devnet" => 27500,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 7;
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
