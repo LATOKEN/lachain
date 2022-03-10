@@ -45,7 +45,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
 
         public byte[] ToBytes()
         {
-            var commitment = Commitment?.ToBytes() ?? new byte[] { };
+            var commitment = Commitment?.ToBytes() ?? Array.Empty<byte>();
             var values = Values.Select(x => x.ToBytes()).Flatten().ToArray();
             var acks = Acks.Select(x => x ? (byte) 1 : (byte) 0).ToArray();
             using var stream = new MemoryStream();
@@ -59,14 +59,14 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
 
         public static State FromBytes(ReadOnlyMemory<byte> bytes)
         {
-            var cLen = bytes.Slice(0, 4).Span.ToInt32();
+            var cLen = bytes[..4].Span.ToInt32();
             var commitment = cLen != 0 ? Commitment.FromBytes(bytes.Slice(4, cLen).ToArray()) : null;
             var n = bytes.Slice(4 + cLen, 4).Span.ToInt32();
             var values = bytes.Slice(8 + cLen, n * Fr.ByteSize).ToArray()
                 .Batch(Fr.ByteSize)
                 .Select(x => Fr.FromBytes(x.ToArray()))
                 .ToArray();
-            var acks = bytes.Slice(8 + cLen + n * Fr.ByteSize).ToArray()
+            var acks = bytes[(8 + cLen + n * Fr.ByteSize)..].ToArray()
                 .Select(b => b != 0)
                 .ToArray();
             var result = new State(values.Length) {Commitment = commitment};
@@ -81,7 +81,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
 
         public bool Equals(State? other)
         {
-            if (ReferenceEquals(null, other)) return false;
+            if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return Values.SequenceEqual(other.Values) &&
                    Acks.SequenceEqual(other.Acks) &&
@@ -90,7 +90,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
 
         public override bool Equals(object? obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            if (obj is null) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
             return Equals((State) obj);
