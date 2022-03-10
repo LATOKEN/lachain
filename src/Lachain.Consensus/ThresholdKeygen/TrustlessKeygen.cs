@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Crypto.TPKE;
-using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
@@ -16,21 +16,31 @@ using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Consensus.ThresholdKeygen
 {
+    [DataContract]
     public class TrustlessKeygen : IEquatable<TrustlessKeygen>
     {
+        [DataMember]
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private static readonly ILogger<TrustlessKeygen> Logger = LoggerFactory.GetLoggerForClass<TrustlessKeygen>();
 
+        [DataMember]
         private readonly EcdsaKeyPair _keyPair;
+        [DataMember]
         private readonly ECDSAPublicKey[] _publicKeys;
+        [DataMember]
         private readonly int _myIdx;
+        [DataMember]
         private readonly State[] _keyGenStates;
+        [DataMember]
         private readonly IList<int> _finished = new List<int>();
+        [DataMember]
         private readonly IDictionary<UInt256, int> _confirmations = new Dictionary<UInt256, int>();
+        [DataMember]
         private bool _confirmSent;
-
+        [DataMember]
         public int Faulty { get; }
+        [DataMember]
         public int Players { get; }
+        [DataMember]
         public ulong Cycle { get; }
 
         public TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f, ulong cycle)
@@ -191,38 +201,38 @@ namespace Lachain.Consensus.ThresholdKeygen
                 .Select(b => Fr.FromBytes(b.ToArray()));
         }
 
-        public byte[] ToBytes()
-        {
-            using var stream = new MemoryStream();
-            stream.Write(Players.ToBytes().ToArray());
-            stream.Write(Faulty.ToBytes().ToArray());
-            stream.Write(Cycle.ToBytes().ToArray());
-            foreach (var publicKey in _publicKeys)
-                stream.Write(publicKey.Buffer.ToArray());
-            foreach (var keyGenState in _keyGenStates)
-            {
-                var bytes = keyGenState.ToBytes();
-                stream.Write(bytes.Length.ToBytes().ToArray());
-                stream.Write(bytes);
-            }
+        //public byte[] ToBytes()
+        //{
+        //    using var stream = new MemoryStream();
+        //    stream.Write(Players.ToBytes().ToArray());
+        //    stream.Write(Faulty.ToBytes().ToArray());
+        //    stream.Write(Cycle.ToBytes().ToArray());
+        //    foreach (var publicKey in _publicKeys)
+        //        stream.Write(publicKey.Buffer.ToArray());
+        //    foreach (var keyGenState in _keyGenStates)
+        //    {
+        //        var bytes = keyGenState.ToBytes();
+        //        stream.Write(bytes.Length.ToBytes().ToArray());
+        //        stream.Write(bytes);
+        //    }
 
-            stream.Write(_finished.Count.ToBytes().ToArray());
-            foreach (var f in _finished)
-                stream.Write(f.ToBytes().ToArray());
-            stream.Write(_confirmations.Count.ToBytes().ToArray());
-            foreach (var confirmation in _confirmations)
-            {
-                stream.Write(confirmation.Key.ToBytes());
-                stream.Write(confirmation.Value.ToBytes().ToArray());
-            }
+        //    stream.Write(_finished.Count.ToBytes().ToArray());
+        //    foreach (var f in _finished)
+        //        stream.Write(f.ToBytes().ToArray());
+        //    stream.Write(_confirmations.Count.ToBytes().ToArray());
+        //    foreach (var confirmation in _confirmations)
+        //    {
+        //        stream.Write(confirmation.Key.ToBytes());
+        //        stream.Write(confirmation.Value.ToBytes().ToArray());
+        //    }
 
-            stream.Write(new[] {_confirmSent ? (byte) 1 : (byte) 0});
-            return stream.ToArray();
-        }
+        //    stream.Write(new[] {_confirmSent ? (byte) 1 : (byte) 0});
+        //    return stream.ToArray();
+        //}
 
         public static TrustlessKeygen FromBytes(ReadOnlyMemory<byte> bytes, EcdsaKeyPair keyPair)
         {
-            var players = bytes.Slice(0, 4).Span.ToInt32();
+            var players = bytes[..4].Span.ToInt32();
             var faulty = bytes.Slice(4, 4).Span.ToInt32();
             var cycle = bytes.Slice(8, 8).Span.ToUInt64();
             var ecdsaPublicKeys = bytes.Slice(16, CryptoUtils.PublicKeyLength * players)
@@ -251,17 +261,17 @@ namespace Lachain.Consensus.ThresholdKeygen
             var confirmations = bytes.Slice(offset, (32 + 4) * confirmationCnt)
                 .Batch(32 + 4)
                 .Select(x => new KeyValuePair<UInt256, int>(
-                    x.Slice(0, 32).ToArray().ToUInt256(),
+                    x[..32].ToArray().ToUInt256(),
                     x.Slice(32, 4).Span.ToInt32())
                 ).ToDictionary(pair => pair.Key, pair => pair.Value);
             offset += (32 + 4) * confirmationCnt;
-            var confirmSent = bytes.Slice(offset).Span[0] != 0;
+            var confirmSent = bytes[offset..].Span[0] != 0;
             return new TrustlessKeygen(keyPair, ecdsaPublicKeys, faulty, cycle, states, finished, confirmations, confirmSent);
         }
 
         public bool Equals(TrustlessKeygen? other)
         {
-            if (ReferenceEquals(null, other)) return false;
+            if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return _keyPair.Equals(other._keyPair) &&
                    _publicKeys.SequenceEqual(other._publicKeys) &&
@@ -277,7 +287,7 @@ namespace Lachain.Consensus.ThresholdKeygen
 
         public override bool Equals(object? obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            if (obj is null) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
             return Equals((TrustlessKeygen) obj);
@@ -291,6 +301,29 @@ namespace Lachain.Consensus.ThresholdKeygen
             hashCode.Add(Cycle);
             hashCode.Add(_keyPair.PrivateKey);
             return hashCode.ToHashCode();
+        }
+
+        public byte[] ToBytes()
+        {
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(TrustlessKeygen));
+            serializer.WriteObject(ms, this);
+
+            return ms.ToArray();
+        }
+
+        public static TrustlessKeygen? FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
+
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(TrustlessKeygen));
+            var obj = (TrustlessKeygen?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }
