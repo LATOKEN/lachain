@@ -13,21 +13,35 @@ using Lachain.Storage.Repositories;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
+using System.Runtime.Serialization;
 
 namespace Lachain.Consensus.RootProtocol
 {
+    [DataContract]
     public class RootProtocol : AbstractProtocol
     {
+        [DataMember]
         private static readonly ILogger<RootProtocol> Logger = LoggerFactory.GetLoggerForClass<RootProtocol>();
+
+        [DataMember]
         private readonly EcdsaKeyPair _keyPair;
+        [DataMember]
         private readonly RootProtocolId _rootId;
+        [DataMember]
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+        [DataMember]
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
+        [DataMember]
         private IBlockProducer? _blockProducer;
+        [DataMember]
         private ulong? _nonce;
+        [DataMember]
         private TransactionReceipt[]? _receipts;
+        [DataMember]
         private BlockHeader? _header;
+        [DataMember]
         private MultiSig? _multiSig;
+        [DataMember]
         private ulong _cycleDuration;
 
         private readonly List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>> _signatures =
@@ -299,6 +313,29 @@ namespace Lachain.Consensus.RootProtocol
             if (bytes is null || bytes.Length == 0) return new ValidatorAttendance(headerIndex / _cycleDuration);
             return ValidatorAttendance.FromBytes(bytes, headerIndex / _cycleDuration,
                 headerIndex % _cycleDuration >= _cycleDuration / 10);
+        }
+
+        public byte[] ToBytes()
+        {
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(RootProtocol));
+            serializer.WriteObject(ms, this);
+
+            return ms.ToArray();
+        }
+
+        public static RootProtocol? FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
+
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(RootProtocol));
+            var obj = (RootProtocol?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }
