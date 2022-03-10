@@ -14,11 +14,12 @@ namespace Lachain.Storage.Trie
             _rocksDbContext = rocksDbContext;
         }
 
-        public IHashTrieNode GetNode(ulong id)
+        public IHashTrieNode? GetNode(ulong id)
         {
             if(id==0) Console.WriteLine("0000000000000") ;
             var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
             var raw = _rocksDbContext.Get(prefix);
+            if (raw is null) return null;
             return NodeSerializer.FromBytes(raw);
         }
 

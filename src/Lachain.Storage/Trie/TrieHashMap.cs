@@ -258,7 +258,7 @@ namespace Lachain.Storage.Trie
             if (_node == null)
             {
                 _node = _repository.GetNode(id);
-                _lruCache.Add(id, _node);
+                if (_node != null) _lruCache.Add(id, _node);
             }
             if(_node is null) Logger.LogDebug($"Get Node By id: {id} not found");
             return _node;
