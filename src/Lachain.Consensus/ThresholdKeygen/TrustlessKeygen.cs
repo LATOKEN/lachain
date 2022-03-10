@@ -201,34 +201,34 @@ namespace Lachain.Consensus.ThresholdKeygen
                 .Select(b => Fr.FromBytes(b.ToArray()));
         }
 
-        //public byte[] ToBytes()
-        //{
-        //    using var stream = new MemoryStream();
-        //    stream.Write(Players.ToBytes().ToArray());
-        //    stream.Write(Faulty.ToBytes().ToArray());
-        //    stream.Write(Cycle.ToBytes().ToArray());
-        //    foreach (var publicKey in _publicKeys)
-        //        stream.Write(publicKey.Buffer.ToArray());
-        //    foreach (var keyGenState in _keyGenStates)
-        //    {
-        //        var bytes = keyGenState.ToBytes();
-        //        stream.Write(bytes.Length.ToBytes().ToArray());
-        //        stream.Write(bytes);
-        //    }
+        public byte[] ToBytes()
+        {
+            using var stream = new MemoryStream();
+            stream.Write(Players.ToBytes().ToArray());
+            stream.Write(Faulty.ToBytes().ToArray());
+            stream.Write(Cycle.ToBytes().ToArray());
+            foreach(var publicKey in _publicKeys)
+                stream.Write(publicKey.Buffer.ToArray());
+            foreach(var keyGenState in _keyGenStates)
+            {
+                var bytes = keyGenState.ToBytes();
+                stream.Write(bytes.Length.ToBytes().ToArray());
+                stream.Write(bytes);
+            }
 
-        //    stream.Write(_finished.Count.ToBytes().ToArray());
-        //    foreach (var f in _finished)
-        //        stream.Write(f.ToBytes().ToArray());
-        //    stream.Write(_confirmations.Count.ToBytes().ToArray());
-        //    foreach (var confirmation in _confirmations)
-        //    {
-        //        stream.Write(confirmation.Key.ToBytes());
-        //        stream.Write(confirmation.Value.ToBytes().ToArray());
-        //    }
+            stream.Write(_finished.Count.ToBytes().ToArray());
+            foreach(var f in _finished)
+                stream.Write(f.ToBytes().ToArray());
+            stream.Write(_confirmations.Count.ToBytes().ToArray());
+            foreach(var confirmation in _confirmations)
+            {
+                stream.Write(confirmation.Key.ToBytes());
+                stream.Write(confirmation.Value.ToBytes().ToArray());
+            }
 
-        //    stream.Write(new[] {_confirmSent ? (byte) 1 : (byte) 0});
-        //    return stream.ToArray();
-        //}
+            stream.Write(new[] { _confirmSent ? (byte)1 : (byte)0 });
+            return stream.ToArray();
+        }
 
         public static TrustlessKeygen FromBytes(ReadOnlyMemory<byte> bytes, EcdsaKeyPair keyPair)
         {
@@ -303,27 +303,27 @@ namespace Lachain.Consensus.ThresholdKeygen
             return hashCode.ToHashCode();
         }
 
-        public byte[] ToBytes()
-        {
-            using var ms = new MemoryStream();
-            var serializer = new DataContractSerializer(typeof(TrustlessKeygen));
-            serializer.WriteObject(ms, this);
+        //public byte[] ToBytes()
+        //{
+        //    using var ms = new MemoryStream();
+        //    var serializer = new DataContractSerializer(typeof(TrustlessKeygen));
+        //    serializer.WriteObject(ms, this);
 
-            return ms.ToArray();
-        }
+        //    return ms.ToArray();
+        //}
 
-        public static TrustlessKeygen? FromBytes(ReadOnlyMemory<byte> bytes)
-        {
-            if(bytes.ToArray() == null)
-            {
-                return default;
-            }
+        //public static TrustlessKeygen? FromBytes(ReadOnlyMemory<byte> bytes)
+        //{
+        //    if(bytes.ToArray() == null)
+        //    {
+        //        return default;
+        //    }
 
-            using var memStream = new MemoryStream(bytes.ToArray());
-            var serializer = new DataContractSerializer(typeof(TrustlessKeygen));
-            var obj = (TrustlessKeygen?)serializer.ReadObject(memStream);
+        //    using var memStream = new MemoryStream(bytes.ToArray());
+        //    var serializer = new DataContractSerializer(typeof(TrustlessKeygen));
+        //    var obj = (TrustlessKeygen?)serializer.ReadObject(memStream);
 
-            return obj;
-        }
+        //    return obj;
+        //}
     }
 }
