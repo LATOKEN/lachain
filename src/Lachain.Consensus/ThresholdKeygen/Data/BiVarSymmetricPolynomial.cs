@@ -1,15 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using MCL.BLS12_381.Net;
 
 namespace Lachain.Consensus.ThresholdKeygen.Data
 {
+    [DataContract]
     public class BiVarSymmetricPolynomial
     {
+        [DataMember]
         private readonly Fr[] _coefficients;
-
+        [DataMember]
         private readonly int _degree;
 
         private BiVarSymmetricPolynomial(int degree, IEnumerable<Fr> c)
@@ -52,10 +56,33 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
             return row;
         }
 
-        private int Index(int i, int j)
+        private static int Index(int i, int j)
         {
             if (i > j) (i, j) = (j, i);
             return i * (i + 1) / 2 + j;
+        }
+
+        public byte[] ToBytes()
+        {
+            using var ms = new MemoryStream();
+            var serializer = new DataContractSerializer(typeof(BiVarSymmetricPolynomial));
+            serializer.WriteObject(ms, this);
+
+            return ms.ToArray();
+        }
+
+        public static BiVarSymmetricPolynomial? FromBytes(ReadOnlyMemory<byte> bytes)
+        {
+            if(bytes.ToArray() == null)
+            {
+                return default;
+            }
+
+            using var memStream = new MemoryStream(bytes.ToArray());
+            var serializer = new DataContractSerializer(typeof(BiVarSymmetricPolynomial));
+            var obj = (BiVarSymmetricPolynomial?)serializer.ReadObject(memStream);
+
+            return obj;
         }
     }
 }

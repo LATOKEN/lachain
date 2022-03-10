@@ -69,13 +69,13 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
         //    return _coefficients.Select(x => x.ToBytes()).Flatten().ToArray();
         //}
 
-        public static Commitment FromBytes(IEnumerable<byte> buffer)
-        {
-            return new Commitment(buffer.Batch(G1.ByteSize)
-                .Select(x => x.ToArray())
-                .Select(b => G1.FromBytes(b.ToArray()))
-            );
-        }
+        //public static Commitment FromBytes(IEnumerable<byte> buffer)
+        //{
+        //    return new Commitment(buffer.Batch(G1.ByteSize)
+        //        .Select(x => x.ToArray())
+        //        .Select(b => G1.FromBytes(b.ToArray()))
+        //    );
+        //}
 
         public bool IsValid()
         {
@@ -108,6 +108,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
             using var ms = new MemoryStream();
             var serializer = new DataContractSerializer(typeof(Commitment));
             serializer.WriteObject(ms, this);
+
             return ms.ToArray();
         }
 
@@ -117,9 +118,11 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
             {
                 return default;
             }
+
             using var memStream = new MemoryStream(bytes.ToArray());
             var serializer = new DataContractSerializer(typeof(Commitment));
             var obj = (Commitment?)serializer.ReadObject(memStream);
+
             return obj;
         }
     }
