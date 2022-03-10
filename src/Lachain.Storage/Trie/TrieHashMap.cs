@@ -445,10 +445,35 @@ namespace Lachain.Storage.Trie
             }
         }
 
+        // These methods are used for DbCompact only
+        private IHashTrieNode? TryGetNodeById(ulong id, IDbShrinkRepository _repo)
+        {
+            if (id == 0) return null;
+            var _node = _lruCache.Get(id);
+            if (_node == null)
+            {
+                var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                var content = _repo.Get(prefix);
+                if (content != null) 
+                {
+                    _node = NodeSerializer.FromBytes(content);
+                    _lruCache.Add(id, _node);
+                }
+            }
+            if (_node is null) Logger.LogDebug($"Get Node By id: {id} not found");
+            return _node;
+        }
+
+        private void DeleteNode(ulong id, IHashTrieNode node, IDbShrinkRepository _repo)
+        {
+            _lruCache.Remove(id);
+            _repository.DeleteNode(id , node, _repo);
+        }
+
         public ulong UpdateNodeIdToBatch(ulong root, bool save, IDbShrinkRepository _repo)
         {
-            if (_repository.NodeIdExist(root) == save) return 0;
-            var node = GetNodeById(root);
+            if (_repository.NodeIdExist(root, _repo) == save) return 0;
+            var node = TryGetNodeById(root, _repo);
             if (node is null) return 0;
 
             ulong nodesUpdated = 0;
@@ -468,8 +493,8 @@ namespace Lachain.Storage.Trie
 
         public ulong DeleteNodes(ulong root, IDbShrinkRepository _repo)
         {
-            if (_repository.NodeIdExist(root)) return 0;
-            var node = GetNodeById(root);
+            if (_repository.NodeIdExist(root, _repo)) return 0;
+            var node = TryGetNodeById(root, _repo);
             if (node is null) return 0;
             
             ulong nodesDeleted = 0;
@@ -481,7 +506,7 @@ namespace Lachain.Storage.Trie
                 }
             }
 
-            _repository.DeleteNode(root , node, _repo);
+            DeleteNode(root , node, _repo);
             return nodesDeleted + 1;
         }
     }

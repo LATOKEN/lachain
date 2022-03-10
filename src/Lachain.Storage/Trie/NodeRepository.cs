@@ -47,11 +47,10 @@ namespace Lachain.Storage.Trie
             _rocksDbContext.SaveBatch(batch);
         }
 
-        public bool NodeIdExist(ulong id)
+        public bool NodeIdExist(ulong id, IDbShrinkRepository _repo)
         {
-            var prefix =  EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            if(_rocksDbContext.Get(prefix) is null) return false;
-            return true;
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+            return _repo.KeyExists(prefix);
         }
 
         public void WriteNodeId(ulong id, IDbShrinkRepository _repo)

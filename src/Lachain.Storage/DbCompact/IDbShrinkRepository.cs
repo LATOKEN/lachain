@@ -6,5 +6,6 @@ namespace Lachain.Storage.DbCompact
         void Delete(byte[] key, bool tryCommit = true);
         void Commit();
         byte[]? Get(byte[] key);
+        bool KeyExists(byte[] key);
     }
 }
