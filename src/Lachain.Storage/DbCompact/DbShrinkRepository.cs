@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Lachain.Proto;
+using Lachain.Crypto;
 
 namespace Lachain.Storage.DbCompact
 {
@@ -7,8 +9,8 @@ namespace Lachain.Storage.DbCompact
     {
         private IRocksDbContext _dbContext;
         private RocksDbAtomicWrite batch;
-        private ConcurrentDictionary<byte[], byte[]> _memDb;
-        private ISet<byte[]> _toDelete;
+        private readonly ConcurrentDictionary<UInt256, byte[]> _memDb = new ConcurrentDictionary<UInt256, byte[]>();
+        private ISet<UInt256> _toDelete = new HashSet<UInt256>();
 
         public DbShrinkRepository(IRocksDbContext dbContext)
         {
@@ -19,15 +21,16 @@ namespace Lachain.Storage.DbCompact
         private void UpdateBatch()
         {
             batch = new RocksDbAtomicWrite(_dbContext);
-            _memDb = new ConcurrentDictionary<byte[], byte[]>();
-            _toDelete = new HashSet<byte[]>();
+            _memDb.Clear();
+            _toDelete.Clear();
         }
 
         public void Save(byte[] key, byte[] content, bool tryCommit = true)
         {
             batch.Put(key, content);
-            _toDelete.Remove(key);
-            _memDb[key] = content;
+            var keyHash = key.Keccak();
+            _toDelete.Remove(keyHash);
+            _memDb[keyHash] = content;
             DbShrinkUtils.UpdateCounter();
             if(tryCommit && DbShrinkUtils.CycleEnded())
             {
@@ -38,8 +41,9 @@ namespace Lachain.Storage.DbCompact
         public void Delete(byte[] key, bool tryCommit = true)
         {
             batch.Delete(key);
-            _memDb.TryRemove(key,out var _);
-            _toDelete.Add(key);
+            var keyHash = key.Keccak();
+            _memDb.TryRemove(keyHash,out var _);
+            _toDelete.Add(keyHash);
             DbShrinkUtils.UpdateCounter();
             if(tryCommit && DbShrinkUtils.CycleEnded())
             {
@@ -56,15 +60,17 @@ namespace Lachain.Storage.DbCompact
 
         public byte[]? Get(byte[] key)
         {
-            if (_memDb.ContainsKey(key)) return _memDb[key];
-            if (_toDelete.Contains(key)) return null;
+            var keyHash = key.Keccak();
+            if (_memDb.ContainsKey(keyHash)) return _memDb[keyHash];
+            if (_toDelete.Contains(keyHash)) return null;
             return _dbContext.Get(key);
         }
 
         public bool KeyExists(byte[] key)
         {
-            if (_memDb.ContainsKey(key)) return true;
-            if (_toDelete.Contains(key)) return false;
+            var keyHash = key.Keccak();
+            if (_memDb.ContainsKey(keyHash)) return true;
+            if (_toDelete.Contains(keyHash)) return false;
             var content = _dbContext.Get(key);
             if (content is null) return false;
             return true;
