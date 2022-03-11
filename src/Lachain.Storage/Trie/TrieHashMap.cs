@@ -460,7 +460,6 @@ namespace Lachain.Storage.Trie
                     _lruCache.Add(id, _node);
                 }
             }
-            if (_node is null) Logger.LogDebug($"Get Node By id: {id} not found");
             return _node;
         }
 
