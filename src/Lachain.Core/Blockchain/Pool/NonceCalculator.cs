@@ -6,16 +6,31 @@ using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Proto;
 
+
 namespace Lachain.Core.Blockchain.Pool
 {
+    /*
+        NonceCalculator Object is a data structure which supports following operations. 
+        (1) add/remove a new tranaction
+        (2) calculate max nonce over all transactions for a given address
+
+        To implement the data structure, we use a dictionary keyed by address. The value of the dictionary
+        is a sorted Set of (nonce, hash) for the key address.
+    */
+
     public class NonceCalculator : INonceCalculator
     {
         private static readonly ILogger<NonceCalculator> Logger = LoggerFactory.GetLoggerForClass<NonceCalculator>();
         private readonly ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>> _noncePerAddress
             = new ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>>();
+        
+        // the count of transactions in the stucture
         private uint _count = 0;
 
         public NonceCalculator() {}
+
+        // try to add a transaction in the data structure
+        // returns false if it already exists, otherwise adds it to the structure and returns true
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryAdd(TransactionReceipt receipt)
@@ -42,6 +57,10 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
+        // try to remove a transaction from the data structure
+        // returns false if it does not exist, 
+        // otherwise removes it and returns true
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryRemove(TransactionReceipt receipt)
         {
@@ -67,6 +86,9 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
+        // given an address, returns the max nonce of all the transactions by this address
+        // if there is no such transaction, returns null
+        
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong? GetMaxNonceForAddress(UInt160 address) 
         {

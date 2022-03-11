@@ -16,6 +16,10 @@ using Lachain.Utility;
 
 namespace Lachain.Core.Blockchain.Pool
 {
+    /*
+        In-memory structure to store all the transactions waiting to be added to the next blocks
+
+    */
     public class TransactionPool : ITransactionPool
     {
         private static readonly ILogger<TransactionPool> Logger = LoggerFactory.GetLoggerForClass<TransactionPool>();
@@ -29,9 +33,19 @@ namespace Lachain.Core.Blockchain.Pool
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
+
+        // _proposed stores the list of proposed transactions that was proposed an era
+        // _proposed should always contain at most one entry representing the last era and
+        // the list of transactions proposed during that era
         private readonly ConcurrentDictionary<ulong, List<TransactionReceipt>> _proposed 
             = new ConcurrentDictionary<ulong, List<TransactionReceipt>>();
+
+        // _toDeleteRepo represents the transactions that have been removed from the in-memory pool, 
+        // but have not been removed from the pool yet. 
         private IList<TransactionReceipt> _toDeleteRepo = new List<TransactionReceipt>();
+        
+        // _lastSanitized represents the height of the block that we are sure 
+        // have been added the state and initializes as 0
         private ulong _lastSanitized = 0;
         private ISet<TransactionReceipt> _transactionsQueue;
 
@@ -73,11 +87,15 @@ namespace Lachain.Core.Blockchain.Pool
             return _transactions.TryGetValue(hash, out var tx) ? tx : _poolRepository.GetTransactionByHash(hash);
         }
 
+        // During the start of a node, it attempts to restore all the transactions
+        // from the persistent database to the in-memory pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Restore()
         {
             var txHashes = _poolRepository.GetTransactionPool();
             Logger.LogTrace($"restoring transactions from pool to in-memory storage");
+            // transactionsToRemove stores all the transactions that was not added to 
+            // the in-memory pool from persistent storage
             List<UInt256> transactionsToRemove = new List<UInt256>();
             foreach (var txHash in txHashes)
             {
@@ -89,6 +107,8 @@ namespace Lachain.Core.Blockchain.Pool
                 if(Add(tx, false) != OperatingError.Ok)
                     transactionsToRemove.Add(tx.Hash);
             }
+            // if a transaction was not added to the pool, that means it's not a valid 
+            // transactions, so we should also erase it from the persistent storage
             _poolRepository.RemoveTransactions(transactionsToRemove);
             CheckConsistency();
         }
@@ -111,7 +131,9 @@ namespace Lachain.Core.Blockchain.Pool
             };
             return Add(acceptedTx, notify);
         }
-
+        // Attempts to add a transaction to the pool
+        // if notify = true, then if it can add to the pool, then also broadcasts this
+        // transaction to all its peers
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(TransactionReceipt receipt, bool notify = true)
         {
@@ -148,7 +170,8 @@ namespace Lachain.Core.Blockchain.Pool
             /* write transaction to persistence storage */
             if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                 _poolRepository.AddTransaction(receipt);
-
+            
+            /* add to the _nonceCalculator to efficiently calculate nonce */
             _nonceCalculator.TryAdd(receipt);
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
             if (notify) TransactionAdded?.Invoke(this, receipt);
@@ -392,6 +415,8 @@ namespace Lachain.Core.Blockchain.Pool
             return (uint) _transactionsQueue.Count;
         }
 
+        // Clears the in-memory pool
+        // If a node is restarted, the transactions would be restored again to the in-memory pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Clear()
         {
@@ -400,16 +425,23 @@ namespace Lachain.Core.Blockchain.Pool
             _nonceCalculator.Clear();
         }
 
+        // It totally clears all the transactions in the persistent storage
+        // Ideally this method should not be called as it may completely lose important transactions
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void ClearRepository()
         {
             _poolRepository.ClearPool();
         }
 
+        // Depending on all the transactions already added to the block and the transactions
+        // stored in the pool, this method calculates the next nonce for an address 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetNextNonceForAddress(UInt160 address)
         {
+            // poolNonce represents the max nonce of all the transactions by this address
             var poolNonce = _nonceCalculator.GetMaxNonceForAddress(address);
+            // stateNonce calculates the next nonce for an address from the transactions that
+            // have been already added to the blocks
             var stateNonce = _transactionManager.CalcNextTxNonce(address);
             return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
         }
