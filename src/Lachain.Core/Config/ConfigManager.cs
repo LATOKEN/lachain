@@ -205,7 +205,7 @@ namespace Lachain.Core.Config
             hardforks.Hardfork_5 ??= network.NetworkName switch
             {
                 "mainnet" => 2450000,
-                "testnet" => 2190000,
+                "testnet" => 2239000,
                 "devnet" => 27500,
                 _ => 0
             };
