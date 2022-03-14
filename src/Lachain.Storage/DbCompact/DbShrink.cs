@@ -11,8 +11,8 @@ namespace Lachain.Storage.DbCompact
             LoggerFactory.GetLoggerForClass<DbShrink>();
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private IDbShrinkRepository _repository;
-        private ulong? dbShrinkDepth;
-        private DbShrinkStatus dbShrinkStatus;
+        private ulong? dbShrinkDepth = null;
+        private DbShrinkStatus? dbShrinkStatus = null;
         
         public DbShrink(ISnapshotIndexRepository snapshotIndexRepository, IDbShrinkRepository repository)
         {
@@ -39,6 +39,7 @@ namespace Lachain.Storage.DbCompact
 
         public DbShrinkStatus GetDbShrinkStatus()
         {
+            if (dbShrinkStatus != null) return dbShrinkStatus.Value;
             var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
             var status = _repository.Get(prefix);
             if (status is null) 
@@ -58,6 +59,7 @@ namespace Lachain.Storage.DbCompact
 
         public ulong? GetDbShrinkDepth()
         {
+            if (dbShrinkDepth != null) return dbShrinkDepth;
             var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
             var depth = _repository.Get(prefix);
             if (depth is null) return null;
@@ -104,8 +106,7 @@ namespace Lachain.Storage.DbCompact
             {
                 if (dbShrinkDepth is null)
                 {
-                    Logger.LogDebug("DbCompact process was started but depth was not written. This should not happen.");
-                    SetDbShrinkDepth(depth);
+                    throw new Exception("DbCompact process was started but depth was not written. This should not happen.");
                 }
                 if (dbShrinkDepth != depth)
                 {
@@ -141,6 +142,9 @@ namespace Lachain.Storage.DbCompact
                     UpdateNodeIdToBatch(depth, totalBlocks, false);
                     Stop();
                     break;
+                    
+                default:
+                    throw new Exception("invalid db-shrink-status");
             }
         }
 
