@@ -114,5 +114,6 @@ namespace Lachain.Core.CLI
         // "hard" -> keep only recent snapshots. Be cautious before this clean-up. 
         //           Node will lose the ability to rollback and emulate in old snapshots and
         //           might lose some other ability as well
+        //           consider taking a backup of the folder ChainLachain in case anything goes wrong
     }
 }

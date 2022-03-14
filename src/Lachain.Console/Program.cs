@@ -96,7 +96,7 @@ namespace Lachain.Console
             }
             else if(options.type == "hard")
             {
-                
+                // consider taking a backup of the folder ChainLachain in case anything goes wrong
                 if(options.depth <= 0) throw new ArgumentException("depth must be positive integer");
                 System.Console.WriteLine("Starting hard db optimization");
 

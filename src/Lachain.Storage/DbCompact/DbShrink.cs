@@ -97,6 +97,7 @@ namespace Lachain.Storage.DbCompact
             _repository.Commit();
         }
 
+        // consider taking a backup of the folder ChainLachain in case anything goes wrong
         public void ShrinkDb(ulong depth, ulong totalBlocks)
         {
             if (dbShrinkStatus != DbShrinkStatus.Stopped)
