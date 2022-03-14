@@ -103,6 +103,7 @@ namespace Lachain.ConsensusTest
             {
                 _broadcasts[i].Terminate();
                 _broadcasts[i].WaitFinish();
+                TestSerialization((BinaryAgreement)_broadcasts[i]);
             }
         }
 
@@ -234,6 +235,16 @@ namespace Lachain.ConsensusTest
                     $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(false, _resultInterceptors[i].Result);
             }
+        }
+
+        [Test]
+        private static BinaryAgreement TestSerialization(BinaryAgreement binaryAgreement)
+        {
+            var bytes = binaryAgreement.ToBytes();
+            var restored = BinaryAgreement.FromBytes(bytes);
+            Assert.NotNull(restored);
+            Assert.AreEqual(restored, binaryAgreement);
+            return restored;
         }
     }
 }
