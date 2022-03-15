@@ -469,7 +469,7 @@ namespace Lachain.Storage.Trie
 
         public ulong UpdateNodeIdToBatch(ulong root, bool save, IDbShrinkRepository _repo)
         {
-            if (_repo.NodeIdExist(root) == save) return 0;
+            if (_repo.NodeIdExists(root) == save) return 0;
             var node = TryGetNodeById(root, _repo);
             if (node is null) return 0;
 
@@ -490,7 +490,7 @@ namespace Lachain.Storage.Trie
 
         public ulong DeleteNodes(ulong root, IDbShrinkRepository _repo)
         {
-            if (_repo.NodeIdExist(root)) return 0;
+            if (_repo.NodeIdExists(root)) return 0;
             var node = TryGetNodeById(root, _repo);
             if (node is null) return 0;
             

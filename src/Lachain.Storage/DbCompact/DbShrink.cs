@@ -2,6 +2,7 @@ using System;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using Lachain.Logger;
+using Lachain.Storage.State;
 
 namespace Lachain.Storage.DbCompact
 {
@@ -13,13 +14,15 @@ namespace Lachain.Storage.DbCompact
         private IDbShrinkRepository _repository;
         private ulong? dbShrinkDepth = null;
         private DbShrinkStatus? dbShrinkStatus = null;
-        
+        private ulong? oldestSnapshot = null;
+
         public DbShrink(ISnapshotIndexRepository snapshotIndexRepository, IDbShrinkRepository repository)
         {
             _snapshotIndexRepository = snapshotIndexRepository;
             _repository = repository;
             dbShrinkStatus = GetDbShrinkStatus();
             dbShrinkDepth = GetDbShrinkDepth();
+            oldestSnapshot = GetOldestSnapshotInDb();
         }
 
         public bool IsStopped()
@@ -30,40 +33,25 @@ namespace Lachain.Storage.DbCompact
         private void SetDbShrinkStatus(DbShrinkStatus status)
         {
             dbShrinkStatus = status;
-            var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
-            var content = new byte[1];
-            content[0] = (byte) status;
-            _repository.Save(prefix, content, false);
-            _repository.Commit();
+            _repository.SetDbShrinkStatus(status);
         }
 
         public DbShrinkStatus GetDbShrinkStatus()
         {
             if (dbShrinkStatus != null) return dbShrinkStatus.Value;
-            var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
-            var status = _repository.Get(prefix);
-            if (status is null) 
-            {
-                return DbShrinkStatus.Stopped;
-            }
-            return (DbShrinkStatus) status[0];
+            return _repository.GetDbShrinkStatus();
         }
 
         private void SetDbShrinkDepth(ulong depth)
         {
             dbShrinkDepth = depth;
-            var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
-            _repository.Save(prefix, UInt64Utils.ToBytes(depth), false);
-            _repository.Commit();
+            _repository.SetDbShrinkDepth(depth);
         }
 
         public ulong? GetDbShrinkDepth()
         {
             if (dbShrinkDepth != null) return dbShrinkDepth;
-            var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
-            var depth = _repository.Get(prefix);
-            if (depth is null) return null;
-            return UInt64Utils.FromBytes(depth);
+            return _repository.GetDbShrinkDepth();
         }
 
         private ulong StartingBlockToKeep(ulong depth, ulong totalBlocks)
@@ -73,11 +61,10 @@ namespace Lachain.Storage.DbCompact
 
         private ulong GetOldestSnapshotInDb()
         {
-            var prefix = EntryPrefix.OldestSnapshotInDb.BuildPrefix();
-            var block = _repository.Get(prefix);
-            if (block is null) return 0;
-            Logger.LogTrace($"Found oldest snapshot block in db: {UInt64Utils.FromBytes(block)}");
-            return UInt64Utils.FromBytes(block);
+            if (oldestSnapshot != null) return oldestSnapshot.Value;
+            var block = _repository.GetOldestSnapshotInDb();
+            Logger.LogTrace($"Found oldest snapshot block in db: {block}");
+            return block;
         }
 
         private void SetOldestSnapshotInDb(ulong block)
@@ -85,18 +72,14 @@ namespace Lachain.Storage.DbCompact
             var currentBlock = GetOldestSnapshotInDb();
             if(block > currentBlock)
             {
-                var prefix = EntryPrefix.OldestSnapshotInDb.BuildPrefix();
-                _repository.Save(prefix, UInt64Utils.ToBytes(block));
+                oldestSnapshot = block;
+                _repository.SetOldestSnapshotInDb(block);
             }
         }
 
         private void Stop()
         {
-            var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
-            _repository.Delete(prefix, false);
-            prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
-            _repository.Delete(prefix, false);
-            _repository.Commit();
+            _repository.DeleteStatusAndDepth();
         }
 
         // consider taking a backup of the folder ChainLachain in case anything goes wrong
@@ -192,7 +175,9 @@ namespace Lachain.Storage.DbCompact
                     }
                     foreach(var snapshot in snapshots)
                     {
-                        _snapshotIndexRepository.DeleteVersion(snapshot.RepositoryId, block, snapshot.Version, _repository);
+                        _repository.DeleteVersion(snapshot.RepositoryId, block, snapshot.Version);
+                        Logger.LogTrace($"Deleted version {snapshot.Version} for "
+                            + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
                     }
                     SetOldestSnapshotInDb(block + 1);
                 }

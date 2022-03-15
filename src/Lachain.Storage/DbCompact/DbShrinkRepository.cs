@@ -1,8 +1,10 @@
+using System.Linq;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Crypto;
 using Lachain.Storage.Trie;
+using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.DbCompact
 {
@@ -24,7 +26,7 @@ namespace Lachain.Storage.DbCompact
             _memDb.Clear();
         }
 
-        public void Save(byte[] key, byte[] content, bool tryCommit = true)
+        private void Save(byte[] key, byte[] content, bool tryCommit = true)
         {
             batch.Put(key, content);
             var keyHash = key.Keccak();
@@ -36,7 +38,7 @@ namespace Lachain.Storage.DbCompact
             }
         }
 
-        public void Delete(byte[] key, bool tryCommit = true)
+        private void Delete(byte[] key, bool tryCommit = true)
         {
             batch.Delete(key);
             var keyHash = key.Keccak();
@@ -48,14 +50,14 @@ namespace Lachain.Storage.DbCompact
             }
         }
 
-        public void Commit()
+        private void Commit()
         {
             batch.Commit();
             DbShrinkUtils.ResetCounter();
             UpdateBatch();
         }
 
-        public byte[]? Get(byte[] key)
+        private byte[]? Get(byte[] key)
         {
             var keyHash = key.Keccak();
             if (_memDb.TryGetValue(keyHash, out var content))
@@ -65,7 +67,7 @@ namespace Lachain.Storage.DbCompact
             return _dbContext.Get(key);
         }
 
-        public bool KeyExists(byte[] key)
+        private bool KeyExists(byte[] key)
         {
             var keyHash = key.Keccak();
             if (_memDb.TryGetValue(keyHash, out var value))
@@ -78,7 +80,7 @@ namespace Lachain.Storage.DbCompact
             return true;
         }
 
-        public bool NodeIdExist(ulong id)
+        public bool NodeIdExists(ulong id)
         {
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
             return KeyExists(prefix);
@@ -113,6 +115,77 @@ namespace Lachain.Storage.DbCompact
             Delete(prefix, false);
             prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
             Delete(prefix);
+        }
+
+        public void DeleteVersion(uint repository, ulong block, ulong version)
+        {
+            // this method is used to delete old snapshot. Don't use it for other purpose.
+            // we need to delete all seven snapshots. If some are deleted and some are not then
+            // later we cannot access non deleted snapshots using available methods.
+            // so set the third optional parameter as false
+            Delete(
+                EntryPrefix.SnapshotIndex.BuildPrefix(
+                    repository.ToBytes().Concat(block.ToBytes()).ToArray()),
+                false
+            );
+        }
+
+        public void SetDbShrinkStatus(DbShrinkStatus status)
+        {
+            var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
+            var content = new byte[1];
+            content[0] = (byte) status;
+            Save(prefix, content, false);
+            Commit();
+        }
+
+        public void SetDbShrinkDepth(ulong depth)
+        {
+            var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
+            Save(prefix, UInt64Utils.ToBytes(depth), false);
+            Commit();
+        }
+
+        public ulong? GetDbShrinkDepth()
+        {
+            var prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
+            var depth = Get(prefix);
+            if (depth is null) return null;
+            return UInt64Utils.FromBytes(depth);
+        }
+
+        public DbShrinkStatus GetDbShrinkStatus()
+        {
+            var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
+            var status = Get(prefix);
+            if (status is null) 
+            {
+                return DbShrinkStatus.Stopped;
+            }
+            return (DbShrinkStatus) status[0];
+        }
+
+        public ulong GetOldestSnapshotInDb()
+        {
+            var prefix = EntryPrefix.OldestSnapshotInDb.BuildPrefix();
+            var block = Get(prefix);
+            if (block is null) return 0;
+            return UInt64Utils.FromBytes(block);
+        }
+
+        public void SetOldestSnapshotInDb(ulong block)
+        {
+            var prefix = EntryPrefix.OldestSnapshotInDb.BuildPrefix();
+            Save(prefix, UInt64Utils.ToBytes(block));
+        }
+
+        public void DeleteStatusAndDepth()
+        {
+            var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
+            Delete(prefix, false);
+            prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
+            Delete(prefix, false);
+            Commit();
         }
 
     }
