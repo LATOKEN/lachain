@@ -48,7 +48,7 @@ namespace Lachain.Storage.Trie
 
         public ulong GetDownloadedNodeCount()
         {
-            return UInt64Utils.FromBytes(_rocksDbContext.Get(EntryPrefix.NodesDownloadedTillNow.BuildPrefix()));
+            return 0;
         }
     }
 }

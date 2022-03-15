@@ -1,3 +1,8 @@
+/*
+    Most crucial for downloading the 6 state tries. It is written in a way that we can download different batch of nodes
+    concurrently(with asynchronous programming).
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
