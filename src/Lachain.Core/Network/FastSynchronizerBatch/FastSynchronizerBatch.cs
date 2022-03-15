@@ -1,3 +1,7 @@
+/*
+    This file controls the fast_sync, other necessary classes are instantiated here.
+    We will be downloading 6 tree data structures, one at a time. Block headers will be downloaded differently, not as a tree.    
+*/
 using System;
 using System.Collections.Generic;
 using Lachain.Logger;
@@ -19,6 +23,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
         };
         private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
+
+        //Fast_sync is started from this function.
+        //urls is the list of peer nodes, we'll be requesting for data throughtout this process
+        //blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
+        //start synching with that peer
         public static void StartSync(IStateManager stateManager,
                                      IRocksDbContext dbContext,
                                      ISnapshotIndexRepository snapshotIndexRepository,
@@ -26,12 +35,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                                      ulong blockNumber,
                                      List<string> urls)
         {
+            //At first we check if fast sync have started and completed before.
+            // If it has completed previously, we don't let the user run it again.
             if(Alldone(dbContext))
             {
                 Console.WriteLine("Fast Sync was done previously\nReturning");
                 return;
             }
-            dbContext.Save(EntryPrefix.NodesDownloadedTillNow.BuildPrefix(), UInt64Utils.ToBytes(0));
             
             Console.WriteLine("Current Version: "+versionFactory.CurrentVersion);
 
@@ -41,11 +51,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             
             RequestManager requestManager = new RequestManager(nodeStorage, hybridQueue);
 
+            //If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
+            //If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
             ulong savedBlockNumber = GetBlockNumberFromDB(dbContext);
             if(savedBlockNumber!=0) blockNumber = savedBlockNumber;
             Downloader downloader = new Downloader(peerManager, requestManager, blockNumber);
-
+            //this line is only useful if fast_sync was not started previously and user wants to sync with latest block
             blockNumber = Convert.ToUInt64(downloader.GetBlockNumber(), 16);
+
+            //to keep track how many tries have been downloaded till now, saved in db with LastDownloaded prefix
             int downloadedTries = Initialize(dbContext, blockNumber, (savedBlockNumber!=0));
             hybridQueue.init();
 

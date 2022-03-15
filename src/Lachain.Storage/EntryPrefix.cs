@@ -35,10 +35,6 @@
         PersistentHashMap = 0x0603,
 
         VersionByHash = 0x0604,
-
-        QueueBatch = 0x0605,
-
-        NodesDownloadedTillNow = 0x0606,
         NodeIdForRecentSnapshot = 0x0607,
         DbShrinkStatus = 0x0608,
         DbShrinkDepth = 0x0609,
@@ -72,23 +68,10 @@
         /*fast_sync status*/
         BlockNumber = 0x0701,
         LastDownloaded = 0x0702,
-<<<<<<< HEAD
-<<<<<<< HEAD
         SavedBatch = 0x0703,
         TotalBatch = 0x0704,
         QueueBatch = 0x0705,
         NodesDownloadedTillNow = 0x0706,
 
-=======
-        DoneBatch = 0x0703,
-        TotalBatch = 0x0704,
->>>>>>> f8373624 (resilient fast_sync working, with additional consistency check, lot of logging, will be helpful for debugging if needed)
-=======
-        SavedBatch = 0x0703,
-        TotalBatch = 0x0704,
-        QueueBatch = 0x0705,
-        NodesDownloadedTillNow = 0x0706,
-
->>>>>>> d7987b97 (fault-tolerant fast_sync working, tested multiple times)
     }
 }
