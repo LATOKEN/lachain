@@ -78,5 +78,10 @@ namespace Lachain.Storage.State
         {
             return _state.DeleteNodes(_repo);
         }
+
+        public void CheckAllNodes()
+        {
+            _state.CheckAllNodes();
+        }
     }
 }

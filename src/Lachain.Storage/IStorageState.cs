@@ -33,5 +33,6 @@ namespace Lachain.Storage
         ulong UpdateNodeIdToBatch(bool save, IDbShrinkRepository _repo);
 
         ulong DeleteNodes(IDbShrinkRepository _repo);
+        void CheckAllNodes();
     }
 }

@@ -140,11 +140,39 @@ namespace Lachain.Storage.DbCompact
 
                 case DbShrinkStatus.DeleteNodeId:
                     UpdateNodeIdToBatch(depth, totalBlocks, false);
+                    SetDbShrinkStatus(DbShrinkStatus.CheckConsistency);
+                    goto case DbShrinkStatus.CheckConsistency;
+
+                case DbShrinkStatus.CheckConsistency:
+                    CheckSnapshots(depth, totalBlocks);
                     Stop();
                     break;
                     
                 default:
                     throw new Exception("invalid db-shrink-status");
+            }
+        }
+
+        private void CheckSnapshots(ulong depth, ulong totalBlocks)
+        {
+            var fromBlock = StartingBlockToKeep(depth, totalBlocks);
+            Logger.LogTrace($"Checking snapshots for blocks in range [{fromBlock} , {totalBlocks}]");
+            for (var block = fromBlock; block <= totalBlocks; block++)
+            {
+                try
+                {
+                    var blockchainSnapshot = _snapshotIndexRepository.GetSnapshotForBlock(block);
+                    var snapshots = blockchainSnapshot.GetAllSnapshot();
+                    foreach (var snapshot in snapshots)
+                    {
+                        snapshot.CheckAllNodes();
+                    }
+                }
+                catch(Exception exception)
+                {
+                    throw new Exception($"Got exception trying to get snapshot for block {block}, "
+                        + $"exception:\n{exception}");
+                }
             }
         }
 

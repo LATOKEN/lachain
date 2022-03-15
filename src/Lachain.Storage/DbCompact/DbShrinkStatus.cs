@@ -6,5 +6,6 @@ namespace Lachain.Storage.DbCompact
         SaveNodeId = 1,
         DeleteOldSnapshot = 2,
         DeleteNodeId = 3,
+        CheckConsistency = 4,
     }
 }
