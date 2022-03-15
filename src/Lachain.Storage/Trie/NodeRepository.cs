@@ -47,34 +47,5 @@ namespace Lachain.Storage.Trie
             _rocksDbContext.SaveBatch(batch);
         }
 
-        public bool NodeIdExist(ulong id, IDbShrinkRepository _repo)
-        {
-            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            return _repo.KeyExists(prefix);
-        }
-
-        public void WriteNodeId(ulong id, IDbShrinkRepository _repo)
-        {
-            // saving nodes that are reachable from recent snapshots temporarily
-            // so that all other nodes can be deleted. 
-            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            _repo.Save(prefix, new byte[1]);
-        }
-
-        public void DeleteNodeId(ulong id, IDbShrinkRepository _repo)
-        {
-            // Deleting temporary nodes
-            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            _repo.Delete(prefix);
-        }
-
-        public void DeleteNode(ulong id , IHashTrieNode node, IDbShrinkRepository _repo)
-        {
-            // first delete the version by hash and then delete the node.
-            var prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
-            _repo.Delete(prefix, false);
-            prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-            _repo.Delete(prefix);
-        }
     }
 }

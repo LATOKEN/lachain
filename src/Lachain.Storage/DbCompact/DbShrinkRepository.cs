@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Crypto;
+using Lachain.Storage.Trie;
 
 namespace Lachain.Storage.DbCompact
 {
@@ -74,6 +75,43 @@ namespace Lachain.Storage.DbCompact
             var content = _dbContext.Get(key);
             if (content is null) return false;
             return true;
+        }
+
+        public bool NodeIdExist(ulong id)
+        {
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+            return KeyExists(prefix);
+        }
+
+        public void WriteNodeId(ulong id)
+        {
+            // saving nodes that are reachable from recent snapshots temporarily
+            // so that all other nodes can be deleted. 
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+            Save(prefix, new byte[1]);
+        }
+
+        public void DeleteNodeId(ulong id)
+        {
+            // Deleting temporary nodes
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+            Delete(prefix);
+        }
+
+        public IHashTrieNode? GetNodeById(ulong id)
+        {
+            var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+            var content = Get(prefix);
+            if (content is null) return null;
+            return NodeSerializer.FromBytes(content);
+        }
+        public void DeleteNode(ulong id , IHashTrieNode node)
+        {
+            // first delete the version by hash and then delete the node.
+            var prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
+            Delete(prefix, false);
+            prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+            Delete(prefix);
         }
 
     }

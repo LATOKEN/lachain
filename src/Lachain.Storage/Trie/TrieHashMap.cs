@@ -452,11 +452,9 @@ namespace Lachain.Storage.Trie
             var _node = _lruCache.Get(id);
             if (_node == null)
             {
-                var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-                var content = _repo.Get(prefix);
-                if (content != null) 
+                _node = _repo.GetNodeById(id);
+                if (_node != null) 
                 {
-                    _node = NodeSerializer.FromBytes(content);
                     _lruCache.Add(id, _node);
                 }
             }
@@ -466,12 +464,12 @@ namespace Lachain.Storage.Trie
         private void DeleteNode(ulong id, IHashTrieNode node, IDbShrinkRepository _repo)
         {
             _lruCache.Remove(id);
-            _repository.DeleteNode(id , node, _repo);
+            _repo.DeleteNode(id , node);
         }
 
         public ulong UpdateNodeIdToBatch(ulong root, bool save, IDbShrinkRepository _repo)
         {
-            if (_repository.NodeIdExist(root, _repo) == save) return 0;
+            if (_repo.NodeIdExist(root) == save) return 0;
             var node = TryGetNodeById(root, _repo);
             if (node is null) return 0;
 
@@ -484,15 +482,15 @@ namespace Lachain.Storage.Trie
                 }
             }
             
-            if (save) _repository.WriteNodeId(root, _repo);
-            else _repository.DeleteNodeId(root, _repo);
+            if (save) _repo.WriteNodeId(root);
+            else _repo.DeleteNodeId(root);
 
             return nodesUpdated + 1;
         }
 
         public ulong DeleteNodes(ulong root, IDbShrinkRepository _repo)
         {
-            if (_repository.NodeIdExist(root, _repo)) return 0;
+            if (_repo.NodeIdExist(root)) return 0;
             var node = TryGetNodeById(root, _repo);
             if (node is null) return 0;
             
