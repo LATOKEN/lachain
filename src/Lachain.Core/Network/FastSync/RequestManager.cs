@@ -1,3 +1,7 @@
+/*
+    It provides the downloader which nodes to download and also processes the downloaded nodes.
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,10 +20,11 @@ namespace Lachain.Core.Network.FastSync
     {
  //       private Queue<string> _queue = new Queue<string>();
         private NodeStorage _nodeStorage;
+
+        //how many nodes we should ask for in every request
         private uint _batchSize = 500;
 
         HybridQueue _hybridQueue;
-        public int maxQueueSize = 0;
 
         public RequestManager(NodeStorage nodeStorage, HybridQueue hybridQueue)
         {
@@ -54,6 +59,7 @@ namespace Lachain.Core.Network.FastSync
             return _hybridQueue.Complete();
         }
 
+        //useful for debugging purpose, use it to check if some tree is downloaded properly
         public bool CheckConsistency(ulong rootId)
         {
             if(rootId==0) return true;
@@ -102,6 +108,7 @@ namespace Lachain.Core.Network.FastSync
             
             List<JObject> successfulNodes = new List<JObject>();
 
+            //discard the whole batch if we haven't got response for all the nodes(or more response, shouldn't happen though)
             if (hashBatch.Count != response.Count)
             {
                 failedHashes = hashBatch;
@@ -112,6 +119,7 @@ namespace Lachain.Core.Network.FastSync
                 {
                     var hash = hashBatch[i];
                     JObject node = (JObject)response[i];
+                    //check if actually the node's content produce desired hash or data is corrupted
                     if (_nodeStorage.IsConsistent(node) && hash == (string)node["Hash"])
                     {
                         successfulHashes.Add(hash);
@@ -151,7 +159,8 @@ namespace Lachain.Core.Network.FastSync
                         var nodeType = (string)node["NodeType"];
                         if (nodeType == null) continue;
 
-                        if (nodeType.Equals("0x1")) // internal node 
+                        //for internal node, we need to extract it's children and put it in the queue for downloading them next
+                        if (nodeType.Equals("0x1")) 
                         {
                             var jsonChildren = (JArray)node["ChildrenHash"];
                             foreach (var jsonChild in jsonChildren)
@@ -160,7 +169,10 @@ namespace Lachain.Core.Network.FastSync
                             }
                         }
 
+                        //sending the node to nodeStorage for inserting it to database
+                        //(maybe temporarily it will reside in memory but flushed to db later)
                         bool res = _nodeStorage.TryAddNode(node);
+                        //informing the hybridQueue that node is received successfully
                         _hybridQueue.ReceivedNode(hash);
                     }
                 }

@@ -1,3 +1,9 @@
+/*
+    We are downloading the tree in a breadth-first-search style, so the required queue might become very large once we
+    go a little bit deep in the tree. So we need to store the queue in disk. But again writing/reading in disk for every single node will be
+    very time consuming. We need to do it in batch too. HybridQueue combines the disk and memory to reduce latency.
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,14 +24,22 @@ namespace Lachain.Core.Network.FastSync
     class HybridQueue{
         private static readonly ILogger<HybridQueue> Logger = LoggerFactory.GetLoggerForClass<HybridQueue>();
         private IRocksDbContext _dbContext;
+        //maximum how many nodes we should put into/out of db at once 
         private const int BatchSize = 5000;
-        private ulong _doneBatch=0, _totalBatch=0, _savedBatch=0;        
+
+        //_totalBatch means how many batch of nodeHashes in total we know about(including the nodeHashes that for whom corresponding node is downloaded)
+        //_savedBatch means for how many batch of nodeHashes we have received node data
+        //_loadedBatch means how many batch of nodeHashes have been loaded from database into _outgoingQueue(for requesting to peers) 
+        private ulong _loadedBatch=0, _totalBatch=0, _savedBatch=0;
+        //nodes which are requested but has not arrived yet resides in the _pending container, mapping is nodeHash -> node's batch        
         private IDictionary<string, ulong> _pending = new Dictionary<string, ulong>();
+        //every node at first enters to _incomingQueue before getting sent to database
         private Queue<string> _incomingQueue = new Queue<string>();
+        //when we take out nodes from database we keep it in _outgoingQueue and it's batch in the _batchQueue
         private Queue<string> _outgoingQueue = new Queue<string>();
         private Queue<ulong> _batchQueue = new Queue<ulong>();
 
-
+        //we need to keep track of how many nodes for a batch has not arrived till now
         private IDictionary<ulong, int> _remaining = new Dictionary<ulong, int>();
 
         private NodeStorage _nodeStorage;
@@ -38,11 +52,11 @@ namespace Lachain.Core.Network.FastSync
         public void init()
         {
             _savedBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.SavedBatch.BuildPrefix()));
-            _doneBatch = _savedBatch;
+            _loadedBatch = _savedBatch;
             _totalBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.TotalBatch.BuildPrefix()));
             
             Logger.LogInformation($"Starting with....");
-            Logger.LogInformation($"Done Batch: {_doneBatch} Total Batch: {_totalBatch}");
+            Logger.LogInformation($"Done Batch: {_loadedBatch} Total Batch: {_totalBatch}");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -73,8 +87,9 @@ namespace Lachain.Core.Network.FastSync
             }
             else{
             //    if(_pending.Count!=0) return false;
-                if(_doneBatch==_totalBatch && _incomingQueue.Count>0) PushToDB();
-                while(_doneBatch<_totalBatch && _outgoingQueue.Count==0)
+                //All the nodeHashes must go through _incomingQueue -> Database -> _outgoingQueue
+                if(_loadedBatch==_totalBatch && _incomingQueue.Count>0) PushToDB();
+                while(_loadedBatch<_totalBatch && _outgoingQueue.Count==0)
                 {
                     LoadFromDB();
                 }
@@ -100,6 +115,7 @@ namespace Lachain.Core.Network.FastSync
 
         public void TryToSaveBatch()
         {
+            //batches are saved one by one, batch x+1 will not be saved until batch x is saved
             while(_remaining.ContainsKey(_savedBatch+1) && _remaining[_savedBatch+1]==0)
             {
                 _remaining.Remove(_savedBatch+1);
@@ -114,7 +130,7 @@ namespace Lachain.Core.Network.FastSync
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Complete()
         {
-            return _doneBatch==_totalBatch && _incomingQueue.Count==0 && _outgoingQueue.Count==0 && _pending.Count==0;
+            return _loadedBatch==_totalBatch && _incomingQueue.Count==0 && _outgoingQueue.Count==0 && _pending.Count==0;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -144,7 +160,7 @@ namespace Lachain.Core.Network.FastSync
 
         void LoadFromDB()
         {
-            ulong _curBatch = _doneBatch+1;
+            ulong _curBatch = _loadedBatch+1;
             byte[] raw = _dbContext.Get(EntryPrefix.QueueBatch.BuildPrefix((ulong)_curBatch));
             int cnt = 0;
             for(int i=0; i<raw.Length; )
@@ -158,7 +174,7 @@ namespace Lachain.Core.Network.FastSync
                 cnt++;
             }
             _remaining[_curBatch] = cnt;
-            _doneBatch = _curBatch;
+            _loadedBatch = _curBatch;
             Logger.LogInformation($"Trying to download nodes from batch: {_curBatch}  size: {cnt}");
             if(cnt==0) TryToSaveBatch();
         }
