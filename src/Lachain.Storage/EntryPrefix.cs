@@ -57,7 +57,5 @@
         SavedBatch = 0x0703,
         TotalBatch = 0x0704,
         QueueBatch = 0x0705,
-        NodesDownloadedTillNow = 0x0706,
-
     }
 }
