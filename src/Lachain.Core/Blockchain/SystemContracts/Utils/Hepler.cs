@@ -9,7 +9,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Utils
     public static class Hepler
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-     
+
         public static UInt160 PublicKeyToAddress(byte[] publicKey)
         {
             return Crypto.ComputeAddress(publicKey).ToUInt160();

@@ -18,9 +18,14 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
+    /* 
+        DeployContract is used to deploy a contract in the chain. 
+    */
     public class DeployContract : ISystemContract
     {
         private readonly InvocationContext _context;
+
+        // _deployHeight[contractAddress] = The block height at which the contract with contractAddress was deployed - 1
         private readonly StorageMapping _deployHeight;
 
         private static readonly ILogger<DeployContract> Logger = LoggerFactory.GetLoggerForClass<DeployContract>();
@@ -49,7 +54,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.ReturnValue = Array.Empty<byte>();
             frame.UseGas(checked(GasMetering.DeployCost + GasMetering.DeployCostPerByte * (ulong) byteCode.Length));
             var receipt = _context.Receipt ?? throw new InvalidOperationException();
-            /* calculate contract hash and register it */
+            // calculate contract hash and register it
+            // the contractAddress at which the bytecode will be stored as calculated
+            // from the sender address (To) and its nonce.
             var hash = UInt160Utils.Zero.ToBytes().Ripemd();
             if (receipt.Transaction?.From != null)
             {

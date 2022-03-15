@@ -5,6 +5,11 @@ using Lachain.Storage.State;
 
 namespace Lachain.Core.Blockchain.SystemContracts.Storage
 {
+    /*
+        StorageMapping is a map of (key, value) pairs that reside in the state of the blockchain.
+        It's a part of the Storage Trie of the state. A contract can declare and use a StorageMapping variable
+        for its use and this variable will be part of the state.
+    */
     public class StorageMapping
     {
         private readonly UInt160 _contract;
