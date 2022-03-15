@@ -1,3 +1,8 @@
+/*
+    We don't add to db everytime we get a node, we accumulate data and make write in batches. NodeStorage helps to hold data 
+    temporary in memory and periodically flushes it to database.
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -162,9 +167,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix(item.Key), NodeSerializer.ToBytes(item.Value));
           //      Console.WriteLine("Adding node to DB : "+item.Key);
             }
-            ulong nodesCnt = UInt64Utils.FromBytes(_dbContext.Get(EntryPrefix.NodesDownloadedTillNow.BuildPrefix()));
-            nodesCnt += (ulong)_nodeCache.Count;
-            tx.Put(EntryPrefix.NodesDownloadedTillNow.BuildPrefix(), UInt64Utils.ToBytes(nodesCnt));
             tx.Commit();
             _nodeCache.Clear();
         }

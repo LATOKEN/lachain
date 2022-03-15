@@ -1,3 +1,6 @@
+/*
+    Here we are downloading block headers. This part is quite slow. Needs investigation.
+*/
 using System;
 using System.Collections.Generic;
 using System.Text;
