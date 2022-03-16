@@ -32,6 +32,7 @@ namespace Lachain.Storage.DbCompact
 
         private void SetDbShrinkStatus(DbShrinkStatus status)
         {
+            Logger.LogTrace($"Setting db-shrink-status: {status}");
             dbShrinkStatus = status;
             _repository.SetDbShrinkStatus(status);
         }
@@ -104,13 +105,12 @@ namespace Lachain.Storage.DbCompact
                 case DbShrinkStatus.Stopped:
                     SetDbShrinkDepth(depth);
                     SetDbShrinkStatus(DbShrinkStatus.SaveNodeId);
+                    Logger.LogTrace($"Keeping latest {depth} snapshots from last approved snapshot" 
+                        + $"for blocks: {StartingBlockToKeep(depth, totalBlocks)} to {totalBlocks}");
                     goto case DbShrinkStatus.SaveNodeId;
 
                 case DbShrinkStatus.SaveNodeId:
-                    Logger.LogTrace("Saving nodeId for recent snapshots");
-                    Logger.LogTrace($"Keeping latest {depth} snapshots from last approved snapshot" 
-                        + $"for blocks: {StartingBlockToKeep(depth, totalBlocks)} to {totalBlocks}");
-                    UpdateNodeIdToBatch(depth, totalBlocks, true);
+                    SaveRecentSnapshotNodeId(depth, totalBlocks);
                     SetDbShrinkStatus(DbShrinkStatus.DeleteOldSnapshot);
                     goto case DbShrinkStatus.DeleteOldSnapshot;
 
@@ -122,7 +122,7 @@ namespace Lachain.Storage.DbCompact
                     goto case DbShrinkStatus.DeleteNodeId;
 
                 case DbShrinkStatus.DeleteNodeId:
-                    UpdateNodeIdToBatch(depth, totalBlocks, false);
+                    DeleteRecentSnapshotNodeId(depth, totalBlocks);
                     SetDbShrinkStatus(DbShrinkStatus.CheckConsistency);
                     goto case DbShrinkStatus.CheckConsistency;
 
@@ -190,11 +190,11 @@ namespace Lachain.Storage.DbCompact
             Logger.LogTrace($"Deleted {deletedNodes} nodes from DB in total");
         }
 
-        private void UpdateNodeIdToBatch(ulong depth, ulong totalBlocks, bool save)
+        private void SaveRecentSnapshotNodeId(ulong depth, ulong totalBlocks)
         {
-            (string Doing, string Done) action = save ? ("Saving" , "Saved") : ("Deleting" , "Deleted");
-            Logger.LogTrace($"{action.Doing} nodeId");
-            ulong usefulNodes = 0, fromBlock = StartingBlockToKeep(depth, totalBlocks);
+            ulong nodeIdSaved = 0, fromBlock = StartingBlockToKeep(depth, totalBlocks);
+            Logger.LogTrace($"Saving nodeId for snapshots in range [{fromBlock}, {totalBlocks}]. All other "
+                + "snapshots will be deleted permanently");
             for(var block = fromBlock; block <= totalBlocks; block++)
             {
                 try
@@ -203,8 +203,8 @@ namespace Lachain.Storage.DbCompact
                     var snapshots = blockchainSnapshot.GetAllSnapshot();
                     foreach(var snapshot in snapshots)
                     {
-                        var count = snapshot.UpdateNodeIdToBatch(save, _repository);
-                        usefulNodes += count;
+                        var count = snapshot.SaveNodeId(_repository);
+                        nodeIdSaved += count;
                     }
                 }
                 catch (Exception exception)
@@ -213,7 +213,32 @@ namespace Lachain.Storage.DbCompact
                         + $" reason: the snapshots were deleted by a previous call. Exception:\n{exception}");
                 }
             }
-            Logger.LogTrace($"{action.Done} {usefulNodes} nodeId in total");
+            Logger.LogTrace($"Saved {nodeIdSaved} nodeId in total");
+        }
+
+        private void DeleteRecentSnapshotNodeId(ulong depth, ulong totalBlocks)
+        {
+            ulong nodeIdDeleted = 0, fromBlock = StartingBlockToKeep(depth, totalBlocks);
+            Logger.LogTrace($"Deleting nodeId for snapshots in range [{fromBlock}, {totalBlocks}]");
+            for(var block = fromBlock; block <= totalBlocks; block++)
+            {
+                try
+                {
+                    var blockchainSnapshot = _snapshotIndexRepository.GetSnapshotForBlock(block);
+                    var snapshots = blockchainSnapshot.GetAllSnapshot();
+                    foreach(var snapshot in snapshots)
+                    {
+                        var count = snapshot.DeleteNodeId(_repository);
+                        nodeIdDeleted += count;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    throw new Exception($"Got exception trying to fetch snapshots for block {block}, probable"
+                        + $" reason: the snapshots were deleted by a previous call. Exception:\n{exception}");
+                }
+            }
+            Logger.LogTrace($"Deleted {nodeIdDeleted} nodeId in total");
         }
     }
 

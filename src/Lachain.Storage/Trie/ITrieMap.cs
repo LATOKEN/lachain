@@ -20,7 +20,8 @@ namespace Lachain.Storage.Trie
         public bool CheckAllNodeHashes(ulong root);
         public ulong InsertAllNodes(ulong root, IDictionary<ulong, IHashTrieNode> allTrieNodes);
         UInt256 GetHash(ulong root);
-        ulong UpdateNodeIdToBatch(ulong root, bool save, IDbShrinkRepository _repo);
+        ulong DeleteNodeId(ulong root, IDbShrinkRepository _repo);
+        ulong SaveNodeId(ulong root, IDbShrinkRepository _repo);
         ulong DeleteNodes(ulong root, IDbShrinkRepository _repo);
     }
 }

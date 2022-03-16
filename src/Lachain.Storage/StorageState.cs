@@ -127,9 +127,14 @@ namespace Lachain.Storage
             return _initialVersion;
         }
 
-        public ulong UpdateNodeIdToBatch(bool save, IDbShrinkRepository _repo)
+        public ulong SaveNodeId(IDbShrinkRepository _repo)
         {
-            return _trieMap.UpdateNodeIdToBatch(CurrentVersion, save, _repo);
+            return _trieMap.SaveNodeId(CurrentVersion, _repo);
+        }
+
+        public ulong DeleteNodeId(IDbShrinkRepository _repo)
+        {
+            return _trieMap.DeleteNodeId(CurrentVersion, _repo);
         }
 
         public ulong DeleteNodes(IDbShrinkRepository _repo)

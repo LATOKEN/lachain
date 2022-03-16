@@ -30,8 +30,8 @@ namespace Lachain.Storage
         ulong Commit(RocksDbAtomicWrite batch);
         void ClearCache();
         ulong Cancel();
-        ulong UpdateNodeIdToBatch(bool save, IDbShrinkRepository _repo);
-
+        ulong SaveNodeId(IDbShrinkRepository _repo);
+        ulong DeleteNodeId(IDbShrinkRepository _repo);
         ulong DeleteNodes(IDbShrinkRepository _repo);
         void CheckAllNodes();
     }

@@ -156,9 +156,14 @@ namespace Lachain.Storage.State
         }
         public UInt256 Hash => _state.Hash;
 
-        public ulong UpdateNodeIdToBatch(bool save, IDbShrinkRepository _repo)
+        public ulong SaveNodeId(IDbShrinkRepository _repo)
         {
-            return _state.UpdateNodeIdToBatch(save, _repo);
+            return _state.SaveNodeId(_repo);
+        }
+
+        public ulong DeleteNodeId(IDbShrinkRepository _repo)
+        {
+            return _state.DeleteNodeId(_repo);
         }
 
         public ulong DeleteSnapshot(IDbShrinkRepository _repo)

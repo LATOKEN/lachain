@@ -467,25 +467,44 @@ namespace Lachain.Storage.Trie
             _repo.DeleteNode(id , node);
         }
 
-        public ulong UpdateNodeIdToBatch(ulong root, bool save, IDbShrinkRepository _repo)
+        public ulong SaveNodeId(ulong root, IDbShrinkRepository _repo)
         {
-            if (_repo.NodeIdExists(root) == save) return 0;
+            if (_repo.NodeIdExists(root)) return 0;
             var node = TryGetNodeById(root, _repo);
-            if (node is null) return 0;
+            if (node is null) throw new Exception("corrupted trie");
 
-            ulong nodesUpdated = 0;
+            ulong nodeIdSaved = 0;
             foreach (var childId in node.Children)
             {
                 if (childId != 0)
                 {
-                    nodesUpdated += UpdateNodeIdToBatch(childId, save, _repo);
+                    nodeIdSaved += SaveNodeId(childId, _repo);
                 }
             }
             
-            if (save) _repo.WriteNodeId(root);
-            else _repo.DeleteNodeId(root);
+            _repo.WriteNodeId(root);
 
-            return nodesUpdated + 1;
+            return nodeIdSaved + 1;
+        }
+
+        public ulong DeleteNodeId(ulong root, IDbShrinkRepository _repo)
+        {
+            if (!_repo.NodeIdExists(root)) return 0;
+            var node = TryGetNodeById(root, _repo);
+            if (node is null) throw new Exception("corrupted trie");
+
+            ulong nodeIdDeleted = 0;
+            foreach (var childId in node.Children)
+            {
+                if (childId != 0)
+                {
+                    nodeIdDeleted += DeleteNodeId(childId, _repo);
+                }
+            }
+            
+            _repo.DeleteNodeId(root);
+
+            return nodeIdDeleted + 1;
         }
 
         public ulong DeleteNodes(ulong root, IDbShrinkRepository _repo)
