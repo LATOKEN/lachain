@@ -22,12 +22,49 @@ using Nethereum.Util;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
+    /*
+        The chain is divided into cycles of some consecutive blocks. For example, if cycleDuration = 10, 
+        then 
+            blocks 0-9     : cycle-0
+            blocks 10-19   : cycle-1
+            blocks 20-29   : cycle-2
+            .......
+        
+        The validators of a cycle are some special nodes that participate in the consensus, verify and execute
+        transactions and get rewards. The validator set changes after every cycle. 
+
+        A cycle is further divided into 3 parts:
+            AttendanceDetectionDuration: [0, cycleDuration / 10 - 1]
+            VrfSubmissionDuration: [cycleDuration / 10, cycleDuration / 2 - 1]
+            KeyGenerationPhase: [cycleDuration / 2, cycleDuration - 1]
+
+        For a node to become a validator, it must have some tokens staked to the StakingContract. 
+        If a node A stakes for a node B (B could be A itself), then we use the following convention:
+        node A -> staker
+        node B -> staked 
+
+        Every node has a public key and the address (160 bit) can be computed from this public key.
+        But the reverse is not true, ie, public key can not be recovered from its address.
+        
+    */
+
     public class StakingContract : ISystemContract
     {
+        // ExpectedValidatorsCount gives the average number of validators during in each cycle 
+        // Default 4 is not used anymore, this parameter is set from the config file
+        // for mainnet, ExpectedValidatorsCount = 8
+        // for testnet, ExpectedValidatorsCount = 4
         public static BigInteger ExpectedValidatorsCount = 4;
+        // A cycle represents the consecutive set of blocks where the validatorSet stays the same
+        // Default 20 is not used anymore, this parameter is set from the config file
+        // for both mainnet and testnet, CycleDuration = 1000 blocks
+
         public static ulong CycleDuration = 20; // in blocks
+        // 
         public static ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
         public static ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
+
+        // AlreadySet is true, if parameters have already been set from config.json file
         public static bool AlreadySet { get; private set; }
 
 
