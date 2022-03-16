@@ -22,6 +22,20 @@ using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
+    /*
+        Governance Contract is responsible for two critical tasks.
+        
+        (1) Finishing a cycle
+        
+        (2) Distribute rewards and penalties 
+
+        (3) Key Generation: Governance Contract manages Key Generation for every cycle. Key generation occurs during 
+        the period, [cycleDuration / 2, cycleDuration - 1] blocks. Our key generation process is 
+        on-chain. That means, every communication between participating nodes happen via transactions
+        in the block. For example, if node A wants to send a msg to node B, then node A encrypts the 
+        msg with node B's public key and broadcast this as a transaction to the governance contract. 
+        After this transaction is added to the chain, node B can decrypt the msg and read it.
+    */
     public class GovernanceContract : ISystemContract
     {
         private readonly InvocationContext _context;
