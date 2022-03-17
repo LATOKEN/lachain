@@ -55,13 +55,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
         // for mainnet, ExpectedValidatorsCount = 8
         // for testnet, ExpectedValidatorsCount = 4
         public static BigInteger ExpectedValidatorsCount = 4;
+
         // A cycle represents the consecutive set of blocks where the validatorSet stays the same
         // Default 20 is not used anymore, this parameter is set from the config file
         // for both mainnet and testnet, CycleDuration = 1000 blocks
-
         public static ulong CycleDuration = 20; // in blocks
-        // 
         public static ulong VrfSubmissionPhaseDuration = CycleDuration / 2; // in blocks
+        
+        // validators submit attendance during [0, cycleDuration/10 - 1] blocks of next cycle
+        // for example, let's assume, cycleDuration = 1000, node A is a validator for
+        // cycle 7 ([7000, 7999] blocks), then, node A submits attendance during
+        // [8000, 8099] blocks. 
         public static ulong AttendanceDetectionDuration = CycleDuration / 10; // in blocks
 
         // AlreadySet is true, if parameters have already been set from config.json file
