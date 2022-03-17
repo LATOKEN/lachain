@@ -17,6 +17,12 @@ using NLog;
 
 namespace Lachain.Core.Network
 {
+    /*
+        BlockSynchroniser makes sure that the node is always up to date with the rest of the network.
+        It continuesly asks to the peers for their height and if their height is greater than its
+        height, then it requests for the new blocks. Upon receiving them, it tries to execute the 
+        block and adds to the chain.
+    */
     public class BlockSynchronizer : IBlockSynchronizer
     {
         private static readonly ILogger<BlockSynchronizer>
