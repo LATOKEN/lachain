@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: rlespinasse/github-slug-action@v4
     - name: Rancher Deploy
-      uses: sekassel-research/actions-rancher-update@1.1.4
+      uses: LATOKEN/actions-rancher-update@1.1.5
       with:
         rancher_url: ${{ secrets.RANCHER_URL_API }}
         rancher_access: ${{ secrets.RANCHER_ACCESS_KEY}}
