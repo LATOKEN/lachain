@@ -451,7 +451,6 @@ namespace Lachain.Storage.Trie
         {
             if (id == 0)
             {
-                Logger.LogTrace("got node id 0 in trie");
                 return null;
             }
             var _node = _lruCache.Get(id);
@@ -476,7 +475,7 @@ namespace Lachain.Storage.Trie
         {
             if (_repo.NodeIdExists(root)) return 0;
             var node = TryGetNodeById(root, _repo);
-            if (node is null) throw new Exception("corrupted trie");
+            if (node is null) throw new Exception($"Corrupted trie: found null node for nodeId {root}");
 
             ulong nodeIdSaved = 0;
             foreach (var childId in node.Children)
@@ -496,7 +495,7 @@ namespace Lachain.Storage.Trie
         {
             if (!_repo.NodeIdExists(root)) return 0;
             var node = TryGetNodeById(root, _repo);
-            if (node is null) throw new Exception("corrupted trie");
+            if (node is null) throw new Exception($"Corrupted trie: found null node for nodeId {root}");
 
             ulong nodeIdDeleted = 0;
             foreach (var childId in node.Children)
