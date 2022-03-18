@@ -5,6 +5,6 @@ namespace Lachain.Storage.DbCompact
         bool IsStopped();
         DbShrinkStatus GetDbShrinkStatus();
         ulong? GetDbShrinkDepth();
-        void ShrinkDb(ulong depth, ulong totalBlocks);
+        void ShrinkDb(ulong depth, ulong totalBlocks, bool consistencyCheck);
     }
 }

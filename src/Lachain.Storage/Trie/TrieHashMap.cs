@@ -169,11 +169,12 @@ namespace Lachain.Storage.Trie
 
         public bool CheckAllNodeHashes(ulong root)
         {
-            IDictionary<ulong, IHashTrieNode> allNodesContainer = GetAllNodes(root);
-            foreach(var node in allNodesContainer)
-            {
-                if( !(node.Value.Hash.SequenceEqual(RecalculateHash(node.Key)))) return false;
-            }
+            if(root == 0) return true;
+            var node = GetNodeById(root);
+            if (node is null) throw new InvalidOperationException("corrupted trie");
+            if( !(node.Hash.SequenceEqual(RecalculateHash(root)))) return false;
+            foreach (var child in node.Children)
+                if (!CheckAllNodeHashes(child)) return false;
             return true;
         }
 

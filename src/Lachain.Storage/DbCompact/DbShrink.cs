@@ -80,11 +80,12 @@ namespace Lachain.Storage.DbCompact
 
         private void Stop()
         {
+            Logger.LogTrace("Stopping hard db optimization");
             _repository.DeleteStatusAndDepth();
         }
 
         // consider taking a backup of the folder ChainLachain in case anything goes wrong
-        public void ShrinkDb(ulong depth, ulong totalBlocks)
+        public void ShrinkDb(ulong depth, ulong totalBlocks, bool consistencyCheck)
         {
             if (dbShrinkStatus != DbShrinkStatus.Stopped)
             {
@@ -104,9 +105,10 @@ namespace Lachain.Storage.DbCompact
             {
                 case DbShrinkStatus.Stopped:
                     SetDbShrinkDepth(depth);
-                    SetDbShrinkStatus(DbShrinkStatus.SaveNodeId);
+                    Logger.LogTrace("Starting hard db optimization");
                     Logger.LogTrace($"Keeping latest {depth} snapshots from last approved snapshot" 
                         + $"for blocks: {StartingBlockToKeep(depth, totalBlocks)} to {totalBlocks}");
+                    SetDbShrinkStatus(DbShrinkStatus.SaveNodeId);
                     goto case DbShrinkStatus.SaveNodeId;
 
                 case DbShrinkStatus.SaveNodeId:
@@ -127,7 +129,7 @@ namespace Lachain.Storage.DbCompact
                     goto case DbShrinkStatus.CheckConsistency;
 
                 case DbShrinkStatus.CheckConsistency:
-                    CheckSnapshots(depth, totalBlocks);
+                    if (consistencyCheck) CheckSnapshots(depth, totalBlocks);
                     Stop();
                     break;
                     
@@ -148,7 +150,10 @@ namespace Lachain.Storage.DbCompact
                     var snapshots = blockchainSnapshot.GetAllSnapshot();
                     foreach (var snapshot in snapshots)
                     {
-                        snapshot.CheckAllNodes();
+                        if (!snapshot.IsTrieNodeHashesOk())
+                        {
+                            throw new Exception($"Consistency check failed for {snapshot} of block {block}");
+                        }
                     }
                 }
                 catch(Exception exception)

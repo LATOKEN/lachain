@@ -142,9 +142,5 @@ namespace Lachain.Storage
             return _trieMap.DeleteNodes(CurrentVersion, _repo);
         }
 
-        public void CheckAllNodes()
-        {
-            _trieMap.CheckAllNodeHashes(CurrentVersion);
-        }
     }
 }

@@ -98,7 +98,6 @@ namespace Lachain.Console
             {
                 // consider taking a backup of the folder ChainLachain in case anything goes wrong
                 if(options.depth <= 0) throw new ArgumentException("depth must be positive integer");
-                System.Console.WriteLine("Starting hard db optimization");
 
                 var logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL");
                 if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
@@ -123,7 +122,7 @@ namespace Lachain.Console
                 }
 
                 var dbShrink = _container.Resolve<IDbShrink>();
-                dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+                dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(), options.consistencyCheck);
                 
             }
             else 
