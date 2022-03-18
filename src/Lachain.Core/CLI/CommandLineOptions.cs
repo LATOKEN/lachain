@@ -106,14 +106,17 @@ namespace Lachain.Core.CLI
     {
         [Option('c', "compact", Required = false, HelpText = "Compact Database")]
         public string? type { get; set; }
-
-        [Option('d', "compactDepth", Required = false, HelpText = "Compact Database Depth")]
-        public ulong depth { get; set; } = 100;
         // type should either be "soft" or "hard" 
         // "soft" -> only compact the db 
         // "hard" -> keep only recent snapshots. Be cautious before this clean-up. 
         //           Node will lose the ability to rollback and emulate in old snapshots and
         //           might lose some other ability as well
         //           consider taking a backup of the folder ChainLachain in case anything goes wrong
+
+        [Option('d', "compactDepth", Required = false, HelpText = "Compact Database Depth")]
+        public ulong depth { get; set; } = 100;
+        
+        [Option('h', "consistencyCheck", Required = false, HelpText = "Consistency check after dbCompact \"hard\"")]
+        public bool consistencyCheck { get; set; } = false;
     }
 }
