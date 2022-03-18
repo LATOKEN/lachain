@@ -449,7 +449,11 @@ namespace Lachain.Storage.Trie
         // These methods are used for DbCompact only
         private IHashTrieNode? TryGetNodeById(ulong id, IDbShrinkRepository _repo)
         {
-            if (id == 0) return null;
+            if (id == 0)
+            {
+                Logger.LogTrace("got node id 0 in trie");
+                return null;
+            }
             var _node = _lruCache.Get(id);
             if (_node == null)
             {
