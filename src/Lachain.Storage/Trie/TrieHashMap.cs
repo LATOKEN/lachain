@@ -473,7 +473,7 @@ namespace Lachain.Storage.Trie
 
         public ulong SaveNodeId(ulong root, IDbShrinkRepository _repo)
         {
-            if (_repo.NodeIdExists(root)) return 0;
+            if (_repo.NodeIdExists(root) || root == 0) return 0;
             var node = TryGetNodeById(root, _repo);
             if (node is null) throw new Exception($"Corrupted trie: found null node for nodeId {root}");
 
@@ -493,7 +493,7 @@ namespace Lachain.Storage.Trie
 
         public ulong DeleteNodeId(ulong root, IDbShrinkRepository _repo)
         {
-            if (!_repo.NodeIdExists(root)) return 0;
+            if (!_repo.NodeIdExists(root) || root == 0) return 0;
             var node = TryGetNodeById(root, _repo);
             if (node is null) throw new Exception($"Corrupted trie: found null node for nodeId {root}");
 
@@ -513,7 +513,7 @@ namespace Lachain.Storage.Trie
 
         public ulong DeleteNodes(ulong root, IDbShrinkRepository _repo)
         {
-            if (_repo.NodeIdExists(root)) return 0;
+            if (_repo.NodeIdExists(root) || root == 0) return 0;
             var node = TryGetNodeById(root, _repo);
             if (node is null) return 0;
             
