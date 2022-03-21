@@ -112,16 +112,9 @@ namespace Lachain.Console
                     ));
                 containerBuilder.RegisterModule<StorageModule>();
                 IContainer _container = containerBuilder.Build();
-
                 var stateManager = _container.Resolve<IStateManager>();
-
-                if(stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() < options.depth)
-                {
-                    System.Console.WriteLine($"Have less blocks than {options.depth}, nothing to delete");
-                    return;
-                }
-
                 var dbShrink = _container.Resolve<IDbShrink>();
+                
                 dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(), options.consistencyCheck);
                 
             }

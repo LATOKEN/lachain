@@ -84,6 +84,21 @@ namespace Lachain.Storage.DbCompact
             _repository.DeleteStatusAndDepth();
         }
 
+        private bool CheckIfDbShrinkNecessary(ulong depth, ulong totalBlocks)
+        {
+            if(depth > totalBlocks)
+            {
+                Logger.LogTrace($"total blocks are {totalBlocks} and got depth {depth}");
+                return false;
+            }
+            if(StartingBlockToKeep(depth, totalBlocks) <= GetOldestSnapshotInDb())
+            {
+                Logger.LogTrace("No redundant snapshots found in db");
+                return false;
+            }
+            return true;
+        }
+
         // consider taking a backup of the folder ChainLachain in case anything goes wrong
         public void ShrinkDb(ulong depth, ulong totalBlocks, bool consistencyCheck)
         {
@@ -104,6 +119,11 @@ namespace Lachain.Storage.DbCompact
             switch (dbShrinkStatus)
             {
                 case DbShrinkStatus.Stopped:
+                    if(!CheckIfDbShrinkNecessary(depth, totalBlocks))
+                    {
+                        Logger.LogTrace("Nothing to delete.");
+                        return;
+                    }
                     SetDbShrinkDepth(depth);
                     Logger.LogTrace("Starting hard db optimization");
                     Logger.LogTrace($"Keeping latest {depth} snapshots from last approved snapshot" 
