@@ -6,6 +6,7 @@ using Lachain.Proto;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using RocksDbSharp;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage
 {
@@ -35,6 +36,8 @@ namespace Lachain.Storage
         }
 
         public ulong CurrentVersion { get; private set; }
+
+        public uint RepositoryId => _repositoryManager.RepositoryId;
 
         public void SetCurrentVersion(ulong root)
         {
@@ -123,5 +126,21 @@ namespace Lachain.Storage
             _trieMap.ClearCaches();
             return _initialVersion;
         }
+
+        public ulong SaveNodeId(IDbShrinkRepository _repo)
+        {
+            return _trieMap.SaveNodeId(CurrentVersion, _repo);
+        }
+
+        public ulong DeleteNodeId(IDbShrinkRepository _repo)
+        {
+            return _trieMap.DeleteNodeId(CurrentVersion, _repo);
+        }
+
+        public ulong DeleteNodes(IDbShrinkRepository _repo)
+        {
+            return _trieMap.DeleteNodes(CurrentVersion, _repo);
+        }
+
     }
 }

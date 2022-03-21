@@ -3,7 +3,7 @@ using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Storage.Trie;
 using System.Collections.Generic;
-
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
@@ -31,6 +31,8 @@ namespace Lachain.Storage.State
         }
         
         public ulong Version => _state.CurrentVersion;
+
+        public uint RepositoryId => _state.RepositoryId;
         
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit(RocksDbAtomicWrite batch)
@@ -66,5 +68,21 @@ namespace Lachain.Storage.State
         {
             _state.ClearCache();
         }
+
+        public ulong SaveNodeId(IDbShrinkRepository _repo)
+        {
+            return _state.SaveNodeId(_repo);
+        }
+
+        public ulong DeleteNodeId(IDbShrinkRepository _repo)
+        {
+            return _state.DeleteNodeId(_repo);
+        }
+
+        public ulong DeleteSnapshot(IDbShrinkRepository _repo)
+        {
+            return _state.DeleteNodes(_repo);
+        }
+
     }
 }

@@ -1,13 +1,15 @@
 ﻿using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Storage.Trie;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage
 {
     public interface IStorageState
     {
         ulong CurrentVersion { get; }
-        
+
+        uint RepositoryId { get; }
         byte[]? Get(byte[] key);
         ulong Add(byte[] key, byte[] value);
         ulong AddOrUpdate(byte[] key, byte[] value);
@@ -28,5 +30,8 @@ namespace Lachain.Storage
         ulong Commit(RocksDbAtomicWrite batch);
         void ClearCache();
         ulong Cancel();
+        ulong SaveNodeId(IDbShrinkRepository _repo);
+        ulong DeleteNodeId(IDbShrinkRepository _repo);
+        ulong DeleteNodes(IDbShrinkRepository _repo);
     }
 }

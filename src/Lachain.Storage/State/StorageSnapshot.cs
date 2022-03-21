@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Lachain.Storage.Trie;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
@@ -12,6 +13,8 @@ namespace Lachain.Storage.State
         private readonly IStorageState _state;
 
         public ulong Version => _state.CurrentVersion;
+
+        public uint RepositoryId => _state.RepositoryId;
 
         public StorageSnapshot(IStorageState state)
         {
@@ -92,5 +95,21 @@ namespace Lachain.Storage.State
         {
             _state.ClearCache();
         }
+
+        public ulong SaveNodeId(IDbShrinkRepository _repo)
+        {
+            return _state.SaveNodeId(_repo);
+        }
+
+        public ulong DeleteNodeId(IDbShrinkRepository _repo)
+        {
+            return _state.DeleteNodeId(_repo);
+        }
+
+        public ulong DeleteSnapshot(IDbShrinkRepository _repo)
+        {
+            return _state.DeleteNodes(_repo);
+        }
+
     }
 }

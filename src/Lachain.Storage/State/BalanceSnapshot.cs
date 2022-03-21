@@ -5,7 +5,7 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.Storage.Trie;
 using System.Collections.Generic;
-
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
@@ -35,6 +35,8 @@ namespace Lachain.Storage.State
         }
 
         public ulong Version => _state.CurrentVersion;
+
+        public uint RepositoryId => _state.RepositoryId;
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Money GetBalance(UInt160 owner)
@@ -153,5 +155,21 @@ namespace Lachain.Storage.State
             _state.ClearCache();
         }
         public UInt256 Hash => _state.Hash;
+
+        public ulong SaveNodeId(IDbShrinkRepository _repo)
+        {
+            return _state.SaveNodeId(_repo);
+        }
+
+        public ulong DeleteNodeId(IDbShrinkRepository _repo)
+        {
+            return _state.DeleteNodeId(_repo);
+        }
+
+        public ulong DeleteSnapshot(IDbShrinkRepository _repo)
+        {
+            return _state.DeleteNodes(_repo);
+        }
+
     }
 }

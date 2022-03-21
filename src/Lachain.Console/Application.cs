@@ -35,6 +35,7 @@ using System.Reflection;
 using System.Text;
 using Lachain.Storage;
 using Lachain.Core.Blockchain;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Console
 {
@@ -84,6 +85,11 @@ namespace Lachain.Console
             var dbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
+
+            // check if compacting db was started but not finished
+            var dbShrink = _container.Resolve<IDbShrink>();
+            if(!dbShrink.IsStopped()) throw new Exception($"Compacting db was started with depth: {dbShrink.GetDbShrinkDepth()}"
+                 + " by deleting nodes from old snapshot but was not finished.");
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;

@@ -11,6 +11,8 @@ namespace Lachain.Storage
         private readonly VersionFactory _versionFactory;
         private readonly VersionRepository _versionRepository;
         public readonly ITrieMap TrieMap;
+
+        public uint RepositoryId => _repositoryId;
         public ulong LatestVersion { get; private set; }
         
         public RepositoryManager(

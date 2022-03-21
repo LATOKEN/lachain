@@ -1,4 +1,5 @@
 using Lachain.Storage.State;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.Repositories
 {

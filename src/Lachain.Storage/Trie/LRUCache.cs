@@ -56,6 +56,16 @@ namespace Lachain.Storage.Trie
             _lruList.RemoveFirst();
             cacheMap.Remove(node.Value.Key);
         }
+
+        public void Remove(ulong key)
+        {
+            if (cacheMap.Count > 0 && cacheMap.TryGetValue(key, out var node))
+            {
+                _lruList.Remove(node);
+                cacheMap.Remove(key);
+            }
+        }
+
     }
 
     class LRUCacheItem

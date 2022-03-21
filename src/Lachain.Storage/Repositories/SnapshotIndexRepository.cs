@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Storage.State;
@@ -73,6 +74,10 @@ namespace Lachain.Storage.Repositories
             var rawVersion = _dbContext.Get(EntryPrefix.SnapshotIndex.BuildPrefix(
                 repository.ToBytes().Concat(block.ToBytes()).ToArray()
             ));
+            if (rawVersion is null)
+            {
+                throw new Exception($"Snapshot {(RepositoryType) repository} for block: {block} is not found");
+            }
             return rawVersion.AsReadOnlySpan().ToUInt64();
         }
 
@@ -87,5 +92,7 @@ namespace Lachain.Storage.Repositories
                 version.ToBytes()
             );
         }
+
+
     }
 }

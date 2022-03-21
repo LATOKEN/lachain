@@ -9,11 +9,14 @@ using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 using RocksDbSharp;
 using Newtonsoft.Json.Linq;
+using Lachain.Logger;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.Trie
 {
     internal class TrieHashMap : ITrieMap
     {
+        private static readonly ILogger<TrieHashMap> Logger = LoggerFactory.GetLoggerForClass<TrieHashMap>();
         private readonly IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private readonly ISet<ulong> _persistedNodes = new HashSet<ulong>();
         private readonly IList<ulong> _toBeDeleted = new List<ulong>();
@@ -166,11 +169,12 @@ namespace Lachain.Storage.Trie
 
         public bool CheckAllNodeHashes(ulong root)
         {
-            IDictionary<ulong, IHashTrieNode> allNodesContainer = GetAllNodes(root);
-            foreach(var node in allNodesContainer)
-            {
-                if( !(node.Value.Hash.SequenceEqual(RecalculateHash(node.Key)))) return false;
-            }
+            if(root == 0) return true;
+            var node = GetNodeById(root);
+            if (node is null) throw new InvalidOperationException("corrupted trie");
+            if( !(node.Hash.SequenceEqual(RecalculateHash(root)))) return false;
+            foreach (var child in node.Children)
+                if (!CheckAllNodeHashes(child)) return false;
             return true;
         }
 
@@ -255,9 +259,9 @@ namespace Lachain.Storage.Trie
             if (_node == null)
             {
                 _node = _repository.GetNode(id);
-                _lruCache.Add(id, _node);
+                if (_node != null) _lruCache.Add(id, _node);
             }
-            if(_node is null) System.Console.WriteLine($"Get Node By id: {id} not found");
+            if(_node is null) Logger.LogDebug($"Get Node By id: {id} not found");
             return _node;
         }
 
@@ -440,6 +444,90 @@ namespace Lachain.Storage.Trie
                         throw new InvalidOperationException($"Unknown node type {root.GetType()}");
                 }
             }
+        }
+
+        // These methods are used for DbCompact only
+        private IHashTrieNode? TryGetNodeById(ulong id, IDbShrinkRepository _repo)
+        {
+            if (id == 0)
+            {
+                return null;
+            }
+            var _node = _lruCache.Get(id);
+            if (_node == null)
+            {
+                _node = _repo.GetNodeById(id);
+                if (_node != null) 
+                {
+                    _lruCache.Add(id, _node);
+                }
+            }
+            return _node;
+        }
+
+        private void DeleteNode(ulong id, IHashTrieNode node, IDbShrinkRepository _repo)
+        {
+            _lruCache.Remove(id);
+            _repo.DeleteNode(id , node);
+        }
+
+        public ulong SaveNodeId(ulong root, IDbShrinkRepository _repo)
+        {
+            if (_repo.NodeIdExists(root) || root == 0) return 0;
+            var node = TryGetNodeById(root, _repo);
+            if (node is null) throw new Exception($"Corrupted trie: found null node for nodeId {root}");
+
+            ulong nodeIdSaved = 0;
+            foreach (var childId in node.Children)
+            {
+                if (childId != 0)
+                {
+                    nodeIdSaved += SaveNodeId(childId, _repo);
+                }
+            }
+            
+            _repo.WriteNodeId(root);
+
+            return nodeIdSaved + 1;
+        }
+
+        public ulong DeleteNodeId(ulong root, IDbShrinkRepository _repo)
+        {
+            if (!_repo.NodeIdExists(root) || root == 0) return 0;
+            var node = TryGetNodeById(root, _repo);
+            if (node is null) throw new Exception($"Corrupted trie: found null node for nodeId {root}");
+
+            ulong nodeIdDeleted = 0;
+            foreach (var childId in node.Children)
+            {
+                if (childId != 0)
+                {
+                    nodeIdDeleted += DeleteNodeId(childId, _repo);
+                }
+            }
+            
+            _repo.DeleteNodeId(root);
+
+            return nodeIdDeleted + 1;
+        }
+
+        public ulong DeleteNodes(ulong root, IDbShrinkRepository _repo)
+        {
+            if (_repo.NodeIdExists(root) || root == 0) return 0;
+            var node = TryGetNodeById(root, _repo);
+            if (node is null) return 0;
+            
+            ulong nodesDeleted = 0;
+            foreach (var childId in node.Children)
+            {
+                if (childId != 0)
+                {
+                    nodesDeleted += DeleteNodes(childId, _repo);
+                }
+            }
+
+            DeleteNode(root , node, _repo);
+            return nodesDeleted + 1;
         }
     }
 }

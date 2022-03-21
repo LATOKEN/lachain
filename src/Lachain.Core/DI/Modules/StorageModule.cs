@@ -4,6 +4,7 @@ using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
+using Lachain.Storage.DbCompact;
 
 namespace Lachain.Core.DI.Modules
 {
@@ -33,6 +34,10 @@ namespace Lachain.Core.DI.Modules
 
             /* database query */ 
             containerBuilder.RegisterSingleton<INodeRetrieval, NodeRetrieval>();
+
+            /* Db Compact */
+            containerBuilder.RegisterSingleton<IDbShrinkRepository, DbShrinkRepository>();
+            containerBuilder.RegisterSingleton<IDbShrink, DbShrink>();
         }
     }
 }

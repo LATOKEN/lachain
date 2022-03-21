@@ -6,6 +6,15 @@ using Lachain.Core.CLI;
 using Lachain.Crypto;
 using System.Linq;
 using Lachain.Storage;
+using Lachain.Storage.State;
+using Lachain.Core.DI;
+using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.Config;
+using System.Reflection;
+using Lachain.Core.DI.Modules;
+using  Lachain.Storage.Repositories;
+using Lachain.Storage.DbCompact;
+using NLog;
 
 namespace Lachain.Console
 {
@@ -80,6 +89,13 @@ namespace Lachain.Console
         
         private static void UpdateDb(DbOptions options)
         {
+            var logLevel = Environment.GetEnvironmentVariable("LOG_LEVEL");
+            if (logLevel != null) logLevel = char.ToUpper(logLevel[0]) + logLevel.ToLower().Substring(1);
+            if (!new[] {"Trace", "Debug", "Info", "Warn", "Error", "Fatal"}.Contains(logLevel))
+                logLevel = "Trace";
+            LogManager.Configuration.Variables["consoleLogLevel"] = logLevel;
+            LogManager.ReconfigExistingLoggers();
+            
             if(options.type == "soft")
             {
                 IRocksDbContext dbContext = new RocksDbContext();
@@ -87,7 +103,21 @@ namespace Lachain.Console
             }
             else if(options.type == "hard")
             {
-                // TO DO
+                // consider taking a backup of the folder ChainLachain in case anything goes wrong
+                if(options.depth <= 0) throw new ArgumentException("depth must be positive integer");
+
+                var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                        "./config.json",
+                        new RunOptions()
+                    ));
+                containerBuilder.RegisterModule<StorageModule>();
+                IContainer _container = containerBuilder.Build();
+                var stateManager = _container.Resolve<IStateManager>();
+                var dbShrink = _container.Resolve<IDbShrink>();
+                var dbContext = _container.Resolve<IRocksDbContext>(); 
+
+                dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(), options.consistencyCheck);
+                dbContext.CompactAll();
             }
             else 
             {
