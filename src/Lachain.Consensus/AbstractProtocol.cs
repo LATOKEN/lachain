@@ -5,13 +5,17 @@ using Lachain.Logger;
 using Lachain.Consensus.Messages;
 using Lachain.Utility.Utils;
 using Prometheus;
+using System.Runtime.Serialization;
 
 namespace Lachain.Consensus
 {
+    [DataContract]
     public abstract class AbstractProtocol : IConsensusProtocol
     {
+        [DataMember]
         private static readonly ILogger<AbstractProtocol> Logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
 
+        [DataMember]
         private static readonly Counter MessageCounter = Metrics.CreateCounter(
             "lachain_consensus_messages_processed",
             "Number of messages processed by protocol and message type",
@@ -20,21 +24,30 @@ namespace Lachain.Consensus
                 LabelNames = new[] {"protocol", "message_type"}
             }
         );
-
+        [DataMember]
         private readonly ConcurrentQueue<MessageEnvelope> _queue = new ConcurrentQueue<MessageEnvelope>();
+        [DataMember]
         private readonly object _queueLock = new object();
+        [DataMember]
         private readonly object _resultLock = new object();
+        [DataMember]
         private bool ResultEmitted { get; set; }
+        [DataMember]
         public bool Terminated { get; protected set; }
         public IProtocolIdentifier Id { get; }
+        [DataMember]
         protected readonly IConsensusBroadcaster Broadcaster;
+        [DataMember]
         private readonly Thread _thread;
+        [DataMember]
         protected readonly IPublicConsensusKeySet Wallet;
         protected int N => Wallet.N;
         protected int F => Wallet.F;
-
+        [DataMember]
         protected string _lastMessage = "";
+        [DataMember]
         private ulong _startTime = 0;
+        [DataMember]
         private const ulong _alertTime = 60 * 1000;
 
         protected AbstractProtocol(

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
@@ -13,18 +14,27 @@ using Lachain.Proto;
 
 namespace Lachain.ConsensusTest
 {
+    [KnownType(typeof(Lachain.ConsensusTest.BroadcastSimulator))]
+    [DataContract(Name="BroadcastSimulator")]
     public class BroadcastSimulator : IConsensusBroadcaster
     {
+        [DataMember]
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
             new Dictionary<IProtocolIdentifier, IProtocolIdentifier>();
-
+        public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
+            new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
+        [DataMember]
         private readonly DeliveryService _deliveryService;
+        [DataMember]
         private readonly IPrivateConsensusKeySet _privateKeys;
+        [DataMember]
         private readonly int _sender;
-
+        [DataMember]
         private readonly ISet<int> _silenced;
-
+        [DataMember]
         private readonly IPublicConsensusKeySet _wallet;
+        [DataMember]
+        private bool Terminated { set; get; }
 
         public BroadcastSimulator(
             int sender, IPublicConsensusKeySet wallet, IPrivateConsensusKeySet privateKeys,
@@ -38,11 +48,6 @@ namespace Lachain.ConsensusTest
             _privateKeys = privateKeys;
             _silenced = new HashSet<int>();
         }
-
-        public Dictionary<IProtocolIdentifier, IConsensusProtocol> Registry { get; } =
-            new Dictionary<IProtocolIdentifier, IConsensusProtocol>();
-
-        private bool Terminated { set; get; }
 
         public IConsensusProtocol GetProtocolById(IProtocolIdentifier id)
         {

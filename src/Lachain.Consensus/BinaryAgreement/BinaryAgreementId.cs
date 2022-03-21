@@ -3,19 +3,23 @@ using Nethereum.RLP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace Lachain.Consensus.BinaryAgreement
 {
+    [DataContract]
     public class BinaryAgreementId : IProtocolIdentifier
     {
+        [DataMember]
+        public long Era { get; }
+        [DataMember]
+        public long AssociatedValidatorId { get; }
+
         public BinaryAgreementId(long era, long associatedValidatorId)
         {
             Era = era;
             AssociatedValidatorId = associatedValidatorId;
         }
-
-        public long Era { get; }
-        public long AssociatedValidatorId { get; }
         
         protected bool Equals(BinaryAgreementId other)
         {
