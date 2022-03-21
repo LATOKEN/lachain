@@ -114,9 +114,10 @@ namespace Lachain.Console
                 IContainer _container = containerBuilder.Build();
                 var stateManager = _container.Resolve<IStateManager>();
                 var dbShrink = _container.Resolve<IDbShrink>();
-                
+                var dbContext = _container.Resolve<IRocksDbContext>(); 
+
                 dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(), options.consistencyCheck);
-                
+                dbContext.CompactAll();
             }
             else 
             {
