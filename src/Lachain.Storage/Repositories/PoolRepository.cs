@@ -48,6 +48,8 @@ namespace Lachain.Storage.Repositories
             return true;
         }
 
+        // use this method for bulk removal of transactions
+        // as this is much faster than deleting transaction one by one
         [MethodImpl(MethodImplOptions.Synchronized)]
         public int RemoveTransactions(IEnumerable<UInt256> txHashes)
         {
