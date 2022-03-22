@@ -163,7 +163,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             try
             {
                 if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
-                    frame.ReturnValue = _deployHeight.GetValue(contractAddress.ToBytes());
+                    frame.ReturnValue = _deployHeight.GetValue(contractAddress.ToBytes()) ?? new byte[64];
             }
             catch (Exception e)
             {

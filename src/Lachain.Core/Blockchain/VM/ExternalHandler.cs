@@ -51,7 +51,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             var input = ContractEncoder.Encode(DeployInterface.MethodGetDeployHeight, contract);
             var height = DoInternalCall(caller, ContractRegisterer.DeployContract,
-                input,  gasLimit,  message).ReturnValue!;
+                input,  gasLimit,  message).ReturnValue ?? new byte[64];
             return BitConverter.ToUInt64(height, 0);
         }
         
