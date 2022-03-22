@@ -162,8 +162,18 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.ReturnValue = new byte[64];
             try
             {
-                if(HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
-                    frame.ReturnValue = _deployHeight.GetValue(contractAddress.ToBytes()) ?? new byte[64];
+                if (HardforkHeights.IsHardfork_3Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                {
+                    if (HardforkHeights.IsHardfork_6Active(
+                            frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                    {
+                        frame.ReturnValue = _deployHeight.GetValue(contractAddress.ToBytes()) ?? new byte[64];
+                    }
+                    else
+                    {
+                        frame.ReturnValue = _deployHeight.GetValue(contractAddress.ToBytes());
+                    }
+                }
             }
             catch (Exception e)
             {
