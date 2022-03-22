@@ -82,10 +82,19 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _vrfSeed;
         private readonly StorageVariable _nextVrfSeed;
         public static readonly byte[] Role = Encoding.ASCII.GetBytes("staker");
+
+        // It's possible to calculate address from public key. But the reverse it not true. 
+        // Hence we need to store this info (address -> public key)
         private readonly StorageMapping _stakedAddressToStakedPubKey;
         private readonly StorageMapping _stakedAddressToStake;
         private readonly StorageMapping _stakedAddressToPenalty;
+
+        // start cycle represents the cycle from which the stake becomes active
+        // and the node is eligible to become a validator
         private readonly StorageMapping _stakedAddressToStartCycle;
+
+        // withdrawRequestCucle represents the cycle at which, stakeWithdrawal 
+        // was requested
         private readonly StorageMapping _stakedAddressToWithdrawRequestCycle;
         private readonly StorageMapping _attendanceVotes;
         private readonly StorageMapping _stakedPubKeyToStakerAddress; // maps public key of the validator to staker address
@@ -163,7 +172,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
               new BigInteger(12).ToUInt256()
             );
         }
-
+        // initializes all the staking contract parameters from the config.json file
         public static void Initialize(NetworkConfig networkConfig)
         {
             if(networkConfig is null)
@@ -189,6 +198,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         public ContractStandard ContractStandard => ContractStandard.StakingContract;
 
+        // A stake address calls BecomeStaker method to stake some amount for stakedPubkey
+        // Currently, a staker address can stake for multiple public keys. But a public key
+        // can be staked by only one address
+
         [ContractMethod(StakingInterface.MethodBecomeStaker)]
         public ExecutionStatus BecomeStaker(byte[] stakedPubKey, UInt256 amount, SystemContractExecutionFrame frame)
         {
@@ -196,8 +209,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             frame.UseGas(GasMetering.StakingBecomeStakerCost);
 
-            // address should also be able to stake for other validator
-
+            // stake amount can't be arbitrarily small 
             if (amount.ToBigInteger() < TokenUnitsInRoll)
                 return ExecutionStatus.ExecutionHalted;
 
@@ -212,11 +224,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
 
             var stake = getStakeExecutionResult.ReturnValue!.ToUInt256();
+
+            // As a public key can be staked by only one address, hence we check if it was 
+            // already staked. If it is already staked, we do not proceed further
             if (!stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
-            // check MsgSender = Staker's balance 
-
+            // checking if staker address has enough balance to pay for the stake
             var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.LatokenContract, ContractRegisterer.StakingContract, Lrc20Interface.MethodBalanceOf,
                 MsgSender());
@@ -242,6 +256,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (fail)
                 return ExecutionStatus.ExecutionHalted;
 
+            // the node is eligible to be a validator from the next cycle
             var startingCycle = GetCurrentCycle() + 1;
 
             // Special case for initial validator
@@ -259,19 +274,33 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return ExecutionStatus.Ok;
         }
 
+        /*
+            Withdrawing Stake works in two steps. 
+            
+            Step-1: Request for stake withdrawal. The staker must make sure that staked node is not selected
+            as a next validator, otherwise this call will fail. best block to execute RequestStakeWithdrawal 
+            is during [cycleDuration / 2 + 1, cycleDuration - 1]. For some other blocks, this request may not be success 
+            due to this node being chosen as the "next validator". request must be after cycle 0. 
+
+            Step-2: Withdraw Stake: StakeWithdraw call can only be executed during [cycleDuration / 10, cycleDuration - 1]
+            blocks of the next cycles.
+            
+        */
+
         [ContractMethod(StakingInterface.MethodRequestStakeWithdrawal)]
         public ExecutionStatus RequestStakeWithdrawal(byte[] stakedPubKey, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.StakingRequestStakeWithdrawalCost);
 
-            // check the address trying to withdraw is indeed the address which staked before or validator itself
             var staker = GetStaker(stakedPubKey);
             if (staker == null) return ExecutionStatus.ExecutionHalted;
+            
+            // check the address trying to withdraw is indeed the address of staker or staked node
             if (IsPublicKeyOwner(stakedPubKey, MsgSender()) == false && staker!.Equals(MsgSender()) == false)
             {
                 return ExecutionStatus.ExecutionHalted;
             }
-
+            // if the staked node is a next validator, request for stake withdrawal is not successful
             var isNextValidatorExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
                 StakingInterface.MethodIsNextValidator, stakedPubKey);
@@ -296,6 +325,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (stake.IsZero())
                 return ExecutionStatus.ExecutionHalted;
 
+            // If RequestStakeWithdrawal is called before, withdrawRequestCycle will be non-empty
+            // hence if withdrawRequestCycle is non-empty, then the call is unsuccessful
             var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
                 StakingInterface.MethodGetWithdrawRequestCycle, Hepler.PublicKeyToAddress(stakedPubKey));
@@ -320,6 +351,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             Logger.LogInformation($"Withdrawing stake");
             var staker = GetStaker(stakedPubKey);
             if (staker == null) return ExecutionStatus.ExecutionHalted;
+            // only the staker or staked node can withdraw stake
             if (IsPublicKeyOwner(stakedPubKey, MsgSender()) == false && staker!.Equals(MsgSender()) == false)
             {
                 return ExecutionStatus.ExecutionHalted;
