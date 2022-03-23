@@ -4,6 +4,10 @@ using Lachain.Storage.Trie;
 
 namespace Lachain.Storage
 {
+    /*
+        There are seven tries in the storage and there is one repository manager for each trie. 
+        _repositryId represents which trie it manages. There is also an additional meta repository manager. 
+    */
     public class RepositoryManager
     {
         private readonly uint _repositoryId;
