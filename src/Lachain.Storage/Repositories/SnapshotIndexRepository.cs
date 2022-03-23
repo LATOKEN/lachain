@@ -7,6 +7,13 @@ using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.Repositories
 {
+
+    /*
+        Chain's state consists of 6 HMATs and there is 1 additional HMAT for storing the blocks.
+        To retrive the state of the chain at some block height, we need to know the version of 
+        the roots of the HMAT trees. SnapshotIndexRepository writes and retrieves this root version
+        info from the database.
+    */
     public class SnapshotIndexRepository : ISnapshotIndexRepository
     {
         private readonly IRocksDbContext _dbContext;

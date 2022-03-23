@@ -4,6 +4,21 @@ using Lachain.Logger;
 
 namespace Lachain.Storage.State
 {
+    /*
+        This is the main class the core part utilizes to make any changes to the state of the blockchain.
+        There are 3 layers of snapshot, 
+        (1) Committed Snapshot - this snapshot already persists in disk
+        (2) Approved Snapshot - approved but may not persist in the disk 
+        (3) Pending Snapshot - this is not yet approved 
+
+        To make any changes to the state, it's required to
+            (1) create a new snapshot, (2) make changes to the snapshot
+            (3) either approve or rollback()
+        approving adds all the changes to the lastApprovedSnapshot
+        and rollback() discards all the changes and lastApprovedSnapshot is not changed
+
+        Always write to state inside safe context to avoid concurrency issues.
+    */
     public class StateManager : IStateManager
     {
         private static readonly ILogger<StateManager> Logger = LoggerFactory.GetLoggerForClass<StateManager>();

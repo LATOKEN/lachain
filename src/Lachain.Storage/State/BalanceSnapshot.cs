@@ -9,6 +9,10 @@ using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
+    /*
+        Balance Snapshot is basically a HMAT (trie) and it stores the balance of all the address. 
+        You can think of it as a key-value storage of (address -> balance).
+    */
     public class BalanceSnapshot : IBalanceSnapshot
     {
         private readonly IStorageState _state;
