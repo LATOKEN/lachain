@@ -578,10 +578,16 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 IReadOnlyCollection<ECDSAPublicKey> validators = _snapshotIndexRepository.GetSnapshotForBlock(height).Validators
                     .GetValidatorsPublicKeys().ToArray();
-                return validators.All(v => keys.Contains(v)) && keys.All(k => validators.Contains(k));
+                var result = validators.All(v => keys.Contains(v)) && keys.All(k => validators.Contains(k));
+                if (!result)
+                {
+                    Logger.LogDebug("Validator set from peer block does not match with validator set from snapshot");
+                }
+                return result;
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
+                Logger.LogTrace($"Got exception while matching validator set: {exception}");
                 return false;
             }
         }
