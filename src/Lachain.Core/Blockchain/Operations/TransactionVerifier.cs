@@ -30,39 +30,40 @@ namespace Lachain.Core.Blockchain.Operations
             = new Dictionary<UInt160, ECDSAPublicKey>();
 
         /* Queue to store unverified transactions */
-        private readonly Queue<TransactionReceipt> _transactionQueue
-            = new Queue<TransactionReceipt>();
+        private readonly Queue<KeyValuePair<TransactionReceipt, bool> > _transactionQueue
+            = new Queue<KeyValuePair<TransactionReceipt,  bool> >();
 
         private readonly object _queueNotEmpty = new object();
 
         public event EventHandler<TransactionReceipt>? OnTransactionVerified;
 
-        public void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey)
+        public void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey, bool useNewChainId)
         {
             var address = _crypto.ComputeAddress(publicKey.EncodeCompressed()).ToUInt160();
             _publicKeyCache.Add(address, publicKey);
-            VerifyTransaction(acceptedTransaction);
+            VerifyTransaction(acceptedTransaction, useNewChainId);
         }
 
         /* Async Verification. Simply adds the transaction to the queue */
-        public void VerifyTransaction(TransactionReceipt acceptedTransaction)
+        public void VerifyTransaction(TransactionReceipt acceptedTransaction,  bool useNewChainId)
         {
             if (acceptedTransaction is null)
                 throw new ArgumentNullException(nameof(acceptedTransaction));
             lock (_queueNotEmpty)
             {
-                _transactionQueue.Enqueue(acceptedTransaction);
+                _transactionQueue.Enqueue(new KeyValuePair<TransactionReceipt, bool>(acceptedTransaction, useNewChainId));
                 Monitor.PulseAll(_queueNotEmpty);
             }
         }
 
         /* Sync Verification, verifies the transaction immediately */
-        public bool VerifyTransactionImmediately(TransactionReceipt receipt, ECDSAPublicKey publicKey)
+        public bool VerifyTransactionImmediately(TransactionReceipt receipt, ECDSAPublicKey publicKey, bool useNewChainId)
         {
             try
             {
                 return _crypto.VerifySignatureHashed(
-                    receipt.Transaction.RawHash().ToBytes(), receipt.Signature.Encode(), publicKey.EncodeCompressed()
+                    receipt.Transaction.RawHash(useNewChainId).ToBytes(), 
+                    receipt.Signature.Encode(), publicKey.EncodeCompressed(), useNewChainId
                 );
             }
             catch (Exception)
@@ -71,23 +72,23 @@ namespace Lachain.Core.Blockchain.Operations
             }
         }
 
-        public bool VerifyTransactionImmediately(TransactionReceipt receipt, bool cacheEnabled = true)
+        public bool VerifyTransactionImmediately(TransactionReceipt receipt,  bool useNewChainId, bool cacheEnabled)
         {
             if (receipt is null)
                 throw new ArgumentNullException(nameof(receipt));
 
             /* validate transaction hash */
-            if (!receipt.Hash.Equals(receipt.FullHash()))
+            if (!receipt.Hash.Equals(receipt.FullHash(useNewChainId)))
                 return false;
 
             try
             {
                 /* try to verify signature using public key cache to avoid EC recover */
                 if (cacheEnabled && _publicKeyCache.TryGetValue(receipt.Transaction.From, out var publicKey))
-                    return VerifyTransactionImmediately(receipt, publicKey);
+                    return VerifyTransactionImmediately(receipt, publicKey, useNewChainId);
 
                 /* recover EC to get public key from signature to compute address */
-                publicKey = receipt.RecoverPublicKey();
+                publicKey = receipt.RecoverPublicKey(useNewChainId);
                 var address = publicKey.GetAddress();
 
                 /* check if recovered address from public key is valid */
@@ -113,14 +114,17 @@ namespace Lachain.Core.Blockchain.Operations
                 try
                 {
                     TransactionReceipt tx;
+                    bool useNewChainId;
                     lock (_queueNotEmpty)
                     {
                         while (_transactionQueue.Count == 0)
                             Monitor.Wait(_queueNotEmpty);
-                        tx = _transactionQueue.Dequeue();
+                        var pair =  _transactionQueue.Dequeue();
+                        tx = pair.Key;
+                        useNewChainId = pair.Value;
                     }
 
-                    if (VerifyTransactionImmediately(tx))
+                    if (VerifyTransactionImmediately(tx, useNewChainId,  true))
                         OnTransactionVerified?.Invoke(this, tx);
                 }
                 catch (Exception e)

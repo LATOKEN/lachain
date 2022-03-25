@@ -46,7 +46,7 @@ namespace Lachain.Core.Blockchain.Genesis
                 .Select(tx => new TransactionReceipt
                 {
                     Transaction = tx,
-                    Hash = tx.FullHash(SignatureUtils.Zero),
+                    Hash = tx.FullHash(SignatureUtils.Zero, false),
                     Signature = SignatureUtils.Zero,
                 })
                 .ToList();

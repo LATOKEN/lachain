@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Consensus;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -384,8 +385,10 @@ namespace Lachain.Core.ValidatorStatus
 
         private void AddTxToPool(Transaction tx)
         {
-            var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
-            _sendingTxHash = tx.FullHash(receipt.Signature);
+            var useNewChainId =
+                HardforkHeights.IsHardfork_6Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+            var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, useNewChainId);
+            _sendingTxHash = tx.FullHash(receipt.Signature, useNewChainId);
             var result = _transactionPool.Add(receipt);
             Logger.LogDebug(result == OperatingError.Ok
                 ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"

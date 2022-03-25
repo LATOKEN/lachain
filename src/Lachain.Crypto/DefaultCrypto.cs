@@ -46,14 +46,14 @@ namespace Lachain.Crypto
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey)
+        public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey, bool useNewChainId)
         {
             var messageHash = message.KeccakBytes();
-            return VerifySignatureHashed(messageHash, signature, publicKey);
+            return VerifySignatureHashed(messageHash, signature, publicKey, useNewChainId);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey)
+        public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey, bool useNewChainId)
         {
             if (messageHash.Length != 32 || signature.Length != 65) return false;
             return EcVerify.Benchmark(() =>
@@ -67,7 +67,7 @@ namespace Lachain.Crypto
                     throw new Exception("Cannot serialize parsed key: how did it happen?");
 
                 var parsedSig = new byte[65];
-                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
+                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId (useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     return false;
 
@@ -76,14 +76,14 @@ namespace Lachain.Crypto
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public byte[] Sign(byte[] message, byte[] privateKey)
+        public byte[] Sign(byte[] message, byte[] privateKey, bool useNewChainId)
         {
             var messageHash = message.KeccakBytes();
-            return SignHashed(messageHash, privateKey);
+            return SignHashed(messageHash, privateKey, useNewChainId);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public byte[] SignHashed(byte[] messageHash, byte[] privateKey)
+        public byte[] SignHashed(byte[] messageHash, byte[] privateKey, bool useNewChainId)
         {
             if (privateKey.Length != 32) throw new ArgumentException(nameof(privateKey));
             if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
@@ -95,20 +95,20 @@ namespace Lachain.Crypto
                 var serialized = new byte[64];
                 if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                     throw new Exception("Cannot serialize recoverable signature: how did it happen?");
-                recId = TransactionUtils.ChainId * 2 + 35 + recId;
+                recId = TransactionUtils.ChainId(useNewChainId) * 2 + 35 + recId;
                 return serialized.Concat(new[] {(byte) recId}).ToArray();
             });
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public byte[] RecoverSignature(byte[] message, byte[] signature)
+        public byte[] RecoverSignature(byte[] message, byte[] signature, bool useNewChainId)
         {
             var messageHash = message.KeccakBytes();
-            return RecoverSignatureHashed(messageHash, signature);
+            return RecoverSignatureHashed(messageHash, signature, useNewChainId);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature)
+        public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId)
         {
             if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
             if (signature.Length != 65) throw new ArgumentException(nameof(signature));
@@ -116,7 +116,7 @@ namespace Lachain.Crypto
             {
                 var parsedSig = new byte[65];
                 var pk = new byte[64];
-                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId;
+                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId(useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     throw new ArgumentException(nameof(signature));
                 if (!Secp256K1.Recover(pk, parsedSig, messageHash))

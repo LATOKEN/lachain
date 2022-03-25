@@ -16,11 +16,11 @@ namespace Lachain.Core.Blockchain.Interface
 
         OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot);
 
-        OperatingError Verify(TransactionReceipt transaction);
+        OperatingError Verify(TransactionReceipt transaction, bool useNewChainId);
 
-        OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey);
+        OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey, bool useNewChainId);
 
-        OperatingError VerifySignature(TransactionReceipt transaction, bool cacheEnabled = true);
+        OperatingError VerifySignature(TransactionReceipt transaction, bool useNewChainId, bool cacheEnabled);
 
         ulong CalcNextTxNonce(UInt160 from);
     }

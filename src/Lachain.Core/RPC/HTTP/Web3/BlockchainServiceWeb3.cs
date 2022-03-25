@@ -14,6 +14,7 @@ using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Globalization;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Storage.Trie;
 using Lachain.Utility;
@@ -613,13 +614,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_chainId")]
         public string ChainId() 
         {
-            return TransactionUtils.ChainId.ToHex();
+            return TransactionUtils.ChainId(HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())).ToHex();
         }
 
         [JsonRpcMethod("net_version")]
         public string NetVersion() 
         {
-            return TransactionUtils.ChainId.ToHex();
+            return TransactionUtils.ChainId(HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())).ToHex();
         }
 
 

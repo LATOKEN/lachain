@@ -1,4 +1,5 @@
-﻿using Lachain.Crypto;
+﻿using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -11,7 +12,7 @@ namespace Lachain.Core.Blockchain.VM
 
         public UInt256 Value => Receipt.Transaction.Value;
 
-        public UInt256 TransactionHash => Receipt.FullHash();
+        public UInt256 TransactionHash => Receipt.FullHash(HardforkHeights.IsHardfork_6Active(Snapshot.Blocks.GetTotalBlockHeight()));
 
         public readonly TransactionReceipt Receipt;
 

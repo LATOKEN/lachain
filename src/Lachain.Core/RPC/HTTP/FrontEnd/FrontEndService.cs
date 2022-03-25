@@ -4,6 +4,7 @@ using System.Numerics;
 using AustinHarris.JsonRpc;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -307,7 +308,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         {
             var wallet = _privateWallet.GetWalletInstance();
             if (wallet is null) return "0x0";
-            var receipt = _transactionSigner.Sign(tx, wallet.EcdsaKeyPair);
+            var receipt = _transactionSigner.Sign(tx, wallet.EcdsaKeyPair, HardforkHeights.IsHardfork_6Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()));
             var result = _transactionPool.Add(receipt);
             Logger.LogDebug(result == OperatingError.Ok
                 ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"
