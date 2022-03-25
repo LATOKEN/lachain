@@ -135,6 +135,8 @@ namespace Lachain.Core.Blockchain.VM
                 var result = snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
                 if (!result)
                     throw new InsufficientFundsException();
+                
+                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
             }
 
             if (snapshot.Contracts.GetContractByHash(address) is null) {
@@ -324,6 +326,7 @@ namespace Lachain.Core.Blockchain.VM
                 var result = snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
                 if (!result)
                     throw new InsufficientFundsException();
+                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
             }
 
             return 0;
@@ -411,7 +414,8 @@ namespace Lachain.Core.Blockchain.VM
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
             snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
-
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
             return 0;
@@ -507,6 +511,7 @@ namespace Lachain.Core.Blockchain.VM
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
             snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -595,6 +600,7 @@ namespace Lachain.Core.Blockchain.VM
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
             snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -690,6 +696,7 @@ namespace Lachain.Core.Blockchain.VM
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
             snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -1314,6 +1321,51 @@ namespace Lachain.Core.Blockchain.VM
                 /* memory methods */
             };
             return result;
+        }
+        
+        private static string PrettyParam(dynamic param)
+        {
+            return param switch
+            {
+                UInt256 x => x.ToBytes().ToHex(),
+                UInt160 x => x.ToBytes().ToHex(),
+                byte[] b => b.ToHex(),
+                byte[][] s => string.Join(", ", s.Select(t => t.ToHex())),
+                _ => param.ToString()
+            };
+        }
+        
+        private static void Emit(InvocationContext context, string eventSignature, params dynamic[] values)
+        {
+            var eventData = ContractEncoder.Encode(null, values);
+            EventObject eventObj;
+            if (Lrc20Interface.EventTransfer == eventSignature &&
+                HardforkHeights.IsHardfork_6Active(context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                // from and to address is in 2nd and 3rd topic, value transferred is in data
+                var topics = new List<UInt256>();
+                byte[] from = new byte[32], to = new byte[32], value = new byte[32];
+                Buffer.BlockCopy(eventData, 0, from, 0, 32);
+                Buffer.BlockCopy(eventData, 32, to, 0, 32);
+                Buffer.BlockCopy(eventData, 64, value, 0, 32);
+                topics.Add(from.ToUInt256());
+                topics.Add(to.ToUInt256());
+
+                eventObj = new EventObject(
+                    new Event
+                    {
+                        Contract = ContractRegisterer.LatokenContract,
+                        Data = ByteString.CopyFrom(value),
+                        TransactionHash = context.Receipt.Hash,
+                        SignatureHash = ContractEncoder.MethodSignature(eventSignature).ToArray().ToUInt256()
+                    },
+                    topics
+                );
+                context.Snapshot.Events.AddEvent(eventObj);
+                Logger.LogDebug(
+                    $"Event: {eventSignature}, sighash: {eventObj.Event!.SignatureHash.ToHex()}, params: {string.Join(", ", values.Select(PrettyParam))}");
+                Logger.LogTrace($"Event data ABI encoded: {eventData.ToHex()}");
+            }
         }
     }
 }
