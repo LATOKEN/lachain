@@ -17,13 +17,22 @@ namespace Lachain.Core.Blockchain.Operations
         {
             /* don't allow null multisig or hash */
             if (multisig is null || hash is null)
+            {
+                Logger.LogDebug("Multisig or hash is null");
                 return OperatingError.InvalidMultisig;
+            }
             /* check that all signatures are unique */
             if (multisig.Signatures.Select(sig => sig.Key).Distinct().Count() != multisig.Signatures.Count)
+            {
+                Logger.LogDebug("Duplicate signature in multisig");
                 return OperatingError.InvalidMultisig;
+            }
             /* check count of unique validators */
             if (multisig.Validators.Distinct().Count() != multisig.Validators.Count)
+            {
+                Logger.LogDebug("Duplicate validator in multisig");
                 return OperatingError.InvalidMultisig;
+            }
             /* verify every validator's signature */
             var verified = 0;
             foreach (var entry in multisig.Signatures)

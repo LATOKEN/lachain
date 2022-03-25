@@ -140,15 +140,16 @@ namespace Lachain.Core.Network
                     return false;
                 }
 
-                if (_blockManager.VerifySignatures(block, true) != OperatingError.Ok)
+                var error = _blockManager.VerifySignatures(block, true);
+                if (error != OperatingError.Ok)
                 {
-                    Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig");
+                    Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig with error: {error}");
                     return false;
                 }
                 // This is to tell consensus manager to terminate current era, since we trust given multisig
                 OnSignedBlockReceived?.Invoke(this, block.Header.Index);
 
-                var error = _stateManager.SafeContext(() =>
+                error = _stateManager.SafeContext(() =>
                 {
                     if (_blockManager.GetHeight() + 1 == block.Header.Index)
                         return _blockManager.Execute(block, receipts, commit: true, checkStateHash: true);
