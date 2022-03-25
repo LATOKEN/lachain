@@ -8,6 +8,13 @@ using Nethereum.Util;
 
 namespace Lachain.Storage.Repositories
 {
+    /*
+        It keeps history of all the transactions from the watchAddresses. Right now, 
+        watchAddresses have only one address and that is its own address. As the node is
+        running and adding blocks, when it gets a transaction whose from address is one of the
+        watchAddresses, it persists them locally. This repository is not part of the state 
+        of the blockchain.
+    */
     public class LocalTransactionRepository : ILocalTransactionRepository
     {
         private static readonly ILogger<LocalTransactionRepository> Logger =

@@ -3,6 +3,12 @@ using Lachain.Storage.State;
 
 namespace Lachain.Core.Blockchain.SystemContracts.Storage
 {
+
+    /*    
+        StorageVariable is a variable that reside in the state of the blockchain.
+        It's a part of the Storage Trie of the state. A contract can declare and use a StorageVariable
+        for its use and this variable will be part of the state.
+    */
     public class StorageVariable
     {
         private readonly UInt160 _contract;

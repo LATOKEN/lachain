@@ -8,6 +8,9 @@ using Lachain.Logger;
 
 namespace Lachain.Storage
 {
+    /*
+        This is the class that handles every read, write in the database.
+    */
     public class RocksDbContext : IRocksDbContext
     {
         private static readonly ILogger<RocksDbContext> Logger = LoggerFactory.GetLoggerForClass<RocksDbContext>();

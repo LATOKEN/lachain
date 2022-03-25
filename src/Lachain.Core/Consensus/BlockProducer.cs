@@ -20,6 +20,20 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Consensus
 {
+    /*
+        BlockProducer object handles the following tasks.
+        
+        (1) Transaction Proposal: After consensus starts for an era, a validator node needs a set of
+        proposed transactions. BlockProducer acts as an intermediate entity between consensus and pool, 
+        fetches the proposed set from the pool and gives it to RootProtocol during consensus. 
+
+        (2) Block Emulation and create header: After consensus, the set of transactions is selected for
+        next block. BlockProducer emulates the transactions, removes bad transactions, calculate state hash
+        and finally creates the block header. 
+
+        (3) Block Execution and Produce Block: After the emulated stateHash is approved by sufficient 
+        number of validators, it is executed and a new block is thus produced.  
+    */
     public class BlockProducer : IBlockProducer
     {
         private static readonly ILogger<BlockProducer> Logger = LoggerFactory.GetLoggerForClass<BlockProducer>();
@@ -48,6 +62,7 @@ namespace Lachain.Core.Consensus
             _transactionBuilder = transactionBuilder;
         }
 
+        // Given an era, returns a proposed set of transaction receipts
         public IEnumerable<TransactionReceipt> GetTransactionsToPropose(long era)
         {
         
@@ -58,11 +73,19 @@ namespace Lachain.Core.Consensus
                 Logger.LogError($"era : {era} should not be negative");
                 throw new ArgumentException("era is negative");
             }
+            // the number of transactions in a block is controlled by this "BatchSize" 
+            // variable. Every validator considers BatchSize number of transactions 
+            // and takes ceil(BatchSize / validatorCount) number of transactions. If the
+            // transactions are selected randomly, then the expected number of transactions
+            // in a block is BatchSize.
             var taken = _transactionPool.Peek(BatchSize, txNum, (ulong) era);
             Logger.LogTrace($"Proposed Transactions Count: {taken.Count()}");
             return taken;
         }
 
+        // Taking the selected transaction receipts from consensus, CreateHeader removes bad
+        // transactions, adds necessary system transactions, emulate the transactions, calculate
+        // stateHash and finally returns a blockHeader
         public BlockHeader? CreateHeader(
             ulong index, IReadOnlyCollection<TransactionReceipt> receipts, ulong nonce, out TransactionReceipt[] receiptsTaken
         )
@@ -87,6 +110,8 @@ namespace Lachain.Core.Consensus
 
             var cycle = index / StakingContract.CycleDuration;
             var indexInCycle = index % StakingContract.CycleDuration;
+
+            // try to add necessary system transactions at the end
             if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration)
             {
                 var txToAdd = DistributeCycleRewardsAndPenaltiesTxReceipt();
@@ -146,6 +171,8 @@ namespace Lachain.Core.Consensus
             };
         }
 
+        // After sufficient votes are on the emulated stateHash, the block is approved and
+        // executed to add to the chain
         public void ProduceBlock(IEnumerable<TransactionReceipt> receipts, BlockHeader header, MultiSig multiSig)
         {
             Logger.LogDebug($"Producing block {header.Index}");

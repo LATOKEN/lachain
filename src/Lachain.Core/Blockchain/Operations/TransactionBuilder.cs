@@ -15,6 +15,9 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Operations
 {
+    /*
+        A helper class to build different types of transactions.
+    */
     public class TransactionBuilder : ITransactionBuilder
     {
         private static readonly ILogger<TransactionBuilder> Logger =

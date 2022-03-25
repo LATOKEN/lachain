@@ -28,6 +28,9 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly IStateManager _stateManager;
         private readonly TransactionExecuter _transactionExecuter;
 
+        // _verifiedTransactions keeps all the verified transactions
+        // verified transactions gets removed from _verifiedTransactions 
+        // once it's queried to keep its size bounded
         private readonly ConcurrentDictionary<UInt256, UInt256> _verifiedTransactions
             = new ConcurrentDictionary<UInt256, UInt256>();
 
@@ -46,6 +49,8 @@ namespace Lachain.Core.Blockchain.Operations
             _transactionExecuter = new TransactionExecuter(contractRegisterer);
             _transactionExecuter.OnSystemContractInvoked +=
                 (sender, context) => OnSystemContractInvoked?.Invoke(sender, context);
+            // once a transaction is verified asynchronously, it invokes OnTransacionVerified
+            // and this adds the transaction to _verifiedTransactions
             transactionVerifier.OnTransactionVerified += (sender, transaction) =>
                 _verifiedTransactions.TryAdd(transaction.Hash, transaction.Hash);
         }
@@ -54,7 +59,7 @@ namespace Lachain.Core.Blockchain.Operations
         {
             return _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(transactionHash);
         }
-
+        // BlockManager uses this method to execute a single transaction
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot)
         {
@@ -72,7 +77,16 @@ namespace Lachain.Core.Blockchain.Operations
             var isDistributeCycleRewardsAndPenaltiesTx = IsDistributeCycleRewardsAndPenaltiesTx(block, receipt.Transaction);
             var isFinishVrfLotteryTx = IsFinishVrfLotteryTx(block, receipt.Transaction);
             var isFinishCycleTx = IsFinishCycleTx(block, receipt.Transaction);
-
+            // there are some cases when transaction verification is skipped
+            // (1) genesis block's transactions
+            // (2) DistributeCycleRewardsAndPenalties transaction. This transaction is executed during block, 
+            //          (a) indexInCycle( = blockHeight % CycleDuration) == AttendanceDetectionDuration (CycleDuration / 10)
+            // (3) FinishVrfLottery transaction. This transaction is executed during block, 
+            //          (a) indexInCycle( = blockHeight % CycleDuration) == VrfSubmissionPhaseDuration (CycleDuration / 2)
+            // (4) FinishCycle transaction. This transaction is executed during block, 
+            //          (a) indexInCycle( = blockHeight % CycleDuration) == 0
+            //          (b) cycle (= blockHeight / cycleDuration) > 0
+            
             var canTransactionMissVerification = isGenesisBlock || 
                 isDistributeCycleRewardsAndPenaltiesTx || isFinishVrfLotteryTx || isFinishCycleTx;
             
@@ -111,9 +125,10 @@ namespace Lachain.Core.Blockchain.Operations
             bool canTransactionMissVerification
         )
         {
+            /* check if the hash matches */
             if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
                 return OperatingError.HashMismatched;
-
+            /* If it's okay to miss verification, the signature is expected to be empty */
             if (canTransactionMissVerification && acceptedTransaction.Signature.IsZero())
                 return OperatingError.Ok;
 
@@ -145,10 +160,12 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, bool cacheEnabled = true)
         {
+            /* First search the cache to see if the transaction is verified, otherwise verify immediately */
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, cacheEnabled)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
+            
             _verifiedTransactions.TryRemove(transaction.Hash, out _);
             return OperatingError.Ok;
         }

@@ -11,6 +11,22 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Operations
 {
+    /*
+
+    There is mostly two types of transactions. 
+    (1) Balance Transfer: "To" address is not a contract address (a plain address). Balance is transferred from
+    "From" address to "To" address. 
+    (2) Contract Call: "To" address is a contract address. This address is special in the sense that - 
+    a source code (in bytecode form) is stored in this address. Any address can direct any transaction to this
+    contract. Transaction stores the method it needs to execute of the contract and also all relevant
+    parameters.
+
+    Again, Contracts are of two types: 
+    (a) System Contract: Governance Contract, Staking Contract, Deploy Contract, Native Token Contract. These
+    contracts are hardcoded in the core.
+    (b) Other contracts' source code are added to a particular address in bytecode form using deploy contract.
+
+    */
     public class TransactionExecuter
     {
         private readonly IContractRegisterer _contractRegisterer;
@@ -57,6 +73,9 @@ namespace Lachain.Core.Blockchain.Operations
                 if (snapshot.Balances.GetBalance(transaction.From) < transaction.Value.ToMoney())
                     return OperatingError.InsufficientBalance;
                 var invocation = ContractEncoder.Encode("transfer(address,uint256)", transaction.To, transaction.Value);
+                
+                /* LatokenContract / NativeTokenContract handles the token transfer */
+
                 return _InvokeContract(ContractRegisterer.LatokenContract, invocation, receipt, snapshot, true);
             }
 
@@ -88,6 +107,7 @@ namespace Lachain.Core.Blockchain.Operations
                     return OperatingError.ContractFailed;
 
                 if (receipt.GasUsed > transaction.GasLimit) return OperatingError.OutOfGas;
+                /* this OnSystemContractInvoked is useful for internal communication (for example - during keyGeneration) */
                 if (isSystemContract) OnSystemContractInvoked?.Invoke(this, context);
                 return OperatingError.Ok;
             }

@@ -1,5 +1,14 @@
 ﻿namespace Lachain.Storage
 {
+    /*
+        There is a single database for the node. So for different use, we divide the space 
+        in terms of prefix of 2 byte. 
+        
+        For example, to store a trie node in the database, we concat PersistentHashMap (= 0x0603) 
+        and node id to generate the key and store the node to this key. 
+        Similarly to get a node from the database with a given id, we generate the key by concat 
+        and query for this key. 
+    */
     public enum EntryPrefix : short
     {
         /* block */

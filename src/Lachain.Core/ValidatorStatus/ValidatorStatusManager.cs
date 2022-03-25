@@ -21,6 +21,18 @@ using LibVRF.Net;
 
 namespace Lachain.Core.ValidatorStatus
 {
+    /*
+        This class handles the validator related tasks, 
+        (1) Sending transaction to become a staker : 
+            For current implementation, a node tries to stake all of its token to become a staker. 
+        (2) withdrawing stake if withdrawal request is triggered 
+        (3) submitting attendanceDetection: 
+            for every cycle during [0, cycleDuration / 10 - 1], a validator has to submit attendanceDetection
+            transaction (this is basically a set of scores given to all other validators depending on their behaviour)
+        (4) Submitting VRF: 
+            if a node wins the lottery for a cycle to be a validator, it needs to submit this proof as a form of
+            transaction. 
+    */
     public class ValidatorStatusManager : IValidatorStatusManager
     {
         private static readonly ILogger<ValidatorStatusManager> Logger =

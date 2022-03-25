@@ -7,6 +7,11 @@ using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
+    /*
+        Contract Snapshot is HMAT (trie) which acts as an key-value storage to store the following infos: 
+        (1) (contractAddress -> byte code of the contract)
+
+    */
     public class ContractSnapshot : IContractSnapshot
     {
         private readonly IStorageState _state;

@@ -10,6 +10,15 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Operations
 {
+    /* 
+        Transaction Verification is done asynchronously. We maintain a queue of unverified transactions. 
+        When a transaction is added to the pool, this transaction is added to the queue. Verification is only 
+        required during the block execution that contains this transaction. So, during the interval of 
+        [addition to pool, block execution], it's most likely that this transaction is dequed from the queue
+        and verified. Once verified, it invokes an event, that caches this verified transaction. 
+        During block execution, to verify a transaction, first it checks the cache, if it can't find it, it
+        verifies immediately. 
+    */
     public class TransactionVerifier : ITransactionVerifier
     {
         private static readonly ILogger<TransactionVerifier> Logger =
@@ -20,6 +29,7 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly IDictionary<UInt160, ECDSAPublicKey> _publicKeyCache
             = new Dictionary<UInt160, ECDSAPublicKey>();
 
+        /* Queue to store unverified transactions */
         private readonly Queue<TransactionReceipt> _transactionQueue
             = new Queue<TransactionReceipt>();
 
@@ -34,6 +44,7 @@ namespace Lachain.Core.Blockchain.Operations
             VerifyTransaction(acceptedTransaction);
         }
 
+        /* Async Verification. Simply adds the transaction to the queue */
         public void VerifyTransaction(TransactionReceipt acceptedTransaction)
         {
             if (acceptedTransaction is null)
@@ -45,6 +56,7 @@ namespace Lachain.Core.Blockchain.Operations
             }
         }
 
+        /* Sync Verification, verifies the transaction immediately */
         public bool VerifyTransactionImmediately(TransactionReceipt receipt, ECDSAPublicKey publicKey)
         {
             try

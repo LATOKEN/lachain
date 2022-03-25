@@ -27,11 +27,34 @@ using Lachain.Core.Blockchain.Validators;
 
 namespace Lachain.Core.Blockchain.Operations
 {
+    /* 
+        BlockManager is the class that handles the block emulation and execution. 
+        It also provides some basic functions to find block by height, latestBlock etc.
+        
+        Block execution happens in exactly one of the two following ways : 
+        
+        (1) if the node is validator and participates in consensus, during the end of consensus 
+        the transaction-set and their order for the next block is chosen. The node first emulates
+        all these transactions (removing all invalid transactions), create the blockHeader which
+        also includes stateHash and waits for confirmations from other peers. 
+        After it's confirmed, the block is produced and executed. 
+
+        (2) blockSynchronizer class continuously queries other peers - their latest block. If it finds
+        a new block, it executes the block immediately using this class's execution.  
+
+    */
     public class BlockManager : IBlockManager
     {
         private static readonly ILogger<BlockManager> Logger = LoggerFactory.GetLoggerForClass<BlockManager>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+
+        // _heightCache and _heightCacheQueue are part of cache layer for storing the recent blocks
+        // _heightCache is a dictionary that keeps (height, block) for fast retrieval of blocks for
+        // a given height.
         private IDictionary<ulong, Block> _heightCache;
+
+        // _heightCacheQueue is a queue that keeps all the heights in the cache to 
+        // find the oldest height to remove from the cache as the cache size exceeds _blockSizeLimit
         private Queue<ulong> _heightCacheQueue;
 
         private static readonly Counter BlockExecCounter = Metrics.CreateCounter(
@@ -111,7 +134,7 @@ namespace Lachain.Core.Blockchain.Operations
 
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
-        /* default cache size limit is 100 items */
+        // default cache size limit is 100 items
         private int _blockSizeLimit = 100;
 
         public BlockManager(
@@ -143,6 +166,8 @@ namespace Lachain.Core.Blockchain.Operations
             _heightCacheQueue = new Queue<ulong>(_blockSizeLimit);
         }
 
+        // _contractTxJustExecuted Keeps track of the most recent contract transaction
+        // that was executed. This is especially useful to trigger key generation process
         private void TransactionManagerOnSystemContractInvoked(object sender, InvocationContext e)
         {
             _contractTxJustExecuted = e;
@@ -150,17 +175,24 @@ namespace Lachain.Core.Blockchain.Operations
 
         public event EventHandler<Block>? OnBlockPersisted;
 
+        // gets the most recent block's height
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetHeight()
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
         }
 
+        // gets the most recent block 
         public Block LatestBlock()
         {
             return GetByHeight(GetHeight()) ?? throw new InvalidOperationException("No blocks in blockchain");
         }
 
+        // Gets the block with a given height, returns null if the
+        // block with the given height can't be found
+        // We have FIFO cache layer to make these queries faster. When a new block is executed and
+        // commited to the database, we add this block to the cache and erase if the cache is size 
+        // exceeds _blockSizeLimit.
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHeight(ulong blockHeight)
         {
@@ -172,27 +204,42 @@ namespace Lachain.Core.Blockchain.Operations
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
         }
 
+        // Every block in the chain contains a hash. Given a hash, it returns the block.
+        // returns null if no block with this hash is found 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Block? GetByHash(UInt256 blockHash)
         {
             return _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHash(blockHash);
         }
 
+        // Checks if a block is the genesis block (the very first block that has height = 0)
+        // the check is done by comparing the hash of genesis block and the given block
         [MethodImpl(MethodImplOptions.Synchronized)]
         private bool _IsGenesisBlock(Block block)
         {
             return block.Hash.Equals(_genesisBuilder.Build().Block.Hash);
         }
 
+        // This method emulates a set of transactions in a block. When during consensus, the transactions
+        // are chosen for the next block, some of the transactions might be invalid (as any validator may be malicious
+        // and its proposed transaction might be invalid). So, before execution, a validator emulates these 
+        // transactions to find all the invalid transactions. It then picks all the valid transactions and 
+        // adds them to the block and executes that block 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public Tuple<OperatingError, List<TransactionReceipt>, UInt256, List<TransactionReceipt>> Emulate(
             Block block, IEnumerable<TransactionReceipt> transactions
         )
         {
+            // No two threads can be in the safeContext at the same time. 
+            // Always execute / emulate inside safeContext. this makes sure that no two threads
+            // concurrently writes to the chain. 
             var (operatingError, removeTransactions, stateHash, relayTransactions) = _stateManager.SafeContext(() =>
             {
+                // this is the state before the start of emulation
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 Logger.LogTrace("Executing transactions in no-check no-commit mode");
+                // during emulation, we _Execute the block, but does not commit the changes to 
+                // the database as it's not the permament change
                 var error = _Execute(
                     block,
                     transactions,
@@ -202,17 +249,24 @@ namespace Lachain.Core.Blockchain.Operations
                     out var gasUsed,
                     out _
                 );
+                // currentStateHash represents the stateHash just after the changes to the chain
+                // due to these transactions that were valid and executed
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
                 Logger.LogDebug(
                     $"Block execution successful, height={_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()}" +
                     $" stateHash={currentStateHash.ToHex()}, gasUsed={gasUsed}"
                 );
+                // we rollback to the state before emulation
+                // thus emulation does not change the state
                 _stateManager.RollbackTo(snapshotBefore);
                 return Tuple.Create(error, removedTransactions, currentStateHash, relayedTransactions);
             });
             return Tuple.Create(operatingError, removeTransactions, stateHash, relayTransactions);
         }
 
+        // this method is called just after a new block is committed to the 
+        // database and thus is persisted. After a block is persisted, this new block is added
+        // to the cache
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void BlockPersisted(Block block)
         {
@@ -233,13 +287,24 @@ namespace Lachain.Core.Blockchain.Operations
                 _heightCache.Remove(oldestKey);
             }
             
+            // this invocation triggers consensusManager and consensusManager knows that a new block
+            // is added and thus stops the current era of consensus if it's running. It also triggers a 
+            // method in pool and pool does some necessary clean-ups
             OnBlockPersisted?.Invoke(this, block);
         }
 
+        // This is the method that is called to add a new block in the chain. It can be called from 2 classes. 
+        // (1) BlockProducer: If a block is approved after consensus, BlockProducer adds that new block to the chain
+        // by executing it. (2) BlockSynchronizer: BlockSynchronizer keeps on querying for new blocks from its peers. When
+        // it gets a new block, it adds to the chain by executing. 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Execute(Block block, IEnumerable<TransactionReceipt> transactionsEnumerable, bool checkStateHash,
             bool commit)
         {
+            // No two threads can be in the safeContext at the same time. 
+            // Always execute / emulate inside safeContext. this makes sure that no two threads
+            // concurrently writes to the chain. 
+
             var error = _stateManager.SafeContext(() =>
             {
                 var transactions = transactionsEnumerable.ToList();
@@ -299,6 +364,7 @@ namespace Lachain.Core.Blockchain.Operations
             return error;
         }
 
+        // This is the internal method used both by Execute and Emulate
         [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError _Execute(
             Block block,
@@ -372,7 +438,14 @@ namespace Lachain.Core.Blockchain.Operations
             
                 try
                 {
+                    // to make any changes to the state, it's required to
+                    // (1) create a new snapshot, (2) make changes to the snapshot
+                    // (3) either approve or rollback()
+                    // approving adds all the changes to the lastApprovedSnapshot
+                    // and rollback() discards all the changes and lastApprovedSnapshot is not changed
                     var snapshot = _stateManager.NewSnapshot();
+                    // if the "from" address of the transaction does not have enough gas to
+                    // pay for the transaction, then this transaction is not executed and thus skipped.
                     var gasLimitCheck = _CheckTransactionGasLimit(transaction, snapshot);
                     if (gasLimitCheck != OperatingError.Ok)
                     {
@@ -400,6 +473,13 @@ namespace Lachain.Core.Blockchain.Operations
                     if (txFailed)
                     {
                         _stateManager.Rollback();
+                        // what exactly is nonce of an transaction ? 
+                        // nonce represents the label of the transactions from a particular address
+                        // for example - let's say address A has 3 transactions in the chain.
+                        // their nonces must be 0, 1, 2
+                        // if A sends a new transaction, it's nonce must be 3. 
+                        // if the nonce does not match with the expected nonce, this transaction
+                        // is also removed and skipped
                         if (result == OperatingError.InvalidNonce)
                         {
                             removeTransactions.Add(receipt);
@@ -410,6 +490,7 @@ namespace Lachain.Core.Blockchain.Operations
                         }
 
                         snapshot = _stateManager.NewSnapshot();
+                        // Adds this transaction to the Transactions Snapshot
                         snapshot.Transactions.AddTransaction(receipt, TransactionStatus.Failed);
                         Logger.LogTrace($"Transaction {txHash.ToHex()} failed because of error: {result}");
                     }
@@ -468,6 +549,7 @@ namespace Lachain.Core.Blockchain.Operations
                 {
                     try
                     {
+                        // this invocation is required to trigger key generation appropriately
                         OnSystemContractInvoked?.Invoke(this, _contractTxJustExecuted);
                     }
                     catch (Exception e)
@@ -643,9 +725,14 @@ namespace Lachain.Core.Blockchain.Operations
             return _CalcEstimatedBlockFee(txs);
         }
 
+        // Every time a node starts, it first tries to build the genesis block
         public bool TryBuildGenesisBlock()
         {
+            // genesis block is built from the config.json file
+            // genesis block mints tokens to the validators for the first cycle
             var genesisBlock = _genesisBuilder.Build();
+
+            // if genesis block can already be found, we return immediately
             if (_stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(0) != null)
                 return false;
             var snapshot = _stateManager.NewSnapshot();
@@ -661,6 +748,10 @@ namespace Lachain.Core.Blockchain.Operations
                 )).ToArray()
             );
             snapshot.Validators.SetConsensusState(initialConsensusState);
+
+            // stake delegation happens even before genesis block
+            // stake delegation means - some other address stakes for the validators
+            // config.json keeps the stakerAddress and the stakeAmount for each of the validators
 
             // init system contracts storage
             var dummyStakerPub = new string('f', CryptoUtils.PublicKeyLength * 2).HexToBytes();
@@ -691,6 +782,12 @@ namespace Lachain.Core.Blockchain.Operations
                 new BigInteger(8).ToUInt256().Buffer,
                 initialBasicGasPrice
             );
+
+            // The followings are the variables used in stakingContract
+            // This variables are stored in the storage snapshot and is a part of the chain
+            // To understand the what each variables represent, refer to StakingContract.cs 
+
+            // We do the stake delegation even before the execution of genesis block
 
             var _userToStake = new StorageMapping(
                 ContractRegisterer.StakingContract,
@@ -741,6 +838,8 @@ namespace Lachain.Core.Blockchain.Operations
             }
 
             _stateManager.Approve();
+
+            // emulate and execute the genesis block
             var (error, removeTransactions, stateHash, relayTransactions) =
                 Emulate(genesisBlock.Block, genesisBlock.Transactions);
             if (error != OperatingError.Ok) throw new InvalidBlockException(error);

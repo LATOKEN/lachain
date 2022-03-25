@@ -20,6 +20,10 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Consensus
 {
+    /*
+        This is the main class responsible for starting and co-ordinating consensus for different
+        eras. 
+    */
     public class ConsensusManager : IConsensusManager
     {
         private static readonly ILogger<ConsensusManager> Logger = LoggerFactory.GetLoggerForClass<ConsensusManager>();

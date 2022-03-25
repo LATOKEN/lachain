@@ -6,6 +6,11 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.State
 {
+    /*
+        A blockchain snapshot keeps 7 snapshots. But 6 of them are part of the global state. 
+        (1) balance, (2) contracts, (3) transaction, (4) events, (5) validators
+        Block Snapshot is not part of the global state, it instead stores the blocks in local state.
+    */
     public class BlockchainSnapshot : IBlockchainSnapshot
     {
         public BlockchainSnapshot(

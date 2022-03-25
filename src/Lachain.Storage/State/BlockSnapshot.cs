@@ -11,6 +11,12 @@ using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
+    /*
+        Block Snapshot is HMAT (trie) which acts as an key-value storage to store the following infos: 
+        (1) (hash -> block)
+        (2) (height -> hash)
+        (3) overall height of the chain
+    */
     public class BlockSnapshot : IBlockSnapshot
     {
         private readonly IStorageState _state;

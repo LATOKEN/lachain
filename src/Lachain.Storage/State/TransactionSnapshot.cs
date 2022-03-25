@@ -10,6 +10,11 @@ using Lachain.Storage.DbCompact;
 
 namespace Lachain.Storage.State
 {
+    /*
+        Transaction Snapshot is HMAT (trie) which acts as an key-value storage to store the following infos: 
+        (1) (transaction hash -> transaction receipt)
+        (2) (address -> count of transactions from this address)
+    */
     public class TransactionSnapshot : ITransactionSnapshot
     {
         private readonly IStorageState _state;

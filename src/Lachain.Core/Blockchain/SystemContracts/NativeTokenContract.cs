@@ -21,6 +21,9 @@ using Lachain.Core.Blockchain.Hardfork;
 
 namespace Lachain.Core.Blockchain.SystemContracts
 {
+    /*
+        Native Token Contract handles transfer, minting of tokens.
+    */
     public class NativeTokenContract : ISystemContract
     {
         private static readonly ILogger<NativeTokenContract> Logger =

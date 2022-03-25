@@ -61,7 +61,18 @@ namespace Lachain.Core.Vault
             _systemContractReader = systemContractReader;
             _blockManager.OnSystemContractInvoked += BlockManagerOnSystemContractInvoked;
         }
+        
+        // For every cycle, a new set of keys are required for the validators. This key generation process
+        // is done on-chain. That means, every communication between participating nodes happen via transactions
+        // in the block. For example, if node A wants to send a msg to node B, then node A encrypts the 
+        // msg with node B's public key and broadcast this as a transaction to the governance contract. 
+        // After this transaction is added to the chain, node B can decrypt the msg and read it.
 
+        // During block execution, after every system transaction is executed, the following method
+        // is invoked. It evaluates the transaction and if it's keygen related, it produces
+        // appropriate response in form of a transaction and adds it to the pool for the addition 
+        // in the block.
+        
         private void BlockManagerOnSystemContractInvoked(object _, InvocationContext context)
         {
             if (context.Receipt is null) return;
