@@ -11,7 +11,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 7;
+        private const ulong _CurrentVersion = 8;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -53,6 +53,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV6();
             if (version < 7)
                 _UpdateConfigToV7();
+            if (version < 8)
+                _UpdateConfigToV8();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -214,6 +216,30 @@ namespace Lachain.Core.Config
             var version = GetConfig<VersionConfig>("version") ??
                           throw new ApplicationException("No version section in config");
             version.Version = 7;
+            _config["version"] = JObject.FromObject(version);
+            
+            _SaveCurrentConfig();
+        }
+
+        // version 7 of config should contain hardfork height for hardfork_5,
+        private void _UpdateConfigToV8()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_6 ??= network.NetworkName switch
+            {
+                "mainnet" => 2620000,
+                "testnet" => 2400000,
+                "devnet" => 0,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 8;
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
