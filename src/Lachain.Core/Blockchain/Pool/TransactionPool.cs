@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Crypto;
@@ -125,7 +126,7 @@ namespace Lachain.Core.Blockchain.Pool
             var acceptedTx = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.FullHash(signature),
+                Hash = transaction.FullHash(signature, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };
@@ -159,10 +160,11 @@ namespace Lachain.Core.Blockchain.Pool
             if(!IsBalanceValid(receipt))
                 return OperatingError.InsufficientBalance;
 
-            var result = _transactionManager.Verify(receipt);
+            bool useNewChainId = HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight());
+            var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
-            _transactionVerifier.VerifyTransaction(receipt);
+            _transactionVerifier.VerifyTransaction(receipt, useNewChainId);
             /* put transaction to pool queue */
             _transactions[receipt.Hash] = receipt;
             _transactionsQueue.Add(receipt);

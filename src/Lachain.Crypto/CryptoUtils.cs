@@ -50,10 +50,10 @@ namespace Lachain.Crypto
             return key.Buffer.ToByteArray();
         }
 
-        public static ECDSAPublicKey RecoverPublicKey(this TransactionReceipt receipt)
+        public static ECDSAPublicKey RecoverPublicKey(this TransactionReceipt receipt, bool useNewChainId)
         {
             return Crypto
-                .RecoverSignatureHashed(receipt.Transaction.RawHash().ToBytes(), receipt.Signature.Encode())
+                .RecoverSignatureHashed(receipt.Transaction.RawHash(useNewChainId).ToBytes(), receipt.Signature.Encode(), useNewChainId)
                 .ToPublicKey();
         }
     }

@@ -85,13 +85,13 @@ namespace Lachain.Networking
                 Content = ByteString.CopyFrom(new MessageBatchContent {Messages = {messages}}.ToByteArray()),
                 Sender = _keyPair.PublicKey,
             };
-            batch.Signature = Crypto.Sign(batch.Content.ToArray(), _keyPair.PrivateKey.Encode()).ToSignature();
+            batch.Signature = Crypto.Sign(batch.Content.ToArray(), _keyPair.PrivateKey.Encode(), true).ToSignature();
             return batch;
         }
 
         public byte[] SignCommunicationHubInit(byte[] hubKey)
         {
-            return Crypto.Sign(hubKey, _keyPair.PrivateKey.Encode());
+            return Crypto.Sign(hubKey, _keyPair.PrivateKey.Encode(), true);
         }
 
         private ulong GenerateMessageId()

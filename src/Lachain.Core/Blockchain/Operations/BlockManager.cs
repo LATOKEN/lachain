@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
@@ -346,7 +347,7 @@ namespace Lachain.Core.Blockchain.Operations
                     BlockSize.Observe(block.CalculateSize());
                     foreach (var transactionReceipt in transactions)
                     {
-                        TxSize.Observe(transactionReceipt.Transaction.RlpWithSignature(transactionReceipt.Signature).Count());
+                        TxSize.Observe(transactionReceipt.Transaction.RlpWithSignature(transactionReceipt.Signature,  HardforkHeights.IsHardfork_6Active(block.Header.Index)).Count());
                     }
                     TxInBlock.Observe(block.TransactionHashes.Count);
 
@@ -629,7 +630,8 @@ namespace Lachain.Core.Blockchain.Operations
         public Signature Sign(BlockHeader block, EcdsaKeyPair keyPair)
         {
             return Crypto.SignHashed(
-                block.Keccak().ToBytes(), keyPair.PrivateKey.Encode()
+                block.Keccak().ToBytes(), keyPair.PrivateKey.Encode(),
+                HardforkHeights.IsHardfork_6Active(block.Index)
             ).ToSignature();
         }
 
@@ -637,7 +639,8 @@ namespace Lachain.Core.Blockchain.Operations
         public OperatingError VerifySignature(BlockHeader blockHeader, Signature signature, ECDSAPublicKey publicKey)
         {
             var result = Crypto.VerifySignatureHashed(
-                blockHeader.Keccak().ToBytes(), signature.Encode(), publicKey.EncodeCompressed()
+                blockHeader.Keccak().ToBytes(), signature.Encode(), publicKey.EncodeCompressed(),
+                HardforkHeights.IsHardfork_6Active(blockHeader.Index)
             );
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
@@ -651,7 +654,7 @@ namespace Lachain.Core.Blockchain.Operations
                 return OperatingError.Ok;
             if (checkValidatorSet && !VerifyValidatorSet(block.Multisig.Validators, block.Header.Index - 1))
                 return OperatingError.InvalidMultisig;
-            return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash);
+            return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash, HardforkHeights.IsHardfork_6Active(block.Header.Index));
         }
 
         private bool VerifyValidatorSet(IReadOnlyCollection<ECDSAPublicKey> keys, ulong height)

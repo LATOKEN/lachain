@@ -108,7 +108,7 @@ namespace Lachain.Networking
             }
 
             if (!Crypto.VerifySignature(batch.Content.ToByteArray(), batch.Signature.Encode(),
-                batch.Sender.EncodeCompressed()))
+                batch.Sender.EncodeCompressed(), true))
             {
                 Logger.LogError($"Incorrect signature received from sender {batch.Sender}, dropping");
                 return;

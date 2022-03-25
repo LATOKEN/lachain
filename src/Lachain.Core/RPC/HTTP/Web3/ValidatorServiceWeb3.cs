@@ -56,7 +56,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 (object) stakeAmount.ToUInt256()
             );
 
-            return Web3DataFormatUtils.Web3UnsignedTransaction(tx);
+            return Web3DataFormatUtils.Web3UnsignedTransaction(tx,  true);
         }
 
 
@@ -80,7 +80,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 validatorPubKey
             );
 
-            return Web3DataFormatUtils.Web3UnsignedTransaction(tx);
+            return Web3DataFormatUtils.Web3UnsignedTransaction(tx,  true);
         }
 
 
@@ -104,7 +104,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 validatorPubKey
             );
 
-            return Web3DataFormatUtils.Web3UnsignedTransaction(tx);
+            return Web3DataFormatUtils.Web3UnsignedTransaction(tx, true);
         }
 
 

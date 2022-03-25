@@ -11,7 +11,7 @@ namespace Lachain.Crypto
         /// <param name="signature">Signature</param>
         /// <param name="publicKey">Public Key</param>
         /// <returns>Bool</returns>
-        bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey);
+        bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey, bool useNewChainId);
 
         /// <summary>
         /// Sign already hashed message (secp256k1)
@@ -19,7 +19,7 @@ namespace Lachain.Crypto
         /// <param name="message">Message</param>
         /// <param name="privateKey">Private Key</param>
         /// <returns>Signature bytearray</returns>
-        byte[] Sign(byte[] message, byte[] privateKey);
+        byte[] Sign(byte[] message, byte[] privateKey, bool useNewChainId);
 
         /// <summary>
         /// Sign already hashed message (secp256k1)
@@ -27,7 +27,7 @@ namespace Lachain.Crypto
         /// <param name="messageHash">Hashed message</param>
         /// <param name="privateKey">Private Key</param>
         /// <returns>Signature bytearray</returns>
-        byte[] SignHashed(byte[] messageHash, byte[] privateKey);
+        byte[] SignHashed(byte[] messageHash, byte[] privateKey, bool useNewChainId);
         
         /// <summary>
         /// Recovers public key from signature
@@ -35,7 +35,7 @@ namespace Lachain.Crypto
         /// <param name="message"></param>
         /// <param name="signature"></param>
         /// <returns></returns>
-        byte[] RecoverSignature(byte[] message, byte[] signature);
+        byte[] RecoverSignature(byte[] message, byte[] signature, bool useNewChainId);
         
         /// <summary>
         /// Computes address from public key
@@ -88,7 +88,7 @@ namespace Lachain.Crypto
         /// <param name="messageHash"></param>
         /// <param name="signature"></param>
         /// <returns></returns>
-        byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature);
+        byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId);
 
         /// <summary>
         /// Check ECDSA Signature (secp256k1)
@@ -97,7 +97,7 @@ namespace Lachain.Crypto
         /// <param name="signature">Signature</param>
         /// <param name="publicKey">Public Key</param>
         /// <returns>Bool</returns>
-        bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey);
+        bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey, bool useNewChainId);
 
         byte[] AesGcmEncrypt(ReadOnlySpan<byte> key, ReadOnlySpan<byte> plaintext);
 

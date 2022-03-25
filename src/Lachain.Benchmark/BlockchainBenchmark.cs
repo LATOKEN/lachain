@@ -111,8 +111,9 @@ namespace Lachain.Benchmark
             Console.WriteLine("-------------------------------");
 
             Logger.LogInformation($"Setting chainId");
-            var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-            TransactionUtils.SetChainId((int)chainId!);
+            var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId ?? 42;
+            var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId ?? chainId;
+            TransactionUtils.SetChainId((int)chainId, newChainId);
             
             // _BenchTxProcessing(_transactionBuilder, _transactionSigner, keyPair);
             // _BenchOneTxInBlock(_transactionBuilder, _transactionSigner, keyPair);
@@ -178,7 +179,7 @@ namespace Lachain.Benchmark
                 ContractEncoder.Encode("constructor(address,uint256)", address1, Money.FromDecimal(10000000));
             var deployTx = transactionBuilder.DeployTransaction(address1, byteCode, deployAbi);
 
-            var deployError = transactionPool.Add(transactionSigner.Sign(deployTx, keyPair));
+            var deployError = transactionPool.Add(transactionSigner.Sign(deployTx, keyPair, true));
             if (deployError != OperatingError.Ok)
                 throw new Exception("Unable to add deploy tx (" + deployError + ")");
             var contract = deployTx.From.ToBytes().Concat(deployTx.Nonce.ToBytes()).Ripemd();
@@ -188,7 +189,7 @@ namespace Lachain.Benchmark
                 var tx = transactionBuilder.TokenTransferTransaction(contract, address1, address2,
                     Money.FromDecimal(1.2m));
                 tx.Nonce += (ulong)i + 1;
-                var error = transactionPool.Add(transactionSigner.Sign(tx, keyPair));
+                var error = transactionPool.Add(transactionSigner.Sign(tx, keyPair, true));
                 if (error != OperatingError.Ok)
                     throw new Exception("Unable to add transcation to pool (" + error + ")");
                 return i;
@@ -256,7 +257,7 @@ namespace Lachain.Benchmark
 
                 var transferTx =
                     transactionBuilder.TransferTransaction(address1, address2, Money.FromDecimal(1.2m));
-                var signed = transactionSigner.Sign(transferTx, keyPair);
+                var signed = transactionSigner.Sign(transferTx, keyPair, true);
                 // var blockWithTxs = new BlockBuilder(latestBlock.Header)
                 //     .WithTransactions(new[] {signed})
                 //     .Build(123456);
@@ -319,7 +320,7 @@ namespace Lachain.Benchmark
                     Value = amount
                 };
 
-                txReceipts.Add(transactionSigner.Sign(tx, keyPair));    
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair,  true));    
             }
             watch.Stop();
             Console.WriteLine($"Building TXs Time: {watch.ElapsedMilliseconds} ms");
@@ -376,7 +377,7 @@ namespace Lachain.Benchmark
                     Value = amount
                 };
 
-                txReceipts.Add(transactionSigner.Sign(tx, keyPair));    
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair,  true));    
             }
             watch.Stop();
             Console.WriteLine($"Building TXs Time: {watch.ElapsedMilliseconds} ms");
@@ -435,7 +436,7 @@ namespace Lachain.Benchmark
                     Nonce = (ulong)i,
                     Value = amount
                 };
-                txReceipts.Add(transactionSigner.Sign(tx, keyPair));
+                txReceipts.Add(transactionSigner.Sign(tx, keyPair, true));
             }
             
             ITransactionPool transactionPool = _container.Resolve<ITransactionPool>();
@@ -488,7 +489,7 @@ namespace Lachain.Benchmark
                         Value = amount
                     };
                     
-                    txReceipts.Add(transactionSigner.Sign(tx, keyPair));
+                    txReceipts.Add(transactionSigner.Sign(tx, keyPair, true));
                 }
 
                 watch.Stop();
@@ -555,7 +556,7 @@ namespace Lachain.Benchmark
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
+                keyPair.PrivateKey.Encode(), true
             ).ToSignature();
 
             var multisig = new MultiSig

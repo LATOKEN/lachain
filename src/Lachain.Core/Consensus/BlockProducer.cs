@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Consensus;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -103,7 +104,8 @@ namespace Lachain.Core.Consensus
 
             // But we need to verify the hash as we map the receipts with its hash
             // we skip the transactions with hash mismatch
-            receipts = receipts.Where(receipt => receipt.Transaction.FullHash(receipt.Signature).Equals(receipt.Hash)).ToList();
+            receipts = receipts.Where(receipt => 
+                receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_6Active(index)).Equals(receipt.Hash)).ToList();
 
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
@@ -220,7 +222,7 @@ namespace Lachain.Core.Consensus
             );
             return new TransactionReceipt
             {
-                Hash = tx.FullHash(SignatureUtils.Zero),
+                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
                 Status = TransactionStatus.Pool,
                 Transaction = tx,
                 Signature = SignatureUtils.Zero,
@@ -245,17 +247,17 @@ namespace Lachain.Core.Consensus
             );
             return new TransactionReceipt
             {
-                Hash = tx.FullHash(SignatureUtils.Zero),
+                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
                 Status = TransactionStatus.Pool,
                 Transaction = tx,
                 Signature = SignatureUtils.Zero,
             };
         }
 
-        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string mehodSignature)
+        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string methodSignature)
         {
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
-            var abi = ContractEncoder.Encode(mehodSignature);
+            var abi = ContractEncoder.Encode(methodSignature);
             var transaction = new Transaction
             {
                 To = contractAddress,
@@ -269,7 +271,7 @@ namespace Lachain.Core.Consensus
             };
             return new TransactionReceipt
             {
-                Hash = transaction.FullHash(SignatureUtils.Zero),
+                Hash = transaction.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
                 Status = TransactionStatus.Pool,
                 Transaction = transaction,
                 Signature = SignatureUtils.Zero,

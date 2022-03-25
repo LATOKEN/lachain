@@ -92,11 +92,13 @@ namespace Lachain.Console
                  + " by deleting nodes from old snapshot but was not finished.");
 
             // set chainId from config
-            var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-            if (chainId == null || chainId == 0) throw new Exception("chainId is not defined in the config file");
+            var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId ?? 0;
+            if (chainId == 0) throw new Exception("chainId is not defined in the config file");
+            var newChainId = configManager.GetConfig<NetworkConfig>("network")?.NewChainId ?? 0;
+            if (newChainId == 0) throw new Exception("newChainId is not defined in the config file");
 
-            Logger.LogInformation($"Chainid {chainId}");
-            TransactionUtils.SetChainId((int)chainId);
+            Logger.LogInformation($"ChainId {chainId}, newChainId {newChainId}");
+            TransactionUtils.SetChainId(chainId, newChainId);
 
             var version = Assembly.GetEntryAssembly()!
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()

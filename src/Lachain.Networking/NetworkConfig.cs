@@ -20,6 +20,8 @@ namespace Lachain.Networking
         
         [JsonProperty("chainId")] public int ChainId;
         
+        [JsonProperty("newChainId")] public int NewChainId;
+        
         [JsonProperty("cycleDuration")] public ulong? CycleDuration;
         
         [JsonProperty("validatorsCount")] public ulong? ValidatorsCount;
