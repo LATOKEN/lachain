@@ -90,10 +90,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager.TryBuildGenesisBlock();
 
             // set chainId from config
-            if (TransactionUtils.ChainId == 0)
+            if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
             }
             ServiceBinder.BindService<GenericParameterAttributes>();
 
@@ -255,7 +256,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
 
-            var signedTx = Signer.Sign(tx, keyPair);
+            var signedTx = Signer.Sign(tx, keyPair, true);
             var result = _transactionPool.Add(signedTx);
 
             var adCode = _apiService!.GetCode(address, "pending");
@@ -316,14 +317,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 GasLimit = 4500000
             };
 
-            var rlp = tx.Rlp();
+            var rlp = tx.Rlp(true);
 
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
-            var receipt = _transactionSigner.Sign(tx, keyPair);
+            var receipt = _transactionSigner.Sign(tx, keyPair, true);
 
             var s = receipt.Signature;
-            var rawTx = tx.RlpWithSignature(s);
+            var rawTx = tx.RlpWithSignature(s, true);
 
             return rawTx.ToHex();
 
@@ -409,7 +410,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
+                keyPair.PrivateKey.Encode(), true
             ).ToSignature();
 
             var multisig = new MultiSig

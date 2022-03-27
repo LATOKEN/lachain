@@ -206,7 +206,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
+                keyPair.PrivateKey.Encode(), true
             ).ToSignature();
 
             var multisig = new MultiSig
@@ -278,7 +278,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())),
                 (pk)
             );
-            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair, true);
             Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventChangeValidators, (pk))));
@@ -298,7 +298,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())),
                 proposer, (value)
             );
-            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair, true);
             Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenSendValue,
@@ -332,7 +332,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 new byte[][] {row}
             );
 
-            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair, true);
             Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenCommit,
@@ -352,7 +352,7 @@ namespace Lachain.CoreTest.IntegrationTests
             );
             return new TransactionReceipt
             {
-                Hash = transaction.FullHash(SignatureUtils.Zero),
+                Hash = transaction.FullHash(SignatureUtils.Zero, true),
                 Status = TransactionStatus.Pool,
                 Transaction = transaction,
                 Signature = SignatureUtils.Zero,

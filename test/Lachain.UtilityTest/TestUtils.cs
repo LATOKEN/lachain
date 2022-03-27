@@ -31,7 +31,7 @@ namespace Lachain.UtilityTest
                 Nonce = 0,
                 Value = Money.Parse($"{randomValue}.0").ToUInt256()
             };
-            return signer.Sign(tx, keyPair);
+            return signer.Sign(tx, keyPair, true);
         }
 
         public static TransactionReceipt GetCustomTransaction(string value, string gasPrice)
@@ -51,7 +51,7 @@ namespace Lachain.UtilityTest
                 Nonce = 0,
                 Value = Money.Parse(value).ToUInt256()
             };
-            return signer.Sign(tx, keyPair);
+            return signer.Sign(tx, keyPair, true);
         }
 
         public static void DeleteTestChainData()

@@ -22,7 +22,7 @@ namespace Lachain.CryptoTest
         [OneTimeSetUp]
         public void Setup()
         {
-            TransactionUtils.SetChainId(41);
+            TransactionUtils.SetChainId(41, 42);
         }
 
 
@@ -137,9 +137,9 @@ namespace Lachain.CryptoTest
                 var message =
                     "0xec808504a817c800825208948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a764000080018080";
                 var digest = message.HexToBytes();
-                var signature = crypto.Sign(digest, privateKey);
-                Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey));
-                var recoveredPubkey = crypto.RecoverSignature(digest, signature);
+                var signature = crypto.Sign(digest, privateKey, true);
+                Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey, true));
+                var recoveredPubkey = crypto.RecoverSignature(digest, signature, true);
                 Assert.AreEqual(recoveredPubkey, publicKey);
             }
 
@@ -169,7 +169,7 @@ namespace Lachain.CryptoTest
             var signature =
                 "0x8357f298e9d84c128e2a2f66727669bd096e55351ff13b3e6bab88ea810dd5643170a74d76efd85d1f57937aa1d3e1632e9198f7f94f0e94b79456a412b8927e76"
                     .HexToBytes();
-            var pubKey = crypto.RecoverSignatureHashed(message, signature);
+            var pubKey = crypto.RecoverSignatureHashed(message, signature, true);
             Assert.AreEqual(
                 "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".ToLower(),
                 crypto.ComputeAddress(pubKey).ToHex().ToLower()
@@ -187,7 +187,7 @@ namespace Lachain.CryptoTest
                 GasPrice = 5000000000,
                 GasLimit = 4500000
             };
-            var rlp = tx.Rlp();
+            var rlp = tx.Rlp(true);
             // compare with actual RLP from metamask
             Assert.IsTrue(rlp.SequenceEqual(
                 "0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080298080"
@@ -219,7 +219,7 @@ namespace Lachain.CryptoTest
                 GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16)
             };
 
-            Console.WriteLine("RLP: " + tx.Rlp().ToHex());
+            Console.WriteLine("RLP: " + tx.Rlp(true).ToHex());
 
             var address = ethTx.Key.GetPublicAddress().HexToBytes();
             var from = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
@@ -236,7 +236,7 @@ namespace Lachain.CryptoTest
                 "0xed808504a817c800832dc6c0948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a764000080018080"
                     .HexToBytes().KeccakBytes();
 
-            var recoveredPubkey = crypto.RecoverSignatureHashed(message, signature);
+            var recoveredPubkey = crypto.RecoverSignatureHashed(message, signature, true);
 
             Console.WriteLine(recoveredPubkey.ToHex());
 
