@@ -752,7 +752,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                         (ulong)nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair);
+            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair, true);
         }
 
         private TransactionReceipt GiveMeSomeMoney(UInt256 money){
@@ -767,7 +767,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()),
                 Value = money
             };
-            return Signer.Sign(tx, keyPair);
+            return Signer.Sign(tx, keyPair, true);
         } 
 
         public void CheckTransactionWeb3Format(ulong blockHeight)
@@ -990,7 +990,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
+                keyPair.PrivateKey.Encode(), true
             ).ToSignature();
 
             var multisig = new MultiSig

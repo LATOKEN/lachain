@@ -73,10 +73,11 @@ namespace Lachain.CoreTest.IntegrationTests
             _transactionPool = _container.Resolve<ITransactionPool>();
             _configManager = _container.Resolve<IConfigManager>();
             // set chainId from config
-            if (TransactionUtils.ChainId == 0)
+            if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
             }
             _blockManager.TryBuildGenesisBlock();
         }
@@ -101,7 +102,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair);
+            var signedTx = Signer.Sign(tx, keyPair, true);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlock(2);
             
@@ -133,7 +134,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Money.Zero,
                 "test()",
                 new dynamic[0]);
-            var signedTxInvoke = Signer.Sign(txInvoke, keyPair);
+            var signedTxInvoke = Signer.Sign(txInvoke, keyPair, true);
             var error = _transactionPool.Add(signedTxInvoke);
             Assert.That(error == OperatingError.Ok, "Failed to add invoke tx to pool");
             GenerateBlock(3);
@@ -164,7 +165,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair);
+            var signedTx = Signer.Sign(tx, keyPair, true);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlock(2);
 
@@ -182,7 +183,7 @@ namespace Lachain.CoreTest.IntegrationTests
             nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            signedTx = Signer.Sign(tx, keyPair);
+            signedTx = Signer.Sign(tx, keyPair, true);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlock(3);
             
@@ -192,7 +193,7 @@ namespace Lachain.CoreTest.IntegrationTests
             
             // init caller contract 
             tx = _transactionBuilder.InvokeTransaction(from, contractHash, Money.Zero, "init(address)", calleeAddress);
-            signedTx = Signer.Sign(tx, keyPair);
+            signedTx = Signer.Sign(tx, keyPair, true);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlock(4);
 
@@ -318,7 +319,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
+                keyPair.PrivateKey.Encode(), true
             ).ToSignature();
 
             var multisig = new MultiSig

@@ -74,10 +74,11 @@ namespace Lachain.CoreTest.IntegrationTests
             _transactionPool = _container.Resolve<ITransactionPool>();
             _configManager = _container.Resolve<IConfigManager>();
             // set chainId from config
-            if (TransactionUtils.ChainId == 0)
+            if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
             }
             _validatorStatusManager = new ValidatorStatusManager(
                 _transactionPool, _container.Resolve<ITransactionSigner>(), _container.Resolve<ITransactionBuilder>(),
@@ -211,7 +212,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
+                keyPair.PrivateKey.Encode(), true
             ).ToSignature();
 
             var multisig = new MultiSig
@@ -244,7 +245,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         (ulong) nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, keyPair);
+            return Signer.Sign(tx, keyPair, true);
         }
         
         private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)

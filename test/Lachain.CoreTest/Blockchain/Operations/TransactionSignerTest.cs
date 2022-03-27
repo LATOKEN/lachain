@@ -17,7 +17,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
         [OneTimeSetUp]
         public void Setup()
         {
-            TransactionUtils.SetChainId(41);
+            TransactionUtils.SetChainId(41, 42);
         }
 
         [Test]
@@ -38,10 +38,10 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Nonce = 0,
                 Value = new BigInteger(0).ToUInt256()
             };
-            var receipt = signer.Sign(tx, keyPair);
-            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash().ToHex());
+            var receipt = signer.Sign(tx, keyPair, true);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
 
-            var publicKey = receipt.RecoverPublicKey();
+            var publicKey = receipt.RecoverPublicKey(true);
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
         }
@@ -65,12 +65,12 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Nonce = 0,
                 Value = new BigInteger(0).ToUInt256()
             };
-            var receipt = signer.Sign(tx, keyPair);
-            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash().ToHex());
+            var receipt = signer.Sign(tx, keyPair, true);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
             var txHashFromWeb3Py = "0x8c78e890b249e7fa814a40648f1810946b639b6fa321c9dec8598ef77615ea91";
             Assert.AreEqual(receipt.Hash.ToHex(), txHashFromWeb3Py);
 
-            var publicKey = receipt.RecoverPublicKey();
+            var publicKey = receipt.RecoverPublicKey(true);
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
         }

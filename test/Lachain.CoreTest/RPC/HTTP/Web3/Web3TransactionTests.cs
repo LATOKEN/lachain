@@ -93,10 +93,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager = _container.Resolve<IBlockManager>();
             _configManager = _container.Resolve<IConfigManager>();
             // set chainId from config
-            if (TransactionUtils.ChainId == 0)
+            if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
             }
             ServiceBinder.BindService<GenericParameterAttributes>();
 
@@ -128,7 +129,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
-            var receipt = _transactionSigner.Sign(t, keyPair);
+            var receipt = _transactionSigner.Sign(t, keyPair, true);
 
             var txid = _apiService!.SendRawTransaction(rawTx2);
             Assert.AreEqual("0x", txid.Substring(0, 2));
@@ -157,10 +158,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             
             var keyPair = new EcdsaKeyPair("0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75"
                 .HexToBytes().ToPrivateKey());
-            var receipt = _transactionSigner.Sign(t, keyPair);
+            var receipt = _transactionSigner.Sign(t, keyPair, true);
             Assert.AreEqual(receipt.Signature, signature.ToSignature());
 
-            var ethTx2 = t.GetEthTx(receipt.Signature);
+            var ethTx2 = t.GetEthTx(receipt.Signature, true);
             Assert.AreEqual(ethTx.ChainId,  ethTx2.ChainId);
             Assert.AreEqual(ethTx.Data,  ethTx2.Data);
 //            Assert.AreEqual(ethTx.Nonce,  ethTx2.Nonce);
@@ -354,7 +355,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var contractHashHx = contractHash.ToHex();
 
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair);
+            var signedTx = Signer.Sign(tx, keyPair, true);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlocks(2, 2);
 
@@ -398,7 +399,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var contractHashHx = contractHash.ToHex();
 
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair);
+            var signedTx = Signer.Sign(tx, keyPair, true);
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlocks(2, 2);
 
@@ -512,7 +513,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
+                keyPair.PrivateKey.Encode(), true
             ).ToSignature();
 
             var multisig = new MultiSig
