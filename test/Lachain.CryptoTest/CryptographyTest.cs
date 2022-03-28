@@ -22,7 +22,7 @@ namespace Lachain.CryptoTest
         [OneTimeSetUp]
         public void Setup()
         {
-            TransactionUtils.SetChainId(41, 42);
+            TransactionUtils.SetChainId(41, 41);
         }
 
 
