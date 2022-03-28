@@ -155,6 +155,13 @@ namespace Lachain.Core.Blockchain.Pool
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
             }
+            else
+            {
+                // Stop accept regular txes 100 blocks before Hardfork_6
+                if (HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight() + 100) &&
+                    !HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight()))
+                    return OperatingError.UnsupportedTransaction;
+            }
 
             /* check if the address has enough gas */ 
             if(!IsBalanceValid(receipt))
