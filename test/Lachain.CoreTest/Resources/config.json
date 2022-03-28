@@ -1,6 +1,7 @@
 {
   "network": {
     "chainId": 25,
+    "newChainId": 25,
     "peers": [
     ],
     "forceIPv6": false,
