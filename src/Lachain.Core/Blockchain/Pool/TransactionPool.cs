@@ -126,7 +126,10 @@ namespace Lachain.Core.Blockchain.Pool
             var acceptedTx = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.FullHash(signature, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
+                // we use next height here because block header should be signed with the same chainId
+                // and this txes will go to the next block
+                Hash = transaction.FullHash(signature, 
+                    HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight() + 1)),
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };
@@ -166,8 +169,10 @@ namespace Lachain.Core.Blockchain.Pool
             /* check if the address has enough gas */ 
             if(!IsBalanceValid(receipt))
                 return OperatingError.InsufficientBalance;
-
-            bool useNewChainId = HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight());
+            
+            // we use next height here because block header should be signed with the same chainId
+            // and this txes will go to the next block
+            bool useNewChainId = HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight() + 1);
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
