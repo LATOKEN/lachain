@@ -17,7 +17,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
         [OneTimeSetUp]
         public void Setup()
         {
-            TransactionUtils.SetChainId(41, 42);
+            TransactionUtils.SetChainId(41, 41);
         }
 
         [Test]
