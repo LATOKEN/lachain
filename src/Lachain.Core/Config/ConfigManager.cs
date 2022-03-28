@@ -228,6 +228,16 @@ namespace Lachain.Core.Config
         {
             var network = GetConfig<NetworkConfig>("network") ??
                           throw new ApplicationException("No network section in config");
+            
+            network.NewChainId ??= network.NetworkName switch
+            {
+                "mainnet" => 225,
+                "testnet" => 226,
+                "devnet" => 227,
+                _ => 42
+            };
+            _config["network"] = JObject.FromObject(network);
+
             var hardforks = GetConfig<HardforkConfig>("hardfork") ??
                             throw new ApplicationException("No hardfork section in config");
             hardforks.Hardfork_6 ??= network.NetworkName switch
