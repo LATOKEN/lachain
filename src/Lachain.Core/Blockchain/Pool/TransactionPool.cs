@@ -158,11 +158,14 @@ namespace Lachain.Core.Blockchain.Pool
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
             }
-            else
+            
+            // TODO: Remove this code after the Hardfork_6
+            // Stop accept regular txes 100 blocks before Hardfork_6
+            if (HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight() + 100) &&
+                !HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight()))
             {
-                // Stop accept regular txes 100 blocks before Hardfork_6
-                if (HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight() + 100) &&
-                    !HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight()))
+                if (!receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) &&
+                    !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
                     return OperatingError.UnsupportedTransaction;
             }
 
