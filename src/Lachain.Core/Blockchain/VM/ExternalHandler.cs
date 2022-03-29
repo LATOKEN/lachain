@@ -809,15 +809,15 @@ namespace Lachain.Core.Blockchain.VM
             frame.UseGas(GasMetering.LoadStorageGasCost * (ulong) (blocks + 1));
 
             // load string from the storage block by block
-            var slot = key.ToUInt256().ToBigInteger();
+            var slotData = key.KeccakBytes().ToUInt256().ToBigInteger();
             var value = new byte[valueLength];
 
             for (int block = 0; block < blocks; block++)
             {
-                slot = slot + 1.ToUInt256().ToBigInteger();
-
-                var valueBlock = frame.InvocationContext.Snapshot.Storage.GetValue(storageAddress, slot.ToUInt256()).ToBytes();
+                var valueBlock = frame.InvocationContext.Snapshot.Storage.GetValue(storageAddress, slotData.ToUInt256()).ToBytes();
                 Array.Copy(valueBlock, 0, value, block * 32, Math.Min(32, valueLength - block * 32));
+
+                slotData = slotData + 1.ToUInt256().ToBigInteger();
             }
 
             if (!SafeCopyToMemory(frame.Memory, value, resultOffset))
@@ -849,20 +849,26 @@ namespace Lachain.Core.Blockchain.VM
             if (value is null) throw new InvalidContractException("Bad call to SAVESTORAGESTRING");
             
             // save string to the storage block by block
-            var slot = key.ToUInt256().ToBigInteger();
             var storageAddress = frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress;
 
             frame.InvocationContext.Snapshot.Storage.SetValue(
-                storageAddress, slot.ToUInt256(), valueLength.ToUInt256()
+                storageAddress, key.ToUInt256(), valueLength.ToUInt256()
             );
 
+            var slotData = key.KeccakBytes().ToUInt256().ToBigInteger();
             for (int block = 0; block < blocks; block++)
             {
-                slot = slot + 1.ToUInt256().ToBigInteger();
+                var valueBlock = value.Skip(block * 32).Take(32).ToArray();
+
+                if (valueBlock.Length < 32) {
+                    valueBlock = valueBlock.Concat(Enumerable.Repeat((byte) 0, 32 - valueBlock.Length)).ToArray();
+                }
 
                 frame.InvocationContext.Snapshot.Storage.SetValue(
-                    storageAddress, slot.ToUInt256(), value.Skip(block * 32).Take(32).ToArray().ToUInt256(true)
+                    storageAddress, slotData.ToUInt256(), valueBlock.ToUInt256()
                 );
+
+                slotData = slotData + 1.ToUInt256().ToBigInteger();
             }
         }
 
