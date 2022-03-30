@@ -116,21 +116,21 @@ namespace Lachain.Core.Consensus
             // try to add necessary system transactions at the end
             if (cycle > 0 && indexInCycle == StakingContract.AttendanceDetectionDuration)
             {
-                var txToAdd = DistributeCycleRewardsAndPenaltiesTxReceipt();
+                var txToAdd = DistributeCycleRewardsAndPenaltiesTxReceipt(index);
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
                     Logger.LogDebug("DistributeCycleRewardsAndPenaltiesTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
             else if (indexInCycle == StakingContract.VrfSubmissionPhaseDuration)
             {
-                var txToAdd = FinishVrfLotteryTxReceipt();
+                var txToAdd = FinishVrfLotteryTxReceipt(index);
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
                     Logger.LogDebug("FinishVrfLotteryTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
             }
             else if (cycle > 0 && indexInCycle == 0)
             {
-                var txToAdd = FinishCycleTxReceipt();
+                var txToAdd = FinishCycleTxReceipt(index);
                 if (receipts.Select(x => x.Hash).Contains(txToAdd.Hash))
                     Logger.LogDebug("FinishCycleTxReceipt is already in txPool");
                 else receipts = receipts.Concat(new[] {txToAdd}).ToList();
@@ -210,7 +210,7 @@ namespace Lachain.Core.Consensus
             }
         }
 
-        private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt()
+        private TransactionReceipt DistributeCycleRewardsAndPenaltiesTxReceipt(ulong blockIndex)
         {
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 UInt160Utils.Zero,
@@ -222,20 +222,20 @@ namespace Lachain.Core.Consensus
             );
             return new TransactionReceipt
             {
-                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
+                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(blockIndex)),
                 Status = TransactionStatus.Pool,
                 Transaction = tx,
                 Signature = SignatureUtils.Zero,
             };
         }
 
-        private TransactionReceipt FinishVrfLotteryTxReceipt()
+        private TransactionReceipt FinishVrfLotteryTxReceipt(ulong blockIndex)
         {
-            return BuildSystemContractTxReceipt(ContractRegisterer.StakingContract,
+            return BuildSystemContractTxReceipt(blockIndex, ContractRegisterer.StakingContract,
                 StakingInterface.MethodFinishVrfLottery);
         }
 
-        private TransactionReceipt FinishCycleTxReceipt()
+        private TransactionReceipt FinishCycleTxReceipt(ulong blockIndex)
         {
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 UInt160Utils.Zero,
@@ -247,14 +247,14 @@ namespace Lachain.Core.Consensus
             );
             return new TransactionReceipt
             {
-                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
+                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(blockIndex)),
                 Status = TransactionStatus.Pool,
                 Transaction = tx,
                 Signature = SignatureUtils.Zero,
             };
         }
 
-        private TransactionReceipt BuildSystemContractTxReceipt(UInt160 contractAddress, string methodSignature)
+        private TransactionReceipt BuildSystemContractTxReceipt(ulong blockIndex, UInt160 contractAddress, string methodSignature)
         {
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var abi = ContractEncoder.Encode(methodSignature);
@@ -271,7 +271,7 @@ namespace Lachain.Core.Consensus
             };
             return new TransactionReceipt
             {
-                Hash = transaction.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())),
+                Hash = transaction.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(blockIndex)),
                 Status = TransactionStatus.Pool,
                 Transaction = transaction,
                 Signature = SignatureUtils.Zero,
