@@ -221,7 +221,7 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
 
-        // version 7 of config should contain hardfork height for hardfork_5,
+        // version 8 of config should contain hardfork height for hardfork_6
         private void _UpdateConfigToV8()
         {
             var network = GetConfig<NetworkConfig>("network") ??
@@ -230,9 +230,9 @@ namespace Lachain.Core.Config
                             throw new ApplicationException("No hardfork section in config");
             hardforks.Hardfork_6 ??= network.NetworkName switch
             {
-                "mainnet" => 2620000,
-                "testnet" => 2400000,
-                "devnet" => 0,
+                "mainnet" => 2770000,
+                "testnet" => 2543000,
+                "devnet" => 145700,
                 _ => 0
             };
             _config["hardfork"] = JObject.FromObject(hardforks);
