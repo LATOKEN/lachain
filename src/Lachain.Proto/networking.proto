@@ -143,3 +143,20 @@ message MessageBatch {
     Signature signature = 4;
     ECDSAPublicKey sender = 5;
 }
+
+message RootHashByTrieNameReply {
+    UInt256 root_hash = 1;
+}
+
+message RootHashByTrieNameRequest {
+    string trie_name = 1;
+    uint64 block = 2;
+}
+
+message BlockBatchRequest {
+    repeated uint64 block_numbers = 1;
+}
+
+message BlockBatchReply {
+    repeated Block block_batch = 1;
+}
