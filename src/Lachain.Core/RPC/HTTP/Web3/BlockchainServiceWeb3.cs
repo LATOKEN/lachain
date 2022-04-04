@@ -614,13 +614,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_chainId")]
         public string ChainId() 
         {
-            return TransactionUtils.ChainId(HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())).ToHex();
+            return TransactionUtils.ChainId(HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight())).ToHex();
         }
 
         [JsonRpcMethod("net_version")]
         public string NetVersion() 
         {
-            return TransactionUtils.ChainId(HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())).ToHex();
+            return TransactionUtils.ChainId(HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight())).ToHex();
         }
 
 

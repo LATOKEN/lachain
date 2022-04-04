@@ -105,7 +105,7 @@ namespace Lachain.Core.Consensus
             // But we need to verify the hash as we map the receipts with its hash
             // we skip the transactions with hash mismatch
             receipts = receipts.Where(receipt => 
-                receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_6Active(index)).Equals(receipt.Hash)).ToList();
+                receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_8Active(index)).Equals(receipt.Hash)).ToList();
 
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
@@ -222,7 +222,7 @@ namespace Lachain.Core.Consensus
             );
             return new TransactionReceipt
             {
-                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(blockIndex)),
+                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_8Active(blockIndex)),
                 Status = TransactionStatus.Pool,
                 Transaction = tx,
                 Signature = SignatureUtils.Zero,
@@ -247,7 +247,7 @@ namespace Lachain.Core.Consensus
             );
             return new TransactionReceipt
             {
-                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(blockIndex)),
+                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_8Active(blockIndex)),
                 Status = TransactionStatus.Pool,
                 Transaction = tx,
                 Signature = SignatureUtils.Zero,
@@ -271,7 +271,7 @@ namespace Lachain.Core.Consensus
             };
             return new TransactionReceipt
             {
-                Hash = transaction.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_6Active(blockIndex)),
+                Hash = transaction.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_8Active(blockIndex)),
                 Status = TransactionStatus.Pool,
                 Transaction = transaction,
                 Signature = SignatureUtils.Zero,

@@ -301,7 +301,7 @@ namespace Lachain.Core.Config
 
             var version = GetConfig<VersionConfig>("version") ??
                           throw new ApplicationException("No version section in config");
-            version.Version = 9;
+            version.Version = 10;
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
