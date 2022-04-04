@@ -91,11 +91,11 @@ namespace Lachain.Core.Blockchain.Operations
             var canTransactionMissVerification = isGenesisBlock || 
                 isDistributeCycleRewardsAndPenaltiesTx || isFinishVrfLotteryTx || isFinishCycleTx;
             
-            var verifyError = VerifyInternal(receipt, canTransactionMissVerification, HardforkHeights.IsHardfork_6Active(block.Header.Index));
+            var verifyError = VerifyInternal(receipt, canTransactionMissVerification, HardforkHeights.IsHardfork_8Active(block.Header.Index));
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
-            if (!receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_6Active(block.Header.Index)).Equals(receipt.Hash))
+            if (!receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_8Active(block.Header.Index)).Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check transaction nonce */
             var nonce = transactionRepository.GetTotalTransactionCount(receipt.Transaction.From);

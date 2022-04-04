@@ -130,7 +130,7 @@ namespace Lachain.Core.CLI
             if (!VirtualMachine.VerifyContract(byteCode, true)) return "Unable to validate smart-contract code";
             // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight()));
+            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight()));
             _transactionPool.Add(signedTx);
             return signedTx.Hash.ToHex();
         }
@@ -189,7 +189,7 @@ namespace Lachain.Core.CLI
                 Money.Zero,
                 methodSignature,
                 ContractEncoder.RestoreTypesFromStrings(arguments.Skip(3)));
-            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight()));
+            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight()));
             var error = _transactionPool.Add(signedTx);
             return error != OperatingError.Ok
                 ? $"Error adding tx {signedTx.Hash.ToHex()} to pool: {error}"
@@ -222,7 +222,7 @@ namespace Lachain.Core.CLI
             var value = Money.Parse(arguments[2]);
             var from = _keyPair.PublicKey.GetAddress();
             var tx = _transactionBuilder.TransferTransaction(from, to, value);
-            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight()));
+            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight()));
             return signedTx.Signature.ToString();
         }
 
@@ -235,7 +235,7 @@ namespace Lachain.Core.CLI
             var sig = arguments[2].HexToBytes().ToSignature();
             var result = _transactionPool.Add(tx, sig);
             Console.WriteLine($"Status: {result}");
-            return $"{tx.FullHash(sig, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight())).ToHex()}";
+            return $"{tx.FullHash(sig, HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight())).ToHex()}";
         }
 
         /*
@@ -252,7 +252,7 @@ namespace Lachain.Core.CLI
             var from = _keyPair.PublicKey.GetAddress();
             var tx = _transactionBuilder.TransferTransaction(from, to, value, gasPrice);
             if (gasPrice == 0) Console.WriteLine($"Set recommended gas price: {tx.GasPrice}");
-            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight()));
+            var signedTx = _transactionSigner.Sign(tx, _keyPair, HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight()));
             var error = _transactionPool.Add(signedTx);
             return error != OperatingError.Ok
                 ? $"Error adding tx {signedTx.Hash.ToHex()} to pool: {error}"
@@ -270,7 +270,7 @@ namespace Lachain.Core.CLI
         {
             var tx = Transaction.Parser.ParseFrom(arguments[1].HexToBytes());
             var sig = arguments[2].HexToBytes().ToSignature();
-            bool useNewChainId = HardforkHeights.IsHardfork_6Active(_blockManager.GetHeight());
+            bool useNewChainId = HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight());
             var accepted = new TransactionReceipt
             {
                 Transaction = tx,
