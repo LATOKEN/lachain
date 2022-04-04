@@ -49,6 +49,24 @@ namespace Lachain.Core.Blockchain.VM
         
         private static ulong GetDeployHeight(ulong currentHeight, UInt160 contract, UInt160 caller, ulong gasLimit, InvocationMessage message)
         {
+            if (HardforkHeights.IsHardfork_7Active(currentHeight))
+                return GetDeployHeightV2(currentHeight, contract, caller, gasLimit, message);
+            return GetDeployHeightV1(currentHeight, contract, caller, gasLimit, message);
+        } 
+        
+        private static ulong GetDeployHeightV1(ulong currentHeight, UInt160 contract, UInt160 caller, ulong gasLimit, InvocationMessage message)
+        {
+            var input = ContractEncoder.Encode(DeployInterface.MethodGetDeployHeight, contract);
+            var height = DoInternalCall(caller, ContractRegisterer.DeployContract,
+                input, gasLimit, message).ReturnValue;
+            Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
+            if (HardforkHeights.IsHardfork_6Active(currentHeight))
+                height = height ?? new byte[64];
+            return BitConverter.ToUInt64(height, 0);
+        }
+
+        private static ulong GetDeployHeightV2(ulong currentHeight, UInt160 contract, UInt160 caller, ulong gasLimit, InvocationMessage message)
+        {
             try
             {
                 var input = ContractEncoder.Encode(DeployInterface.MethodGetDeployHeight, contract);
