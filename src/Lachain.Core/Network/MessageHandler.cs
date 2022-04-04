@@ -12,6 +12,7 @@ using Lachain.Core.Consensus;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using Prometheus;
 
@@ -25,6 +26,8 @@ namespace Lachain.Core.Network
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
         private readonly IConsensusManager _consensusManager;
+        private readonly ISnapshotIndexRepository _snapshotIndexer;
+        private readonly IBlockManager _blockManager;
 
         private readonly INetworkManager _networkManager;
         
@@ -55,7 +58,8 @@ namespace Lachain.Core.Network
             IStateManager stateManager,
             IConsensusManager consensusManager,
             IBlockManager blockManager,
-            INetworkManager networkManager
+            INetworkManager networkManager,
+            ISnapshotIndexRepository snapshotIndexer
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -63,6 +67,8 @@ namespace Lachain.Core.Network
             _stateManager = stateManager;
             _consensusManager = consensusManager;
             _networkManager = networkManager;
+            _blockManager = blockManager;
+            _snapshotIndexer = snapshotIndexer;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
             _networkManager.OnPingReply += OnPingReply;
@@ -213,6 +219,113 @@ namespace Lachain.Core.Network
 
                 Logger.LogTrace("Queued message too far in future...");
             }
+        }
+
+        private void OnRootHashByTrieNameReply(object sender, (RootHashByTrieNameReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("RootHashByTrieNameReply").NewTimer();
+            Logger.LogTrace("Start processing RootHashByTrieNameReply");
+            var (reply, publicKey) = @event;
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    // start downloading the trie via fastsync
+                    // probably use _blockSynchronizer to integrate it in a better way
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError($"Error occured while handling root hash from peer {publicKey}: {exception}");
+                }
+            }, TaskCreationOptions.LongRunning);
+            Logger.LogTrace("Finished processing RootHashByTrieNameReply");
+        }
+
+        private void OnRootHashByTrieNameRequest(object sender,
+            (RootHashByTrieNameRequest request, Action<RootHashByTrieNameReply> callback) @event
+        )
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("RootHashByTrieNameRequest").NewTimer();
+            Logger.LogTrace("Start processing RootHashByTrieNameRequest");
+            var (request, callback) = @event;
+            try
+            {
+                var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
+                var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
+                var reply = new RootHashByTrieNameReply
+                {
+                    RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash
+                };
+                callback(reply);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to get root hash for trie {request.TrieName}"
+                    + $" for block {request.Block} : {exception}");
+                var reply = new RootHashByTrieNameReply
+                {
+                    RootHash = UInt256Utils.Zero
+                };
+                callback(reply);
+            }
+
+            Logger.LogTrace("Finished processing RootHashByTrieNameRequest");
+        }
+
+        private void OnBlockBatchReply(object sender, (BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnBlockBatchReply").NewTimer();
+            Logger.LogTrace("Start processing OnBlockBatchReply");
+            var (reply, publicKey) = @event;
+            var blocks = reply.BlockBatch.ToList();
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    // handle the blocks via fastsync
+                    // probably use _blockSynchronizer to integrate it in a better way
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError($"Error occured while handling blocks from peer {publicKey}: {exception}");
+                }
+            }, TaskCreationOptions.LongRunning);
+            Logger.LogTrace("Finished processing OnBlockBatchReply");
+        }
+
+        private void OnBlockBatchRequest(object sender,
+            (BlockBatchRequest request, Action<BlockBatchReply> callback) @event
+        )
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnBlockBatchRequest").NewTimer();
+            Logger.LogTrace("Start processing OnBlockBatchRequest");
+            var (request, callback) = @event;
+            try
+            {
+                var blockNumbers = request.BlockNumbers.ToList();
+                List<Block> blockBatch = new List<Block>();
+                foreach (var blockNumber in blockNumbers)
+                {
+                    var block = _blockManager.GetByHeight(blockNumber);
+                    if (block != null) blockBatch.Add(block);
+                }
+                var reply = new BlockBatchReply
+                {
+                    BlockBatch = {blockBatch}
+                };
+                callback(reply);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to get blocks : {exception}");
+                var reply = new BlockBatchReply
+                {
+                    BlockBatch = {new List<Block>()}
+                };
+                callback(reply);
+            }
+
+            Logger.LogTrace("Finished processing OnBlockBatchRequest");
         }
     }
 }
