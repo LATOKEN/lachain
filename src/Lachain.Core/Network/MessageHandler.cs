@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
@@ -12,6 +13,7 @@ using Lachain.Core.Consensus;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Storage.Trie;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using Prometheus;
@@ -28,6 +30,7 @@ namespace Lachain.Core.Network
         private readonly IConsensusManager _consensusManager;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IBlockManager _blockManager;
+        private readonly INodeRetrieval _nodeRetrieval;
 
         private readonly INetworkManager _networkManager;
         
@@ -59,7 +62,8 @@ namespace Lachain.Core.Network
             IConsensusManager consensusManager,
             IBlockManager blockManager,
             INetworkManager networkManager,
-            ISnapshotIndexRepository snapshotIndexer
+            ISnapshotIndexRepository snapshotIndexer,
+            INodeRetrieval nodeRetrieval
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -69,6 +73,7 @@ namespace Lachain.Core.Network
             _networkManager = networkManager;
             _blockManager = blockManager;
             _snapshotIndexer = snapshotIndexer;
+            _nodeRetrieval = nodeRetrieval;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
             _networkManager.OnPingReply += OnPingReply;
@@ -235,7 +240,7 @@ namespace Lachain.Core.Network
                 }
                 catch (Exception exception)
                 {
-                    Logger.LogError($"Error occured while handling root hash from peer {publicKey}: {exception}");
+                    Logger.LogError($"Error occured while handling root hash from peer {publicKey.ToHex()}: {exception}");
                 }
             }, TaskCreationOptions.LongRunning);
             Logger.LogTrace("Finished processing OnRootHashByTrieNameReply");
@@ -287,7 +292,7 @@ namespace Lachain.Core.Network
                 }
                 catch (Exception exception)
                 {
-                    Logger.LogError($"Error occured while handling blocks from peer {publicKey}: {exception}");
+                    Logger.LogError($"Error occured while handling blocks from peer {publicKey.ToHex()}: {exception}");
                 }
             }, TaskCreationOptions.LongRunning);
             Logger.LogTrace("Finished processing OnBlockBatchReply");
@@ -326,6 +331,92 @@ namespace Lachain.Core.Network
             }
 
             Logger.LogTrace("Finished processing OnBlockBatchRequest");
+        }
+
+        private void OnTrieNodeByHashReply(object sender, (TrieNodeByHashReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnTrieNodeByHashReply").NewTimer();
+            Logger.LogTrace("Start processing OnTrieNodeByHashReply");
+            var (reply, publicKey) = @event;
+            var trieNodes = reply.TrieNodes.ToList();
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    // handle the blocks via fastsync
+                    // probably use _blockSynchronizer to integrate it in a better way
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError($"Error occured while handling trie nodes from peer {publicKey.ToHex()}: {exception}");
+                }
+            }, TaskCreationOptions.LongRunning);
+            Logger.LogTrace("Finished processing OnTrieNodeByHashReply");
+        }
+
+        private void OnTrieNodeByHashRequest(object sender, 
+            (TrieNodeByHashRequest request, Action<TrieNodeByHashReply> callback) @event
+        )
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnTrieNodeByHashRequest").NewTimer();
+            Logger.LogTrace("Start processing OnTrieNodeByHashRequest");
+            var (request, callback) = @event;
+            var nodeHashes = request.NodeHashes.ToList();
+
+            try
+            {
+
+                var trieNodeInfoList = new List<TrieNodeInfo>();
+                foreach (var nodeHash in nodeHashes)
+                {
+                    IHashTrieNode? node = _nodeRetrieval.TryGetNode(nodeHash.ToBytes(), out var childrenHash);
+                    if (node is null) continue;
+                    var nodeInfo = new TrieNodeInfo();
+
+                    switch (node)
+                    {
+                        case InternalNode internalNode:
+                            var childrenHashes = new List<UInt256>();
+                            foreach(var childHash in childrenHash) childrenHashes.Add(childHash.ToUInt256());
+                            nodeInfo.NonLeaf = new InternalNodeInfo
+                            {
+                                NodeType = ByteString.CopyFrom((byte) internalNode.Type),
+                                Hash = internalNode.Hash.ToUInt256(),
+                                ChildrenMask = internalNode.ChildrenMask,
+                                ChildrenHash = { childrenHashes }
+                            };
+                            break;
+
+                        case LeafNode leafNode:
+                            nodeInfo.Leaf = new LeafNodeInfo
+                            {
+                                NodeType = ByteString.CopyFrom((byte) leafNode.Type),
+                                Hash = leafNode.Hash.ToUInt256(),
+                                KeyHash = leafNode.KeyHash.ToUInt256(),
+                                Value = ByteString.CopyFrom(leafNode.Value)
+                            };
+                            break;
+                    }
+                    trieNodeInfoList.Add(nodeInfo);
+                }
+
+                var reply = new TrieNodeByHashReply
+                {
+                    TrieNodes = {trieNodeInfoList}
+                };
+                callback(reply);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to get trie nodes: {exception}");
+                var reply = new TrieNodeByHashReply
+                {
+                    TrieNodes = {new List<TrieNodeInfo>()}
+                };
+                callback(reply);
+            }
+            
+            Logger.LogTrace("Finished processing OnTrieNodeByHashRequest");
         }
     }
 }
