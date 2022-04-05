@@ -223,8 +223,8 @@ namespace Lachain.Core.Network
 
         private void OnRootHashByTrieNameReply(object sender, (RootHashByTrieNameReply reply, ECDSAPublicKey publicKey) @event)
         {
-            using var timer = IncomingMessageHandlingTime.WithLabels("RootHashByTrieNameReply").NewTimer();
-            Logger.LogTrace("Start processing RootHashByTrieNameReply");
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameReply").NewTimer();
+            Logger.LogTrace("Start processing OnRootHashByTrieNameReply");
             var (reply, publicKey) = @event;
             Task.Factory.StartNew(() =>
             {
@@ -238,15 +238,15 @@ namespace Lachain.Core.Network
                     Logger.LogError($"Error occured while handling root hash from peer {publicKey}: {exception}");
                 }
             }, TaskCreationOptions.LongRunning);
-            Logger.LogTrace("Finished processing RootHashByTrieNameReply");
+            Logger.LogTrace("Finished processing OnRootHashByTrieNameReply");
         }
 
         private void OnRootHashByTrieNameRequest(object sender,
             (RootHashByTrieNameRequest request, Action<RootHashByTrieNameReply> callback) @event
         )
         {
-            using var timer = IncomingMessageHandlingTime.WithLabels("RootHashByTrieNameRequest").NewTimer();
-            Logger.LogTrace("Start processing RootHashByTrieNameRequest");
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameRequest").NewTimer();
+            Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
             var (request, callback) = @event;
             try
             {
@@ -269,7 +269,7 @@ namespace Lachain.Core.Network
                 callback(reply);
             }
 
-            Logger.LogTrace("Finished processing RootHashByTrieNameRequest");
+            Logger.LogTrace("Finished processing OnRootHashByTrieNameRequest");
         }
 
         private void OnBlockBatchReply(object sender, (BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
