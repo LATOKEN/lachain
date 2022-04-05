@@ -1,8 +1,8 @@
 ﻿namespace Lachain.Storage.Trie
 {
-    public enum NodeType
+    public enum NodeType : byte
     {
-        Leaf,
-        Internal
+        Leaf = 0,
+        Internal = 1,
     }
 }
