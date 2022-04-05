@@ -5,6 +5,7 @@ import "default.proto";
 import "transaction.proto";
 import "block.proto";
 import "consensus.proto";
+import "trienode.proto";
 
 message Peer {
     reserved 1, 2; // deleted
@@ -95,4 +96,12 @@ message BlockBatchRequest {
 
 message BlockBatchReply {
     repeated Block block_batch = 1;
+}
+
+message TrieNodeByHashRequest {
+    repeated UInt256 node_hashes = 1;
+}
+
+message TrieNodeByHashReply {
+    repeated TrieNodeInfo trie_nodes = 1;
 }
