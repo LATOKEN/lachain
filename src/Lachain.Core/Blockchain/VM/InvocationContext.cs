@@ -12,7 +12,7 @@ namespace Lachain.Core.Blockchain.VM
 
         public UInt256 Value => Receipt.Transaction.Value;
 
-        public UInt256 TransactionHash => Receipt.FullHash(HardforkHeights.IsHardfork_8Active(Snapshot.Blocks.GetTotalBlockHeight()));
+        public UInt256 TransactionHash => Receipt.FullHash(HardforkHeights.IsHardfork_8Active(Snapshot.Blocks.GetTotalBlockHeight() + 1));
 
         public readonly TransactionReceipt Receipt;
 
