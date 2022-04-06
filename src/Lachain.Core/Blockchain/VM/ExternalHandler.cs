@@ -1146,7 +1146,7 @@ namespace Lachain.Core.Blockchain.VM
             Array.Copy(s, 0, sig, r.Length, s.Length);
             sig[64] = (byte) v;
             var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig,
-                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()));
+                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
             var address = VirtualMachine.Crypto.ComputeAddress(publicKey);
             SafeCopyToMemory(frame.Memory, address, resultOffset);
         }
@@ -1165,7 +1165,7 @@ namespace Lachain.Core.Blockchain.VM
             var publicKey = SafeCopyFromMemory(frame.Memory, publicKeyOffset, CryptoUtils.PublicKeyLength) ??
                             throw new InvalidOperationException();
             var result = VirtualMachine.Crypto.VerifySignature(message, sig, publicKey,
-                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()));
+                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
             SafeCopyToMemory(frame.Memory, new[] {result ? (byte) 1 : (byte) 0}, resultOffset);
         }
 
@@ -1370,7 +1370,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetChainId outside wasm frame");
 
-            var chainId = TransactionUtils.ChainId(HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()));
+            var chainId = TransactionUtils.ChainId(HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
             
             // Load chainId at the given dataOffset
             var result = SafeCopyToMemory(frame.Memory, chainId.ToBytes().ToArray(), dataOffset);
