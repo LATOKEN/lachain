@@ -77,6 +77,40 @@ namespace Lachain.Networking
                 {SyncBlocksRequest = new SyncBlocksRequest {FromHeight = fromHeight, ToHeight = toHeight}};
         }
 
+        public NetworkMessage RootHashByTrieNameRequest(ulong block, string trieName)
+        {
+            return new NetworkMessage
+            {
+                RootHashByTrieNameRequest = new RootHashByTrieNameRequest
+                {
+                    Block = block,
+                    TrieName = trieName
+                }
+            };
+        }
+
+        public NetworkMessage BlockBatchRequest(List<ulong> blockNumbers)
+        {
+            return new NetworkMessage
+            {
+                BlockBatchRequest = new BlockBatchRequest
+                {
+                    BlockNumbers = {blockNumbers}
+                }
+            };
+        }
+
+        public NetworkMessage TrieNodeByHashRequest(List<UInt256> nodeHashes)
+        {
+            return new NetworkMessage
+            {
+                TrieNodeByHashRequest = new TrieNodeByHashRequest
+                {
+                    NodeHashes = {nodeHashes}
+                }
+            };
+        }
+
         public MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages)
         {
             var batch = new MessageBatch
