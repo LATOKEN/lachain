@@ -15,6 +15,9 @@ namespace Lachain.Networking
         NetworkMessage SyncPoolRequest(IEnumerable<UInt256> hashes);
         NetworkMessage SyncPoolReply(IEnumerable<TransactionReceipt> transactions);
         NetworkMessage SyncBlocksRequest(ulong fromHeight, ulong toHeight);
+        NetworkMessage RootHashByTrieNameRequest(ulong block, string trieName);
+        NetworkMessage BlockBatchRequest(List<ulong> blockNumbers);
+        NetworkMessage TrieNodeByHashRequest(List<UInt256> nodeHashes);
 
         MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages);
 
