@@ -42,6 +42,7 @@ namespace Lachain.Consensus.RootProtocol
             _rootId = id;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _cycleDuration = cycleDuration;
+            _useNewChainId = useNewChainId;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
