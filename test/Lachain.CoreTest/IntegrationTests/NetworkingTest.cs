@@ -39,8 +39,6 @@ namespace Lachain.CoreTest.IntegrationTests
     {
         private static readonly ILogger<NetworkingTest> Logger = LoggerFactory.GetLoggerForClass<NetworkingTest>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private static readonly ITransactionSigner Signer = new TransactionSigner();
-        
         private IBlockManager _blockManager = null!;
         private ITransactionBuilder _transactionBuilder = null!;
         private ITransactionPool _transactionPool = null!;
