@@ -85,7 +85,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             try
             {
                 var useNewChainId =
-                    HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+                    HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
                 var transaction = MakeTransaction(ethTx);
                 var txHash = transaction.FullHash(signature, useNewChainId);
                 var result = _transactionManager.Verify(new TransactionReceipt
@@ -193,7 +193,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var transaction = MakeTransaction(ethTx);
                 bool useNewChainId =
-                    HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+                    HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId(useNewChainId))}))
                     throw new Exception($"Can not add to transaction pool: BadChainId");
                 var result = _transactionPool.Add(transaction, signature.ToSignature());
@@ -529,7 +529,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var signedTx = MakeAndSignTransaction(opts);
             var transaction = signedTx.Transaction;
             var sign = signedTx.Signature;
-            var rawTx = transaction.RlpWithSignature(sign, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()));
+            var rawTx = transaction.RlpWithSignature(sign, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
             return Web3DataFormatUtils.Web3Data(rawTx);
         }
 
@@ -598,7 +598,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             return _transactionSigner.Sign(tx, keyPair, 
-                HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()));
+                HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
         }
         private (OperatingError, object?) _InvokeSystemContract(
             UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot

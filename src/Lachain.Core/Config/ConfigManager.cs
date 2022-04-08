@@ -57,6 +57,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV8();
             if (version < 9)
                 _UpdateConfigToV9();
+            if (version < 10)
+                _UpdateConfigToV10();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
