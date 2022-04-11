@@ -174,7 +174,7 @@ namespace Lachain.Core.Vault
                     return;
                 }
 
-                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Snapshot.Blocks.GetTotalBlockHeight())));
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Receipt.Block)));
                 if (sender < 0)
                 {
                     Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
@@ -217,7 +217,7 @@ namespace Lachain.Core.Vault
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
-                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Snapshot.Blocks.GetTotalBlockHeight() + 1)));
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Receipt.Block)));
                 if (sender < 0) return;
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenSendValue);
                 var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle for Confirm transaction");
@@ -256,7 +256,7 @@ namespace Lachain.Core.Vault
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
-                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Snapshot.Blocks.GetTotalBlockHeight() + 1)));
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Receipt.Block)));
                 if (sender < 0) return;
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
@@ -381,7 +381,7 @@ namespace Lachain.Core.Vault
                     {
                         Logger.LogDebug(
                             $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
-                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(i + 1)));
+                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(i)));
                         if (sender < 0)
                         {
                             Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
@@ -401,7 +401,7 @@ namespace Lachain.Core.Vault
                     {
                         Logger.LogDebug(
                             $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
-                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(i + 1)));
+                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(i)));
                         if (sender < 0)
                         {
                             Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
@@ -422,7 +422,7 @@ namespace Lachain.Core.Vault
                     {
                         Logger.LogDebug(
                             $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
-                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(i + 1)));
+                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(i)));
                         if (sender < 0)
                         {
                             Logger.LogWarning($"Skipping call because of invalid sender: {sender}");

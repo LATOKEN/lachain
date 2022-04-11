@@ -61,7 +61,7 @@ namespace Lachain.Core.RPC.HTTP
                 throw new Exception("Failed to validate serialized and deserialized transactions");
             var s = signature.HexToBytes().ToSignature();
             var useNewChainId =
-                HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight());
+                HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
             var txHash = transaction.FullHash(s, useNewChainId);
             var json = new JObject {["hash"] = txHash.ToHex()};
             var accepted = new TransactionReceipt
@@ -84,7 +84,8 @@ namespace Lachain.Core.RPC.HTTP
         {
             var transaction = Transaction.Parser.ParseFrom(rawTransaction.HexToBytes());
             var s = signature.HexToBytes().ToSignature();
-            var json = new JObject {["hash"] = transaction.FullHash(s, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())).ToHex()};
+            var json = new JObject {["hash"] = transaction.FullHash(s, 
+                    HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1)).ToHex()};
             var result = _transactionPool.Add(
                 transaction, signature.HexToBytes().ToSignature());
             if (result != OperatingError.Ok)
@@ -122,7 +123,7 @@ namespace Lachain.Core.RPC.HTTP
                 throw new ArgumentException("Unable to validate smart-contract code");
             // TODO: use deploy abi if required
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = _transactionSigner.Sign(tx, ecdsaKeyPair, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()));
+            var signedTx = _transactionSigner.Sign(tx, ecdsaKeyPair, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
             var error = _transactionPool.Add(signedTx);
             return new JObject
             {
@@ -188,7 +189,7 @@ namespace Lachain.Core.RPC.HTTP
                 Money.Zero,
                 methodSignature,
                 ContractEncoder.RestoreTypesFromStrings(arguments.Split(',')));
-            var signedTx = _transactionSigner.Sign(tx, ecdsaKeyPair, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()));
+            var signedTx = _transactionSigner.Sign(tx, ecdsaKeyPair, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
             var error = _transactionPool.Add(signedTx);
             return new JObject
             {

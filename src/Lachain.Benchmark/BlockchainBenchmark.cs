@@ -112,7 +112,7 @@ namespace Lachain.Benchmark
 
             Logger.LogInformation($"Setting chainId");
             var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId ?? 42;
-            var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId ?? chainId;
+            var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId ?? chainId;
             TransactionUtils.SetChainId((int)chainId, newChainId);
             
             // _BenchTxProcessing(_transactionBuilder, _transactionSigner, keyPair);
