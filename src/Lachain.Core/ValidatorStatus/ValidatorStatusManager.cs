@@ -143,6 +143,7 @@ namespace Lachain.Core.ValidatorStatus
                     }
 
                     lastCheckedBlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+                    Logger.LogInformation($"Check {lastCheckedBlockHeight} height");
 
                     if (_sendingTxHash != null)
                     {
@@ -159,6 +160,7 @@ namespace Lachain.Core.ValidatorStatus
                     }
 
                     var stake = _systemContractReader.GetStake().ToBigInteger();
+                    Logger.LogInformation($"Stake size is {stake}");
                     var isStaker = !stake.IsZero;
 
                     if (!isStaker)
@@ -186,6 +188,7 @@ namespace Lachain.Core.ValidatorStatus
                     }
 
                     var requestCycle = _systemContractReader.GetWithdrawRequestCycle();
+                    Logger.LogInformation($"Request cycle is {requestCycle}");
                     if (requestCycle != 0)
                     {
                         Logger.LogInformation(
