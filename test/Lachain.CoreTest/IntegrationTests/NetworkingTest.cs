@@ -145,13 +145,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         nodeHashList.Add(node.Hash.ToUInt256());
                     }
 
-                    var message = new NetworkMessage
-                    {
-                        TrieNodeByHashRequest = new TrieNodeByHashRequest
-                        {
-                            NodeHashes = {nodeHashList}
-                        }
-                    };
+                    var message = _networkManager.MessageFactory.TrieNodeByHashRequest(nodeHashList);
 
                     CheckTrieNodeByHashRequest(message, snapshot);
                 }
@@ -297,15 +291,21 @@ namespace Lachain.CoreTest.IntegrationTests
             var nodeListFromState = new List < IHashTrieNode > ();
             foreach (var nodeInfo in nodeInfoList)
             {
-                if (nodeInfo.Leaf != null)
+                switch (nodeInfo.MessageCase)
                 {
-                    var leafNode = GetLeafNodeFromInfo(nodeInfo.Leaf);
-                    nodeList.Add(leafNode);
-                }
-                else
-                {
-                    var internalNode = GetInternalNodeFromInfo(nodeInfo.NonLeaf);
-                    nodeList.Add(internalNode);
+                    case TrieNodeInfo.MessageOneofCase.Leaf:
+                        var leafNode = GetLeafNodeFromInfo(nodeInfo.Leaf);
+                        nodeList.Add(leafNode);
+                        break;
+                    
+                    case TrieNodeInfo.MessageOneofCase.NonLeaf:
+                        var internalNode = GetInternalNodeFromInfo(nodeInfo.NonLeaf);
+                        nodeList.Add(internalNode);
+                        break;
+
+                    default:
+                        Assert.That(false, "Invalid trie node in nodeInfo");
+                        break;
                 }
             }
             foreach (var item in state)
