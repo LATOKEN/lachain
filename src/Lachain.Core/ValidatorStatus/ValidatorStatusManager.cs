@@ -129,7 +129,7 @@ namespace Lachain.Core.ValidatorStatus
                 const ulong checkInterval = 1000;
                 var lastCheckedBlockHeight = (ulong) 0;
                 var passingCycle = -1;
-                Logger.LogInformation($"Validator status manager started");
+                Logger.LogInformation($"Validator status manager started, {_withdrawTriggered}, {_stakeSize}, {_stopRequested}");
 
                 while (!_withdrawTriggered)
                 {
