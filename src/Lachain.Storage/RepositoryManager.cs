@@ -12,6 +12,7 @@ namespace Lachain.Storage
         private readonly VersionRepository _versionRepository;
         public readonly ITrieMap TrieMap;
         public ulong LatestVersion { get; private set; }
+        public uint RepositoryId => _repositoryId;
         
         public RepositoryManager(
             uint repositoryId,
