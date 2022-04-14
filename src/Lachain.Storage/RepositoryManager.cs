@@ -18,6 +18,7 @@ namespace Lachain.Storage
 
         public uint RepositoryId => _repositoryId;
         public ulong LatestVersion { get; private set; }
+        public uint RepositoryId => _repositoryId;
         
         public RepositoryManager(
             uint repositoryId,
