@@ -1,4 +1,7 @@
+using System.Linq;
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Storage.Repositories
 {
@@ -21,7 +24,26 @@ namespace Lachain.Storage.Repositories
         }
         public void SaveCheckpoint(Block block)
         {
-            // TODO: save block id, block hash, all six state hash
+            RocksDbAtomicWrite batch = new RocksDbAtomicWrite(_rocksDbContext);
+        }
+
+        private void SaveBlockId(RocksDbAtomicWrite batch, ulong blockId)
+        {
+            var key = EntryPrefix.CheckpointBlockHeight.BuildPrefix();
+            var value = UInt64Utils.ToBytes(blockId);
+            batch.Put(key, value);
+        }
+
+        private void SaveBlockHash(RocksDbAtomicWrite batch, UInt256 blockHash)
+        {
+            var key = EntryPrefix.CheckpointBlockHash.BuildPrefix();
+            var value = blockHash.ToBytes();
+            batch.Put(key, value);
+        }
+
+        private void SaveBalanceState(RocksDbAtomicWrite batch, UInt256 stateHash)
+        {
+            
         }
     }
 }
