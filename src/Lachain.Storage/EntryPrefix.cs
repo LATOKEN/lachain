@@ -62,12 +62,7 @@
         /* checkpoint info */
         CheckpointBlockHeight = 0x0f01,
         CheckpointBlockHash = 0x0f02,
-        CheckpointBalanceState = 0x0f03,
-        CheckpointContractState = 0x0f04,
-        CheckpointEventState = 0x0f05,
-        CheckpointStorageState = 0x0f06,
-        CheckpointTransactionState = 0x0f07,
-        CheckpointValidatorState = 0x0f08,
+        CheckpointSnapshotState = 0x0f03,
 
     }
 }
