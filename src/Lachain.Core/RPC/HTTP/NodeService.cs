@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using Lachain.Utility.Utils;
 using Lachain.Storage.State;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Logger;
 using Lachain.Proto;
 
 
@@ -16,6 +17,8 @@ namespace Lachain.Core.RPC.HTTP
 {
     public class NodeService : JsonRpcService
     {
+        private static readonly ILogger<NodeService> Logger =
+            LoggerFactory.GetLoggerForClass<NodeService>();
         private readonly ulong _startTs;
         private readonly IBlockSynchronizer _blockSynchronizer;
         private readonly IBlockchainEventFilter _blockchainEventFilter;
@@ -50,18 +53,24 @@ namespace Lachain.Core.RPC.HTTP
         [JsonRpcMethod("net_peers")]
         private JArray GetConnectedPeers()
         {
+            Logger.LogInformation($"net_peers start");
             var peers = _blockSynchronizer.GetConnectedPeers();
+            Logger.LogInformation($"net_peers 1");
             var result = new JArray();
+            Logger.LogInformation($"net_peers 2");
             
             foreach (var (ecdsaPublicKey, height) in peers)
             {
+                Logger.LogInformation($"net_peers 3");
                 var peerJObject = new JObject
                 {
                     ["publicKey"] = ecdsaPublicKey!.ToHex(),
                     ["height"] = height,
                 };
+                Logger.LogInformation($"net_peers 4");
                 result.Add(peerJObject);
             }
+            Logger.LogInformation($"net_peers 5");
             
             return result;
         }

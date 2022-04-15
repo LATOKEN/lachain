@@ -7,6 +7,7 @@ using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using NLog.Fluent;
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -99,8 +100,9 @@ namespace Lachain.Core.Blockchain.Operations
                 if (cacheEnabled)
                     _publicKeyCache.Add(receipt.Transaction.From, publicKey);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.LogWarning($"Failed to verify transaction: {ex}");
                 return false;
             }
 

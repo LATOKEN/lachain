@@ -218,7 +218,12 @@ namespace Lachain.Core.Vault
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Receipt.Block)));
-                if (sender < 0) return;
+                if (sender < 0) 
+                {
+                    Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
+                    return;
+                }
+
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenSendValue);
                 var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle for Confirm transaction");
                 var proposer = args[1] as UInt256 ??
@@ -257,7 +262,11 @@ namespace Lachain.Core.Vault
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
                 var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_8Active(context.Receipt.Block)));
-                if (sender < 0) return;
+                if (sender < 0) 
+                {
+                    Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
+                    return;
+                }
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
                 var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle");
