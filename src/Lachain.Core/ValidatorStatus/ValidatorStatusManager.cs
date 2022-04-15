@@ -328,6 +328,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void BecomeStaker(BigInteger stakeAmount)
         {
+            Logger.LogInformation("BecomeStaker");
             var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
@@ -342,6 +343,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void SubmitVrf(byte[] proof)
         {
+            Logger.LogInformation("SubmitVrf");
             var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
@@ -356,6 +358,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void SubmitAttendanceDetection()
         {
+            Logger.LogInformation("SubmitAttendanceDetection");
             var previousValidators = _systemContractReader.GetPreviousValidators();
 
             var publicKeys = new byte[previousValidators.Length][];
