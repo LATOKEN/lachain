@@ -3,7 +3,7 @@ using Lachain.Storage.State;
 
 namespace Lachain.Core.Blockchain.Operations
 {
-    public interface IBlockCheckpoint
+    public interface ICheckpointManager
     {
         /// <returns>
         /// Block index of the last checkpoint, null if no checkpoint was saved

@@ -3,7 +3,7 @@ using Lachain.Proto;
 
 namespace Lachain.Storage.Repositories
 {
-    public interface IBlockCheckpointRepository
+    public interface ICheckpointRepository
     {
         /// <returns>
         /// Saves Checkpoint
