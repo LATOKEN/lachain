@@ -76,6 +76,10 @@ message TrieNodeByHashReply {
     repeated TrieNodeInfo trie_nodes = 1;
 }
 
+message CheckpointRequest {
+    bytes checkpoint_type = 1;
+}
+
 message NetworkMessage {
     oneof message {
         PingReply ping_reply = 13;
@@ -93,6 +97,7 @@ message NetworkMessage {
         BlockBatchReply block_batch_reply = 34;
         TrieNodeByHashRequest trie_node_by_hash_request = 35;
         TrieNodeByHashReply trie_node_by_hash_reply = 36;
+        CheckpointRequest checkpoint_request = 37;
     }
     reserved 12, 14 to 19, 25, 26; // deleted
 }
