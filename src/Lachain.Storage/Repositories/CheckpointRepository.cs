@@ -7,13 +7,13 @@ using Lachain.Logger;
 
 namespace Lachain.Storage.Repositories
 {
-    public class BlockCheckpointRepository : IBlockCheckpointRepository
+    public class CheckpointRepository : ICheckpointRepository
     {
-        private static readonly ILogger<BlockCheckpointRepository> Logger = LoggerFactory.GetLoggerForClass<BlockCheckpointRepository>();
+        private static readonly ILogger<CheckpointRepository> Logger = LoggerFactory.GetLoggerForClass<CheckpointRepository>();
         private readonly IRocksDbContext _rocksDbContext;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
 
-        public BlockCheckpointRepository(
+        public CheckpointRepository(
             IRocksDbContext rocksDbContext,
             ISnapshotIndexRepository snapshotIndexer
         )
