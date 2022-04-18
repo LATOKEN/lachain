@@ -146,7 +146,6 @@ namespace Lachain.Core.Blockchain.Operations
                 }
                 if (!stateHash.Equals(snapshot.Hash))
                 {
-                    Logger.LogInformation($"state hash: {snapshot.Hash}, saved state hash: {stateHash}");
                     Logger.LogInformation($"State hash mismatch for {(RepositoryType) snapshot.RepositoryId}"
                         + $"saved state hash: {stateHash.ToHex()}, actual state hash: {snapshot.Hash.ToHex()}");
                     return false;
