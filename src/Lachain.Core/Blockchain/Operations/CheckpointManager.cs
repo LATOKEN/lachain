@@ -9,20 +9,20 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Blockchain.Operations
 {
-    public class BlockCheckpoint : IBlockCheckpoint
+    public class CheckpointManager : ICheckpointManager
     {
-        private static readonly ILogger<BlockCheckpoint> Logger = LoggerFactory.GetLoggerForClass<BlockCheckpoint>();
+        private static readonly ILogger<CheckpointManager> Logger = LoggerFactory.GetLoggerForClass<CheckpointManager>();
         private readonly IBlockManager _blockManager;
-        private readonly IBlockCheckpointRepository _repository;
+        private readonly ICheckpointRepository _repository;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private ulong? _checkpointBlockId;
         private UInt256? _checkpointBlockHash;
         private IDictionary<RepositoryType, UInt256?> _stateHashes = new Dictionary<RepositoryType, UInt256?>();
         public ulong? CheckpointBlockId => _checkpointBlockId;
         public UInt256? CheckpointBlockHash => _checkpointBlockHash;
-        public BlockCheckpoint(
+        public CheckpointManager(
             IBlockManager blockManager,
-            IBlockCheckpointRepository repository,
+            ICheckpointRepository repository,
             ISnapshotIndexRepository snapshotIndexer
         )
         {
@@ -121,11 +121,11 @@ namespace Lachain.Core.Blockchain.Operations
             var block = GetCheckPointBlock();
             if (block is null)
             {
-                Logger.LogInformation($"Found null block for checkpoint block: {_checkpointBlockId}");
+                Logger.LogInformation($"Found null block for checkpoint blockId: {_checkpointBlockId}");
                 return false;
             }
 
-            if (block.Hash != _checkpointBlockHash)
+            if (!_checkpointBlockHash.Equals(block.Hash))
             {
                 Logger.LogInformation($"Block hash mismatch, block hash saved in checkpoint: {_checkpointBlockHash.ToHex()}"
                     + $" actual block hash: {block.Hash.ToHex()}");
@@ -136,14 +136,17 @@ namespace Lachain.Core.Blockchain.Operations
             var snapshots = blockchainSnapshot.GetAllSnapshot();
             foreach (var snapshot in snapshots)
             {
+                if (snapshot.RepositoryId == (uint) RepositoryType.BlockRepository) continue;
                 var stateHash = GetStateHashForSnapshot((RepositoryType) snapshot.RepositoryId);
                 if (stateHash is null)
                 {
-                    Logger.LogInformation($"State hash is not saved for {(RepositoryType) snapshot.RepositoryId}");
+                    Logger.LogInformation($"State hash is not saved for {(RepositoryType) snapshot.RepositoryId}, "
+                        + $"state hash: {snapshot.Hash.ToHex()}");
                     return false;
                 }
-                if (stateHash != snapshot.Hash)
+                if (!stateHash.Equals(snapshot.Hash))
                 {
+                    Logger.LogInformation($"state hash: {snapshot.Hash}, saved state hash: {stateHash}");
                     Logger.LogInformation($"State hash mismatch for {(RepositoryType) snapshot.RepositoryId}"
                         + $"saved state hash: {stateHash.ToHex()}, actual state hash: {snapshot.Hash.ToHex()}");
                     return false;
