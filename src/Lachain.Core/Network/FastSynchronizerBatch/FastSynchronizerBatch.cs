@@ -57,8 +57,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             if(savedBlockNumber!=0) blockNumber = savedBlockNumber;
             Downloader downloader = new Downloader(peerManager, requestManager, blockNumber);
             //this line is only useful if fast_sync was not started previously and user wants to sync with latest block
-            blockNumber = Convert.ToUInt64(downloader.GetBlockNumber(), 16);
-
+            blockNumber = downloader.GetBlockNumber();
+            
             //to keep track how many tries have been downloaded till now, saved in db with LastDownloaded prefix
             int downloadedTries = Initialize(dbContext, blockNumber, (savedBlockNumber!=0));
             hybridQueue.init();
@@ -66,8 +66,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             for(int i = downloadedTries; i < trieNames.Length; i++)
             {
                 Logger.LogWarning($"Starting trie {trieNames[i]}");
-                string rootHash = downloader.GetTrie(trieNames[i], nodeStorage);
-                bool foundRoot = nodeStorage.GetIdByHash(rootHash, out ulong curTrieRoot);
+                var rootHash = downloader.GetTrie(trieNames[i], nodeStorage);
+                bool foundRoot = nodeStorage.GetIdByHash(rootHash.ToHex(), out ulong curTrieRoot);
             //    snapshots[i].SetCurrentVersion(curTrieRoot);
                 downloadedTries++;
                 dbContext.Save(EntryPrefix.LastDownloaded.BuildPrefix(), downloadedTries.ToBytes().ToArray());
@@ -92,7 +92,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
                 for(int i=0; i<trieNames.Length; i++)
                 {
-                    bool foundHash = nodeStorage.GetIdByHash(downloader.DownloadRootHashByTrieName(trieNames[i]), out ulong trieRoot);
+                    bool foundHash = nodeStorage.GetIdByHash(downloader.DownloadRootHashByTrieName(trieNames[i]).ToHex(), out ulong trieRoot);
                     snapshots[i].SetCurrentVersion(trieRoot);
                 }
 

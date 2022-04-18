@@ -32,7 +32,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private uint _nodeCacheCapacity = 5000;
         private IRocksDbContext _dbContext;
         private VersionFactory _versionFactory;
-        private const string EmptyHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         private NodeRetrieval nodeRetrieval;
         public NodeStorage(IRocksDbContext dbContext, VersionFactory versionFactory)
         {
