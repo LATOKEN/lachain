@@ -16,6 +16,7 @@ using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Google.Protobuf;
 using Lachain.Logger;
+using Lachain.Proto;
 
 
 namespace Lachain.Core.Network.FastSync
@@ -23,10 +24,10 @@ namespace Lachain.Core.Network.FastSync
     class Downloader
     {
 
-        private string _blockNumber;
+        private ulong _blockNumber;
         private PeerManager _peerManager;
         private RequestManager _requestManager;
-        private const string EmptyHash = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         private const int DefaultTimeout = 5 * 1000; // 5 sec 
         private BlockRequestManager _blockRequestManager; 
         private static readonly ILogger<Downloader> Logger = LoggerFactory.GetLoggerForClass<Downloader>();
@@ -46,7 +47,7 @@ namespace Lachain.Core.Network.FastSync
             _requestManager = requestManager;
             _blockNumber = DownloadLatestBlockNumber();
 
-            System.Console.WriteLine("blocknumber: " + Convert.ToUInt64(_blockNumber,16));
+            System.Console.WriteLine("blocknumber: " + _blockNumber);
         }
 
         public string GetBlockNumber()
@@ -54,14 +55,14 @@ namespace Lachain.Core.Network.FastSync
             return _blockNumber;
         }
 
-        public string GetTrie(string trieName, NodeStorage _nodeStorage)
+        public UInt256 GetTrie(string trieName, NodeStorage _nodeStorage)
         {
-            string rootHash = DownloadRootHashByTrieName(trieName, _blockNumber);
-            Logger.LogInformation("Inside Get Trie. rootHash: " + rootHash);
+            var rootHash = DownloadRootHashByTrieName(trieName, _blockNumber);
+            Logger.LogInformation("Inside Get Trie. rootHash: " + rootHash.ToHex());
             if (!rootHash.Equals(EmptyHash))
             {
-                bool foundHash = _nodeStorage.GetIdByHash(rootHash, out var id);
-                if(!foundHash) _requestManager.AddHash(rootHash);
+                bool foundHash = _nodeStorage.GetIdByHash(rootHash.ToHex(), out var id);
+                if(!foundHash) _requestManager.AddHash(rootHash.ToHex());
             }
 
             var requestTime = TimeUtils.CurrentTimeMillis();
@@ -206,10 +207,10 @@ namespace Lachain.Core.Network.FastSync
             }
         }
 
-        private string DownloadLatestBlockNumber()
+        private ulong DownloadLatestBlockNumber()
         {
             if (_peerManager.GetTotalPeerCount() == 0) throw new Exception("No available peers");
-            string blockNumber;
+            ulong? blockNumber;
 
             while (true)
             {
@@ -222,13 +223,13 @@ namespace Lachain.Core.Network.FastSync
 
                 _peerManager.TryFreePeer(peer);
 
-                if(blockNumber != "0x") return blockNumber;  
+                if(blockNumber != null) return blockNumber.Value;  
             }
         }
 
-        private string DownloadLatestBlockNumber(Peer peer)
+        private ulong? DownloadLatestBlockNumber(Peer peer)
         {
-            string blockNumber = "0x";
+            ulong? blockNumber = null;
             try
             {
                 Logger.LogTrace("HandleCheckpointBlockFromPeer");
@@ -291,15 +292,27 @@ namespace Lachain.Core.Network.FastSync
                 Logger.LogWarning($"failed in downloading latest Block Number from peer: {peer._url}");
                 Logger.LogWarning("\nMessage:{0}", e.Message);
             }
-            if(blockNumber is null) blockNumber = "0x";
             return blockNumber;
         }
 
-        public string DownloadRootHashByTrieName(string trieName)
+        private ulong? DownloadLatestBlockNumberFromPeer(Peer peer)
+        {
+            var blockNumber = (string)SyncRPCApi("eth_blockNumber", new JArray { }, peer._url);
+            if(blockNumber is null || blockNumber == "0x") return null;
+            return Convert.ToUInt64(blockNumber, 16);
+        }
+
+        public UInt256 DownloadRootHashByTrieName(string trieName)
         {
             return DownloadRootHashByTrieName(trieName, _blockNumber);
         }
-        private string DownloadRootHashByTrieName(string trieName, string blockNumber)
+
+        private UInt256 DownloadRootHashByTrieName(string trieName, ulong blockNumber)
+        {
+            return DownloadRootHashByTrieNameFromApi(trieName, Web3DataFormatUtils.Web3Number(blockNumber)).HexToUInt256();
+        }
+
+        private string DownloadRootHashByTrieNameFromApi(string trieName, string blockNumber)
         {
             if (_peerManager.GetTotalPeerCount() == 0) throw new Exception("No available peers");
             string rootHash;
@@ -334,7 +347,7 @@ namespace Lachain.Core.Network.FastSync
 
         public void DownloadBlocks(NodeStorage nodeStorage, IBlockSnapshot blockSnapshot)
         {
-            _blockRequestManager = new BlockRequestManager(blockSnapshot, Convert.ToUInt64(_blockNumber,16), nodeStorage);
+            _blockRequestManager = new BlockRequestManager(blockSnapshot, _blockNumber, nodeStorage);
 
             var requestTime = TimeUtils.CurrentTimeMillis();
             ulong alertTime = 60 * 1000; // 1 min
