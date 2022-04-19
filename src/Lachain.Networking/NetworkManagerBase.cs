@@ -154,6 +154,7 @@ namespace Lachain.Networking
                         new NetworkMessage {RootHashByTrieNameReply = rootHashByTrieNameReply},
                     BlockBatchReply blockBatchReply => new NetworkMessage {BlockBatchReply = blockBatchReply},
                     TrieNodeByHashReply trieNodeByHashReply => new NetworkMessage {TrieNodeByHashReply = trieNodeByHashReply},
+                    CheckpointReply checkpointReply => new NetworkMessage {CheckpointReply = checkpointReply},
                     _ => throw new InvalidOperationException()
                 };
                 peer.AddMsgToQueue(msg);
@@ -203,6 +204,12 @@ namespace Lachain.Networking
                     break;
                 case NetworkMessage.MessageOneofCase.TrieNodeByHashReply:
                     OnTrieNodeByHashReply?.Invoke(this, (message.TrieNodeByHashReply, envelope.PublicKey));
+                    break;
+                case NetworkMessage.MessageOneofCase.CheckpointRequest:
+                    OnCheckpointRequest?.Invoke(this, (message.CheckpointRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.CheckpointReply:
+                    OnCheckpointReply?.Invoke(this, (message.CheckpointReply, envelope.PublicKey));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),
@@ -255,5 +262,7 @@ namespace Lachain.Networking
         public event EventHandler<(TrieNodeByHashRequest message, Action<TrieNodeByHashReply> callback)>? 
             OnTrieNodeByHashRequest;
         public event EventHandler<(TrieNodeByHashReply message, ECDSAPublicKey address)>? OnTrieNodeByHashReply;
+        public event EventHandler<(CheckpointRequest message, Action<CheckpointReply> callback)>? OnCheckpointRequest;
+        public event EventHandler<(CheckpointReply message, ECDSAPublicKey address)>? OnCheckpointReply;
     }
 }

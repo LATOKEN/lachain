@@ -10,5 +10,6 @@ namespace Lachain.Storage.Repositories
         StorageStateHash = 5,
         TransactionStateHash = 6,
         ValidatorStateHash = 7,
+        CheckpointExist = 8,
     }
 }

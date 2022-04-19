@@ -9,6 +9,7 @@ using Google.Protobuf.Collections;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Consensus;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -31,7 +32,7 @@ namespace Lachain.Core.Network
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IBlockManager _blockManager;
         private readonly INodeRetrieval _nodeRetrieval;
-
+        private readonly ICheckpointManager _checkpointManager;
         private readonly INetworkManager _networkManager;
         
         private static readonly Summary IncomingMessageHandlingTime = Metrics.CreateSummary(
@@ -63,7 +64,8 @@ namespace Lachain.Core.Network
             IBlockManager blockManager,
             INetworkManager networkManager,
             ISnapshotIndexRepository snapshotIndexer,
-            INodeRetrieval nodeRetrieval
+            INodeRetrieval nodeRetrieval,
+            ICheckpointManager checkpointManager
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -74,6 +76,7 @@ namespace Lachain.Core.Network
             _blockManager = blockManager;
             _snapshotIndexer = snapshotIndexer;
             _nodeRetrieval = nodeRetrieval;
+            _checkpointManager = checkpointManager;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
             _networkManager.OnPingReply += OnPingReply;
@@ -88,6 +91,8 @@ namespace Lachain.Core.Network
             _networkManager.OnBlockBatchReply += OnBlockBatchReply;
             _networkManager.OnTrieNodeByHashRequest += OnTrieNodeByHashRequest;
             _networkManager.OnTrieNodeByHashReply += OnTrieNodeByHashReply;
+            _networkManager.OnCheckpointRequest += OnCheckpointRequest;
+            _networkManager.OnCheckpointReply += OnCheckpointReply;
         }
 
         private void TransactionPoolOnTransactionAdded(object sender, TransactionReceipt e)
@@ -288,11 +293,11 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("OnBlockBatchReply").NewTimer();
             Logger.LogTrace("Start processing OnBlockBatchReply");
             var (reply, publicKey) = @event;
-            var blocks = reply.BlockBatch.ToList();
             Task.Factory.StartNew(() =>
             {
                 try
                 {
+                    var blocks = reply.BlockBatch.ToList();
                     // handle the blocks via fastsync
                     // probably use _blockSynchronizer to integrate it in a better way
                 }
@@ -344,11 +349,11 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("OnTrieNodeByHashReply").NewTimer();
             Logger.LogTrace("Start processing OnTrieNodeByHashReply");
             var (reply, publicKey) = @event;
-            var trieNodes = reply.TrieNodes.ToList();
             Task.Factory.StartNew(() =>
             {
                 try
                 {
+                    var trieNodes = reply.TrieNodes.ToList();
                     // handle the blocks via fastsync
                     // probably use _blockSynchronizer to integrate it in a better way
                 }
@@ -367,11 +372,10 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("OnTrieNodeByHashRequest").NewTimer();
             Logger.LogTrace("Start processing OnTrieNodeByHashRequest");
             var (request, callback) = @event;
-            var nodeHashes = request.NodeHashes.ToList();
-
+            
             try
             {
-
+                var nodeHashes = request.NodeHashes.ToList();
                 var trieNodeInfoList = new List<TrieNodeInfo>();
                 foreach (var nodeHash in nodeHashes)
                 {
@@ -423,6 +427,109 @@ namespace Lachain.Core.Network
             }
             
             Logger.LogTrace("Finished processing OnTrieNodeByHashRequest");
+        }
+
+        private void OnCheckpointRequest(object sender, 
+            (CheckpointRequest request, Action<CheckpointReply> callback) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnCheckpointRequest").NewTimer();
+            Logger.LogTrace("Start processing OnCheckpointRequest");
+            var (request, callback) = @event;
+            try
+            {
+                var checkpointTypes = request.CheckpointType.ToByteArray();
+                var checkpoints = new List<CheckpointInfo>();
+                foreach (var checkpointType in checkpointTypes)
+                {
+                    checkpoints.Add(GetCheckpointInfo((CheckpointType) checkpointType));
+                }
+                var reply = new CheckpointReply
+                {
+                    Checkpoints = { checkpoints }
+                };
+                callback(reply);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to get checkpoints: {exception}");
+                var reply = new CheckpointReply
+                {
+                    Checkpoints = { new List<CheckpointInfo>() }
+                };
+                callback(reply);
+            }
+            Logger.LogTrace("Finished processing OnCheckpointRequest");
+        }
+
+        private void OnCheckpointReply(object sender, (CheckpointReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnCheckpointReply").NewTimer();
+            Logger.LogTrace("Start processing OnCheckpointReply");
+            var (reply, publicKey) = @event;
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var checkpoints = reply.Checkpoints.ToList();
+                    // handle checkpoint info
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError($"Error occured while handling checkpoints from peer {publicKey.ToHex()}: {exception}");
+                }
+            }, TaskCreationOptions.LongRunning);
+            Logger.LogTrace("Finished processing OnCheckpointReply");
+        }
+
+        private CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
+        {
+            var checkpoint = new CheckpointInfo();
+            switch (checkpointType)
+            {
+                case CheckpointType.BlockHeight:
+                    checkpoint.BlockHeight = _checkpointManager.CheckpointBlockId!.Value;
+                    break;
+                
+                case CheckpointType.BlockHash:
+                    checkpoint.BlockHash = _checkpointManager.CheckpointBlockHash;
+                    break;
+
+                case CheckpointType.BalanceStateHash:
+                    checkpoint.BalanceStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.BalanceRepository);
+                    break;
+                
+                case CheckpointType.ContractStateHash:
+                    checkpoint.ContractStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ContractRepository);
+                    break;
+                
+                case CheckpointType.EventStateHash:
+                    checkpoint.EventStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.EventRepository);
+                    break;
+
+                case CheckpointType.StorageStateHash:
+                    checkpoint.StorageStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.StorageRepository);
+                    break;
+
+                case CheckpointType.TransactionStateHash:
+                    checkpoint.TransactionStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.TransactionRepository);
+                    break;
+
+                case CheckpointType.ValidatorStateHash:
+                    checkpoint.ValidatorStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ValidatorRepository);
+                    break;
+
+                case CheckpointType.CheckpointExist:
+                    checkpoint.CheckpointExist = 
+                        ( _checkpointManager.IsCheckpointConsistent() && (_checkpointManager.CheckpointBlockId != null) );
+                    break;
+            }
+            return checkpoint;
         }
     }
 }
