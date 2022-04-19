@@ -154,8 +154,8 @@ namespace Lachain.CoreTest.IntegrationTests
             }
         }
 
-        //[Test]
-        //[Repeat(2)]
+        [Test]
+        [Repeat(2)]
         public void Test_CheckpoinRequestAndReply()
         {
             ulong totalBlocks = 10;
@@ -213,7 +213,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var checkpointInfo = reply.Checkpoints.ToList();
             Assert.AreEqual(1, checkpointInfo.Count);
             Assert.AreEqual(CheckpointInfo.MessageOneofCase.CheckpointExist, checkpointInfo[0].MessageCase);
-            Assert.AreEqual(true, checkpointInfo[0]);
+            Assert.AreEqual(true, checkpointInfo[0].CheckpointExist);
 
             Logger.LogTrace("Finished processing OnCheckpointRequest");
         }
