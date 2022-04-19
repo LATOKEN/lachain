@@ -1,5 +1,7 @@
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Storage.Repositories;
+using System.Collections.Generic;
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -40,5 +42,6 @@ namespace Lachain.Core.Blockchain.Operations
         /// True if consistent, False otherwise
         /// </returns>
         bool IsCheckpointConsistent();
+        List<CheckpointType> GetAllCheckpointTypes();
     }
 }

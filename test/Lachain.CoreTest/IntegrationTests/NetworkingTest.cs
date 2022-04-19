@@ -363,7 +363,6 @@ namespace Lachain.CoreTest.IntegrationTests
 
             Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
             var request = message.RootHashByTrieNameRequest;
-
             var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
             var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
             var reply = new RootHashByTrieNameReply
