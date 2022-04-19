@@ -40,6 +40,14 @@ namespace Lachain.Networking
         /// NetworkMessage
         /// </returns>
         NetworkMessage TrieNodeByHashRequest(List<UInt256> nodeHashes);
+        /// <summary>
+        /// Formats a NetworkMessage to request checkpoint info
+        /// </summary>
+        /// <param name = "request"> Array of bytes consisting of CheckpointType </param>
+        /// <returns>
+        /// NetworkMessage
+        /// </returns>
+        NetworkMessage CheckpointRequest(byte[] request);
 
         MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages);
 

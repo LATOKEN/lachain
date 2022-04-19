@@ -1,0 +1,18 @@
+syntax = "proto3";
+option csharp_namespace = "Lachain.Proto";
+option java_package = "com.latoken.proto";
+import "default.proto";
+
+message CheckpointInfo {
+    oneof message {
+        uint64 block_height = 1;
+        UInt256 block_hash = 2;
+        UInt256 balance_state_hash = 3;
+        UInt256 contract_state_hash = 4;
+        UInt256 event_state_hash = 5;
+        UInt256 storage_state_hash = 6;
+        UInt256 transaction_state_hash = 7;
+        UInt256 validator_state_hash = 8;
+        bool checkpoint_exist = 9;
+    }
+}
