@@ -10,6 +10,7 @@ using Lachain.Logger;
 using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Consensus;
 using Lachain.Core.Network.FastSync;
 using Lachain.Networking;

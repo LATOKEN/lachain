@@ -155,8 +155,11 @@ namespace Lachain.Networking
                     BlockBatchReply blockBatchReply => new NetworkMessage {BlockBatchReply = blockBatchReply},
                     TrieNodeByHashReply trieNodeByHashReply => new NetworkMessage {TrieNodeByHashReply = trieNodeByHashReply},
                     CheckpointReply checkpointReply => new NetworkMessage {CheckpointReply = checkpointReply},
+<<<<<<< HEAD
                     CheckpointBlockReply checkpointBlockReply =>
                         new NetworkMessage {CheckpointBlockReply = checkpointBlockReply},
+=======
+>>>>>>> added network message for checkpoint info
                     _ => throw new InvalidOperationException()
                 };
                 peer.AddMsgToQueue(msg);
@@ -213,12 +216,15 @@ namespace Lachain.Networking
                 case NetworkMessage.MessageOneofCase.CheckpointReply:
                     OnCheckpointReply?.Invoke(this, (message.CheckpointReply, envelope.PublicKey));
                     break;
+<<<<<<< HEAD
                 case NetworkMessage.MessageOneofCase.CheckpointBlockRequest:
                     OnCheckpointBlockRequest?.Invoke(this, (message.CheckpointBlockRequest, SendTo(envelope.RemotePeer)));
                     break;
                 case NetworkMessage.MessageOneofCase.CheckpointBlockReply:
                     OnCheckpointBlockReply?.Invoke(this, (message.CheckpointBlockReply, envelope.PublicKey));
                     break;
+=======
+>>>>>>> added network message for checkpoint info
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),
                         "Unable to resolve message type (" + message.MessageCase + ") from protobuf structure");
