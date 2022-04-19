@@ -155,5 +155,20 @@ namespace Lachain.Core.Blockchain.Operations
             return true;
         }
 
+        public List<CheckpointType> GetAllCheckpointTypes()
+        {
+            var checkpointTypes = new List<CheckpointType>();
+            checkpointTypes.Add(CheckpointType.BlockHeight);
+            checkpointTypes.Add(CheckpointType.BlockHash);
+            checkpointTypes.Add(CheckpointType.BalanceStateHash);
+            checkpointTypes.Add(CheckpointType.ContractStateHash);
+            checkpointTypes.Add(CheckpointType.EventStateHash);
+            checkpointTypes.Add(CheckpointType.StorageStateHash);
+            checkpointTypes.Add(CheckpointType.TransactionStateHash);
+            checkpointTypes.Add(CheckpointType.ValidatorStateHash);
+            checkpointTypes.Add(CheckpointType.CheckpointExist);
+            return checkpointTypes;
+        }
+
     }
 }
