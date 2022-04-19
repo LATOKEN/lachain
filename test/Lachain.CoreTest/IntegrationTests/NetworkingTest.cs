@@ -49,6 +49,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private ISnapshotIndexRepository _snapshotIndexer = null!;
         private INodeRetrieval _nodeRetrieval = null!;
         private IRocksDbContext _dbContext = null!;
+        private ICheckpointManager _checkpointManager = null!;
         private IContainer? _container;
 
         [SetUp]
@@ -75,6 +76,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _snapshotIndexer = _container.Resolve<ISnapshotIndexRepository>();
             _nodeRetrieval = _container.Resolve<INodeRetrieval>();
             _dbContext = _container.Resolve<IRocksDbContext>();
+            _checkpointManager = _container.Resolve<ICheckpointManager>();
             // set chainId from config
             if (TransactionUtils.ChainId == 0)
             {
@@ -152,35 +154,214 @@ namespace Lachain.CoreTest.IntegrationTests
             }
         }
 
+        //[Test]
+        //[Repeat(2)]
+        public void Test_CheckpoinRequestAndReply()
+        {
+            ulong totalBlocks = 10;
+            GenerateBlocks(totalBlocks);
+
+            for (ulong blockNo = 1; blockNo <= totalBlocks ; blockNo++)
+            {
+                _checkpointManager.SaveCheckpoint(_blockManager.GetByHeight(blockNo)!);
+                Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent());
+                Assert.AreNotEqual(null, _checkpointManager.CheckpointBlockId);
+                Assert.AreEqual(blockNo, _checkpointManager.CheckpointBlockId!.Value);
+                var request = new byte[1];
+                request[0] = (byte) CheckpointType.CheckpointExist;
+                var message = _networkManager.MessageFactory.CheckpointRequest(request);
+                CheckCheckpointExist(message);
+                request = GetCheckpointRequests();
+                message = _networkManager.MessageFactory.CheckpointRequest(request);
+                CheckCheckpointRequest(message);
+            }
+        }
+
+        public byte[] GetCheckpointRequests()
+        {
+            var types = _checkpointManager.GetAllCheckpointTypes();
+            var request = new List<byte>();
+            foreach (var type in types)
+            {
+                if (type != CheckpointType.CheckpointExist)
+                {
+                    request.Add((byte) type);
+                }
+            }
+            return request.ToArray();
+        }
+
+        public void CheckCheckpointExist(NetworkMessage message)
+        {
+            // most of it copy pasted from OnCheckpointRequest from MessageHandler.cs 
+
+            Logger.LogTrace("Start processing OnCheckpointRequest");
+            var request = message.CheckpointRequest;
+           
+            var checkpointTypes = request.CheckpointType.ToByteArray();
+            var checkpoints = new List<CheckpointInfo>();
+            foreach (var checkpointType in checkpointTypes)
+            {
+                checkpoints.Add(GetCheckpointInfo((CheckpointType) checkpointType));
+            }
+            var reply = new CheckpointReply
+            {
+                Checkpoints = { checkpoints }
+            };
+            
+            // Checking reply
+            var checkpointInfo = reply.Checkpoints.ToList();
+            Assert.AreEqual(1, checkpointInfo.Count);
+            Assert.AreEqual(CheckpointInfo.MessageOneofCase.CheckpointExist, checkpointInfo[0].MessageCase);
+            Assert.AreEqual(true, checkpointInfo[0]);
+
+            Logger.LogTrace("Finished processing OnCheckpointRequest");
+        }
+
+        public void CheckCheckpointRequest(NetworkMessage message)
+        {
+            // most of it copy pasted from OnCheckpointRequest from MessageHandler.cs 
+
+            Logger.LogTrace("Start processing OnCheckpointRequest");
+            var request = message.CheckpointRequest;
+           
+            var checkpointTypes = request.CheckpointType.ToByteArray();
+            var checkpoints = new List<CheckpointInfo>();
+            foreach (var checkpointType in checkpointTypes)
+            {
+                checkpoints.Add(GetCheckpointInfo((CheckpointType) checkpointType));
+            }
+            var reply = new CheckpointReply
+            {
+                Checkpoints = { checkpoints }
+            };
+            
+            CheckCheckpointReply(reply);
+
+            Logger.LogTrace("Finished processing OnCheckpointRequest");
+        }
+
+        public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
+        {
+            var checkpoint = new CheckpointInfo();
+            switch (checkpointType)
+            {
+                case CheckpointType.BlockHeight:
+                    checkpoint.BlockHeight = _checkpointManager.CheckpointBlockId!.Value;
+                    break;
+                
+                case CheckpointType.BlockHash:
+                    checkpoint.BlockHash = _checkpointManager.CheckpointBlockHash;
+                    break;
+
+                case CheckpointType.BalanceStateHash:
+                    checkpoint.BalanceStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.BalanceRepository);
+                    break;
+                
+                case CheckpointType.ContractStateHash:
+                    checkpoint.ContractStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ContractRepository);
+                    break;
+                
+                case CheckpointType.EventStateHash:
+                    checkpoint.EventStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.EventRepository);
+                    break;
+
+                case CheckpointType.StorageStateHash:
+                    checkpoint.StorageStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.StorageRepository);
+                    break;
+
+                case CheckpointType.TransactionStateHash:
+                    checkpoint.TransactionStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.TransactionRepository);
+                    break;
+
+                case CheckpointType.ValidatorStateHash:
+                    checkpoint.ValidatorStateHash = 
+                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ValidatorRepository);
+                    break;
+
+                case CheckpointType.CheckpointExist:
+                    checkpoint.CheckpointExist = 
+                        ( _checkpointManager.IsCheckpointConsistent() && (_checkpointManager.CheckpointBlockId != null) );
+                    break;
+            }
+            return checkpoint;
+        }
+
+        public void CheckCheckpointReply(CheckpointReply reply)
+        {
+            var checkpointInfos = reply.Checkpoints.ToList();
+            foreach (var checkpointInfo in checkpointInfos)
+            {
+                switch (checkpointInfo.MessageCase)
+                {
+                    case CheckpointInfo.MessageOneofCase.BlockHeight:
+                        Assert.AreEqual(checkpointInfo.BlockHeight, _checkpointManager.CheckpointBlockId);
+                        break;
+                    
+                    case CheckpointInfo.MessageOneofCase.BlockHash:
+                        Assert.AreEqual(checkpointInfo.BlockHash, _checkpointManager.CheckpointBlockHash);
+                        break;
+                    
+                    case CheckpointInfo.MessageOneofCase.BalanceStateHash:
+                        Assert.AreEqual(checkpointInfo.BalanceStateHash, 
+                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.BalanceRepository));
+                        break;
+                    
+                    case CheckpointInfo.MessageOneofCase.ContractStateHash:
+                        Assert.AreEqual(checkpointInfo.ContractStateHash,
+                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.ContractRepository));
+                        break;
+
+                    case CheckpointInfo.MessageOneofCase.EventStateHash:
+                        Assert.AreEqual(checkpointInfo.EventStateHash,
+                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.EventRepository));
+                        break;
+
+                    case CheckpointInfo.MessageOneofCase.StorageStateHash:
+                        Assert.AreEqual(checkpointInfo.StorageStateHash,
+                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.StorageRepository));
+                        break;
+
+                    case CheckpointInfo.MessageOneofCase.TransactionStateHash:
+                        Assert.AreEqual(checkpointInfo.TransactionStateHash, 
+                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.TransactionRepository));
+                        break;
+
+                    case CheckpointInfo.MessageOneofCase.ValidatorStateHash:
+                        Assert.AreEqual(checkpointInfo.ValidatorStateHash, 
+                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.ValidatorRepository));
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(checkpointInfo),
+                        "Unable to resolve message type (" + checkpointInfo.MessageCase + ") from protobuf structure");
+                }
+            }
+        }
+
         public void CheckBlockBatchRequest(NetworkMessage message)
         {
             // most of it copy pasted from OnBlockBatchRequest from MessageHandler.cs 
             
             Logger.LogTrace("Start processing OnBlockBatchRequest");
             var request = message.BlockBatchRequest;
-            try
+            var blockNumbers = request.BlockNumbers.ToList();
+            List<Block> blockBatch = new List<Block>();
+            foreach (var blockNumber in blockNumbers)
             {
-                var blockNumbers = request.BlockNumbers.ToList();
-                List<Block> blockBatch = new List<Block>();
-                foreach (var blockNumber in blockNumbers)
-                {
-                    var block = _blockManager.GetByHeight(blockNumber);
-                    if (block != null) blockBatch.Add(block);
-                }
-                var reply = new BlockBatchReply
-                {
-                    BlockBatch = {blockBatch}
-                };
-                CheckBlockBatchReply(reply);
+                var block = _blockManager.GetByHeight(blockNumber);
+                if (block != null) blockBatch.Add(block);
             }
-            catch (Exception exception)
+            var reply = new BlockBatchReply
             {
-                Logger.LogWarning($"Got exception trying to get blocks : {exception}");
-                var reply = new BlockBatchReply
-                {
-                    BlockBatch = {new List<Block>()}
-                };
-            }
+                BlockBatch = {blockBatch}
+            };
+            CheckBlockBatchReply(reply);
             
             Logger.LogTrace("Finished processing OnBlockBatchRequest");
         }
@@ -201,25 +382,14 @@ namespace Lachain.CoreTest.IntegrationTests
 
             Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
             var request = message.RootHashByTrieNameRequest;
-            try
+            
+            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
+            var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
+            var reply = new RootHashByTrieNameReply
             {
-                var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
-                var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
-                var reply = new RootHashByTrieNameReply
-                {
-                    RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash
-                };
-                CheckRootHashByTrieNameReply(reply, block, snapshotName);
-            }
-            catch (Exception exception)
-            {
-                Logger.LogWarning($"Got exception trying to get root hash for trie {request.TrieName}"
-                    + $" for block {request.Block} : {exception}");
-                var reply = new RootHashByTrieNameReply
-                {
-                    RootHash = UInt256Utils.Zero
-                };
-            }
+                RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash
+            };
+            CheckRootHashByTrieNameReply(reply, block, snapshotName);
 
             Logger.LogTrace("Finished processing OnRootHashByTrieNameRequest");
         }
