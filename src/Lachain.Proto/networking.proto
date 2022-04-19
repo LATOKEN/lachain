@@ -108,6 +108,10 @@ message CheckpointRequest {
     bytes checkpoint_type = 1;
 }
 
+message CheckpointReply {
+    repeated CheckpointInfo checkpoints = 1;
+}
+
 message NetworkMessage {
     oneof message {
         PingReply ping_reply = 13;

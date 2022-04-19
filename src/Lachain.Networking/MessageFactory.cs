@@ -139,6 +139,17 @@ namespace Lachain.Networking
             };
         }
 
+        public NetworkMessage CheckpointRequest(byte[] request)
+        {
+            return new NetworkMessage
+            {
+                CheckpointRequest = new CheckpointRequest
+                {
+                    CheckpointType = ByteString.CopyFrom(request)
+                }
+            };
+        }
+
         public MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages)
         {
             var batch = new MessageBatch
