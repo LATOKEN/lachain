@@ -61,7 +61,11 @@ namespace Lachain.Core.Blockchain.VM
                 input, gasLimit, message).ReturnValue;
             Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
             if (HardforkHeights.IsHardfork_6Active(currentHeight))
-                height = height ?? new byte[64];
+            {
+                height ??= HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+                if(height.Length < 1)
+                    height = HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+            }
             return BitConverter.ToUInt64(height, 0);
         }
 
@@ -74,13 +78,18 @@ namespace Lachain.Core.Blockchain.VM
                     input, gasLimit, message).ReturnValue;
                 Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
                 if (HardforkHeights.IsHardfork_6Active(currentHeight))
-                    height = height ?? new byte[64];
+                {
+                    height ??= HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+                    if(height.Length < 1)
+                        height = HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+                }
+
                 return BitConverter.ToUInt64(height, 0);
             }
             catch (Exception ex)
             {
                 Logger.LogWarning($"Error in GetDeployHeight: {ex}");
-                return 0;
+                return HardforkHeights.GetHardfork_3(); 
             }
         }
         

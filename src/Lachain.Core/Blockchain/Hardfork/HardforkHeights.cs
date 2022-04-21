@@ -13,6 +13,12 @@ namespace Lachain.Core.Blockchain.Hardfork
         private static ulong Hardfork_6;
         private static ulong Hardfork_7;
 
+        //we need this value as default deploy height
+        public static ulong GetHardfork_3() 
+        {
+            return Hardfork_3;
+        }
+
         public static bool IsHardfork_1Active(ulong height)
         {
             return height >= Hardfork_1;
