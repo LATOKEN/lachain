@@ -72,14 +72,16 @@ namespace Lachain.Core.Blockchain.Pool
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        
         private void OnBlockPersisted(object sender, Block block)
         {
-            SanitizeMemPool(block.Header.Index);
-            // TO DO: we should make this removal async for better performance
-            _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
-            _toDeleteRepo.Clear();
+            lock (_toDeleteRepo)
+            {
+                SanitizeMemPool(block.Header.Index);
+                // TODO: we should make this removal async for better performance
+                _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
+                _toDeleteRepo.Clear();
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -317,7 +319,10 @@ namespace Lachain.Core.Blockchain.Pool
         {
             Logger.LogTrace($"Proposing Transactions from pool");
             // try sanitizing mempool ...
-            SanitizeMemPool(era - 1);
+            lock (_toDeleteRepo)
+            {
+                SanitizeMemPool(era - 1);
+            }
 
             // it's possible that block for this era is already persisted, 
             // so we should return an empty set of transactions in this case
