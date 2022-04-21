@@ -97,7 +97,6 @@ namespace Lachain.CoreTest.IntegrationTests
 
         // TODO: this is not working since we have only 1 validator
         [Test]
-        [Ignore("TODO: fix it")]
         public void Test_StakeWithdraw()
         {
             _blockManager.TryBuildGenesisBlock();
