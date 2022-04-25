@@ -124,7 +124,6 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
-        [Ignore("TODO: fix it")]
         public void Test_StakeSize()
         {
             _blockManager.TryBuildGenesisBlock();
