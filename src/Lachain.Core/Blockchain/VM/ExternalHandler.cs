@@ -62,9 +62,9 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
             if (HardforkHeights.IsHardfork_6Active(currentHeight))
             {
-                height ??= HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+                height ??= HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
                 if(height.Length < 1)
-                    height = HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+                    height = HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
             }
             return BitConverter.ToUInt64(height, 0);
         }
@@ -79,9 +79,9 @@ namespace Lachain.Core.Blockchain.VM
                 Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
                 if (HardforkHeights.IsHardfork_6Active(currentHeight))
                 {
-                    height ??= HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+                    height ??= HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
                     if(height.Length < 1)
-                        height = HardforkHeights.GetHardfork_3().ToBytes().ToArray(); 
+                        height = HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
                 }
 
                 return BitConverter.ToUInt64(height, 0);
@@ -89,7 +89,7 @@ namespace Lachain.Core.Blockchain.VM
             catch (Exception ex)
             {
                 Logger.LogWarning($"Error in GetDeployHeight: {ex}");
-                return HardforkHeights.GetHardfork_3(); 
+                return HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3() : 0; 
             }
         }
         
