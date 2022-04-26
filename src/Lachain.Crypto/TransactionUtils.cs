@@ -21,6 +21,12 @@ namespace Lachain.Crypto
             else throw new Exception("trying to set chainId second time.");
         }
 
+        public static void Dispose()
+        {
+            _oldChainId = 0;
+            _newChainId = 0;
+        }
+
         public static int ChainId(bool useNewId)
         {
             return useNewId ? _newChainId : _oldChainId;
