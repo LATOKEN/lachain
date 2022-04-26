@@ -1,4 +1,7 @@
+using System;
+using System.IO;
 using System.Text;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using NUnit.Framework;
@@ -10,6 +13,13 @@ using Lachain.Proto;
 using Google.Protobuf;
 using Secp256k1Net;
 using Lachain.Logger;
+using Lachain.Core.DI;
+using Lachain.Core.Config;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.CLI;
+using Lachain.UtilityTest;
+using Lachain.Networking;
 
 namespace Lachain.CryptoTest
 {
@@ -19,17 +29,41 @@ namespace Lachain.CryptoTest
         private static readonly byte[] TestString =
             Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
         private static readonly Secp256k1 Secp256K1 = new Secp256k1();
-
+        private IContainer? _container;
+        private IConfigManager _configManager = null!;
 
         [SetUp]
         public void Setup()
         {
+            _container?.Dispose() ;
+            TestUtils.DeleteTestChainData();
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            
+            containerBuilder.RegisterModule<ConfigModule>();
+            _container = containerBuilder.Build();
+            _configManager = _container.Resolve<IConfigManager>();
         }
 
         [TearDown]
         public void Teardown()
         {
             TransactionUtils.Dispose();
+            _container?.Dispose();
+            TestUtils.DeleteTestChainData();
+        }
+
+        [Test]
+        [Repeat(2)]
+        public void Test_SignatureWithMultipleNetwork()
+        {
+            TestForNetwork();
+            TestForNetwork("local");
+            TestForNetwork("devnet");
+            TestForNetwork("testnet");
+            TestForNetwork("mainnet");
         }
 
 
@@ -50,6 +84,61 @@ namespace Lachain.CryptoTest
             Assert.IsTrue(Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED));
             Assert.AreEqual(publicKey, publicKeySerialized);
             SignatureWithRandomChainId(key);
+        }
+
+
+        public void TestForNetwork(string? networkName = null)
+        {
+            BuildForNetwork(networkName);
+            var network = _configManager.GetConfig<NetworkConfig>("network") ??
+                throw new ApplicationException("No network section in config");
+            Assert.That(network.NewChainId != null);
+            var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+            var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+            }
+
+            Logger.LogInformation($"old chain id: {TransactionUtils.ChainId(false)}, new chain id: {TransactionUtils.ChainId(true)}");
+            Assert.AreEqual(TransactionUtils.ChainId(false), chainId);
+            Assert.AreEqual(TransactionUtils.ChainId(true), newChainId);
+
+            var privateKey = "0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes();
+            var ecsdsaPrivateKey = new ECDSAPrivateKey
+            {
+                Buffer = ByteString.CopyFrom(privateKey)
+            };
+            var key = new EcdsaKeyPair(ecsdsaPrivateKey);
+            var pk = new byte[64];
+            var publicKey = key.PublicKey.Buffer.ToByteArray();
+            Assert.AreEqual(true, Secp256K1.PublicKeyParse(pk, publicKey));
+            var publicKeySerialized = new byte[33];
+            Assert.IsTrue(Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED));
+            Assert.AreEqual(publicKey, publicKeySerialized);
+            SignMessageAndVerify(key);
+        }
+
+        public void BuildForNetwork(string? networkName = null)
+        {
+            Teardown();
+            _container?.Dispose() ;
+            TestUtils.DeleteTestChainData();
+            string configPath = "config";
+            if (networkName != null)
+            {
+                configPath += "_";
+                configPath += networkName;
+            }
+            configPath += ".json";
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), configPath),
+                new RunOptions()
+            ));
+            
+            containerBuilder.RegisterModule<ConfigModule>();
+            _container = containerBuilder.Build();
+            _configManager = _container.Resolve<IConfigManager>();
         }
 
         public void SignatureWithRandomChainId(EcdsaKeyPair key)
@@ -87,9 +176,15 @@ namespace Lachain.CryptoTest
                 rng.GetBytes(random);
                 message += random.ToHex().Substring(2);
                 var digest = message.HexToBytes();
+                // using new chain id
                 var signature = crypto.Sign(digest, key.PrivateKey.Buffer.ToByteArray(), true);
                 Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey, true));
                 var recoveredPubkey = crypto.RecoverSignature(digest, signature, true);
+                Assert.AreEqual(recoveredPubkey, publicKey);
+                // using old chain id
+                signature = crypto.Sign(digest, key.PrivateKey.Buffer.ToByteArray(), false);
+                Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey, false));
+                recoveredPubkey = crypto.RecoverSignature(digest, signature, false);
                 Assert.AreEqual(recoveredPubkey, publicKey);
             }
         }
@@ -97,7 +192,7 @@ namespace Lachain.CryptoTest
         public (int,int) GetRandomChainId(int lowestChainId, int highestChainId, RNGCryptoServiceProvider rng)
         {
             var range = highestChainId - lowestChainId + 1;
-            return (GetRandomByteInRange(range, rng) , GetRandomByteInRange(range, rng));
+            return (GetRandomByteInRange(range, rng) + lowestChainId, GetRandomByteInRange(range, rng) + lowestChainId);
         }
 
         public int GetRandomByteInRange(int range, RNGCryptoServiceProvider rng)

@@ -7,6 +7,48 @@
         <RootNamespace>Lachain.CryptoTest</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
+      <ContentWithTargetPath Include="Resources\config.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>config.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\config_local.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>config_local.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\config_devnet.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>config_devnet.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\config_testnet.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>config_testnet.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\config_mainnet.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>config_mainnet.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\wallet.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>wallet.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\wallet_local.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>wallet_local.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\wallet_devnet.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>wallet_devnet.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\wallet_testnet.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>wallet_testnet.json</TargetPath>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="Resources\wallet_mainnet.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <TargetPath>wallet_mainnet.json</TargetPath>
+      </ContentWithTargetPath>
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Nethereum.RPC" Version="3.8.0" />
         <PackageReference Include="nunit" Version="3.12.0" />
         <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
