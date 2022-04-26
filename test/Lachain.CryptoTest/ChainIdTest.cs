@@ -49,7 +49,11 @@ namespace Lachain.CryptoTest
             var publicKeySerialized = new byte[33];
             Assert.IsTrue(Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED));
             Assert.AreEqual(publicKey, publicKeySerialized);
+            SignatureWithRandomChainId(key);
+        }
 
+        public void SignatureWithRandomChainId(EcdsaKeyPair key)
+        {
             var chainIds = new List<(int,int)>();
             // Add some chain id to test
             int total = 10;
@@ -92,7 +96,7 @@ namespace Lachain.CryptoTest
 
         public (int,int) GetRandomChainId(int lowestChainId, int highestChainId, RNGCryptoServiceProvider rng)
         {
-            var range = highestChainId - lowestChainId;
+            var range = highestChainId - lowestChainId + 1;
             return (GetRandomByteInRange(range, rng) , GetRandomByteInRange(range, rng));
         }
 
