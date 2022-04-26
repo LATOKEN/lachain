@@ -11,7 +11,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 9;
+        private const ulong _CurrentVersion = 10;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -57,6 +57,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV8();
             if (version < 9)
                 _UpdateConfigToV9();
+            if (version < 10)
+                _UpdateConfigToV10();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -259,6 +261,30 @@ namespace Lachain.Core.Config
                 "mainnet" => 2840000,
                 "testnet" => 2615000,
                 "devnet" => 214000,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 9;
+            _config["version"] = JObject.FromObject(version);
+            
+            _SaveCurrentConfig();
+        }
+
+        // version 10 of config should contain hardfork height for hardfork_8
+        private void _UpdateConfigToV10()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_8 ??= network.NetworkName switch
+            {
+                "mainnet" => 3205000,
+                "testnet" => 2960000,
+                "devnet" => 350000,
                 _ => 0
             };
             _config["hardfork"] = JObject.FromObject(hardforks);
