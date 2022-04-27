@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Reflection;
 using System.Collections.Generic;
@@ -20,14 +21,21 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.CLI;
 using Lachain.UtilityTest;
 using Lachain.Networking;
+using Lachain.Utility.Benchmark;
 
 namespace Lachain.CryptoTest
 {
     public class ChainIdTest
     {
         private static readonly ILogger<ChainIdTest> Logger = LoggerFactory.GetLoggerForClass<ChainIdTest>();
-        private static readonly byte[] TestString =
-            Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
+        private static readonly TimeBenchmark EcSign = new TimeBenchmark();
+        private static readonly TimeBenchmark EcVerify = new TimeBenchmark();
+        private static readonly TimeBenchmark EcRecover = new TimeBenchmark();
+        private static int _oldChainId;
+        private static int _newChainId;
+        // set these values properly for the tests to work
+        private static int _lowestValidChainId = 25; // don't know the lowest value but must be positive
+        private static int _highestValidChainId = 109;
         private static readonly Secp256k1 Secp256K1 = new Secp256k1();
         private IContainer? _container;
         private IConfigManager _configManager = null!;
@@ -50,7 +58,6 @@ namespace Lachain.CryptoTest
         [TearDown]
         public void Teardown()
         {
-            TransactionUtils.Dispose();
             _container?.Dispose();
             TestUtils.DeleteTestChainData();
         }
@@ -77,12 +84,7 @@ namespace Lachain.CryptoTest
                 Buffer = ByteString.CopyFrom(privateKey)
             };
             var key = new EcdsaKeyPair(ecsdsaPrivateKey);
-            var pk = new byte[64];
-            var publicKey = key.PublicKey.Buffer.ToByteArray();
-            Assert.AreEqual(true, Secp256K1.PublicKeyParse(pk, publicKey));
-            var publicKeySerialized = new byte[33];
-            Assert.IsTrue(Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED));
-            Assert.AreEqual(publicKey, publicKeySerialized);
+            VerifyPublicKey(key);
             SignatureWithRandomChainId(key);
         }
 
@@ -93,16 +95,13 @@ namespace Lachain.CryptoTest
             var network = _configManager.GetConfig<NetworkConfig>("network") ??
                 throw new ApplicationException("No network section in config");
             Assert.That(network.NewChainId != null);
-            var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+            var oldChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
             var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
-            if (TransactionUtils.ChainId(false) == 0)
-            {
-                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
-            }
+            SetChainId(oldChainId!.Value, newChainId!.Value);
 
-            Logger.LogInformation($"old chain id: {TransactionUtils.ChainId(false)}, new chain id: {TransactionUtils.ChainId(true)}");
-            Assert.AreEqual(TransactionUtils.ChainId(false), chainId);
-            Assert.AreEqual(TransactionUtils.ChainId(true), newChainId);
+            Logger.LogInformation($"old chain id: {ChainId(false)}, new chain id: {ChainId(true)}");
+            Assert.AreEqual(ChainId(false), oldChainId);
+            Assert.AreEqual(ChainId(true), newChainId);
 
             var privateKey = "0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes();
             var ecsdsaPrivateKey = new ECDSAPrivateKey
@@ -110,12 +109,7 @@ namespace Lachain.CryptoTest
                 Buffer = ByteString.CopyFrom(privateKey)
             };
             var key = new EcdsaKeyPair(ecsdsaPrivateKey);
-            var pk = new byte[64];
-            var publicKey = key.PublicKey.Buffer.ToByteArray();
-            Assert.AreEqual(true, Secp256K1.PublicKeyParse(pk, publicKey));
-            var publicKeySerialized = new byte[33];
-            Assert.IsTrue(Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED));
-            Assert.AreEqual(publicKey, publicKeySerialized);
+            VerifyPublicKey(key);
             SignMessageAndVerify(key);
         }
 
@@ -149,20 +143,21 @@ namespace Lachain.CryptoTest
             RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
             for (int i = 0 ; i < total ; i++)
             {
-                chainIds.Add(GetRandomChainId(25, 109, rng));
+                chainIds.Add(GetRandomChainId(_lowestValidChainId, _highestValidChainId, rng));
             }
 
             foreach (var (oldChainId, newChainId) in chainIds)
             {
                 Logger.LogInformation($"old chain id: {oldChainId}, new chain id: {newChainId}");
                 SetChainId(oldChainId, newChainId);
+                Assert.AreEqual(oldChainId, ChainId(false));
+                Assert.AreEqual(newChainId, ChainId(true));
                 SignMessageAndVerify(key);
             }
         }
 
         public void SignMessageAndVerify(EcdsaKeyPair key)
         {
-            var crypto = CryptoProvider.GetCrypto();
             byte[] random = new byte[32];
             RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
             var publicKey = key.PublicKey.Buffer.ToByteArray();
@@ -177,16 +172,109 @@ namespace Lachain.CryptoTest
                 message += random.ToHex().Substring(2);
                 var digest = message.HexToBytes();
                 // using new chain id
-                var signature = crypto.Sign(digest, key.PrivateKey.Buffer.ToByteArray(), true);
-                Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey, true));
-                var recoveredPubkey = crypto.RecoverSignature(digest, signature, true);
+                var signature = Sign(digest, key.PrivateKey.Buffer.ToByteArray(), true);
+                Assert.IsTrue(VerifySignature(digest, signature, publicKey, true));
+                var recoveredPubkey = RecoverSignature(digest, signature, true);
                 Assert.AreEqual(recoveredPubkey, publicKey);
                 // using old chain id
-                signature = crypto.Sign(digest, key.PrivateKey.Buffer.ToByteArray(), false);
-                Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey, false));
-                recoveredPubkey = crypto.RecoverSignature(digest, signature, false);
+                signature = Sign(digest, key.PrivateKey.Buffer.ToByteArray(), false);
+                Assert.IsTrue(VerifySignature(digest, signature, publicKey, false));
+                recoveredPubkey = RecoverSignature(digest, signature, false);
                 Assert.AreEqual(recoveredPubkey, publicKey);
             }
+        }
+
+        // mimic of VerifySignature of DefaultCrypto.cs but using different chain id
+        public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey, bool useNewChainId)
+        {
+            var messageHash = message.KeccakBytes();
+            return VerifySignatureHashed(messageHash, signature, publicKey, useNewChainId);
+        }
+
+        // mimic of VerifySignatureHashed of DefaultCrypto.cs but using different chain id
+        public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey, bool useNewChainId)
+        {
+            if (messageHash.Length != 32 || signature.Length != 65) return false;
+            return EcVerify.Benchmark(() =>
+            {
+                var pk = new byte[64];
+                if (!Secp256K1.PublicKeyParse(pk, publicKey))
+                    return false;
+
+                var publicKeySerialized = new byte[33];
+                if (!Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED))
+                    throw new Exception("Cannot serialize parsed key: how did it happen?");
+
+                var parsedSig = new byte[65];
+                var recId = (signature[64] - 36) / 2 / ChainId (useNewChainId);
+                if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
+                    return false;
+
+                return Secp256K1.Verify(parsedSig.Take(64).ToArray(), messageHash, pk);
+            });
+        }
+
+        // mimic of Sign of DefaultCrypto.cs but using different chain id
+        public byte[] Sign(byte[] message, byte[] privateKey, bool useNewChainId)
+        {
+            var messageHash = message.KeccakBytes();
+            return SignHashed(messageHash, privateKey, useNewChainId);
+        }
+
+        // mimic of SignHashed of DefaultCrypto.cs but using different chain id
+        public byte[] SignHashed(byte[] messageHash, byte[] privateKey, bool useNewChainId)
+        {
+            if (privateKey.Length != 32) throw new ArgumentException(nameof(privateKey));
+            if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
+            return EcSign.Benchmark(() =>
+            {
+                var sig = new byte[65];
+                if (!Secp256K1.SignRecoverable(sig, messageHash, privateKey))
+                    throw new Exception("secp256k1.sign_recoverable failed");
+                var serialized = new byte[64];
+                if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
+                    throw new Exception("Cannot serialize recoverable signature: how did it happen?");
+                recId = ChainId(useNewChainId) * 2 + 35 + recId;
+                return serialized.Concat(new[] {(byte) recId}).ToArray();
+            });
+        }
+
+        // mimic of RecoverSignature of DefaultCrypto.cs but using different chain id
+        public byte[] RecoverSignature(byte[] message, byte[] signature, bool useNewChainId)
+        {
+            var messageHash = message.KeccakBytes();
+            return RecoverSignatureHashed(messageHash, signature, useNewChainId);
+        }
+
+        // mimic of RecoverSignatureHashed of DefaultCrypto.cs but using different chain id
+        public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId)
+        {
+            if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
+            if (signature.Length != 65) throw new ArgumentException(nameof(signature));
+            return EcRecover.Benchmark(() =>
+            {
+                var parsedSig = new byte[65];
+                var pk = new byte[64];
+                var recId = (signature[64] - 36) / 2 / ChainId(useNewChainId);
+                if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
+                    throw new ArgumentException(nameof(signature));
+                if (!Secp256K1.Recover(pk, parsedSig, messageHash))
+                    throw new ArgumentException("Bad signature");
+                var result = new byte[33];
+                if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+                    throw new Exception("Cannot serialize recovered public key: how did it happen?");
+                return result;
+            });
+        }
+
+        public void VerifyPublicKey(EcdsaKeyPair key)
+        {
+            var pk = new byte[64];
+            var publicKey = key.PublicKey.Buffer.ToByteArray();
+            Assert.IsTrue(Secp256K1.PublicKeyParse(pk, publicKey));
+            var publicKeySerialized = new byte[33];
+            Assert.IsTrue(Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED));
+            Assert.AreEqual(publicKey, publicKeySerialized);
         }
 
         public (int,int) GetRandomChainId(int lowestChainId, int highestChainId, RNGCryptoServiceProvider rng)
@@ -205,8 +293,15 @@ namespace Lachain.CryptoTest
 
         private void SetChainId(int oldChainId, int newChainId)
         {
-            TransactionUtils.Dispose();
-            TransactionUtils.SetChainId(oldChainId, newChainId);
+            _oldChainId = oldChainId;
+            _newChainId = newChainId;
         }
+
+        private int ChainId(bool useNewChainId)
+        {
+            if (useNewChainId) return _newChainId;
+            return _oldChainId;
+        }
+
     }
 }
