@@ -17,6 +17,8 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
+using Lachain.Crypto;
+using Lachain.Core.RPC.HTTP.Web3;
 
 namespace Lachain.Core.RPC.HTTP.FrontEnd
 {
@@ -31,6 +33,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         private readonly ISystemContractReader _systemContractReader;
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ILocalTransactionRepository _localTransactionRepository;
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         public FrontEndService(
             IStateManager stateManager,
@@ -278,6 +281,52 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             {
                 ["transactions"] = results,
             };
+        }
+
+        [JsonRpcMethod("fe_signMessage")]
+        public string SignMessage(string message, bool useNewChainId)
+        {
+            if (_privateWallet.IsLocked())
+            {
+                throw new Exception("wallet is locked");
+            }
+            var keyPair = _privateWallet.EcdsaKeyPair;
+            Logger.LogInformation($"public key: {keyPair.PublicKey.ToHex()}, address: {keyPair.PublicKey.GetAddress().ToHex()}");
+            try
+            {
+                var msg = message.HexToBytes();
+                var signature = Crypto.Sign(msg, keyPair.PrivateKey.Encode(), useNewChainId);
+                return Web3DataFormatUtils.Web3Data(signature);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to sign message: {exception}");
+                throw;
+            }
+        }
+
+        [JsonRpcMethod("fe_verifySign")]
+        public bool VerifySign(string message, string sign, bool useNewChainId)
+        {
+            if (_privateWallet.IsLocked())
+            {
+                throw new Exception("wallet is locked");
+            }
+            var keyPair = _privateWallet.EcdsaKeyPair;
+            Logger.LogInformation($"public key: {keyPair.PublicKey.ToHex()}, address: {keyPair.PublicKey.GetAddress().ToHex()}");
+            try
+            {
+                var msg = message.HexToBytes();
+                var signBytes = sign.HexToBytes();
+                var pubkeyParsed = Crypto.RecoverSignature(msg, signBytes, useNewChainId);
+                if (!keyPair.PublicKey.EncodeCompressed().SequenceEqual(pubkeyParsed)) return false;
+                return Crypto.VerifySignature(msg, signBytes, keyPair.PublicKey.EncodeCompressed(), useNewChainId);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to verify signed message: {exception}");
+                throw;
+            }
         }
 
         private static JObject FormatTx(TransactionReceipt receipt, Block? block = null)
