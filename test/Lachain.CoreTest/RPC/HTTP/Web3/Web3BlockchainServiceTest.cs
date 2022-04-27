@@ -991,7 +991,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
                 keyPair.PrivateKey.Encode(), true
-            ).ToSignature();
+            ).ToSignature(true);
 
             var multisig = new MultiSig
             {

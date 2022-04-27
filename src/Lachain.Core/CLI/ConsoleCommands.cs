@@ -230,12 +230,13 @@ namespace Lachain.Core.CLI
         {
             if (arguments.Length != 3)
                 return null;
+            bool useNewChainId = HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight());
             var rawTx = arguments[1].HexToBytes();
             var tx = Transaction.Parser.ParseFrom(rawTx);
-            var sig = arguments[2].HexToBytes().ToSignature();
+            var sig = arguments[2].HexToBytes().ToSignature(useNewChainId);
             var result = _transactionPool.Add(tx, sig);
             Console.WriteLine($"Status: {result}");
-            return $"{tx.FullHash(sig, HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight())).ToHex()}";
+            return $"{tx.FullHash(sig, useNewChainId).ToHex()}";
         }
 
         /*
@@ -269,8 +270,8 @@ namespace Lachain.Core.CLI
         public string VerifyTransaction(string[] arguments)
         {
             var tx = Transaction.Parser.ParseFrom(arguments[1].HexToBytes());
-            var sig = arguments[2].HexToBytes().ToSignature();
             bool useNewChainId = HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight());
+            var sig = arguments[2].HexToBytes().ToSignature(useNewChainId);
             var accepted = new TransactionReceipt
             {
                 Transaction = tx,
