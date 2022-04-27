@@ -130,7 +130,10 @@ namespace Lachain.Crypto
             {
                 var parsedSig = new byte[65];
                 var pk = new byte[64];
-                var recIdBytes = signature.Slice(64, signature.Length - 63).Concat(new byte[67 - signature.Length]).ToArray();
+                var recIdBytes = new byte[4];
+                recIdBytes[0] = signature[64];
+                if (signature.Length > 65)
+                    recIdBytes[1] = signature[65];
                 var encodedRecId = BitConverter.ToInt32(recIdBytes);
                 var recId = (encodedRecId - 36) / 2 / TransactionUtils.ChainId(useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
