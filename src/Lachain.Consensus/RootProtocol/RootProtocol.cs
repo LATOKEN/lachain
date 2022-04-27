@@ -222,7 +222,7 @@ namespace Lachain.Consensus.RootProtocol
             var signature = _crypto.SignHashed(
                 _header.Keccak().ToBytes(),
                 _keyPair.PrivateKey.Encode(), _useNewChainId
-            ).ToSignature();
+            ).ToSignature(_useNewChainId);
             Logger.LogTrace(
                 $"Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}"
             );

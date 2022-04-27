@@ -632,7 +632,7 @@ namespace Lachain.Core.Blockchain.Operations
             return Crypto.SignHashed(
                 block.Keccak().ToBytes(), keyPair.PrivateKey.Encode(),
                 HardforkHeights.IsHardfork_8Active(block.Index)
-            ).ToSignature();
+            ).ToSignature(HardforkHeights.IsHardfork_8Active(block.Index));
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
