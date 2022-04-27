@@ -19,6 +19,8 @@ using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using Lachain.Crypto;
 using Lachain.Core.RPC.HTTP.Web3;
+using Nethereum.Signer;
+using Transaction = Lachain.Proto.Transaction;
 
 namespace Lachain.Core.RPC.HTTP.FrontEnd
 {
@@ -33,6 +35,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         private readonly ISystemContractReader _systemContractReader;
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ILocalTransactionRepository _localTransactionRepository;
+        private readonly ITransactionManager _transactionManager;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         public FrontEndService(
@@ -42,7 +45,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             ISystemContractReader systemContractReader,
             ILocalTransactionRepository localTransactionRepository,
             IValidatorStatusManager validatorStatusManager,
-            IPrivateWallet privateWallet
+            IPrivateWallet privateWallet,
+            ITransactionManager transactionManager
         )
         {
             _stateManager = stateManager;
@@ -52,6 +56,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             _localTransactionRepository = localTransactionRepository;
             _validatorStatusManager = validatorStatusManager;
             _privateWallet = privateWallet;
+            _transactionManager = transactionManager;
         }
 
         [JsonRpcMethod("fe_getBalance")]
@@ -327,6 +332,59 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 Logger.LogWarning($"Got exception trying to verify signed message: {exception}");
                 throw;
             }
+        }
+
+        [JsonRpcMethod("fe_verifyRawTransaction")]
+        public string VerifyRawTransaction(string rawTx, bool useNewChainId)
+        {
+            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+
+            var r = ethTx.Signature.R;
+            while (r.Length < 32)
+                r = "00".HexToBytes().Concat(r).ToArray();
+
+            var s = ethTx.Signature.S;
+            while (s.Length < 32)
+                s = "00".HexToBytes().Concat(s).ToArray();
+
+            var v = ethTx.Signature.V;
+
+            var signature = r.Concat(s).Concat(v).ToArray().ToSignature();
+            try
+            {
+                var transaction = MakeTransaction(ethTx);
+                var txHash = transaction.FullHash(signature, useNewChainId);
+                var result = _transactionManager.Verify(new TransactionReceipt
+                {
+                    Hash = txHash,
+                    Signature = signature,
+                    Status = TransactionStatus.Pool,
+                    Transaction = transaction
+                }, useNewChainId);
+
+                if (result != OperatingError.Ok) throw new Exception($"Transaction is invalid: {result}");
+                return txHash.ToHex();
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception in handling fe_verifyRawTransaction: {e}");
+                throw;
+            }
+        }
+
+        public Transaction MakeTransaction(SignedTransactionBase ethTx)
+        {
+            return new Transaction
+            {
+                // this is special case where empty uint160 is allowed
+                To = ethTx.ReceiveAddress?.ToUInt160() ?? UInt160Utils.Empty,
+                Value = ethTx.Value.ToUInt256(true),
+                From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
+                Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
+                GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
+                GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
+                Invocation = ethTx.Data is null ? ByteString.Empty : ByteString.CopyFrom(ethTx.Data),
+            };
         }
 
         private static JObject FormatTx(TransactionReceipt receipt, Block? block = null)
