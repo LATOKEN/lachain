@@ -13,6 +13,7 @@ namespace Lachain.Core.Blockchain.Hardfork
         private static ulong Hardfork_6;
         private static ulong Hardfork_7;
         private static ulong Hardfork_8;
+        private static ulong Hardfork_9;
 
         //we need this value as default deploy height
         public static ulong GetHardfork_3() 
@@ -61,6 +62,11 @@ namespace Lachain.Core.Blockchain.Hardfork
         }
 
         
+        public static bool IsHardfork_9Active(ulong height)
+        {
+            return height >= Hardfork_9;
+        }
+        
         public static void SetHardforkHeights(HardforkConfig hardforkConfig)
         {
             if(alreadySet == true) 
@@ -99,6 +105,10 @@ namespace Lachain.Core.Blockchain.Hardfork
             if(hardforkConfig.Hardfork_8 is null)
                 throw new Exception("hardfork_8 is null");
             Hardfork_8 = (ulong) hardforkConfig.Hardfork_8;
+            
+            if(hardforkConfig.Hardfork_9 is null)
+                throw new Exception("hardfork_9 is null");
+            Hardfork_9 = (ulong) hardforkConfig.Hardfork_9;
         }
     }
 }

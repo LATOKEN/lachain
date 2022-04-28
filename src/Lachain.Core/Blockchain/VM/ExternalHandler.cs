@@ -1135,7 +1135,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call ECRECOVER outside wasm frame");
             bool useNewChainId =
-                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
+                HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
             frame.UseGas(GasMetering.RecoverGasCost);
             var hash = SafeCopyFromMemory(frame.Memory, hashOffset, 32) ??
                           throw new InvalidOperationException();
@@ -1169,7 +1169,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call ECVERIFY outside wasm frame");
             bool useNewChainId =
-                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
+                HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
             frame.UseGas(GasMetering.VerifyGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength) ??
                           throw new InvalidOperationException();
@@ -1382,7 +1382,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetChainId outside wasm frame");
 
-            var chainId = TransactionUtils.ChainId(HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
+            var chainId = TransactionUtils.ChainId(HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
             
             // Load chainId at the given dataOffset
             var result = SafeCopyToMemory(frame.Memory, chainId.ToBytes().ToArray(), dataOffset);

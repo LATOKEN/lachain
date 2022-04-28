@@ -324,7 +324,7 @@ namespace Lachain.Core.Consensus
                 case RootProtocolId rootId:
                     var root = new RootProtocol(rootId, _validators, _wallet.EcdsaKeyPair.PrivateKey, 
                         this, _validatorAttendanceRepository, StakingContract.CycleDuration,
-                        HardforkHeights.IsHardfork_8Active((ulong)_era));
+                        HardforkHeights.IsHardfork_9Active((ulong)_era));
                     RegisterProtocols(new[] {root});
                     return root;
                 default:
