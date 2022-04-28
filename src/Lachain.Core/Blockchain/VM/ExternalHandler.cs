@@ -1147,14 +1147,10 @@ namespace Lachain.Core.Blockchain.VM
                       throw new InvalidOperationException();
             Array.Copy(s, 0, sig, r.Length, s.Length);
             var fullBin = v.ToBytes().ToArray();
+            sig[64] = fullBin[0];
             if (useNewChainId)
             {
-                sig[64] = fullBin[1];
-                sig[65] = fullBin[0];
-            }
-            else
-            {
-                sig[64] = fullBin[0];
+                sig[65] = fullBin[1];
             }
 
             var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig, useNewChainId);
