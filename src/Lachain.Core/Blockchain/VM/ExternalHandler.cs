@@ -1154,7 +1154,7 @@ namespace Lachain.Core.Blockchain.VM
             }
             else
             {
-                sig[0] = fullBin[0];
+                sig[64] = fullBin[0];
             }
 
             var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig, useNewChainId);

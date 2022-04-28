@@ -23,6 +23,20 @@ namespace Lachain.Crypto
         private static readonly TimeBenchmark EcRecover = new TimeBenchmark();
         private static readonly ILogger<DefaultCrypto> Logger = LoggerFactory.GetLoggerForClass<DefaultCrypto>();
 
+        private static int SignatureSize(bool useNewChainId)
+        {
+            return useNewChainId ? 66 : 65;
+        }
+
+        private static int RestoreEncodedRecIdFromSignatureBuffer(byte[] signature)
+        {
+            var recIdBytes = new byte[4];
+            recIdBytes[0] = signature[64];
+            if (signature.Length > 65)
+                recIdBytes[1] = signature[65];
+            return BitConverter.ToInt32(recIdBytes);
+        }
+        
         public static void ResetBenchmark()
         {
             var fn = new Func<TimeBenchmark, string>(x => $"{x.Count} times, total = {x.TotalTime} ms");
@@ -57,7 +71,7 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey, bool useNewChainId)
         {
-            if (messageHash.Length != 32 || signature.Length != 65) return false;
+            if (messageHash.Length != 32 || signature.Length != SignatureSize(useNewChainId)) return false;
             return EcVerify.Benchmark(() =>
             {
                 var pk = new byte[64];
@@ -69,7 +83,7 @@ namespace Lachain.Crypto
                     throw new Exception("Cannot serialize parsed key: how did it happen?");
 
                 var parsedSig = new byte[65];
-                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId (useNewChainId);
+                var recId = (RestoreEncodedRecIdFromSignatureBuffer(signature) - 36) / 2 / TransactionUtils.ChainId (useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     return false;
 
@@ -100,14 +114,10 @@ namespace Lachain.Crypto
                 recId = TransactionUtils.ChainId(useNewChainId) * 2 + 35 + recId;
                 var recIdBytes = new byte[useNewChainId ? 2 : 1];
                 var fullBin = recId.ToBytes().ToArray();
+                recIdBytes[0] = fullBin[0];
                 if (useNewChainId)
                 {
-                    recIdBytes[0] = fullBin[1];
-                    recIdBytes[1] = fullBin[0];
-                }
-                else
-                {
-                    recIdBytes[0] = fullBin[0];
+                    recIdBytes[1] = fullBin[1];
                 }
                 return serialized.Concat(recIdBytes).ToArray();
             });
@@ -123,18 +133,13 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId)
         {
-            var defaultLen = useNewChainId ? 66 : 65;
             if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
-            if (signature.Length != defaultLen) throw new ArgumentException(nameof(signature));
+            if (signature.Length != SignatureSize(useNewChainId)) throw new ArgumentException(nameof(signature));
             return EcRecover.Benchmark(() =>
             {
                 var parsedSig = new byte[65];
                 var pk = new byte[64];
-                var recIdBytes = new byte[4];
-                recIdBytes[0] = signature[64];
-                if (signature.Length > 65)
-                    recIdBytes[1] = signature[65];
-                var encodedRecId = BitConverter.ToInt32(recIdBytes);
+                var encodedRecId = RestoreEncodedRecIdFromSignatureBuffer(signature);
                 var recId = (encodedRecId - 36) / 2 / TransactionUtils.ChainId(useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     throw new ArgumentException(nameof(signature));
