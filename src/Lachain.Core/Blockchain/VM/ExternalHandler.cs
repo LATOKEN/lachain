@@ -62,7 +62,11 @@ namespace Lachain.Core.Blockchain.VM
                 input, gasLimit, message).ReturnValue;
             Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
             if (HardforkHeights.IsHardfork_6Active(currentHeight))
-                height = height ?? new byte[64];
+            {
+                height ??= HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
+                if(height.Length < 1)
+                    height = HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
+            }
             return BitConverter.ToUInt64(height, 0);
         }
 
@@ -75,13 +79,18 @@ namespace Lachain.Core.Blockchain.VM
                     input, gasLimit, message).ReturnValue;
                 Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
                 if (HardforkHeights.IsHardfork_6Active(currentHeight))
-                    height = height ?? new byte[64];
+                {
+                    height ??= HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
+                    if(height.Length < 1)
+                        height = HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
+                }
+
                 return BitConverter.ToUInt64(height, 0);
             }
             catch (Exception ex)
             {
                 Logger.LogWarning($"Error in GetDeployHeight: {ex}");
-                return 0;
+                return HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3() : 0; 
             }
         }
         
@@ -1126,7 +1135,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call ECRECOVER outside wasm frame");
             bool useNewChainId =
-                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
+                HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
             frame.UseGas(GasMetering.RecoverGasCost);
             var hash = SafeCopyFromMemory(frame.Memory, hashOffset, 32) ??
                           throw new InvalidOperationException();
@@ -1145,7 +1154,7 @@ namespace Lachain.Core.Blockchain.VM
             }
             else
             {
-                sig[0] = fullBin[0];
+                sig[64] = fullBin[0];
             }
 
             var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig, useNewChainId);
@@ -1160,7 +1169,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call ECVERIFY outside wasm frame");
             bool useNewChainId =
-                HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
+                HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
             frame.UseGas(GasMetering.VerifyGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength) ??
                           throw new InvalidOperationException();
@@ -1373,7 +1382,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetChainId outside wasm frame");
 
-            var chainId = TransactionUtils.ChainId(HardforkHeights.IsHardfork_8Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
+            var chainId = TransactionUtils.ChainId(HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
             
             // Load chainId at the given dataOffset
             var result = SafeCopyToMemory(frame.Memory, chainId.ToBytes().ToArray(), dataOffset);

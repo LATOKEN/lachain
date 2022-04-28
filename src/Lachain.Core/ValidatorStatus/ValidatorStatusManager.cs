@@ -396,7 +396,7 @@ namespace Lachain.Core.ValidatorStatus
         private void AddTxToPool(Transaction tx)
         {
             var useNewChainId =
-                HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
+                HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
             var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, useNewChainId);
             _sendingTxHash = tx.FullHash(receipt.Signature, useNewChainId);
             var result = _transactionPool.Add(receipt);

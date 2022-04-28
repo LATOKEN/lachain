@@ -105,7 +105,7 @@ namespace Lachain.Core.Consensus
             // But we need to verify the hash as we map the receipts with its hash
             // we skip the transactions with hash mismatch
             receipts = receipts.Where(receipt => 
-                receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_8Active(index)).Equals(receipt.Hash)).ToList();
+                receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_9Active(index)).Equals(receipt.Hash)).ToList();
 
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
@@ -220,7 +220,7 @@ namespace Lachain.Core.Consensus
                 0,
                 UInt256Utils.ToUInt256((GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())))
             );
-            return HardforkHeights.IsHardfork_8Active(blockIndex) ?
+            return HardforkHeights.IsHardfork_9Active(blockIndex) ?
                 new TransactionReceipt
                 {
                     Hash = tx.FullHash(SignatureUtils.ZeroNew, true),
@@ -254,7 +254,7 @@ namespace Lachain.Core.Consensus
                 0,
                 UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight()))
             );
-            return HardforkHeights.IsHardfork_8Active(blockIndex) ?
+            return HardforkHeights.IsHardfork_9Active(blockIndex) ?
                 new TransactionReceipt
                 {
                     Hash = tx.FullHash(SignatureUtils.ZeroNew, true),
@@ -287,7 +287,7 @@ namespace Lachain.Core.Consensus
                 GasLimit = 100000000,
                 Invocation = ByteString.CopyFrom(abi),
             };
-            return HardforkHeights.IsHardfork_8Active(blockIndex) ?
+            return HardforkHeights.IsHardfork_9Active(blockIndex) ?
                 new TransactionReceipt
                 {
                     Hash = tx.FullHash(SignatureUtils.ZeroNew, true),
