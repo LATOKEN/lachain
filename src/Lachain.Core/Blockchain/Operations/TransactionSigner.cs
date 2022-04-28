@@ -19,7 +19,7 @@ namespace Lachain.Core.Blockchain.Operations
         {
             /* use raw byte arrays to sign transaction hash */
             var messageHash = transaction.RawHash(useNewChainId);
-            var signature = Crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode(), useNewChainId).ToSignature();
+            var signature = Crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode(), useNewChainId).ToSignature(useNewChainId);
             var signed = new TransactionReceipt
             {
                 Transaction = transaction,

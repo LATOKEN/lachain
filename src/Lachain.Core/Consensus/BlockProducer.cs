@@ -220,13 +220,22 @@ namespace Lachain.Core.Consensus
                 0,
                 UInt256Utils.ToUInt256((GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight())))
             );
-            return new TransactionReceipt
-            {
-                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_8Active(blockIndex)),
-                Status = TransactionStatus.Pool,
-                Transaction = tx,
-                Signature = SignatureUtils.Zero,
-            };
+            return HardforkHeights.IsHardfork_8Active(blockIndex) ?
+                new TransactionReceipt
+                {
+                    Hash = tx.FullHash(SignatureUtils.ZeroNew, true),
+                    Status = TransactionStatus.Pool,
+                    Transaction = tx,
+                    Signature = SignatureUtils.ZeroNew,
+                }
+                :
+                new TransactionReceipt
+                {
+                    Hash = tx.FullHash(SignatureUtils.ZeroOld, false),
+                    Status = TransactionStatus.Pool,
+                    Transaction = tx,
+                    Signature = SignatureUtils.ZeroOld,
+                };
         }
 
         private TransactionReceipt FinishVrfLotteryTxReceipt(ulong blockIndex)
@@ -245,20 +254,29 @@ namespace Lachain.Core.Consensus
                 0,
                 UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_blockManager.GetHeight()))
             );
-            return new TransactionReceipt
-            {
-                Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_8Active(blockIndex)),
-                Status = TransactionStatus.Pool,
-                Transaction = tx,
-                Signature = SignatureUtils.Zero,
-            };
+            return HardforkHeights.IsHardfork_8Active(blockIndex) ?
+                new TransactionReceipt
+                {
+                    Hash = tx.FullHash(SignatureUtils.ZeroNew, true),
+                    Status = TransactionStatus.Pool,
+                    Transaction = tx,
+                    Signature = SignatureUtils.ZeroNew,
+                }
+                :
+                new TransactionReceipt
+                {
+                    Hash = tx.FullHash(SignatureUtils.ZeroOld, false),
+                    Status = TransactionStatus.Pool,
+                    Transaction = tx,
+                    Signature = SignatureUtils.ZeroOld,
+                };
         }
 
         private TransactionReceipt BuildSystemContractTxReceipt(ulong blockIndex, UInt160 contractAddress, string methodSignature)
         {
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(UInt160Utils.Zero);
             var abi = ContractEncoder.Encode(methodSignature);
-            var transaction = new Transaction
+            var tx = new Transaction
             {
                 To = contractAddress,
                 Value = UInt256Utils.Zero,
@@ -269,13 +287,22 @@ namespace Lachain.Core.Consensus
                 GasLimit = 100000000,
                 Invocation = ByteString.CopyFrom(abi),
             };
-            return new TransactionReceipt
-            {
-                Hash = transaction.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_8Active(blockIndex)),
-                Status = TransactionStatus.Pool,
-                Transaction = transaction,
-                Signature = SignatureUtils.Zero,
-            };
+            return HardforkHeights.IsHardfork_8Active(blockIndex) ?
+                new TransactionReceipt
+                {
+                    Hash = tx.FullHash(SignatureUtils.ZeroNew, true),
+                    Status = TransactionStatus.Pool,
+                    Transaction = tx,
+                    Signature = SignatureUtils.ZeroNew,
+                }
+                :
+                new TransactionReceipt
+                {
+                    Hash = tx.FullHash(SignatureUtils.ZeroOld, false),
+                    Status = TransactionStatus.Pool,
+                    Transaction = tx,
+                    Signature = SignatureUtils.ZeroOld,
+                };
         }
     }
 }

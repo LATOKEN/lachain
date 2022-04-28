@@ -5,6 +5,8 @@ using System.Security.Cryptography;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Utility.Benchmark;
+using Lachain.Utility.Serialization;
+using Nethereum.Util;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -96,7 +98,18 @@ namespace Lachain.Crypto
                 if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                     throw new Exception("Cannot serialize recoverable signature: how did it happen?");
                 recId = TransactionUtils.ChainId(useNewChainId) * 2 + 35 + recId;
-                return serialized.Concat(new[] {(byte) recId}).ToArray();
+                var recIdBytes = new byte[useNewChainId ? 2 : 1];
+                var fullBin = recId.ToBytes().ToArray();
+                if (useNewChainId)
+                {
+                    recIdBytes[0] = fullBin[1];
+                    recIdBytes[1] = fullBin[0];
+                }
+                else
+                {
+                    recIdBytes[0] = fullBin[0];
+                }
+                return serialized.Concat(recIdBytes).ToArray();
             });
         }
 
@@ -110,13 +123,19 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId)
         {
+            var defaultLen = useNewChainId ? 66 : 65;
             if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
-            if (signature.Length != 65) throw new ArgumentException(nameof(signature));
+            if (signature.Length != defaultLen) throw new ArgumentException(nameof(signature));
             return EcRecover.Benchmark(() =>
             {
                 var parsedSig = new byte[65];
                 var pk = new byte[64];
-                var recId = (signature[64] - 36) / 2 / TransactionUtils.ChainId(useNewChainId);
+                var recIdBytes = new byte[4];
+                recIdBytes[0] = signature[64];
+                if (signature.Length > 65)
+                    recIdBytes[1] = signature[65];
+                var encodedRecId = BitConverter.ToInt32(recIdBytes);
+                var recId = (encodedRecId - 36) / 2 / TransactionUtils.ChainId(useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     throw new ArgumentException(nameof(signature));
                 if (!Secp256K1.Recover(pk, parsedSig, messageHash))
