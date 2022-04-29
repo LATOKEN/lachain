@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
@@ -6,6 +7,7 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
+using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Storage.State;
@@ -22,10 +24,31 @@ namespace Lachain.CoreTest.IntegrationTests
 {
     public class TransactionsTest
     {
+        private IConfigManager _configManager = null!;
+        private IContainer? _container;
+        
         [SetUp]
         public void Setup()
         {
             TestUtils.DeleteTestChainData();
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<BlockchainModule>();
+            containerBuilder.RegisterModule<ConfigModule>();
+            containerBuilder.RegisterModule<StorageModule>();
+            _container = containerBuilder.Build();
+            _configManager = _container.Resolve<IConfigManager>();
+            // set chainId from config
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+            }
+
         }
 
         [TearDown]
@@ -56,7 +79,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 "0xef8085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d0000080298080"
                     .HexToBytes()
                     .Keccak();
-            Assert.AreEqual(expectedRawHash, tx.RawHash(true));
+            Assert.AreEqual(expectedRawHash, tx.RawHash(false));
 
             // this is correct RLP of signed ethereum tx, check at https://toolkit.abdk.consulting/ethereum#transaction
             // signature is deterministic in compliance with https://tools.ietf.org/html/rfc6979
@@ -64,7 +87,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 "0xf86f8085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d000008076a0a62d5dc477e8ed4ed7077c129bac8b68c3e260c99329513f28e3f97b5d9f532da04333f86ce60ed12ea85aa7c9e5f3713b5b81dfbd7f492afc667e0dd5dd0a5939"
                     .HexToBytes()
                     .Keccak();
-            var receipt = signer.Sign(tx, keyPair, true);
+            var receipt = signer.Sign(tx, keyPair, false);
             Assert.AreEqual(
                 expectedFullHash,
                 receipt.Hash
