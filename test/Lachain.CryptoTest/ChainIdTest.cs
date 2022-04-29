@@ -78,16 +78,38 @@ namespace Lachain.CryptoTest
         [Repeat(2)]
         public void Test_SignatureWithMultipleChainId()
         {
-            var privateKey = "0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes();
-            var ecsdsaPrivateKey = new ECDSAPrivateKey
+            var chainIds = new List<(int,int)>();
+            // Add some chain id to test
+            int total = 10;
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            for (int i = 0 ; i < total ; i++)
             {
-                Buffer = ByteString.CopyFrom(privateKey)
-            };
-            var key = new EcdsaKeyPair(ecsdsaPrivateKey);
-            VerifyPublicKey(key);
-            SignatureWithRandomChainId(key);
+                chainIds.Add(GetRandomChainId(_lowestValidChainId, _highestValidChainId, rng));
+            }
+
+            foreach (var (oldChainId, newChainId) in chainIds)
+            {
+                Logger.LogInformation($"old chain id: {oldChainId}, new chain id: {newChainId}");
+                SetChainId(oldChainId, newChainId);
+                Assert.AreEqual(oldChainId, ChainId(false));
+                Assert.AreEqual(newChainId, ChainId(true));
+                int noOfTest = 10;
+                for (var it = 0 ; it < noOfTest ; it++)
+                {
+                    var key = GetRandomKey();
+                    VerifyPublicKey(key.PublicKey);
+                    SignMessageAndVerify(key);
+                }
+            }
         }
 
+        public EcdsaKeyPair GetRandomKey()
+        {
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            byte[] random = new byte[32];
+            rng.GetBytes(random);
+            return new EcdsaKeyPair(random.ToPrivateKey());
+        }
 
         public void TestForNetwork(string? networkName = null)
         {
@@ -103,21 +125,18 @@ namespace Lachain.CryptoTest
             Assert.AreEqual(ChainId(false), oldChainId);
             Assert.AreEqual(ChainId(true), newChainId);
 
-            var privateKey = "0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes();
-            var ecsdsaPrivateKey = new ECDSAPrivateKey
+            int noOfTest = 10;
+            for (var it = 0 ; it < noOfTest ; it++)
             {
-                Buffer = ByteString.CopyFrom(privateKey)
-            };
-            var key = new EcdsaKeyPair(ecsdsaPrivateKey);
-            VerifyPublicKey(key);
-            SignMessageAndVerify(key);
+                var key = GetRandomKey();
+                VerifyPublicKey(key.PublicKey);
+                SignMessageAndVerify(key);
+            }
         }
 
         public void BuildForNetwork(string? networkName = null)
         {
             Teardown();
-            _container?.Dispose() ;
-            TestUtils.DeleteTestChainData();
             string configPath = "config";
             if (networkName != null)
             {
@@ -135,33 +154,12 @@ namespace Lachain.CryptoTest
             _configManager = _container.Resolve<IConfigManager>();
         }
 
-        public void SignatureWithRandomChainId(EcdsaKeyPair key)
-        {
-            var chainIds = new List<(int,int)>();
-            // Add some chain id to test
-            int total = 10;
-            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
-            for (int i = 0 ; i < total ; i++)
-            {
-                chainIds.Add(GetRandomChainId(_lowestValidChainId, _highestValidChainId, rng));
-            }
-
-            foreach (var (oldChainId, newChainId) in chainIds)
-            {
-                Logger.LogInformation($"old chain id: {oldChainId}, new chain id: {newChainId}");
-                SetChainId(oldChainId, newChainId);
-                Assert.AreEqual(oldChainId, ChainId(false));
-                Assert.AreEqual(newChainId, ChainId(true));
-                SignMessageAndVerify(key);
-            }
-        }
-
         public void SignMessageAndVerify(EcdsaKeyPair key)
         {
             byte[] random = new byte[32];
             RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
             var publicKey = key.PublicKey.Buffer.ToByteArray();
-            int n = 1000;
+            int n = 100;
             for (var it = 0; it < n; ++it)
             {
                 rng.GetBytes(random);
@@ -184,6 +182,22 @@ namespace Lachain.CryptoTest
             }
         }
 
+        // mimic of SignatureSize of DefaultCrypto.cs but using different chain id
+        public int SignatureSize(bool useNewChainId)
+        {
+            return useNewChainId ? 66 : 65;
+        }
+
+        // mimic of RestoreEncodedRecIdFromSignatureBuffer of DefaultCrypto.cs but using different chain id
+        public int RestoreEncodedRecIdFromSignatureBuffer(byte[] signature)
+        {
+            var recIdBytes = new byte[4];
+            recIdBytes[0] = signature[64];
+            if (signature.Length > 65)
+                recIdBytes[1] = signature[65];
+            return BitConverter.ToInt32(recIdBytes);
+        }
+
         // mimic of VerifySignature of DefaultCrypto.cs but using different chain id
         public bool VerifySignature(byte[] message, byte[] signature, byte[] publicKey, bool useNewChainId)
         {
@@ -194,7 +208,7 @@ namespace Lachain.CryptoTest
         // mimic of VerifySignatureHashed of DefaultCrypto.cs but using different chain id
         public bool VerifySignatureHashed(byte[] messageHash, byte[] signature, byte[] publicKey, bool useNewChainId)
         {
-            if (messageHash.Length != 32 || signature.Length != 65) return false;
+            if (messageHash.Length != 32 || signature.Length != SignatureSize(useNewChainId)) return false;
             return EcVerify.Benchmark(() =>
             {
                 var pk = new byte[64];
@@ -206,7 +220,7 @@ namespace Lachain.CryptoTest
                     throw new Exception("Cannot serialize parsed key: how did it happen?");
 
                 var parsedSig = new byte[65];
-                var recId = (signature[64] - 36) / 2 / ChainId (useNewChainId);
+                var recId = (RestoreEncodedRecIdFromSignatureBuffer(signature) - 36) / 2 / ChainId (useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     return false;
 
@@ -235,7 +249,14 @@ namespace Lachain.CryptoTest
                 if (!Secp256K1.RecoverableSignatureSerializeCompact(serialized, out var recId, sig))
                     throw new Exception("Cannot serialize recoverable signature: how did it happen?");
                 recId = ChainId(useNewChainId) * 2 + 35 + recId;
-                return serialized.Concat(new[] {(byte) recId}).ToArray();
+                var recIdBytes = new byte[useNewChainId ? 2 : 1];
+                var fullBin = recId.ToBytes().ToArray();
+                recIdBytes[0] = fullBin[0];
+                if (useNewChainId)
+                {
+                    recIdBytes[1] = fullBin[1];
+                }
+                return serialized.Concat(recIdBytes).ToArray();
             });
         }
 
@@ -250,12 +271,13 @@ namespace Lachain.CryptoTest
         public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId)
         {
             if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
-            if (signature.Length != 65) throw new ArgumentException(nameof(signature));
+            if (signature.Length != SignatureSize(useNewChainId)) throw new ArgumentException(nameof(signature));
             return EcRecover.Benchmark(() =>
             {
                 var parsedSig = new byte[65];
                 var pk = new byte[64];
-                var recId = (signature[64] - 36) / 2 / ChainId(useNewChainId);
+                var encodedRecId = RestoreEncodedRecIdFromSignatureBuffer(signature);
+                var recId = (encodedRecId - 36) / 2 / ChainId(useNewChainId);
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     throw new ArgumentException(nameof(signature));
                 if (!Secp256K1.Recover(pk, parsedSig, messageHash))
@@ -267,10 +289,10 @@ namespace Lachain.CryptoTest
             });
         }
 
-        public void VerifyPublicKey(EcdsaKeyPair key)
+        public void VerifyPublicKey(ECDSAPublicKey pubkey)
         {
             var pk = new byte[64];
-            var publicKey = key.PublicKey.Buffer.ToByteArray();
+            var publicKey = pubkey.Buffer.ToByteArray();
             Assert.IsTrue(Secp256K1.PublicKeyParse(pk, publicKey));
             var publicKeySerialized = new byte[33];
             Assert.IsTrue(Secp256K1.PublicKeySerialize(publicKeySerialized, pk, Flags.SECP256K1_EC_COMPRESSED));
