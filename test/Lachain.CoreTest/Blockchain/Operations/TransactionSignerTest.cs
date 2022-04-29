@@ -34,9 +34,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
                 new RunOptions()
             ));
-            containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
-            containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
             _configManager = _container.Resolve<IConfigManager>();
             // set chainId from config
