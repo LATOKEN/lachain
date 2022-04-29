@@ -131,7 +131,7 @@ namespace Lachain.Core.Blockchain.Pool
                 // we use next height here because block header should be signed with the same chainId
                 // and this txes will go to the next block
                 Hash = transaction.FullHash(signature, 
-                    HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight() + 1)),
+                    HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1)),
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };
@@ -161,10 +161,9 @@ namespace Lachain.Core.Blockchain.Pool
                 return OperatingError.Ok;
             }
             
-            // TODO: Remove this code after the Hardfork_6
             // Stop accept regular txes 100 blocks before Hardfork_6
-            if (HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight() + 100) &&
-                !HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight()))
+            if (HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 100) &&
+                !HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
             {
                 if (!receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) &&
                     !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
@@ -177,7 +176,7 @@ namespace Lachain.Core.Blockchain.Pool
             
             // we use next height here because block header should be signed with the same chainId
             // and this txes will go to the next block
-            bool useNewChainId = HardforkHeights.IsHardfork_8Active(_blockManager.GetHeight() + 1);
+            bool useNewChainId = HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1);
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;

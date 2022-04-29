@@ -47,8 +47,8 @@ namespace Lachain.Core.Blockchain.Genesis
                 .Select(tx => new TransactionReceipt
                 {
                     Transaction = tx,
-                    Hash = tx.FullHash(SignatureUtils.Zero, HardforkHeights.IsHardfork_8Active(0)),
-                    Signature = SignatureUtils.Zero,
+                    Hash = HardforkHeights.IsHardfork_9Active(0) ? tx.FullHash(SignatureUtils.ZeroNew, true) : tx.FullHash(SignatureUtils.ZeroOld, false),
+                    Signature = HardforkHeights.IsHardfork_9Active(0) ? SignatureUtils.ZeroNew : SignatureUtils.ZeroOld,
                 })
                 .ToList();
 
