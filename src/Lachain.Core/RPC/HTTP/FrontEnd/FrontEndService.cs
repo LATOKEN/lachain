@@ -349,7 +349,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
 
             var v = ethTx.Signature.V;
 
-            var signature = r.Concat(s).Concat(v).ToArray().ToSignature();
+            var signature = r.Concat(s).Concat(v).ToArray().ToSignature(useNewChainId);
             try
             {
                 var transaction = MakeTransaction(ethTx);
@@ -362,7 +362,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                     Transaction = transaction
                 }, useNewChainId);
 
-                if (result != OperatingError.Ok) throw new Exception($"Transaction is invalid: {result}");
+                if (result != OperatingError.Ok) return $"Transaction is invalid: {result}";
                 return txHash.ToHex();
             }
             catch (Exception e)
