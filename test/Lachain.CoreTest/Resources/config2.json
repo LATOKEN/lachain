@@ -1,7 +1,7 @@
 {
   "network": {
     "chainId": 25,
-    "newChainId": 25,
+    "newChainId": 225,
     "peers": [
     ],
     "forceIPv6": false,
@@ -40,6 +40,17 @@
   "vault": {
     "path": "wallet2.json",
     "password": "c485e3f217c6135fe546a913abcceab913fc01c9"
+  },
+  "hardfork": {
+    "hardfork_1": 0,
+    "hardfork_2": 0,
+    "hardfork_3": 0,
+    "hardfork_4": 0,
+    "hardfork_5": 10,
+    "hardfork_6": 10,
+    "hardfork_7": 10,
+    "hardfork_8": 10,
+    "hardfork_9": 1000
   },
   "storage": {
     "provider": "RocksDB",

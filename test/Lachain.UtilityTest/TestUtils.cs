@@ -14,7 +14,7 @@ namespace Lachain.UtilityTest
 {
     public class TestUtils
     {
-        public static TransactionReceipt GetRandomTransaction()
+        public static TransactionReceipt GetRandomTransaction(bool useNewChainId)
         {
             var signer = new TransactionSigner();
             byte[] random = new byte[32];
@@ -31,10 +31,10 @@ namespace Lachain.UtilityTest
                 Nonce = 0,
                 Value = Money.Parse($"{randomValue}.0").ToUInt256()
             };
-            return signer.Sign(tx, keyPair, true);
+            return signer.Sign(tx, keyPair, useNewChainId);
         }
 
-        public static TransactionReceipt GetCustomTransaction(string value, string gasPrice)
+        public static TransactionReceipt GetCustomTransaction(string value, string gasPrice, bool useNewChainId)
         {
             var signer = new TransactionSigner();
             byte[] random = new byte[32];
@@ -51,7 +51,7 @@ namespace Lachain.UtilityTest
                 Nonce = 0,
                 Value = Money.Parse(value).ToUInt256()
             };
-            return signer.Sign(tx, keyPair, true);
+            return signer.Sign(tx, keyPair, useNewChainId);
         }
 
         public static void DeleteTestChainData()

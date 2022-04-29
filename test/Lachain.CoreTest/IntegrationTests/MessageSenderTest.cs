@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -65,6 +66,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
             _blockManager.TryBuildGenesisBlock();
         }
@@ -95,7 +97,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, true);
+            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlock(2);
             
@@ -176,8 +178,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode(), true
-            ).ToSignature(true);
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {

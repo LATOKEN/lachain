@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -79,6 +80,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
             _validatorStatusManager = new ValidatorStatusManager(
                 _transactionPool, _container.Resolve<ITransactionSigner>(), _container.Resolve<ITransactionBuilder>(),
@@ -128,7 +130,8 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             _blockManager.TryBuildGenesisBlock();
             var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
-            var tx = TopUpBalanceTx(systemContractReader.NodeAddress(),Money.Parse("3000.0").ToUInt256(), 0);
+            var tx = TopUpBalanceTx(systemContractReader.NodeAddress(),Money.Parse("3000.0").ToUInt256(), 0, 
+                HardforkHeights.IsHardfork_9Active(1));
             Assert.AreEqual(OperatingError.Ok, _transactionPool.Add(tx));
             GenerateBlocks(1, 1);
             var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(systemContractReader.NodeAddress());
@@ -210,8 +213,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode(), true
-            ).ToSignature(true);
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {
@@ -229,7 +232,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return (header, multisig);
         }
         
-        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
+        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc, bool useNewChainId)
         {
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
@@ -243,7 +246,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         (ulong) nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, keyPair, true);
+            return Signer.Sign(tx, keyPair, useNewChainId);
         }
         
         private OperatingError ExecuteBlock(Block block, TransactionReceipt[]? receipts = null)

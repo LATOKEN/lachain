@@ -7,6 +7,7 @@ using System.Reflection;
 using Google.Protobuf;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -22,6 +23,7 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -43,6 +45,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private ITransactionBuilder _transactionBuilder = null!;
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
+        private IConfigManager _configManager = null!;
         private IPrivateWallet _wallet = null!;
         private IContainer? _container;
         private Dictionary<UInt256, ByteString> _eventData = null!;
@@ -81,6 +84,15 @@ namespace Lachain.CoreTest.IntegrationTests
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+            _configManager = _container.Resolve<IConfigManager>();
+            // set chainId from config
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+            }
         }
 
         [TearDown]
@@ -206,8 +218,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode(), true
-            ).ToSignature(true);
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {

@@ -38,10 +38,10 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Nonce = 0,
                 Value = new BigInteger(0).ToUInt256()
             };
-            var receipt = signer.Sign(tx, keyPair, true);
-            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
+            var receipt = signer.Sign(tx, keyPair, false);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(false).ToHex());
 
-            var publicKey = receipt.RecoverPublicKey(true);
+            var publicKey = receipt.RecoverPublicKey(false);
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
         }
@@ -66,7 +66,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Value = new BigInteger(0).ToUInt256()
             };
             var receipt = signer.Sign(tx, keyPair, true);
-            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(false).ToHex());
             var txHashFromWeb3Py = "0x8c78e890b249e7fa814a40648f1810946b639b6fa321c9dec8598ef77615ea91";
             Assert.AreEqual(receipt.Hash.ToHex(), txHashFromWeb3Py);
 
