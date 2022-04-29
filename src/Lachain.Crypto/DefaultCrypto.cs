@@ -133,7 +133,6 @@ namespace Lachain.Crypto
         [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId)
         {
-            var defaultLen = useNewChainId ? 66 : 65;
             if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
             if (signature.Length != SignatureSize(useNewChainId)) throw new ArgumentException(nameof(signature));
             return EcRecover.Benchmark(() =>
