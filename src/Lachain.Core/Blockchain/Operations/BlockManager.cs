@@ -347,7 +347,7 @@ namespace Lachain.Core.Blockchain.Operations
                     BlockSize.Observe(block.CalculateSize());
                     foreach (var transactionReceipt in transactions)
                     {
-                        TxSize.Observe(transactionReceipt.Transaction.RlpWithSignature(transactionReceipt.Signature,  HardforkHeights.IsHardfork_8Active(block.Header.Index)).Count());
+                        TxSize.Observe(transactionReceipt.Transaction.RlpWithSignature(transactionReceipt.Signature,  HardforkHeights.IsHardfork_9Active(block.Header.Index)).Count());
                     }
                     TxInBlock.Observe(block.TransactionHashes.Count);
 
@@ -631,8 +631,8 @@ namespace Lachain.Core.Blockchain.Operations
         {
             return Crypto.SignHashed(
                 block.Keccak().ToBytes(), keyPair.PrivateKey.Encode(),
-                HardforkHeights.IsHardfork_8Active(block.Index)
-            ).ToSignature();
+                HardforkHeights.IsHardfork_9Active(block.Index)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(block.Index));
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -640,7 +640,7 @@ namespace Lachain.Core.Blockchain.Operations
         {
             var result = Crypto.VerifySignatureHashed(
                 blockHeader.Keccak().ToBytes(), signature.Encode(), publicKey.EncodeCompressed(),
-                HardforkHeights.IsHardfork_8Active(blockHeader.Index)
+                HardforkHeights.IsHardfork_9Active(blockHeader.Index)
             );
             return result ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
@@ -654,7 +654,7 @@ namespace Lachain.Core.Blockchain.Operations
                 return OperatingError.Ok;
             if (checkValidatorSet && !VerifyValidatorSet(block.Multisig.Validators, block.Header.Index - 1))
                 return OperatingError.InvalidMultisig;
-            return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash, HardforkHeights.IsHardfork_8Active(block.Header.Index));
+            return _multisigVerifier.VerifyMultisig(block.Multisig, block.Hash, HardforkHeights.IsHardfork_9Active(block.Header.Index));
         }
 
         private bool VerifyValidatorSet(IReadOnlyCollection<ECDSAPublicKey> keys, ulong height)

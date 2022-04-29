@@ -159,7 +159,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var keyPair = new EcdsaKeyPair("0xE83385AF76B2B1997326B567461FB73DD9C27EAB9E1E86D26779F4650C5F2B75"
                 .HexToBytes().ToPrivateKey());
             var receipt = _transactionSigner.Sign(t, keyPair, true);
-            Assert.AreEqual(receipt.Signature, signature.ToSignature());
+            Assert.AreEqual(receipt.Signature, signature.ToSignature(true));
 
             var ethTx2 = t.GetEthTx(receipt.Signature, true);
             Assert.AreEqual(ethTx.ChainId,  ethTx2.ChainId);
@@ -514,7 +514,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
                 keyPair.PrivateKey.Encode(), true
-            ).ToSignature();
+            ).ToSignature(true);
 
             var multisig = new MultiSig
             {

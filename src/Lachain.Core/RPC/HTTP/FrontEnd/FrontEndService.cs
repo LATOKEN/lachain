@@ -415,7 +415,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         {
             var wallet = _privateWallet.GetWalletInstance();
             if (wallet is null) return "0x0";
-            var receipt = _transactionSigner.Sign(tx, wallet.EcdsaKeyPair, HardforkHeights.IsHardfork_8Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
+            var receipt = _transactionSigner.Sign(tx, wallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
             var result = _transactionPool.Add(receipt);
             Logger.LogDebug(result == OperatingError.Ok
                 ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"

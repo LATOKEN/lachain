@@ -85,7 +85,7 @@ namespace Lachain.Networking
                 Content = ByteString.CopyFrom(new MessageBatchContent {Messages = {messages}}.ToByteArray()),
                 Sender = _keyPair.PublicKey,
             };
-            batch.Signature = Crypto.Sign(batch.Content.ToArray(), _keyPair.PrivateKey.Encode(), true).ToSignature();
+            batch.Signature = Crypto.Sign(batch.Content.ToArray(), _keyPair.PrivateKey.Encode(), true).ToSignature(true);
             return batch;
         }
 

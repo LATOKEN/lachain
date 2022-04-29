@@ -207,7 +207,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
                 keyPair.PrivateKey.Encode(), true
-            ).ToSignature();
+            ).ToSignature(true);
 
             var multisig = new MultiSig
             {
@@ -352,10 +352,10 @@ namespace Lachain.CoreTest.IntegrationTests
             );
             return new TransactionReceipt
             {
-                Hash = transaction.FullHash(SignatureUtils.Zero, true),
+                Hash = transaction.FullHash(SignatureUtils.ZeroNew, true),
                 Status = TransactionStatus.Pool,
                 Transaction = transaction,
-                Signature = SignatureUtils.Zero,
+                Signature = SignatureUtils.ZeroNew,
             };
         }
     }
