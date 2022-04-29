@@ -99,6 +99,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
             ServiceBinder.BindService<GenericParameterAttributes>();
 
@@ -356,7 +357,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var contractHashHx = contractHash.ToHex();
 
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, true);
+            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlocks(2, 2);
 
@@ -400,7 +401,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var contractHashHx = contractHash.ToHex();
 
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, true);
+            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlocks(2, 2);
 
@@ -514,8 +515,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode(), true
-            ).ToSignature(true);
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {

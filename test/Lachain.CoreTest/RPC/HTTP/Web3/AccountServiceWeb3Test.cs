@@ -96,6 +96,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
             ServiceBinder.BindService<GenericParameterAttributes>();
 
@@ -196,7 +197,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
 
-            var rawTx2 = MakeDummyTx();
+            var rawTx2 = MakeDummyTx(HardforkHeights.IsHardfork_9Active(1));
 
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
@@ -221,7 +222,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             _blockManager.TryBuildGenesisBlock();
 
-            var rawTx2 = MakeDummyTx();
+            var rawTx2 = MakeDummyTx(HardforkHeights.IsHardfork_9Active(1));
 
             var ethTx = new TransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
@@ -271,7 +272,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
 
-            var rawTx2 = MakeDummyTx();
+            var rawTx2 = MakeDummyTx(HardforkHeights.IsHardfork_9Active(1));
 
             ExecuteDummyTransaction(true, rawTx2);
 
@@ -296,7 +297,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
 
-            var rawTx2 = MakeDummyTx();
+            var rawTx2 = MakeDummyTx(HardforkHeights.IsHardfork_9Active(1));
 
             ExecuteDummyTransaction(true, rawTx2);
 
@@ -306,7 +307,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(adCode, "");
         }
 
-        private string MakeDummyTx()
+        private string MakeDummyTx(bool useNewCainId)
         {
             var tx = new Transaction
             {
@@ -318,14 +319,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 GasLimit = 4500000
             };
 
-            var rlp = tx.Rlp(true);
+            var rlp = tx.Rlp(useNewCainId);
 
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
-            var receipt = _transactionSigner.Sign(tx, keyPair, true);
+            var receipt = _transactionSigner.Sign(tx, keyPair, useNewCainId);
 
             var s = receipt.Signature;
-            var rawTx = tx.RlpWithSignature(s, true);
+            var rawTx = tx.RlpWithSignature(s, useNewCainId);
 
             return rawTx.ToHex();
 
@@ -411,8 +412,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode(), true
-            ).ToSignature(true);
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {

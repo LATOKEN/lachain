@@ -101,8 +101,13 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             _configManager = _container.Resolve<IConfigManager>();
             _consensusManager = _container.Resolve<IConsensusManager>();
-
-
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+            }
 
             ServiceBinder.BindService<GenericParameterAttributes>();
             _apiService = new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool,
@@ -135,7 +140,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             ulong total = 1;
             GenerateBlocksWithGenesis(total);
             bool fullTx = false;
-            var tx = GiveMeSomeMoney(Money.Parse("100000").ToUInt256());
+            var tx = GiveMeSomeMoney(Money.Parse("100000").ToUInt256(), HardforkHeights.IsHardfork_9Active(1));
             var txList = new List<TransactionReceipt> ();
             txList.Add(tx);
             AddBatchTransactionToPool(txList, false);
@@ -143,7 +148,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             GenerateBlocks(1,total);
             CheckBlockWeb3Format("latest",(ulong)total , fullTx);
             var randomTxList = GetRandomTransactionBatch(10,  HardforkHeights.IsHardfork_9Active(2));
-            var topUpTxList = TopUpBalanceTxBatch(randomTxList, "10");
+            var topUpTxList = TopUpBalanceTxBatch(randomTxList, "10", HardforkHeights.IsHardfork_9Active(2));
             AddBatchTransactionToPool(topUpTxList, false);
             total++;
             GenerateBlocks(1,total);
@@ -351,10 +356,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             GenerateBlocksWithGenesis(1);
 
             //var customReceipts = GetCustomTransactionBatch(10, "0.00000000001", "0.000000000000000001");
-            var customReceipts = GetCustomTransactionBatch(10,"0.00000000001","0.000000000000000001");
+            var customReceipts = GetCustomTransactionBatch(10,"0.00000000001","0.000000000000000001", 
+                HardforkHeights.IsHardfork_9Active(1));
             // set coverTxFee = "10" if GetRandomTransactionBatch() is used instead of GetCustomTransactionBatch()
             var coverTxFee = "0.0001"; 
-            var topUpReceipts = TopUpBalanceTxBatch(customReceipts, coverTxFee); 
+            var topUpReceipts = TopUpBalanceTxBatch(customReceipts, coverTxFee, 
+                HardforkHeights.IsHardfork_9Active(1)); 
             Logger.LogInformation("Adding topUpReceipts transactions in Pool:");
             foreach (var tx in topUpReceipts)
             {
@@ -415,7 +422,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             GenerateBlocksWithGenesis(0);
             var randomtx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             var coverTxFee = Money.Parse("10");
-            var topUpTx = TopUpBalanceTx(randomtx.Transaction.From, (randomtx.Transaction.Value.ToMoney() + coverTxFee).ToUInt256(), 0);
+            var topUpTx = TopUpBalanceTx(randomtx.Transaction.From, (randomtx.Transaction.Value.ToMoney() + coverTxFee).ToUInt256(), 0, 
+                HardforkHeights.IsHardfork_9Active(1));
             Console.WriteLine($"Sending tx: {topUpTx.Hash.ToHex()} and {randomtx.Hash.ToHex()}");
             _transactionPool.Add(topUpTx , false);
             ulong total = 1;
@@ -435,15 +443,17 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             GenerateBlocksWithGenesis(0);
             CheckTransactionPoolWeb3();
-            var tx = GiveMeSomeMoney(Money.Parse("10").ToUInt256());
+            var tx = GiveMeSomeMoney(Money.Parse("10").ToUInt256(), HardforkHeights.IsHardfork_9Active(1));
             var txList = new List<TransactionReceipt> ();
             txList.Add(tx);
             AddBatchTransactionToPool(txList, false);
             CheckTransactionPoolWeb3();
             ulong total = 1;
             GenerateBlocks(1,total);
-            var randomTx = GetCustomTransactionBatch(5,"1","0.00000000001");
-            var topUpTx = TopUpBalanceTxBatch(randomTx,"1");
+            var randomTx = GetCustomTransactionBatch(5,"1","0.00000000001", 
+                HardforkHeights.IsHardfork_9Active(2));
+            var topUpTx = TopUpBalanceTxBatch(randomTx,"1", 
+                HardforkHeights.IsHardfork_9Active(2));
             AddBatchTransactionToPool(topUpTx, false);
             CheckTransactionPoolWeb3();
             total++;
@@ -461,17 +471,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         // changed from private to public: GetLogs()
         public void Test_GetLogs()
         {
-
-
             GenerateBlocksWithGenesis(0);
-            var tx = GiveMeSomeMoney(Money.Parse("10").ToUInt256());
+            var tx = GiveMeSomeMoney(Money.Parse("10").ToUInt256(), HardforkHeights.IsHardfork_9Active(2));
             var txList = new List<TransactionReceipt> ();
             txList.Add(tx);
             AddBatchTransactionToPool(txList, false);
             ulong total = 1;
             GenerateBlocks(1,total);
-            var randomTx = GetCustomTransactionBatch(5 , "1" , "0.000000000001");
-            var topUpTx = TopUpBalanceTxBatch(randomTx , "1");
+            var randomTx = GetCustomTransactionBatch(5 , "1" , "0.000000000001", 
+                HardforkHeights.IsHardfork_9Active(2));
+            var topUpTx = TopUpBalanceTxBatch(randomTx , "1", HardforkHeights.IsHardfork_9Active(2));
             AddBatchTransactionToPool(topUpTx, false);
             total++;
             GenerateBlocks(1,total);
@@ -644,21 +653,21 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             return randomReceipts;
         }
 
-        public List<TransactionReceipt> GetCustomTransactionBatch(int txCount, string value, string gasPrice)
+        public List<TransactionReceipt> GetCustomTransactionBatch(int txCount, string value, string gasPrice, bool useNewChainId)
         {
 
             var customReceipts = new List<TransactionReceipt>();
 
             for (var i = 0; i < txCount; i++)
             {
-                var tx = TestUtils.GetCustomTransaction(value , gasPrice);
+                var tx = TestUtils.GetCustomTransaction(value , gasPrice, useNewChainId);
                 customReceipts.Add(tx);
 
             }
             return customReceipts;
         }
 
-        public List<TransactionReceipt> TopUpBalanceTxBatch(List<TransactionReceipt> receipts , string coverTxFee = "100") 
+        public List<TransactionReceipt> TopUpBalanceTxBatch(List<TransactionReceipt> receipts , string coverTxFee, bool useNewChainId) 
         {
 
             var topUpReceipts = new List<TransactionReceipt>();
@@ -668,7 +677,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             foreach (var receipt in receipts)
             {
                 //var coverTxFee = receipt.Transaction.GasLimit * receipt.Transaction.GasPrice;
-                var tx = TopUpBalanceTx(receipt.Transaction.From,(receipt.Transaction.Value.ToMoney() + Money.Parse(coverTxFee)).ToUInt256(),nonce);
+                var tx = TopUpBalanceTx(receipt.Transaction.From,(receipt.Transaction.Value.ToMoney() + Money.Parse(coverTxFee)).ToUInt256(),nonce, useNewChainId);
                 nonce++;
                 topUpReceipts.Add(tx);
             }
@@ -739,7 +748,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
         }
 
-        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
+        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc, bool useNewChainId)
         {
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
@@ -753,10 +762,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                         (ulong)nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair, true);
+            return Signer.Sign(tx, _privateWallet.EcdsaKeyPair, useNewChainId);
         }
 
-        private TransactionReceipt GiveMeSomeMoney(UInt256 money){
+        private TransactionReceipt GiveMeSomeMoney(UInt256 money, bool useNewChainId){
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
             var tx = new Transaction
@@ -768,7 +777,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()),
                 Value = money
             };
-            return Signer.Sign(tx, keyPair, true);
+            return Signer.Sign(tx, keyPair, useNewChainId);
         } 
 
         public void CheckTransactionWeb3Format(ulong blockHeight)
@@ -991,8 +1000,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode(), true
-            ).ToSignature(true);
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {
