@@ -50,7 +50,7 @@
     "hardfork_6": 10,
     "hardfork_7": 10,
     "hardfork_8": 10,
-    "hardfork_9": 10
+    "hardfork_9": 1000
   },
   "storage": {
     "provider": "RocksDB",
