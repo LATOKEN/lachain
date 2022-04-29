@@ -27,6 +27,7 @@ using NUnit.Framework;
 using Lachain.Crypto.Misc;
 using Lachain.Utility;
 using System.Collections.Generic;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Networking;
 using Newtonsoft.Json.Linq;
 using Lachain.Utility.Serialization;
@@ -252,7 +253,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_GetTransactionReceipt()
         {
              _blockManager.TryBuildGenesisBlock();
-            var tx = TestUtils.GetRandomTransaction();
+            var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
@@ -268,7 +269,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_GetTransactionByHash()
         {
             _blockManager.TryBuildGenesisBlock();
-            var tx = TestUtils.GetRandomTransaction();
+            var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
@@ -287,7 +288,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_GetTransactionByBlockHashAndIndex()
         {
             _blockManager.TryBuildGenesisBlock();
-            var tx = TestUtils.GetRandomTransaction();
+            var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
@@ -311,7 +312,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
 
             _blockManager.TryBuildGenesisBlock();
-            var tx = TestUtils.GetRandomTransaction();
+            var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);

@@ -31,6 +31,7 @@ using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Crypto.ECDSA;
 using System.Security.Cryptography;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Utility.Serialization;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
@@ -141,7 +142,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             total++;
             GenerateBlocks(1,total);
             CheckBlockWeb3Format("latest",(ulong)total , fullTx);
-            var randomTxList = GetRandomTransactionBatch(10);
+            var randomTxList = GetRandomTransactionBatch(10,  HardforkHeights.IsHardfork_9Active(2));
             var topUpTxList = TopUpBalanceTxBatch(randomTxList, "10");
             AddBatchTransactionToPool(topUpTxList, false);
             total++;
@@ -412,7 +413,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_Wev3Events()
         {
             GenerateBlocksWithGenesis(0);
-            var randomtx = TestUtils.GetRandomTransaction();
+            var randomtx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             var coverTxFee = Money.Parse("10");
             var topUpTx = TopUpBalanceTx(randomtx.Transaction.From, (randomtx.Transaction.Value.ToMoney() + coverTxFee).ToUInt256(), 0);
             Console.WriteLine($"Sending tx: {topUpTx.Hash.ToHex()} and {randomtx.Hash.ToHex()}");
@@ -629,14 +630,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
         }
 
-        public List<TransactionReceipt> GetRandomTransactionBatch(int txCount)
+        public List<TransactionReceipt> GetRandomTransactionBatch(int txCount,  bool useNewChainId)
         {
             
             var randomReceipts = new List<TransactionReceipt>();
 
             for (var i = 0; i < txCount; i++)
             {
-                var tx = TestUtils.GetRandomTransaction();
+                var tx = TestUtils.GetRandomTransaction(useNewChainId);
                 randomReceipts.Add(tx);
                 
             }

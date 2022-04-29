@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -84,6 +85,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
         }
 
@@ -165,10 +167,11 @@ namespace Lachain.CoreTest.IntegrationTests
             var coverTxFeeAmount = Money.Parse("10.0");
             for (var i = 0; i < txCount; i++)
             {
-                var tx = TestUtils.GetRandomTransaction();
+                var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(2));
                 randomReceipts.Add(tx);
                 topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
-                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
+                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i, 
+                    HardforkHeights.IsHardfork_9Active(1)));
             }
 
             var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
@@ -187,13 +190,15 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_Storage_Changing()
         {
             _blockManager.TryBuildGenesisBlock();
-            var randomTx = TestUtils.GetRandomTransaction();
+            var randomTx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             var balance = randomTx.Transaction.Value;
             var allowance = balance;
             var receiver = randomTx.Transaction.From;
 
-            var tx1 = TopUpBalanceTx(receiver, balance, 0);
-            var tx2 = ApproveTx(receiver, allowance, 0);
+            var tx1 = TopUpBalanceTx(receiver, balance, 0, 
+                HardforkHeights.IsHardfork_9Active(1));
+            var tx2 = ApproveTx(receiver, allowance, 0, 
+                HardforkHeights.IsHardfork_9Active(1));
 
             var owner = tx2.Transaction.From;
 
@@ -277,8 +282,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode(), true
-            ).ToSignature(true);
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {
@@ -323,7 +328,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return status;
         }
 
-        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
+        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc, bool useNewChainId)
         {
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
@@ -337,10 +342,10 @@ namespace Lachain.CoreTest.IntegrationTests
                         (ulong) nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, keyPair, true);
+            return Signer.Sign(tx, keyPair, useNewChainId);
         }
 
-        private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)
+        private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc,  bool useNewChainId)
         {
             var input = ContractEncoder.Encode(Lrc20Interface.MethodApprove, to, value);
             var tx = new Transaction
@@ -354,7 +359,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         (ulong) nonceInc,
                 Value = UInt256Utils.Zero,
             };
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair, true);
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair, useNewChainId);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.CLI;
@@ -90,9 +91,10 @@ namespace Lachain.CoreTest.IntegrationTests
                 var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 var newChainId = configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(configManager.GetConfig<HardforkConfig>("hardfork"));
             }
 
-            var tx = TestUtils.GetRandomTransaction();
+            var tx = TestUtils.GetRandomTransaction(false);
             var result = txPool.Add(tx);
             Assert.AreEqual(OperatingError.InsufficientBalance, result);
 
@@ -104,13 +106,13 @@ namespace Lachain.CoreTest.IntegrationTests
             result = txPool.Add(tx);
             Assert.AreEqual(OperatingError.AlreadyExists, result);
 
-            var tx2 = TestUtils.GetRandomTransaction();
+            var tx2 = TestUtils.GetRandomTransaction(false);
             tx2.Transaction.Nonce++;
             result = txPool.Add(tx2);
             Assert.AreEqual(OperatingError.InvalidNonce, result); 
 
             /* TODO: maybe we should fix this strange behaviour */
-            var tx3 = TestUtils.GetRandomTransaction();
+            var tx3 = TestUtils.GetRandomTransaction(false);
             tx3.Transaction.From = UInt160Utils.Zero;
             result = txPool.Add(tx3);
             Assert.AreEqual(OperatingError.Ok, result);

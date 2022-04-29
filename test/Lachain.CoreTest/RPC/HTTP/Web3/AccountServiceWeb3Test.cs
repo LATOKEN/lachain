@@ -19,6 +19,7 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Crypto.Misc;
@@ -136,7 +137,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void TestGetBalancePending()
         {
 
-            var tx = TestUtils.GetRandomTransaction();
+            var tx = TestUtils.GetRandomTransaction(false);
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
@@ -166,7 +167,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         public void Test_GetTransactionCount_latest()
         {
             _blockManager.TryBuildGenesisBlock();
-            var tx = TestUtils.GetRandomTransaction();
+            var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             // adding balance so that it's transaction is added to the pool
             _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
 
