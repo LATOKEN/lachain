@@ -292,15 +292,15 @@ namespace Lachain.CoreTest.IntegrationTests
 
         private void Check_Random_Address_Storage_Changing()
         {
-            var randomTx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
+            var randomTx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
             var balance = randomTx.Transaction.Value;
             var allowance = balance;
             var receiver = randomTx.Transaction.From;
 
             var tx1 = TopUpBalanceTx(receiver, balance, 0, 
-                HardforkHeights.IsHardfork_9Active(1));
+                HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
             var tx2 = ApproveTx(receiver, allowance, 0, 
-                HardforkHeights.IsHardfork_9Active(1));
+                HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
 
             var owner = tx2.Transaction.From;
 
