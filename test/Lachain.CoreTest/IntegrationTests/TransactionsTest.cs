@@ -89,6 +89,7 @@ namespace Lachain.CoreTest.IntegrationTests
             };
             Console.WriteLine($"Tx: from: {tx.From.ToHex()}, to: {tx.To.ToHex()}");
 
+            // using old chain id
             // this is correct RLP of unsigned ethereum tx with chain id 25, check at https://toolkit.abdk.consulting/ethereum#transaction
             var expectedRawHash =
                 "0xef8085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d0000080198080"
@@ -96,9 +97,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     .Keccak();
             Console.WriteLine($"rlp: {tx.Rlp(true).ToHex()}");
             Assert.AreEqual(expectedRawHash, tx.RawHash(false));
-            Assert.AreEqual(expectedRawHash, tx.RawHash(true));
             
-            // using old chain id
             // this is correct RLP of signed ethereum tx with chain id 25, check at https://toolkit.abdk.consulting/ethereum#transaction
             // signature is deterministic in compliance with https://tools.ietf.org/html/rfc6979
             var expectedFullHash =
@@ -112,6 +111,13 @@ namespace Lachain.CoreTest.IntegrationTests
             );
 
             // using new chain id
+            // this is correct RLP of unsigned ethereum tx with chain id 25, check at https://toolkit.abdk.consulting/ethereum#transaction
+            expectedRawHash = 
+                "0xf08085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d000008081e18080"
+                    .HexToBytes()
+                    .Keccak();
+            Assert.AreEqual(expectedRawHash, tx.RawHash(true));
+            
             // this is correct RLP of signed ethereum tx with chain id 225, check at https://toolkit.abdk.consulting/ethereum#transaction
             // signature is deterministic in compliance with https://tools.ietf.org/html/rfc6979
             expectedFullHash = 
