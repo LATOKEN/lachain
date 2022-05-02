@@ -111,7 +111,7 @@ namespace Lachain.CoreTest.IntegrationTests
             );
 
             // using new chain id
-            // this is correct RLP of unsigned ethereum tx with chain id 25, check at https://toolkit.abdk.consulting/ethereum#transaction
+            // this is correct RLP of unsigned ethereum tx with chain id 225, check at https://toolkit.abdk.consulting/ethereum#transaction
             expectedRawHash = 
                 "0xf08085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d000008081e18080"
                     .HexToBytes()
