@@ -106,7 +106,17 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_EventFormat()
         {
             _blockManager.TryBuildGenesisBlock();
+            TestEventFormat();
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                GenerateBlocks(1);
+            }
+            TestEventFormat();
+        }
 
+        private void TestEventFormat()
+        {
             for (var i = 0; i < (int)(CycleDuration + 2); i++)
             {
                 GenerateBlocks(1);

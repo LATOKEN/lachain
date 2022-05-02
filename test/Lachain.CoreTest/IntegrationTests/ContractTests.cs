@@ -15,6 +15,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -94,126 +95,43 @@ namespace Lachain.CoreTest.IntegrationTests
         [Test]
         public void Test_ContractDeployAndInvoke()
         {
-            var keyPair = _wallet.EcdsaKeyPair;
-            GenerateBlock(1);
+            int blockNum = 1;
+            TestContractDeployAndInvoke(blockNum);
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            blockNum = (int) _blockManager.GetHeight() + 1;
+            while(!HardforkHeights.IsHardfork_9Active((ulong) blockNum - 1))
+            {
+                GenerateBlock(blockNum);
+                blockNum++;
+            }
             
-            // Deploy contract 
-            var byteCode = ByteCodeHex.HexToBytes();
-            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate smart-contract code");
-            var from = keyPair.PublicKey.GetAddress();
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
-            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
-            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlock(2);
-            
-            // check contract is deployed
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            Assert.That(contract != null, "Failed to find deployed contract");
-            
-            // invoke deployed contract without blockchain
-            var abi = ContractEncoder.Encode("test()");
-            var transactionReceipt = new TransactionReceipt {
-                Block = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(),
-            };
-            transactionReceipt.Transaction = new Transaction();
-            transactionReceipt.Transaction.Value = 0.ToUInt256();
-            var invocationResult = VirtualMachine.InvokeWasmContract(
-                contract!,
-                new InvocationContext(from, _stateManager.LastApprovedSnapshot, transactionReceipt),
-                abi,
-                GasMetering.DefaultBlockGasLimit
-            );
-            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke deployed contract");
-            Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
-            Assert.That(invocationResult.ReturnValue!.ToHex() == "0x000000000000000000000000000000000000000000000000000000000000002a", "Invalid invocation return value");
-            
-            // invoke contract in blockchain
-            var txInvoke = _transactionBuilder.InvokeTransaction(
-                keyPair.PublicKey.GetAddress(),
-                contractHash,
-                Money.Zero,
-                "test()",
-                new dynamic[0]);
-            var signedTxInvoke = Signer.Sign(txInvoke, keyPair, HardforkHeights.IsHardfork_9Active(3));
-            var error = _transactionPool.Add(signedTxInvoke);
-            Assert.That(error == OperatingError.Ok, "Failed to add invoke tx to pool");
-            GenerateBlock(3);
-            var tx2 = 
-                _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(signedTxInvoke.Hash);
-            Assert.That(tx2 != null, "Failed to add invoke tx to block");
-            Assert.That(tx2!.Status == TransactionStatus.Executed, "Failed to execute invoke tx");
-            Assert.That(tx2.GasUsed > 0, "Invoke tx didn't use gas");
-            // Invocation result is not stored in TransactionReceipt now, can't verify it
+            var topUpTx = TopUpBalanceTx(_wallet.EcdsaKeyPair.PublicKey.GetAddress(), Money.Parse("10.0").ToUInt256(),0, true);
+            var error = _transactionPool.Add(topUpTx);
+            Assert.AreEqual(OperatingError.Ok, error, $"failed to add top up tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
+            TestContractDeployAndInvoke(blockNum);
         }
 
         [Test]
         public void Test_ContractFromContractInvoke()
         {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceC = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.C.wasm");
-            var resourceD = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.D.wasm");
-            var keyPair = _wallet.EcdsaKeyPair;
-            GenerateBlock(1);
+            int blockNum = 1;
+            TestContractFromContractInvoke(blockNum);
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            blockNum = (int) _blockManager.GetHeight() + 1;
+            while(!HardforkHeights.IsHardfork_9Active((ulong) blockNum - 1))
+            {
+                GenerateBlock(blockNum);
+                blockNum++;
+            }
             
-            // Deploy callee contract 
-            if(resourceD is null)
-                Assert.Fail("Failed t read script from resources");
-            var byteCode = new byte[resourceD!.Length];
-            resourceD!.Read(byteCode, 0, (int)resourceD!.Length);
-            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate callee code");
-            var from = keyPair.PublicKey.GetAddress();
-            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
-            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
-            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlock(2);
-
-            // check contract is deployed
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            Assert.That(contract != null, "Failed to find deployed callee contract");
-            var calleeAddress = contractHash;
-            
-            // Deploy caller contract 
-            if(resourceC is null)
-                Assert.Fail("Failed to read script from resources");
-            byteCode = new byte[resourceC!.Length];
-            resourceC!.Read(byteCode, 0, (int)resourceC!.Length);
-            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate caller code");
-            nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
-            contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
-            tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(3));
-            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlock(3);
-            
-            // check contract is deployed
-            contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
-            Assert.That(contract != null, "Failed to find deployed caller contract");
-            
-            // init caller contract 
-            tx = _transactionBuilder.InvokeTransaction(from, contractHash, Money.Zero, "init(address)", calleeAddress);
-            signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(4));
-            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlock(4);
-
-            // invoke caller contract 
-            var transactionReceipt = new TransactionReceipt();
-            transactionReceipt.Transaction = new Transaction();
-            transactionReceipt.Transaction.Value = 0.ToUInt256();
-            var abi = ContractEncoder.Encode("getA()");
-            var invocationResult = VirtualMachine.InvokeWasmContract(
-                contract!,
-                new InvocationContext(from, _stateManager.LastApprovedSnapshot, transactionReceipt),
-                abi,
-                GasMetering.DefaultBlockGasLimit
-            );
-            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke caller contract");
-            Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
-            Assert.AreEqual(invocationResult.ReturnValue!.ToHex(), "0x0000000000000000000000000000000000000000000000000000000000000064", 
-                "Invalid invocation return value");
+            var topUpTx = TopUpBalanceTx(_wallet.EcdsaKeyPair.PublicKey.GetAddress(), Money.Parse("10.0").ToUInt256(),0, true);
+            var error = _transactionPool.Add(topUpTx);
+            Assert.AreEqual(OperatingError.Ok, error, $"failed to add top up tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
+            TestContractFromContractInvoke(blockNum);
         }
 
         [Test]
@@ -263,6 +181,138 @@ namespace Lachain.CoreTest.IntegrationTests
             //     _stateManager.CurrentSnapshot.Events.GetEventByTransactionHashAndIndex(signedTxInvoke.Hash, 0);
             // Assert.NotNull(emitedEvent);
             // Assert.That(emitedEvent!.TransactionHash.Equals(signedTxInvoke.Hash), "Invalid tx hash in event");
+        }
+
+        private void TestContractDeployAndInvoke(int blockNum)
+        {
+            var keyPair = _wallet.EcdsaKeyPair;
+            GenerateBlock(blockNum);
+            blockNum++;
+            // Deploy contract 
+            var byteCode = ByteCodeHex.HexToBytes();
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate smart-contract code");
+            var from = keyPair.PublicKey.GetAddress();
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            var error = _transactionPool.Add(signedTx);
+            Assert.That(error == OperatingError.Ok, $"Can't add deploy tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
+            // check contract is deployed
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            Assert.That(contract != null, "Failed to find deployed contract");
+            
+            // invoke deployed contract without blockchain
+            var abi = ContractEncoder.Encode("test()");
+            var transactionReceipt = new TransactionReceipt {
+                Block = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(),
+            };
+            transactionReceipt.Transaction = new Transaction();
+            transactionReceipt.Transaction.Value = 0.ToUInt256();
+            var invocationResult = VirtualMachine.InvokeWasmContract(
+                contract!,
+                new InvocationContext(from, _stateManager.LastApprovedSnapshot, transactionReceipt),
+                abi,
+                GasMetering.DefaultBlockGasLimit
+            );
+            Assert.That(invocationResult.Status == ExecutionStatus.Ok, $"Failed to invoke deployed contract: {invocationResult.Status}");
+            Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
+            Assert.That(invocationResult.ReturnValue!.ToHex() == "0x000000000000000000000000000000000000000000000000000000000000002a", "Invalid invocation return value");
+            
+            // invoke contract in blockchain
+            var txInvoke = _transactionBuilder.InvokeTransaction(
+                keyPair.PublicKey.GetAddress(),
+                contractHash,
+                Money.Zero,
+                "test()",
+                new dynamic[0]);
+            var signedTxInvoke = Signer.Sign(txInvoke, keyPair, HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            error = _transactionPool.Add(signedTxInvoke);
+            Assert.That(error == OperatingError.Ok, $"Failed to add invoke tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
+            var tx2 = 
+                _stateManager.CurrentSnapshot.Transactions.GetTransactionByHash(signedTxInvoke.Hash);
+            Assert.That(tx2 != null, "Failed to add invoke tx to block");
+            Assert.That(tx2!.Status == TransactionStatus.Executed, $"Failed to execute invoke tx: {tx2!.Status}");
+            Assert.That(tx2.GasUsed > 0, "Invoke tx didn't use gas");
+            // Invocation result is not stored in TransactionReceipt now, can't verify it
+        }
+
+        private void TestContractFromContractInvoke(int blockNum)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceC = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.C.wasm");
+            var resourceD = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.D.wasm");
+            var keyPair = _wallet.EcdsaKeyPair;
+            GenerateBlock(blockNum);
+            blockNum++;
+
+            // Deploy callee contract 
+            if(resourceD is null)
+                Assert.Fail("Failed t read script from resources");
+            var byteCode = new byte[resourceD!.Length];
+            resourceD!.Read(byteCode, 0, (int)resourceD!.Length);
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate callee code");
+            var from = keyPair.PublicKey.GetAddress();
+            var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            var tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            var error = _transactionPool.Add(signedTx);
+            Assert.That(error == OperatingError.Ok, $"Can't add deploy tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
+
+            // check contract is deployed
+            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            Assert.That(contract != null, "Failed to find deployed callee contract");
+            var calleeAddress = contractHash;
+            
+            // Deploy caller contract 
+            if(resourceC is null)
+                Assert.Fail("Failed to read script from resources");
+            byteCode = new byte[resourceC!.Length];
+            resourceC!.Read(byteCode, 0, (int)resourceC!.Length);
+            Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate caller code");
+            nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
+            contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
+            tx = _transactionBuilder.DeployTransaction(from, byteCode);
+            signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            error = _transactionPool.Add(signedTx);
+            Assert.That(error == OperatingError.Ok, $"Can't add deploy tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
+            
+            // check contract is deployed
+            contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
+            Assert.That(contract != null, "Failed to find deployed caller contract");
+            
+            // init caller contract 
+            tx = _transactionBuilder.InvokeTransaction(from, contractHash, Money.Zero, "init(address)", calleeAddress);
+            signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            error = _transactionPool.Add(signedTx);
+            Assert.That(error == OperatingError.Ok, $"Can't add deploy tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
+
+            // invoke caller contract 
+            var transactionReceipt = new TransactionReceipt();
+            transactionReceipt.Transaction = new Transaction();
+            transactionReceipt.Transaction.Value = 0.ToUInt256();
+            var abi = ContractEncoder.Encode("getA()");
+            var invocationResult = VirtualMachine.InvokeWasmContract(
+                contract!,
+                new InvocationContext(from, _stateManager.LastApprovedSnapshot, transactionReceipt),
+                abi,
+                GasMetering.DefaultBlockGasLimit
+            );
+            Assert.That(invocationResult.Status == ExecutionStatus.Ok, $"Failed to invoke caller contract: {invocationResult.Status}");
+            Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
+            Assert.AreEqual(invocationResult.ReturnValue!.ToHex(), "0x0000000000000000000000000000000000000000000000000000000000000064", 
+                "Invalid invocation return value");
         }
 
         private void GenerateBlock(int blockNum)
@@ -357,6 +407,23 @@ namespace Lachain.CoreTest.IntegrationTests
             
             var status = _blockManager.Execute(block, receipts, true, true);
             return status;
+        }
+
+        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc, bool useNewChainId)
+        {
+            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+                .HexToBytes().ToPrivateKey());
+            var tx = new Transaction
+            {
+                To = to,
+                From = keyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
+                GasLimit = 4_000_000,
+                Nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress()) +
+                        (ulong) nonceInc,
+                Value = value
+            };
+            return Signer.Sign(tx, keyPair, useNewChainId);
         }
     }
 }
