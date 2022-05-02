@@ -111,7 +111,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
 
-            /* new chain id issue.
+            
             // using new chain id
             receipt = signer.Sign(tx, keyPair, true);
             Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
@@ -121,7 +121,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
             publicKey = receipt.RecoverPublicKey(true);
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
-            */
+            
         }
     }
 }
