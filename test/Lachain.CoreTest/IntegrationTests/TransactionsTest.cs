@@ -95,7 +95,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 "0xef8085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d0000080198080"
                     .HexToBytes()
                     .Keccak();
-            Console.WriteLine($"rlp: {tx.Rlp(true).ToHex()}");
             Assert.AreEqual(expectedRawHash, tx.RawHash(false));
             
             // this is correct RLP of signed ethereum tx with chain id 25, check at https://toolkit.abdk.consulting/ethereum#transaction
@@ -109,6 +108,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 expectedFullHash,
                 receipt.Hash
             );
+            var pubKey = receipt.RecoverPublicKey(false);
+            Assert.AreEqual(receipt.Transaction.From.ToHex(), pubKey.GetAddress().ToHex());
 
             // using new chain id
             // this is correct RLP of unsigned ethereum tx with chain id 225, check at https://toolkit.abdk.consulting/ethereum#transaction
@@ -121,7 +122,7 @@ namespace Lachain.CoreTest.IntegrationTests
             // this is correct RLP of signed ethereum tx with chain id 225, check at https://toolkit.abdk.consulting/ethereum#transaction
             // signature is deterministic in compliance with https://tools.ietf.org/html/rfc6979
             expectedFullHash = 
-                "0xf8718085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d00000808201e5a0c763aabd0587adb01786db24eac39c76a22bfcf97d19ad07f3b64ddd2294bdeba04710bc793cd49e4a957cc4babec18c27eabd8c873267b1fdb4943f16de22321f"
+                "0xf8718085174876e8008405f5e10094b8cd3195faf7da8a87a2816b9b4bba2a19d25dab8901158e460913d00000808201e5a07daf59f5e3223da3732ff0f0ffc464c533a881245fe00d09573c792f8a5f055aa067da9775fd1253f05215f961a019b619cc4d2aa8e2ae6c29c8232152f6692c24"
                     .HexToBytes()
                     .Keccak();
             receipt = signer.Sign(tx, keyPair, true);
@@ -129,6 +130,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 expectedFullHash,
                 receipt.Hash
             );
+            pubKey = receipt.RecoverPublicKey(true);
+            Assert.AreEqual(receipt.Transaction.From.ToHex(), pubKey.GetAddress().ToHex());
 
         }
 
@@ -169,7 +172,7 @@ namespace Lachain.CoreTest.IntegrationTests
             /* TODO: maybe we should fix this strange behaviour */
             var tx3 = TestUtils.GetRandomTransaction(useNewChainId);
             tx3.Transaction.From = UInt160Utils.Zero;
-            tx3.Transaction.Nonce++;
+            tx3.Transaction.Nonce = _transactionPool.GetNextNonceForAddress(UInt160Utils.Zero) ;
             result = _transactionPool.Add(tx3);
             Assert.AreEqual(OperatingError.Ok, result);
         }
