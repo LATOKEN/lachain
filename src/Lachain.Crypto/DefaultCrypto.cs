@@ -31,9 +31,16 @@ namespace Lachain.Crypto
         private static int RestoreEncodedRecIdFromSignatureBuffer(byte[] signature)
         {
             var recIdBytes = new byte[4];
-            recIdBytes[0] = signature[64];
-            if (signature.Length > 65)
-                recIdBytes[1] = signature[65];
+            if (signature.Length == 66)
+            {
+                recIdBytes[0] = signature[65];
+                recIdBytes[1] = signature[64];
+            }
+            else if (signature.Length == 65)
+            {
+                recIdBytes[0] = signature[64];
+            }
+            else throw new ArgumentOutOfRangeException("Invalid signature length");
             return BitConverter.ToInt32(recIdBytes);
         }
         
@@ -114,10 +121,14 @@ namespace Lachain.Crypto
                 recId = TransactionUtils.ChainId(useNewChainId) * 2 + 35 + recId;
                 var recIdBytes = new byte[useNewChainId ? 2 : 1];
                 var fullBin = recId.ToBytes().ToArray();
-                recIdBytes[0] = fullBin[0];
                 if (useNewChainId)
                 {
-                    recIdBytes[1] = fullBin[1];
+                    recIdBytes[0] = fullBin[1];
+                    recIdBytes[1] = fullBin[0];
+                }
+                else
+                {
+                    recIdBytes[0] = fullBin[0];
                 }
                 return serialized.Concat(recIdBytes).ToArray();
             });
