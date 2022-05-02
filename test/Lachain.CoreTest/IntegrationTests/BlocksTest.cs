@@ -153,6 +153,23 @@ namespace Lachain.CoreTest.IntegrationTests
             var block = BuildNextBlock();
             var result = ExecuteBlock(block);
             Assert.AreEqual(OperatingError.Ok, result);
+
+            // using new chain id
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                block = BuildNextBlock();
+                result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+
+            int total = 100;
+            for (var it = 0 ; it < total ; it++)
+            {
+                block = BuildNextBlock();
+                result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
         }
 
         [Test]
@@ -184,12 +201,97 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
             Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
+
+            // building random txes for new chain id. will send TopUpTx right now.
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            txCount = 50;
+            topUpReceipts = new List<TransactionReceipt>();
+            randomReceipts = new List<TransactionReceipt>();
+            coverTxFeeAmount = Money.Parse("0.0000000001");
+            Console.WriteLine(Money.Wei.ToString());
+            for (var i = 0; i < txCount; i++)
+            {
+                var tx = TestUtils.GetCustomTransaction("0", Money.Wei.ToString() , true);
+                randomReceipts.Add(tx);
+                topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
+                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i, 
+                    HardforkHeights.IsHardfork_9Active(3)));
+            }
+            topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
+            topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
+            Assert.AreEqual(topUpResult, OperatingError.Ok);
+            executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(topUpBlock.Header.Index);
+            Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
+
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                var block = BuildNextBlock();
+                result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+
+            int total = 10;
+            for (int it = 0 ; it < total ; it++)
+            {
+                var remBlocks = total - it;
+                var txesToTake = randomReceipts.Count / remBlocks;
+                var txes = new List<TransactionReceipt>();
+                while(txesToTake > 0)
+                {
+                    txes.Add(randomReceipts.Last());
+                    randomReceipts.RemoveAt(randomReceipts.Count-1);
+                    txesToTake--;
+                }
+                randomBlock = BuildNextBlock(txes.ToArray());
+                result = ExecuteBlock(randomBlock, txes.ToArray());
+                Assert.AreEqual(result, OperatingError.Ok);
+                executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
+                Assert.AreEqual(executedBlock!.TransactionHashes.Count, txes.Count);
+            }
         }
 
         [Test]
         public void Test_Storage_Changing()
         {
             _blockManager.TryBuildGenesisBlock();
+            Check_Random_Address_Storage_Changing();
+            
+            // using new chain id
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                var block = BuildNextBlock();
+                var result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+            Check_Random_Address_Storage_Changing();
+        }
+
+        [Test]
+        public void Test_Wrong_Block_Emulation()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            var block = BuildNextBlock();
+            block.Hash = UInt256Utils.Zero;
+
+            var result = EmulateBlock(block);
+            Assert.AreEqual(OperatingError.HashMismatched, result);
+
+            block = BuildNextBlock();
+            block.Header.Index = 0;
+
+            result = EmulateBlock(block);
+            Assert.AreEqual(OperatingError.HashMismatched, result);
+
+            block = BuildNextBlock();
+            block.Multisig = null;
+
+            result = EmulateBlock(block);
+            Assert.AreEqual(OperatingError.InvalidMultisig, result);
+        }
+
+        private void Check_Random_Address_Storage_Changing()
+        {
             var randomTx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             var balance = randomTx.Transaction.Value;
             var allowance = balance;
@@ -215,29 +317,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 UInt256Utils.Zero.Buffer.Concat(owner.ToBytes().Concat(receiver.ToBytes()))
             ).ToUInt256().ToMoney();
             Assert.AreEqual(allowance.ToMoney(), storedAllowance);
-        }
-
-        [Test]
-        public void Test_Wrong_Block_Emulation()
-        {
-            _blockManager.TryBuildGenesisBlock();
-            var block = BuildNextBlock();
-            block.Hash = UInt256Utils.Zero;
-
-            var result = EmulateBlock(block);
-            Assert.AreEqual(OperatingError.HashMismatched, result);
-
-            block = BuildNextBlock();
-            block.Header.Index = 0;
-
-            result = EmulateBlock(block);
-            Assert.AreEqual(OperatingError.HashMismatched, result);
-
-            block = BuildNextBlock();
-            block.Multisig = null;
-
-            result = EmulateBlock(block);
-            Assert.AreEqual(OperatingError.InvalidMultisig, result);
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)

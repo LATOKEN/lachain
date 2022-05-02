@@ -74,10 +74,19 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Nonce = 0,
                 Value = new BigInteger(0).ToUInt256()
             };
+            // using old chain id
             var receipt = signer.Sign(tx, keyPair, false);
             Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(false).ToHex());
 
             var publicKey = receipt.RecoverPublicKey(false);
+            Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
+            Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
+
+            // using new chain id
+            receipt = signer.Sign(tx, keyPair, true);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
+
+            publicKey = receipt.RecoverPublicKey(true);
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
         }
