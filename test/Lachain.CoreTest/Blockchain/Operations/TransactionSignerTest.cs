@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
@@ -14,6 +15,7 @@ using Lachain.Core.Config;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Networking;
 using Lachain.UtilityTest;
 using NUnit.Framework;
@@ -43,6 +45,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
         }
 
