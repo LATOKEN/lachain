@@ -360,6 +360,17 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 {
                     return FormatResult($"tx hash mismatch, calculated hash: {txHash.ToHex()}" , UInt256Utils.Zero, 0);
                 }
+                var receipt = new TransactionReceipt
+                {
+                    Hash = txHash,
+                    Signature = signature,
+                    Status = TransactionStatus.Pool,
+                    Transaction = transaction
+                };
+                var publicKey = receipt.RecoverPublicKey(useNewChainId);
+                var address = publicKey.GetAddress();
+                if (!address.Equals(receipt.Transaction.From))
+                    return FormatResult($"Address mismatch, got address: {address.ToHex()}", UInt256Utils.Zero, null);
                 var result = _transactionManager.Verify(new TransactionReceipt
                 {
                     Hash = txHash,
