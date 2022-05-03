@@ -13,19 +13,19 @@
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\config_local.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>config2.json</TargetPath>
+            <TargetPath>config_local.json</TargetPath>
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\config_devnet.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>config2.json</TargetPath>
+            <TargetPath>config_devnet.json</TargetPath>
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\config_testnet.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>config2.json</TargetPath>
+            <TargetPath>config_testnet.json</TargetPath>
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\config_mainnet.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>config2.json</TargetPath>
+            <TargetPath>config_mainnet.json</TargetPath>
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\wallet.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -33,19 +33,19 @@
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\wallet_local.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>wallet2.json</TargetPath>
+            <TargetPath>wallet_local.json</TargetPath>
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\wallet_devnet.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>wallet2.json</TargetPath>
+            <TargetPath>wallet_devnet.json</TargetPath>
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\wallet_testnet.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>wallet2.json</TargetPath>
+            <TargetPath>wallet_testnet.json</TargetPath>
         </ContentWithTargetPath>
         <ContentWithTargetPath Include="Resources\wallet_mainnet.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <TargetPath>wallet2.json</TargetPath>
+            <TargetPath>wallet_mainnet.json</TargetPath>
         </ContentWithTargetPath>
     </ItemGroup>
     <ItemGroup>
