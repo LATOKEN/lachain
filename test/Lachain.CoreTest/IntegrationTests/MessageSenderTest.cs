@@ -81,10 +81,24 @@ namespace Lachain.CoreTest.IntegrationTests
         [Test]
         public void Test_MessageSender()
         {
+            TestMessageSender(1);
+            int blockNum = (int) _blockManager.GetHeight();
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            while(!HardforkHeights.IsHardfork_9Active((ulong) blockNum))
+            {
+                GenerateBlock(blockNum + 1);
+                blockNum++;
+            }
+            TestMessageSender(blockNum + 1);
+        }
+
+        public void TestMessageSender(int blockNum)
+        {
             var assembly = Assembly.GetExecutingAssembly();
             var resourceTest = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.test.wasm");
             var keyPair = _wallet.EcdsaKeyPair;
-            GenerateBlock(1);
+            GenerateBlock(blockNum);
+            blockNum++;
             
             // Deploy caller contract 
             if(resourceTest is null)
@@ -97,9 +111,11 @@ namespace Lachain.CoreTest.IntegrationTests
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
-            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlock(2);
+            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            var error = _transactionPool.Add(signedTx);
+            Assert.That(error == OperatingError.Ok, $"Can't add deploy tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
             
             // check contract is deployed
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
@@ -116,7 +132,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 abi,
                 GasMetering.DefaultBlockGasLimit
             );
-            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke contract");
+            Assert.That(invocationResult.Status == ExecutionStatus.Ok, $"Failed to invoke contract: {invocationResult.Status}");
             Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
             Assert.AreEqual(from.ToUInt256().ToHex(), invocationResult.ReturnValue!.ToHex(), 
                 "Invalid invocation return value");

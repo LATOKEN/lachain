@@ -108,7 +108,13 @@ namespace Lachain.CoreTest.IntegrationTests
             Assert.IsTrue(_validatorStatusManager.IsStarted());
             Assert.IsFalse(_validatorStatusManager.IsWithdrawTriggered());
 
-            GenerateBlocks(2, 51);
+            int blockNum = (int) _blockManager.GetHeight();
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            while(!HardforkHeights.IsHardfork_9Active((ulong) blockNum))
+            {
+                blockNum++;
+                GenerateBlocks(blockNum, blockNum);
+            }
 
             var systemContractReader = _container?.Resolve<ISystemContractReader>() ?? throw new Exception("Container is not loaded");
             var stake = new Money(systemContractReader.GetStake());
@@ -140,7 +146,15 @@ namespace Lachain.CoreTest.IntegrationTests
             _validatorStatusManager.StartWithStake(placeToStake.ToUInt256());
             Assert.That(_validatorStatusManager.IsStarted(), "Manager is not started");
             Assert.That(!_validatorStatusManager.IsWithdrawTriggered(), "Withdraw was triggered from the beggining");
-            GenerateBlocks(2, 51);
+            
+            int blockNum = (int) _blockManager.GetHeight();
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            while(!HardforkHeights.IsHardfork_9Active((ulong) blockNum))
+            {
+                blockNum++;
+                GenerateBlocks(blockNum, blockNum);
+            }
+            
             var stake = new Money(systemContractReader.GetStake(systemContractReader.NodeAddress()));
             // TODO: fix it
 //            Assert.That(stake == placeToStake, $"Stake is not as intended: {stake} != {placeToStake}");

@@ -37,22 +37,19 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
     public class Web3TransactionTests
     {
         private IContainer? _container;
-        private IStateManager? _stateManager;
-        private ITransactionManager? _transactionManager;
-        private ITransactionBuilder? _transactionBuilder;
-        private ITransactionSigner? _transactionSigner;
-        private ITransactionPool? _transactionPool;
-        private IContractRegisterer? _contractRegisterer;
-        private IPrivateWallet? _privateWallet;
+        private IStateManager _stateManager = null!;
+        private ITransactionManager _transactionManager = null!;
+        private ITransactionBuilder _transactionBuilder = null!;
+        private ITransactionSigner _transactionSigner = null!;
+        private ITransactionPool _transactionPool = null!;
+        private IContractRegisterer _contractRegisterer = null!;
+        private IPrivateWallet _privateWallet = null!;
         private IConfigManager _configManager = null!;
 
-        private TransactionServiceWeb3? _apiService;
+        private TransactionServiceWeb3 _apiService = null!;
 
-        // from BlockTest.cs
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private static readonly ITransactionSigner Signer = new Core.Blockchain.Operations.TransactionSigner();
         private IBlockManager _blockManager = null!;
-        //private IPrivateWallet _privateWallet = null!;
 
         /*
          * Contract bytecode. It's C++ code is:
@@ -260,8 +257,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(OperatingError.Ok, result);
             GenerateBlocks(1, 1);
             var txHashSent = tx.Hash.ToHex();
-            var txReceipt = _apiService!.GetTransactionReceipt(txHashSent);
-            var txHashReceived = txReceipt["transactionHash"].ToString();
+            var txReceipt = _apiService.GetTransactionReceipt(txHashSent);
+            var txHashReceived = txReceipt!["transactionHash"]!.ToString();
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
         }
 
@@ -278,7 +275,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var txHashSent = tx.Hash.ToHex();
 
             var tx2 = _apiService!.GetTransactionByHash(txHashSent);
-            var txHashReceived = tx2["hash"].ToString();
+            var txHashReceived = tx2!["hash"]!.ToString();
 
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
 
@@ -297,10 +294,10 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var txHashSent = tx.Hash.ToHex();
             var tx2 = _apiService!.GetTransactionByHash(txHashSent);
-            var blockHash = tx2["blockHash"].ToString();
+            var blockHash = tx2!["blockHash"]!.ToString();
             var txIndex = (ulong)0; // 0
             var txFromBlockHash = _apiService!.GetTransactionByBlockHashAndIndex(blockHash, txIndex);
-            var txHashReceived = txFromBlockHash["hash"].ToString();
+            var txHashReceived = txFromBlockHash!["hash"]!.ToString();
 
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
 
@@ -322,7 +319,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var txHashSent = tx.Hash.ToHex();
             var txIndex = (ulong)0; // 0
             var txFromBlockHash = _apiService!.GetTransactionByBlockNumberAndIndex("latest", txIndex);
-            var txHashReceived = txFromBlockHash["hash"];
+            var txHashReceived = txFromBlockHash!["hash"]!;
 
             Assert.AreEqual(txHashReceived.ToString(), txHashSent.ToString());
 
@@ -357,7 +354,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var contractHashHx = contractHash.ToHex();
 
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
+            var signedTx = _transactionSigner.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlocks(2, 2);
 
@@ -401,7 +398,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var contractHashHx = contractHash.ToHex();
 
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
+            var signedTx = _transactionSigner.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
             GenerateBlocks(2, 2);
 
