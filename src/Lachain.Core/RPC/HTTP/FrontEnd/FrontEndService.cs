@@ -371,13 +371,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 var address = publicKey.GetAddress();
                 if (!address.Equals(receipt.Transaction.From))
                     return FormatResult($"Address mismatch, got address: {address.ToHex()}", UInt256Utils.Zero, null);
-                var result = _transactionManager.Verify(new TransactionReceipt
-                {
-                    Hash = txHash,
-                    Signature = signature,
-                    Status = TransactionStatus.Pool,
-                    Transaction = transaction
-                }, useNewChainId);
+                var result = _transactionManager.Verify(receipt, useNewChainId);
 
                 if (result != OperatingError.Ok) return FormatResult($"Transaction is invalid: {result}" , UInt256Utils.Zero, 0);
                 return FormatResult("transaction verified", txHash, decodedV);
