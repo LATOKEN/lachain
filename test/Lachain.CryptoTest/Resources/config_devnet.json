@@ -1,0 +1,61 @@
+{
+  "network": {
+    "chainId": 27,
+    "peers": [
+    ],
+    "forceIPv6": false,
+    "maxPeers": 100,
+    "bootstrapAddresses": [
+    ],
+    "hubLogLevel": "Trace",
+    "hubMetricsPort": 7072,
+    "networkName": "devnet"
+  },
+  "genesis": {
+    "TPKEPublicKey": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000",
+    "balances": {
+      "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "10000000",
+      "0xbea9fcb898177bb15bb734c7f26fc974e9024239": "10"
+    },
+    "validators": [
+      {
+        "ECDSAPublicKey": "02742a346e340dddaf82c21203d81d5cfc379569eb011ed4bb0db8a0c8903e2bc4",
+        "thresholdSignaturePublicKey": "0x9d3b54f66a2d23dbcd5ba0b888c713444784e1feeab6d1eae27b35353162e18d03fccfa1d9f77d785b6687f417d5c187",
+        "stakerAddress": "0x6bc32575acb8754886dc283c2c8ac54b1bd93195",
+        "stakeAmount": "1000000"
+      }
+    ]
+  },
+  "rpc": {
+    "hosts": [
+      "+"
+    ],
+    "port": 7070,
+    "metricsPort": 7071,
+    "apiKey": "0x2e917846fe7487a4ea3a765473a3fc9b2d9227a4d312bc77fb9de357cf73d7e52b771d537394336e9eb2cb4838138f668f4bd7d8cf7e04d9242a42c71b99f166"
+  },
+  "vault": {
+    "path": "wallet.json",
+    "password": "d88de92cb046a01a8aa81813d7815a76dfa1d994"
+  },
+  "hardfork": {
+    "hardfork_1": 0,
+    "hardfork_2": 0,
+    "hardfork_3": 0,
+    "hardfork_4": 0,
+    "hardfork_5": 10,
+    "hardfork_6": 10,
+    "hardfork_7": 10,
+    "hardfork_8": 10,
+    "hardfork_9": 1000
+  },
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainTest"
+  },
+  "blockchain": {
+    "targetBlockTime": 0
+  }
+}
