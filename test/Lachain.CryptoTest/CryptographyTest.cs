@@ -1,12 +1,22 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Nethereum.Signer;
 using NUnit.Framework;
+using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Core.Config;
+using Lachain.Core.CLI;
+using Lachain.Core.DI;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
+using Lachain.Networking;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 using Transaction = Lachain.Proto.Transaction;
@@ -17,12 +27,34 @@ namespace Lachain.CryptoTest
     {
         private static readonly byte[] TestString =
             Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
-
-
-        [OneTimeSetUp]
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private IContainer? _container;
+        private IConfigManager _configManager = null!; 
+        [SetUp]
         public void Setup()
         {
-            TransactionUtils.SetChainId(41, 41);
+            _container?.Dispose();
+            TestUtils.DeleteTestChainData();
+
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+
+            containerBuilder.RegisterModule<ConfigModule>();
+
+            _container = containerBuilder.Build();
+
+            _configManager = _container.Resolve<IConfigManager>();
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+            }
+
+            Console.WriteLine($"old chain id: {TransactionUtils.ChainId(false)}, new chain id: {TransactionUtils.ChainId(true)}");
         }
 
 
@@ -77,8 +109,7 @@ namespace Lachain.CryptoTest
         [Test]
         public void Test_AesGcmEncryptDecryptRoundTrip()
         {
-            var crypto = CryptoProvider.GetCrypto();
-            var key = crypto.GenerateRandomBytes(32);
+            var key = Crypto.GenerateRandomBytes(32);
             var baseText =
                 "0xf86d808504a817c800832dc6c0948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a76400008025a0115105d96a43f41a5ea562bb3e591cbfa431a8cdae9c3030457adca2cb854f78a012fb41922c53c73473563003667ed8e783359c91d95b42301e1955d530b1ca33"
                     .HexToBytes();
@@ -87,8 +118,8 @@ namespace Lachain.CryptoTest
             for (var it = 0; it < n; ++it)
             {
                 var plaintext = baseText.Concat(it.ToBytes()).ToArray();
-                var cipher = crypto.AesGcmEncrypt(key, plaintext);
-                var decrypted = crypto.AesGcmDecrypt(key, cipher);
+                var cipher = Crypto.AesGcmEncrypt(key, plaintext);
+                var decrypted = Crypto.AesGcmDecrypt(key, cipher);
                 Assert.IsTrue(plaintext.SequenceEqual(decrypted));
             }
 
@@ -99,8 +130,7 @@ namespace Lachain.CryptoTest
         [Test]
         public void Test_Secp256K1EncryptDecryptRoundTrip()
         {
-            var crypto = CryptoProvider.GetCrypto();
-            var key = crypto.GeneratePrivateKey();
+            var key = Crypto.GeneratePrivateKey();
             var baseText =
                 "0xf86d808504a817c800832dc6c0948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a76400008025a0115105d96a43f41a5ea562bb3e591cbfa431a8cdae9c3030457adca2cb854f78a012fb41922c53c73473563003667ed8e783359c91d95b42301e1955d530b1ca33"
                     .HexToBytes();
@@ -110,8 +140,8 @@ namespace Lachain.CryptoTest
             for (var it = 0; it < n; ++it)
             {
                 var plaintext = baseText.Concat(it.ToBytes()).ToArray();
-                var cipher = crypto.Secp256K1Encrypt(key.ToPrivateKey().GetPublicKey().EncodeCompressed(), plaintext);
-                var decrypted = crypto.Secp256K1Decrypt(key, cipher);
+                var cipher = Crypto.Secp256K1Encrypt(key.ToPrivateKey().GetPublicKey().EncodeCompressed(), plaintext);
+                var decrypted = Crypto.Secp256K1Decrypt(key, cipher);
                 Assert.IsTrue(plaintext.SequenceEqual(decrypted));
             }
 
@@ -122,12 +152,11 @@ namespace Lachain.CryptoTest
         [Test]
         public void Test_SignRoundTrip()
         {
-            var crypto = new DefaultCrypto();
             var privateKey = "0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48".HexToBytes();
-            var publicKey = crypto.ComputePublicKey(privateKey);
+            var publicKey = Crypto.ComputePublicKey(privateKey, true);
             var address = "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".HexToBytes();
 
-            CollectionAssert.AreEqual(address, crypto.ComputeAddress(publicKey));
+            CollectionAssert.AreEqual(address, Crypto.ComputeAddress(publicKey));
 
             var startTs = TimeUtils.CurrentTimeMillis();
             const int n = 100;
@@ -137,9 +166,16 @@ namespace Lachain.CryptoTest
                 var message =
                     "0xec808504a817c800825208948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a764000080018080";
                 var digest = message.HexToBytes();
-                var signature = crypto.Sign(digest, privateKey, false);
-                Assert.IsTrue(crypto.VerifySignature(digest, signature, publicKey, false));
-                var recoveredPubkey = crypto.RecoverSignature(digest, signature, false);
+                // using old chain id
+                var signature = Crypto.Sign(digest, privateKey, false);
+                Assert.IsTrue(Crypto.VerifySignature(digest, signature, publicKey, false));
+                var recoveredPubkey = Crypto.RecoverSignature(digest, signature, false);
+                Assert.AreEqual(recoveredPubkey, publicKey);
+
+                // using new chain id
+                signature = Crypto.Sign(digest, privateKey, true);
+                Assert.IsTrue(Crypto.VerifySignature(digest, signature, publicKey, true));
+                recoveredPubkey = Crypto.RecoverSignature(digest, signature, true);
                 Assert.AreEqual(recoveredPubkey, publicKey);
             }
 
@@ -148,10 +184,49 @@ namespace Lachain.CryptoTest
             Console.WriteLine($"Per 1 iteration: {(double) (endTs - startTs) / n}ms");
         }
 
+
+        // [Test]
+        // public void Test_External_Signature()
+        // {
+        //     /*
+        //      * message is raw hash of eth transaction with following parameters
+        //      * const txParams = {
+        //      *   nonce: '0x00',
+        //      *   gasPrice: '0x09184e72a000',
+        //      *   gasLimit: '0x27100000',
+        //      *   value: '0x00',
+        //      *   data: '0x7f7465737432000000000000000000000000000000000000000000000000000000600057',
+        //      * };
+        //      * EIP-155 encoding used, with chain id = 41
+        //      * Signature created from private key: 0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48
+        //      * Address: 0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195
+        //      * RLP: 0xf7808609184e72a00084271000008080a47f7465737432000000000000000000000000000000000000000000000000000000600057298080
+        //      * Check here: https://toolkit.abdk.consulting/ethereum#transaction
+        //      */
+        //     // 0xf7808609184e72a00084271000008080a47f7465737432000000000000000000000000000000000000000000000000000000600057198080
+        //     var rlp = 
+        //         "0xf7808609184e72a00084271000008080a47f7465737432000000000000000000000000000000000000000000000000000000600057298080"
+        //             .HexToBytes();
+        //     var rawHash = rlp.Keccak().ToBytes();
+        //     var message = "0x29aa471d6a7b7b4894b896791c3ed325fe3b70a7a0f07c2f8c3fef9d7cf0f7d2".HexToBytes();
+        //     Console.WriteLine($"message: {message.ToHex()}");
+        //     Console.WriteLine($"raw hash: {rawHash.ToHex()}");
+        //     Assert.AreEqual(rawHash, message);
+        //     var signature =
+        //         "0x8357f298e9d84c128e2a2f66727669bd096e55351ff13b3e6bab88ea810dd5643170a74d76efd85d1f57937aa1d3e1632e9198f7f94f0e94b79456a412b8927e76"
+        //             .HexToBytes();
+        //     var pubKey = Crypto.RecoverSignatureHashed(message, signature, false);
+        //     Assert.AreEqual(
+        //         "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".ToLower(),
+        //         Crypto.ComputeAddress(pubKey).ToHex().ToLower()
+        //     );
+        // }
+
+
         [Test]
         public void Test_External_Signature()
         {
-            var crypto = CryptoProvider.GetCrypto();
+            // using old chain id
             /*
              * message is raw hash of eth transaction with following parameters
              * const txParams = {
@@ -161,18 +236,58 @@ namespace Lachain.CryptoTest
              *   value: '0x00',
              *   data: '0x7f7465737432000000000000000000000000000000000000000000000000000000600057',
              * };
-             * EIP-155 encoding used, with chain id = 41
+             * EIP-155 encoding used, with chain id = 25
              * Signature created from private key: 0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48
              * Address: 0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195
+             * RLP: 0xf7808609184e72a00084271000008080a47f7465737432000000000000000000000000000000000000000000000000000000600057198080
+             * Check here: https://toolkit.abdk.consulting/ethereum#transaction
              */
-            var message = "0x29aa471d6a7b7b4894b896791c3ed325fe3b70a7a0f07c2f8c3fef9d7cf0f7d2".HexToBytes();
-            var signature =
-                "0x8357f298e9d84c128e2a2f66727669bd096e55351ff13b3e6bab88ea810dd5643170a74d76efd85d1f57937aa1d3e1632e9198f7f94f0e94b79456a412b8927e76"
+
+            var rlp = 
+                "0xf7808609184e72a00084271000008080a47f7465737432000000000000000000000000000000000000000000000000000000600057198080"
                     .HexToBytes();
-            var pubKey = crypto.RecoverSignatureHashed(message, signature, false);
+            var message = rlp.Keccak().ToBytes();
+
+            // check the signature with python script
+            var signature =
+                "0xCC3D45ADFC4570ABA45FE873D17741434310F178B7AB406C11A2CD4E6AF8DCB727A3F460B3B7601425CFAEB7B89E734F637509F4691A5553547F638DBEB17BBB56"
+                    .HexToBytes();
+            var pubKey = Crypto.RecoverSignatureHashed(message, signature, false);
             Assert.AreEqual(
                 "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".ToLower(),
-                crypto.ComputeAddress(pubKey).ToHex().ToLower()
+                Crypto.ComputeAddress(pubKey).ToHex().ToLower()
+            );
+
+            // using new chain id
+            /*
+             * message is raw hash of eth transaction with following parameters
+             * const txParams = {
+             *   nonce: '0x00',
+             *   gasPrice: '0x09184e72a000',
+             *   gasLimit: '0x27100000',
+             *   value: '0x00',
+             *   data: '0x7f7465737432000000000000000000000000000000000000000000000000000000600057',
+             * };
+             * EIP-155 encoding used, with chain id = 225
+             * Signature created from private key: 0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48
+             * Address: 0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195
+             * RLP: 0xf838808609184e72a00084271000008080a47f746573743200000000000000000000000000000000000000000000000000000060005781e18080
+             * Check here: https://toolkit.abdk.consulting/ethereum#transaction
+             */
+
+            rlp = 
+                "0xf838808609184e72a00084271000008080a47f746573743200000000000000000000000000000000000000000000000000000060005781e18080"
+                    .HexToBytes();
+            message = rlp.Keccak().ToBytes();
+
+            // check the signature with python script
+            signature =
+                "0x3BBFC886AD74E518C99D59966B5B4B656D3ED03B71FACD9384A82D08C8ED825B170B6E685A3E15FA9969D729B6C036ED3E5C3926B6FC424708F8F7DE0728003401E6"
+                    .HexToBytes();
+            pubKey = Crypto.RecoverSignatureHashed(message, signature, true);
+            Assert.AreEqual(
+                "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".ToLower(),
+                Crypto.ComputeAddress(pubKey).ToHex().ToLower()
             );
         }
 
@@ -187,11 +302,20 @@ namespace Lachain.CryptoTest
                 GasPrice = 5000000000,
                 GasLimit = 4500000
             };
-            var rlp = tx.Rlp(true);
-            // compare with actual RLP from metamask
-            Assert.IsTrue(rlp.SequenceEqual(
-                "0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080298080"
-                    .HexToBytes()));
+            var rlp = tx.Rlp(false);
+            // This is correct rlp with chain id 25. Check here: https://toolkit.abdk.consulting/ethereum#transaction
+            var expectedRlp = 
+                "0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080198080"
+                    .HexToBytes();
+            Assert.IsTrue(rlp.SequenceEqual(expectedRlp));
+
+            rlp = tx.Rlp(true);
+            // This is correct rlp with chain id 225. Check here: https://toolkit.abdk.consulting/ethereum#transaction
+            expectedRlp = 
+                "0xef8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d631000008081e18080"
+                    .HexToBytes();
+            Assert.IsTrue(rlp.SequenceEqual(expectedRlp));
+
         }
 
         [Test]
