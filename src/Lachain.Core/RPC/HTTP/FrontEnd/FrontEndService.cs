@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using AustinHarris.JsonRpc;
@@ -8,8 +9,10 @@ using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
+using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -17,6 +20,8 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
+using Nethereum.Signer;
+using Transaction = Lachain.Proto.Transaction;
 
 namespace Lachain.Core.RPC.HTTP.FrontEnd
 {
@@ -31,6 +36,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         private readonly ISystemContractReader _systemContractReader;
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ILocalTransactionRepository _localTransactionRepository;
+        private readonly ITransactionManager _transactionManager;
+        private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         public FrontEndService(
             IStateManager stateManager,
@@ -39,7 +46,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             ISystemContractReader systemContractReader,
             ILocalTransactionRepository localTransactionRepository,
             IValidatorStatusManager validatorStatusManager,
-            IPrivateWallet privateWallet
+            IPrivateWallet privateWallet,
+            ITransactionManager transactionManager
         )
         {
             _stateManager = stateManager;
@@ -49,6 +57,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             _localTransactionRepository = localTransactionRepository;
             _validatorStatusManager = validatorStatusManager;
             _privateWallet = privateWallet;
+            _transactionManager = transactionManager;
         }
 
         [JsonRpcMethod("fe_getBalance")]
@@ -277,6 +286,123 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             return new JObject
             {
                 ["transactions"] = results,
+            };
+        }
+
+        [JsonRpcMethod("fe_signMessage")]
+        public string SignMessage(string message, bool useNewChainId)
+        {
+            if (_privateWallet.IsLocked())
+            {
+                throw new Exception("wallet is locked");
+            }
+            var keyPair = _privateWallet.EcdsaKeyPair;
+            Logger.LogInformation($"public key: {keyPair.PublicKey.ToHex()}, address: {keyPair.PublicKey.GetAddress().ToHex()}");
+            try
+            {
+                var msg = message.HexToBytes();
+                var signature = Crypto.Sign(msg, keyPair.PrivateKey.Encode(), useNewChainId);
+                return Web3DataFormatUtils.Web3Data(signature);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to sign message: {exception}");
+                throw;
+            }
+        }
+
+        [JsonRpcMethod("fe_verifySign")]
+        public bool VerifySign(string message, string sign, bool useNewChainId)
+        {
+            if (_privateWallet.IsLocked())
+            {
+                throw new Exception("wallet is locked");
+            }
+            var keyPair = _privateWallet.EcdsaKeyPair;
+            Logger.LogInformation($"public key: {keyPair.PublicKey.ToHex()}, address: {keyPair.PublicKey.GetAddress().ToHex()}");
+            try
+            {
+                var msg = message.HexToBytes();
+                var signBytes = sign.HexToBytes();
+                var pubkeyParsed = Crypto.RecoverSignature(msg, signBytes, useNewChainId);
+                if (!keyPair.PublicKey.EncodeCompressed().SequenceEqual(pubkeyParsed)) return false;
+                return Crypto.VerifySignature(msg, signBytes, keyPair.PublicKey.EncodeCompressed(), useNewChainId);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to verify signed message: {exception}");
+                throw;
+            }
+        }
+
+        [JsonRpcMethod("fe_verifyRawTransaction")]
+        public string VerifyRawTransaction(string rawTx, string externalTxHash, bool useNewChainId)
+        {
+            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+
+            var r = ethTx.Signature.R;
+            while (r.Length < 32)
+                r = "00".HexToBytes().Concat(r).ToArray();
+
+            var s = ethTx.Signature.S;
+            while (s.Length < 32)
+                s = "00".HexToBytes().Concat(s).ToArray();
+
+            var v = ethTx.Signature.V;
+            var decodedV = DecodeV(v);
+
+            var signature = r.Concat(s).Concat(v).ToArray().ToSignature(useNewChainId);
+            try
+            {
+                var transaction = MakeTransaction(ethTx);
+                var txHash = transaction.FullHash(signature, useNewChainId);
+                if (!txHash.ToBytes().SequenceEqual(externalTxHash.HexToBytes()))
+                {
+                    return $"tx hash mismatch, calculated hash: {txHash.ToHex()}";
+                }
+                var result = _transactionManager.Verify(new TransactionReceipt
+                {
+                    Hash = txHash,
+                    Signature = signature,
+                    Status = TransactionStatus.Pool,
+                    Transaction = transaction
+                }, useNewChainId);
+
+                if (result != OperatingError.Ok) return $"Transaction is invalid: {result}";
+                return $"transaction verified with hash: {txHash.ToHex()} and v: {decodedV}";
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception in handling fe_verifyRawTransaction: {e}");
+                throw;
+            }
+        }
+
+        int? DecodeV(byte[]? v)
+        {
+            if (v is null) return null;
+            var list = new List<byte>();
+            foreach (var item in v)
+            {
+                list.Add(item);
+            }
+            var reversed = list.ToArray().Reverse().ToList();
+            while(reversed.Count < 4) reversed.Add(0);
+            return BitConverter.ToInt32(reversed.ToArray());
+        }
+
+        public Transaction MakeTransaction(SignedTransactionBase ethTx)
+        {
+            return new Transaction
+            {
+                // this is special case where empty uint160 is allowed
+                To = ethTx.ReceiveAddress?.ToUInt160() ?? UInt160Utils.Empty,
+                Value = ethTx.Value.ToUInt256(true),
+                From = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160(),
+                Nonce = Convert.ToUInt64(ethTx.Nonce.ToHex(), 16),
+                GasPrice = Convert.ToUInt64(ethTx.GasPrice.ToHex(), 16),
+                GasLimit = Convert.ToUInt64(ethTx.GasLimit.ToHex(), 16),
+                Invocation = ethTx.Data is null ? ByteString.Empty : ByteString.CopyFrom(ethTx.Data),
             };
         }
 

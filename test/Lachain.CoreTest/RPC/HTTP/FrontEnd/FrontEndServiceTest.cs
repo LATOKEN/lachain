@@ -32,6 +32,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
         private ILocalTransactionRepository? _localTransactionRepository;
         private IValidatorStatusManager? _validatorStatusManager;
         private IPrivateWallet? _privateWallet;
+        private ITransactionManager? _transactionManager;
 
         private FrontEndService? _fes;
 
@@ -59,6 +60,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             _systemContractReader = _container.Resolve<ISystemContractReader>();
             _localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
             _privateWallet = _container.Resolve<IPrivateWallet>();
+            _transactionManager = _container.Resolve<ITransactionManager>();
             _validatorStatusManager = _validatorStatusManager = new ValidatorStatusManager(
                 _transactionPool, _container.Resolve<ITransactionSigner>(), _container.Resolve<ITransactionBuilder>(),
                 _privateWallet, _stateManager, _container.Resolve<IValidatorAttendanceRepository>(),
@@ -66,7 +68,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             );
             ServiceBinder.BindService<GenericParameterAttributes>();
             _fes = new FrontEndService(_stateManager, _transactionPool, _transactionSigner,
-                _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet);
+                _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet, _transactionManager);
            
         }
 
