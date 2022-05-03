@@ -336,7 +336,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         }
 
         [JsonRpcMethod("fe_verifyRawTransaction")]
-        public string VerifyRawTransaction(string rawTx, string externalTxHash, bool useNewChainId)
+        public JObject VerifyRawTransaction(string rawTx, string externalTxHash, bool useNewChainId)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
 
@@ -358,7 +358,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 var txHash = transaction.FullHash(signature, useNewChainId);
                 if (!txHash.ToBytes().SequenceEqual(externalTxHash.HexToBytes()))
                 {
-                    return $"tx hash mismatch, calculated hash: {txHash.ToHex()}";
+                    return FormatResult($"tx hash mismatch, calculated hash: {txHash.ToHex()}" , UInt256Utils.Zero, 0);
                 }
                 var result = _transactionManager.Verify(new TransactionReceipt
                 {
@@ -368,8 +368,8 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                     Transaction = transaction
                 }, useNewChainId);
 
-                if (result != OperatingError.Ok) return $"Transaction is invalid: {result}";
-                return $"transaction verified with hash: {txHash.ToHex()} and v: {decodedV}";
+                if (result != OperatingError.Ok) return FormatResult($"Transaction is invalid: {result}" , UInt256Utils.Zero, 0);
+                return FormatResult("transaction verified", txHash, decodedV);
             }
             catch (Exception e)
             {
@@ -391,6 +391,16 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             return BitConverter.ToInt32(reversed.ToArray());
         }
 
+        public JObject FormatResult(string msg, UInt256 hash, int? v)
+        {
+            if (v is null) v = 0;
+            return new JObject
+            {
+                ["message"] = msg,
+                ["hash"] = Web3DataFormatUtils.Web3Data(hash),
+                ["v"] = Web3DataFormatUtils.Web3Number((ulong) v),
+            };
+        }
         public Transaction MakeTransaction(SignedTransactionBase ethTx)
         {
             return new Transaction
