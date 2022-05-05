@@ -11,6 +11,7 @@ using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
@@ -321,7 +322,9 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:
-                    var root = new RootProtocol(rootId, _validators, _wallet.EcdsaKeyPair.PrivateKey, this, _validatorAttendanceRepository, StakingContract.CycleDuration);
+                    var root = new RootProtocol(rootId, _validators, _wallet.EcdsaKeyPair.PrivateKey, 
+                        this, _validatorAttendanceRepository, StakingContract.CycleDuration,
+                        HardforkHeights.IsHardfork_9Active((ulong)_era));
                     RegisterProtocols(new[] {root});
                     return root;
                 default:

@@ -13,7 +13,7 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private static readonly ILogger<MultisigVerifier> Logger = LoggerFactory.GetLoggerForClass<MultisigVerifier>();
 
-        public OperatingError VerifyMultisig(MultiSig multisig, UInt256 hash)
+        public OperatingError VerifyMultisig(MultiSig multisig, UInt256 hash, bool useNewChainId)
         {
             /* don't allow null multisig or hash */
             if (multisig is null || hash is null)
@@ -45,7 +45,7 @@ namespace Lachain.Core.Blockchain.Operations
                 try
                 {
                     /* if signature invalid that skip it */
-                    if (!_crypto.VerifySignatureHashed(hash.ToBytes(), sig, publicKey))
+                    if (!_crypto.VerifySignatureHashed(hash.ToBytes(), sig, publicKey, useNewChainId))
                     {
                         Logger.LogWarning($"Invalid Multisig signature: hash: {hash.ToHex()}, sig: {sig.ToHex()}, publicKey: {publicKey.ToHex()}");
                         continue;

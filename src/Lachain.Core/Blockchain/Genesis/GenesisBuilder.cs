@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Config;
 using Lachain.Proto;
@@ -46,8 +47,8 @@ namespace Lachain.Core.Blockchain.Genesis
                 .Select(tx => new TransactionReceipt
                 {
                     Transaction = tx,
-                    Hash = tx.FullHash(SignatureUtils.Zero),
-                    Signature = SignatureUtils.Zero,
+                    Hash = HardforkHeights.IsHardfork_9Active(0) ? tx.FullHash(SignatureUtils.ZeroNew, true) : tx.FullHash(SignatureUtils.ZeroOld, false),
+                    Signature = HardforkHeights.IsHardfork_9Active(0) ? SignatureUtils.ZeroNew : SignatureUtils.ZeroOld,
                 })
                 .ToList();
 

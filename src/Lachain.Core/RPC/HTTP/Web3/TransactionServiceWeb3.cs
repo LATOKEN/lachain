@@ -81,18 +81,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string VerifyRawTransaction(string rawTx)
         {
             var ethTx = new TransactionChainId(rawTx.HexToBytes());
-            var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature();
+            var useNewChainId =
+                HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
+            var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature(useNewChainId);
             try
             {
                 var transaction = MakeTransaction(ethTx);
-                var txHash = transaction.FullHash(signature);
+                var txHash = transaction.FullHash(signature, useNewChainId);
                 var result = _transactionManager.Verify(new TransactionReceipt
                 {
                     Hash = txHash,
                     Signature = signature,
                     Status = TransactionStatus.Pool,
                     Transaction = transaction
-                });
+                }, useNewChainId);
 
                 if (result != OperatingError.Ok) throw new Exception($"Transaction is invalid: {result}");
                 return txHash.ToHex();
@@ -190,12 +192,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
             try
             {
                 var transaction = MakeTransaction(ethTx);
-                //TransactionUtils.SetChainId(41);
-                if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId)}))
+                bool useNewChainId =
+                    HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
+                if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId(useNewChainId))}))
                     throw new Exception($"Can not add to transaction pool: BadChainId");
-                var result = _transactionPool.Add(transaction, signature.ToSignature());
+                var result = _transactionPool.Add(transaction, signature.ToSignature(useNewChainId));
                 if (result != OperatingError.Ok) throw new Exception($"Can not add to transaction pool: {result}");
-                return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature()));
+                return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature(useNewChainId), useNewChainId));
             }
             catch (Exception e)
             {
@@ -526,7 +529,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var signedTx = MakeAndSignTransaction(opts);
             var transaction = signedTx.Transaction;
             var sign = signedTx.Signature;
-            var rawTx = transaction.RlpWithSignature(sign);
+            var rawTx = transaction.RlpWithSignature(sign, HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
             return Web3DataFormatUtils.Web3Data(rawTx);
         }
 
@@ -594,7 +597,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                
             }
 
-            return _transactionSigner.Sign(tx, keyPair);
+            return _transactionSigner.Sign(tx, keyPair, 
+                HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
         }
         private (OperatingError, object?) _InvokeSystemContract(
             UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot

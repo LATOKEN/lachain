@@ -29,18 +29,20 @@ namespace Lachain.Consensus.RootProtocol
         private BlockHeader? _header;
         private MultiSig? _multiSig;
         private ulong _cycleDuration;
+        private bool _useNewChainId;
 
         private readonly List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>> _signatures =
             new List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>>();
 
         public RootProtocol(RootProtocolId id, IPublicConsensusKeySet wallet, ECDSAPrivateKey privateKey,
             IConsensusBroadcaster broadcaster, IValidatorAttendanceRepository validatorAttendanceRepository,
-            ulong cycleDuration) : base(wallet, id, broadcaster)
+            ulong cycleDuration, bool useNewChainId) : base(wallet, id, broadcaster)
         {
             _keyPair = new EcdsaKeyPair(privateKey);
             _rootId = id;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _cycleDuration = cycleDuration;
+            _useNewChainId = useNewChainId;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -80,8 +82,9 @@ namespace Lachain.Consensus.RootProtocol
                 if (!_crypto.VerifySignatureHashed(
                     signedHeaderMessage.Header.Keccak().ToBytes(),
                     signedHeaderMessage.Signature.Encode(),
-                    Wallet.EcdsaPublicKeySet[idx].EncodeCompressed()
-                ))
+                    Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(),
+                    _useNewChainId
+                    ))
                 {
                     _lastMessage =
                         $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}";
@@ -218,8 +221,8 @@ namespace Lachain.Consensus.RootProtocol
 
             var signature = _crypto.SignHashed(
                 _header.Keccak().ToBytes(),
-                _keyPair.PrivateKey.Encode()
-            ).ToSignature();
+                _keyPair.PrivateKey.Encode(), _useNewChainId
+            ).ToSignature(_useNewChainId);
             Logger.LogTrace(
                 $"Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}"
             );

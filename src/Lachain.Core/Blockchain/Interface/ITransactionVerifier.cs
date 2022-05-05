@@ -7,11 +7,11 @@ namespace Lachain.Core.Blockchain.Interface
     {
         event EventHandler<TransactionReceipt> OnTransactionVerified;
         
-        void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey);
-        void VerifyTransaction(TransactionReceipt acceptedTransaction);
+        void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey, bool useNewChainId);
+        void VerifyTransaction(TransactionReceipt acceptedTransaction,  bool useNewChainId);
 
-        bool VerifyTransactionImmediately(TransactionReceipt receipt, ECDSAPublicKey publicKey);
-        bool VerifyTransactionImmediately(TransactionReceipt receipt, bool cacheEnabled = true);
+        bool VerifyTransactionImmediately(TransactionReceipt receipt, ECDSAPublicKey publicKey,  bool useNewChainId);
+        bool VerifyTransactionImmediately(TransactionReceipt receipt, bool useNewChainId, bool cacheEnabled);
         
         void Start();
         void Stop();

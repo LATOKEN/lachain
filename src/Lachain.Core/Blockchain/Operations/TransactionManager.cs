@@ -12,6 +12,7 @@ using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Google.Protobuf;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Logger;
 
@@ -90,11 +91,11 @@ namespace Lachain.Core.Blockchain.Operations
             var canTransactionMissVerification = isGenesisBlock || 
                 isDistributeCycleRewardsAndPenaltiesTx || isFinishVrfLotteryTx || isFinishCycleTx;
             
-            var verifyError = VerifyInternal(receipt, canTransactionMissVerification);
+            var verifyError = VerifyInternal(receipt, canTransactionMissVerification, HardforkHeights.IsHardfork_9Active(block.Header.Index));
             if (verifyError != OperatingError.Ok)
                 return verifyError;
             /* maybe we don't need this check, but I'm afraid */
-            if (!receipt.Transaction.FullHash(receipt.Signature).Equals(receipt.Hash))
+            if (!receipt.Transaction.FullHash(receipt.Signature,  HardforkHeights.IsHardfork_9Active(block.Header.Index)).Equals(receipt.Hash))
                 return OperatingError.HashMismatched;
             /* check transaction nonce */
             var nonce = transactionRepository.GetTotalTransactionCount(receipt.Transaction.From);
@@ -114,25 +115,26 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError Verify(TransactionReceipt transaction)
+        public OperatingError Verify(TransactionReceipt transaction,  bool useNewChainId)
         {
-            return VerifyInternal(transaction, false);
+            return VerifyInternal(transaction, false, useNewChainId);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError VerifyInternal(
             TransactionReceipt acceptedTransaction,
-            bool canTransactionMissVerification
+            bool canTransactionMissVerification,
+            bool useNewChainId
         )
         {
             /* check if the hash matches */
-            if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash()))
+            if (!Equals(acceptedTransaction.Hash, acceptedTransaction.FullHash(useNewChainId)))
                 return OperatingError.HashMismatched;
             /* If it's okay to miss verification, the signature is expected to be empty */
             if (canTransactionMissVerification && acceptedTransaction.Signature.IsZero())
                 return OperatingError.Ok;
 
-            var result = VerifySignature(acceptedTransaction);
+            var result = VerifySignature(acceptedTransaction, useNewChainId,  true);
             if (result != OperatingError.Ok)
                 return result;
             var transaction = acceptedTransaction.Transaction;
@@ -147,10 +149,10 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey)
+        public OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey,  bool useNewChainId)
         {
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
-                return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey)
+                return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey, useNewChainId)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
             _verifiedTransactions.TryRemove(transaction.Hash, out _);
@@ -158,11 +160,11 @@ namespace Lachain.Core.Blockchain.Operations
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignature(TransactionReceipt transaction, bool cacheEnabled = true)
+        public OperatingError VerifySignature(TransactionReceipt transaction, bool useNewChainId,  bool cacheEnabled)
         {
             /* First search the cache to see if the transaction is verified, otherwise verify immediately */
             if (!_verifiedTransactions.ContainsKey(transaction.Hash))
-                return _transactionVerifier.VerifyTransactionImmediately(transaction, cacheEnabled)
+                return _transactionVerifier.VerifyTransactionImmediately(transaction, useNewChainId, cacheEnabled)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
             

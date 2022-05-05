@@ -8,20 +8,23 @@ namespace Lachain.Utility.Utils
 {
     public static class SignatureUtils
     {
-        public const int Length = 65;
+        public static int Length(bool useNewChainId)
+        {
+            return useNewChainId ? 66 : 65;
+        } 
 
-        public static Signature Zero = new byte[Length].ToSignature();
+        public static Signature ZeroNew = new byte[66].ToSignature(true);
+        public static Signature ZeroOld = new byte[65].ToSignature(false);
 
         public static bool IsZero(this Signature signature)
         {
-            return Zero.
-                Equals(signature);
+            return ZeroNew.Equals(signature) || ZeroOld.Equals(signature);
         }
 
-        public static Signature ToSignature(this IEnumerable<byte> signature)
+        public static Signature ToSignature(this IEnumerable<byte> signature, bool useNewChainId)
         {
             var bytes = signature.ToArray();
-            if (bytes.Length != Length)
+            if (bytes.Length != Length(useNewChainId))
                 throw new ArgumentOutOfRangeException(nameof(signature));
             return new Signature {Buffer = ByteString.CopyFrom(bytes)};
         }

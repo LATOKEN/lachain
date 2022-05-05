@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Consensus;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
@@ -128,20 +129,25 @@ namespace Lachain.Core.ValidatorStatus
                 const ulong checkInterval = 1000;
                 var lastCheckedBlockHeight = (ulong) 0;
                 var passingCycle = -1;
-                Logger.LogInformation($"Validator status manager started");
+                Logger.LogInformation($"Validator status manager started, {_withdrawTriggered}, {_stakeSize}, {_stopRequested}");
 
                 while (!_withdrawTriggered)
                 {
+                    Logger.LogInformation("1111_11111");
                     if (_stopRequested)
                         break;
+                    Logger.LogInformation("2222_22222");
                     if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() ||
                         GetCurrentCycle() == passingCycle)
                     {
+                        Logger.LogInformation("3333_33333");
                         Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                         continue;
                     }
+                    Logger.LogInformation("4444_44444");
 
                     lastCheckedBlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+                    Logger.LogInformation($"Check {lastCheckedBlockHeight} height");
 
                     if (_sendingTxHash != null)
                     {
@@ -158,6 +164,7 @@ namespace Lachain.Core.ValidatorStatus
                     }
 
                     var stake = _systemContractReader.GetStake().ToBigInteger();
+                    Logger.LogInformation($"Stake size is {stake}");
                     var isStaker = !stake.IsZero;
 
                     if (!isStaker)
@@ -185,6 +192,7 @@ namespace Lachain.Core.ValidatorStatus
                     }
 
                     var requestCycle = _systemContractReader.GetWithdrawRequestCycle();
+                    Logger.LogInformation($"Request cycle is {requestCycle}");
                     if (requestCycle != 0)
                     {
                         Logger.LogInformation(
@@ -320,6 +328,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void BecomeStaker(BigInteger stakeAmount)
         {
+            Logger.LogInformation("BecomeStaker");
             var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
@@ -334,6 +343,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void SubmitVrf(byte[] proof)
         {
+            Logger.LogInformation("SubmitVrf");
             var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
@@ -348,6 +358,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void SubmitAttendanceDetection()
         {
+            Logger.LogInformation("SubmitAttendanceDetection");
             var previousValidators = _systemContractReader.GetPreviousValidators();
 
             var publicKeys = new byte[previousValidators.Length][];
@@ -384,8 +395,10 @@ namespace Lachain.Core.ValidatorStatus
 
         private void AddTxToPool(Transaction tx)
         {
-            var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
-            _sendingTxHash = tx.FullHash(receipt.Signature);
+            var useNewChainId =
+                HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
+            var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, useNewChainId);
+            _sendingTxHash = tx.FullHash(receipt.Signature, useNewChainId);
             var result = _transactionPool.Add(receipt);
             Logger.LogDebug(result == OperatingError.Ok
                 ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -60,10 +61,12 @@ namespace Lachain.CoreTest.IntegrationTests
             _transactionPool = _container.Resolve<ITransactionPool>();
             _configManager = _container.Resolve<IConfigManager>();
             // set chainId from config
-            if (TransactionUtils.ChainId == 0)
+            if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
             _blockManager.TryBuildGenesisBlock();
         }
@@ -78,10 +81,24 @@ namespace Lachain.CoreTest.IntegrationTests
         [Test]
         public void Test_MessageSender()
         {
+            TestMessageSender(1);
+            int blockNum = (int) _blockManager.GetHeight();
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            while(!HardforkHeights.IsHardfork_9Active((ulong) blockNum))
+            {
+                GenerateBlock(blockNum + 1);
+                blockNum++;
+            }
+            TestMessageSender(blockNum + 1);
+        }
+
+        public void TestMessageSender(int blockNum)
+        {
             var assembly = Assembly.GetExecutingAssembly();
             var resourceTest = assembly.GetManifestResourceStream("Lachain.CoreTest.Resources.scripts.test.wasm");
             var keyPair = _wallet.EcdsaKeyPair;
-            GenerateBlock(1);
+            GenerateBlock(blockNum);
+            blockNum++;
             
             // Deploy caller contract 
             if(resourceTest is null)
@@ -94,9 +111,11 @@ namespace Lachain.CoreTest.IntegrationTests
             var nonce = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
             var contractHash = from.ToBytes().Concat(nonce.ToBytes()).Ripemd();
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
-            var signedTx = Signer.Sign(tx, keyPair);
-            Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlock(2);
+            var signedTx = Signer.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active((ulong) blockNum));
+            var error = _transactionPool.Add(signedTx);
+            Assert.That(error == OperatingError.Ok, $"Can't add deploy tx to pool: {error}");
+            GenerateBlock(blockNum);
+            blockNum++;
             
             // check contract is deployed
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
@@ -113,7 +132,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 abi,
                 GasMetering.DefaultBlockGasLimit
             );
-            Assert.That(invocationResult.Status == ExecutionStatus.Ok, "Failed to invoke contract");
+            Assert.That(invocationResult.Status == ExecutionStatus.Ok, $"Failed to invoke contract: {invocationResult.Status}");
             Assert.That(invocationResult.GasUsed > 0, "No gas used during contract invocation");
             Assert.AreEqual(from.ToUInt256().ToHex(), invocationResult.ReturnValue!.ToHex(), 
                 "Invalid invocation return value");
@@ -175,8 +194,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
-            ).ToSignature();
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {

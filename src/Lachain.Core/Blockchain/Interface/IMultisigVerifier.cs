@@ -5,6 +5,6 @@ namespace Lachain.Core.Blockchain.Interface
 {
     public interface IMultisigVerifier
     {
-        OperatingError VerifyMultisig(MultiSig multisig, UInt256 hash);
+        OperatingError VerifyMultisig(MultiSig multisig, UInt256 hash, bool useNewChainId);
     }
 }

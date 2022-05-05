@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -79,10 +80,12 @@ namespace Lachain.CoreTest.IntegrationTests
             _configManager = _container.Resolve<IConfigManager>();
 
             // set chainId from config
-            if (TransactionUtils.ChainId == 0)
+            if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
         }
 
@@ -150,6 +153,23 @@ namespace Lachain.CoreTest.IntegrationTests
             var block = BuildNextBlock();
             var result = ExecuteBlock(block);
             Assert.AreEqual(OperatingError.Ok, result);
+
+            // using new chain id
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                block = BuildNextBlock();
+                result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+
+            int total = 100;
+            for (var it = 0 ; it < total ; it++)
+            {
+                block = BuildNextBlock();
+                result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
         }
 
         [Test]
@@ -164,10 +184,11 @@ namespace Lachain.CoreTest.IntegrationTests
             var coverTxFeeAmount = Money.Parse("10.0");
             for (var i = 0; i < txCount; i++)
             {
-                var tx = TestUtils.GetRandomTransaction();
+                var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(2));
                 randomReceipts.Add(tx);
                 topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
-                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i));
+                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i, 
+                    HardforkHeights.IsHardfork_9Active(1)));
             }
 
             var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
@@ -180,35 +201,70 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
             Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
+
+            // building random txes for new chain id. will send TopUpTx right now.
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            txCount = 50;
+            topUpReceipts = new List<TransactionReceipt>();
+            randomReceipts = new List<TransactionReceipt>();
+            coverTxFeeAmount = Money.Parse("0.0000000001");
+            Console.WriteLine(Money.Wei.ToString());
+            for (var i = 0; i < txCount; i++)
+            {
+                var tx = TestUtils.GetCustomTransaction("0", Money.Wei.ToString() , true);
+                randomReceipts.Add(tx);
+                topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
+                    (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i, 
+                    HardforkHeights.IsHardfork_9Active(3)));
+            }
+            topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
+            topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
+            Assert.AreEqual(topUpResult, OperatingError.Ok);
+            executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(topUpBlock.Header.Index);
+            Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
+
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                var block = BuildNextBlock();
+                result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+
+            int total = 10;
+            for (int it = 0 ; it < total ; it++)
+            {
+                var remBlocks = total - it;
+                var txesToTake = randomReceipts.Count / remBlocks;
+                var txes = new List<TransactionReceipt>();
+                while(txesToTake > 0)
+                {
+                    txes.Add(randomReceipts.Last());
+                    randomReceipts.RemoveAt(randomReceipts.Count-1);
+                    txesToTake--;
+                }
+                randomBlock = BuildNextBlock(txes.ToArray());
+                result = ExecuteBlock(randomBlock, txes.ToArray());
+                Assert.AreEqual(result, OperatingError.Ok);
+                executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
+                Assert.AreEqual(executedBlock!.TransactionHashes.Count, txes.Count);
+            }
         }
 
         [Test]
         public void Test_Storage_Changing()
         {
             _blockManager.TryBuildGenesisBlock();
-            var randomTx = TestUtils.GetRandomTransaction();
-            var balance = randomTx.Transaction.Value;
-            var allowance = balance;
-            var receiver = randomTx.Transaction.From;
-
-            var tx1 = TopUpBalanceTx(receiver, balance, 0);
-            var tx2 = ApproveTx(receiver, allowance, 0);
-
-            var owner = tx2.Transaction.From;
-
-            var blockTxs = new[] {tx1, tx2};
-
-            var topUpBlock = BuildNextBlock(blockTxs);
-            ExecuteBlock(topUpBlock, blockTxs);
-
-            var storedBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receiver);
-            Assert.AreEqual(balance.ToMoney(), storedBalance);
-
-            var storedAllowance = _stateManager.LastApprovedSnapshot.Storage.GetRawValue(
-                ContractRegisterer.LatokenContract,
-                UInt256Utils.Zero.Buffer.Concat(owner.ToBytes().Concat(receiver.ToBytes()))
-            ).ToUInt256().ToMoney();
-            Assert.AreEqual(allowance.ToMoney(), storedAllowance);
+            Check_Random_Address_Storage_Changing();
+            
+            // using new chain id
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                var block = BuildNextBlock();
+                var result = ExecuteBlock(block);
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+            Check_Random_Address_Storage_Changing();
         }
 
         [Test]
@@ -232,6 +288,35 @@ namespace Lachain.CoreTest.IntegrationTests
 
             result = EmulateBlock(block);
             Assert.AreEqual(OperatingError.InvalidMultisig, result);
+        }
+
+        private void Check_Random_Address_Storage_Changing()
+        {
+            var randomTx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
+            var balance = randomTx.Transaction.Value;
+            var allowance = balance;
+            var receiver = randomTx.Transaction.From;
+
+            var tx1 = TopUpBalanceTx(receiver, balance, 0, 
+                HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
+            var tx2 = ApproveTx(receiver, allowance, 0, 
+                HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
+
+            var owner = tx2.Transaction.From;
+
+            var blockTxs = new[] {tx1, tx2};
+
+            var topUpBlock = BuildNextBlock(blockTxs);
+            ExecuteBlock(topUpBlock, blockTxs);
+
+            var storedBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receiver);
+            Assert.AreEqual(balance.ToMoney(), storedBalance);
+
+            var storedAllowance = _stateManager.LastApprovedSnapshot.Storage.GetRawValue(
+                ContractRegisterer.LatokenContract,
+                UInt256Utils.Zero.Buffer.Concat(owner.ToBytes().Concat(receiver.ToBytes()))
+            ).ToUInt256().ToMoney();
+            Assert.AreEqual(allowance.ToMoney(), storedAllowance);
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
@@ -276,8 +361,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
-            ).ToSignature();
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {
@@ -322,7 +407,7 @@ namespace Lachain.CoreTest.IntegrationTests
             return status;
         }
 
-        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc)
+        private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc, bool useNewChainId)
         {
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
                 .HexToBytes().ToPrivateKey());
@@ -336,10 +421,10 @@ namespace Lachain.CoreTest.IntegrationTests
                         (ulong) nonceInc,
                 Value = value
             };
-            return Signer.Sign(tx, keyPair);
+            return Signer.Sign(tx, keyPair, useNewChainId);
         }
 
-        private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc)
+        private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc,  bool useNewChainId)
         {
             var input = ContractEncoder.Encode(Lrc20Interface.MethodApprove, to, value);
             var tx = new Transaction
@@ -353,7 +438,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         (ulong) nonceInc,
                 Value = UInt256Utils.Zero,
             };
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            return Signer.Sign(tx, _wallet.EcdsaKeyPair, useNewChainId);
         }
     }
 }

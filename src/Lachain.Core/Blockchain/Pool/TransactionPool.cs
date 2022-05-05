@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Crypto;
@@ -71,14 +72,16 @@ namespace Lachain.Core.Blockchain.Pool
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
+        
         private void OnBlockPersisted(object sender, Block block)
         {
-            SanitizeMemPool(block.Header.Index);
-            // TO DO: we should make this removal async for better performance
-            _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
-            _toDeleteRepo.Clear();
+            lock (_toDeleteRepo)
+            {
+                SanitizeMemPool(block.Header.Index);
+                // TODO: we should make this removal async for better performance
+                _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
+                _toDeleteRepo.Clear();
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -125,7 +128,10 @@ namespace Lachain.Core.Blockchain.Pool
             var acceptedTx = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.FullHash(signature),
+                // we use next height here because block header should be signed with the same chainId
+                // and this txes will go to the next block
+                Hash = transaction.FullHash(signature, 
+                    HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1)),
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };
@@ -154,15 +160,27 @@ namespace Lachain.Core.Blockchain.Pool
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
             }
+            
+            // Stop accept regular txes 100 blocks before Hardfork_6
+            if (HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 100) &&
+                !HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                if (!receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) &&
+                    !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
+                    return OperatingError.UnsupportedTransaction;
+            }
 
             /* check if the address has enough gas */ 
             if(!IsBalanceValid(receipt))
                 return OperatingError.InsufficientBalance;
-
-            var result = _transactionManager.Verify(receipt);
+            
+            // we use next height here because block header should be signed with the same chainId
+            // and this txes will go to the next block
+            bool useNewChainId = HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1);
+            var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
-            _transactionVerifier.VerifyTransaction(receipt);
+            _transactionVerifier.VerifyTransaction(receipt, useNewChainId);
             /* put transaction to pool queue */
             _transactions[receipt.Hash] = receipt;
             _transactionsQueue.Add(receipt);
@@ -300,7 +318,10 @@ namespace Lachain.Core.Blockchain.Pool
         {
             Logger.LogTrace($"Proposing Transactions from pool");
             // try sanitizing mempool ...
-            SanitizeMemPool(era - 1);
+            lock (_toDeleteRepo)
+            {
+                SanitizeMemPool(era - 1);
+            }
 
             // it's possible that block for this era is already persisted, 
             // so we should return an empty set of transactions in this case

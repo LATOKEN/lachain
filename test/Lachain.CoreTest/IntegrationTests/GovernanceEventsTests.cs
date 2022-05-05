@@ -7,6 +7,7 @@ using System.Reflection;
 using Google.Protobuf;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -22,6 +23,7 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -43,6 +45,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private ITransactionBuilder _transactionBuilder = null!;
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
+        private IConfigManager _configManager = null!;
         private IPrivateWallet _wallet = null!;
         private IContainer? _container;
         private Dictionary<UInt256, ByteString> _eventData = null!;
@@ -81,6 +84,15 @@ namespace Lachain.CoreTest.IntegrationTests
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+            _configManager = _container.Resolve<IConfigManager>();
+            // set chainId from config
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+            }
         }
 
         [TearDown]
@@ -94,7 +106,17 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_EventFormat()
         {
             _blockManager.TryBuildGenesisBlock();
+            TestEventFormat();
+            Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            {
+                GenerateBlocks(1);
+            }
+            TestEventFormat();
+        }
 
+        private void TestEventFormat()
+        {
             for (var i = 0; i < (int)(CycleDuration + 2); i++)
             {
                 GenerateBlocks(1);
@@ -206,8 +228,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
-            ).ToSignature();
+                keyPair.PrivateKey.Encode(), HardforkHeights.IsHardfork_9Active(blockIndex)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(blockIndex));
 
             var multisig = new MultiSig
             {
@@ -278,7 +300,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())),
                 (pk)
             );
-            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair, true);
             Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventChangeValidators, (pk))));
@@ -298,7 +320,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 UInt256Utils.ToUInt256(GovernanceContract.GetCycleByBlockNumber(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight())),
                 proposer, (value)
             );
-            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair, true);
             Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenSendValue,
@@ -332,7 +354,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 new byte[][] {row}
             );
 
-            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair);
+            var res = Signer.Sign(tx, _wallet.EcdsaKeyPair, true);
             Assert.False(_eventData.ContainsKey(res.Hash));
             _eventData.Add(res.Hash,
                 ByteString.CopyFrom(ContractEncoder.Encode(GovernanceInterface.EventKeygenCommit,
@@ -352,10 +374,10 @@ namespace Lachain.CoreTest.IntegrationTests
             );
             return new TransactionReceipt
             {
-                Hash = transaction.FullHash(SignatureUtils.Zero),
+                Hash = transaction.FullHash(SignatureUtils.ZeroNew, true),
                 Status = TransactionStatus.Pool,
                 Transaction = transaction,
-                Signature = SignatureUtils.Zero,
+                Signature = SignatureUtils.ZeroNew,
             };
         }
     }

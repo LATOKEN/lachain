@@ -1,7 +1,6 @@
 {
   "network": {
-    "chainId": 25,
-    "newChainId": 225,
+    "chainId": 26,
     "peers": [
     ],
     "forceIPv6": false,
@@ -10,7 +9,7 @@
     ],
     "hubLogLevel": "Trace",
     "hubMetricsPort": 7072,
-    "networkName": "unittests"
+    "networkName": "testnet"
   },
   "genesis": {
     "TPKEPublicKey": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",

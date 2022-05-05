@@ -6,6 +6,7 @@ using System.Threading;
 using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
@@ -84,7 +85,7 @@ namespace Lachain.Core.Network
                         continue;
                     }
 
-                    var error = _transactionManager.Verify(tx);
+                    var error = _transactionManager.Verify(tx, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
                     if (error != OperatingError.Ok)
                     {
                         Logger.LogTrace($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");

@@ -1,4 +1,7 @@
+using System;
+using System.IO;
 using System.Numerics;
+using System.Reflection;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -7,6 +10,14 @@ using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using Lachain.Core.CLI;
+using Lachain.Core.Config;
+using Lachain.Core.DI;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Networking;
+using Lachain.UtilityTest;
 using NUnit.Framework;
 
 namespace Lachain.CoreTest.Blockchain.Operations
@@ -14,10 +25,35 @@ namespace Lachain.CoreTest.Blockchain.Operations
     public class SignerTest
     {
 
+        private IConfigManager _configManager = null!;
+        private IContainer? _container;
+
         [OneTimeSetUp]
         public void Setup()
         {
-            TransactionUtils.SetChainId(41);
+            TestUtils.DeleteTestChainData();
+            var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                new RunOptions()
+            ));
+            containerBuilder.RegisterModule<ConfigModule>();
+            _container = containerBuilder.Build();
+            _configManager = _container.Resolve<IConfigManager>();
+            // set chainId from config
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+            }
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            _container?.Dispose();
+            TestUtils.DeleteTestChainData();
         }
 
         [Test]
@@ -38,10 +74,19 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Nonce = 0,
                 Value = new BigInteger(0).ToUInt256()
             };
-            var receipt = signer.Sign(tx, keyPair);
-            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash().ToHex());
+            // using old chain id
+            var receipt = signer.Sign(tx, keyPair, false);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(false).ToHex());
 
-            var publicKey = receipt.RecoverPublicKey();
+            var publicKey = receipt.RecoverPublicKey(false);
+            Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
+            Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
+
+            // using new chain id
+            receipt = signer.Sign(tx, keyPair, true);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
+
+            publicKey = receipt.RecoverPublicKey(true);
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
         }
@@ -65,14 +110,27 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 Nonce = 0,
                 Value = new BigInteger(0).ToUInt256()
             };
-            var receipt = signer.Sign(tx, keyPair);
-            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash().ToHex());
-            var txHashFromWeb3Py = "0x8c78e890b249e7fa814a40648f1810946b639b6fa321c9dec8598ef77615ea91";
+            // using old chain id
+            var receipt = signer.Sign(tx, keyPair, false);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(false).ToHex());
+            var txHashFromWeb3Py = "0x0bd482bdd02f75f4897658f39c6ddf0a4ef0c58b2f4c3acdf0474ba497a0a6d5";
             Assert.AreEqual(receipt.Hash.ToHex(), txHashFromWeb3Py);
 
-            var publicKey = receipt.RecoverPublicKey();
+            var publicKey = receipt.RecoverPublicKey(false);
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
+
+            
+            // using new chain id
+            receipt = signer.Sign(tx, keyPair, true);
+            Assert.AreEqual(receipt.Hash.ToHex(), receipt.FullHash(true).ToHex());
+            txHashFromWeb3Py = "0x45361b6213f2f7115feb7044ab9f52e03f2c7e49bb1866b5d094a0e39f0fa2f6";
+            Assert.AreEqual(receipt.Hash.ToHex(), txHashFromWeb3Py);
+
+            publicKey = receipt.RecoverPublicKey(true);
+            Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
+            Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
+            
         }
     }
 }

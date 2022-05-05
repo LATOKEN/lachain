@@ -47,7 +47,8 @@ namespace Lachain.Networking
             };
             _hubConnector = new HubConnector(
                 string.Join(",", networkConfig.BootstrapAddresses),
-                hubPrivateKey, networkConfig.NetworkName ?? "devnet", version, minPeerVersion, networkConfig.ChainId,
+                hubPrivateKey, networkConfig.NetworkName ?? "devnet", version, minPeerVersion, 
+                networkConfig.NewChainId ?? throw new Exception("No newChainId in config"),
                 networkConfig.HubMetricsPort ?? 7072, _messageFactory, networkConfig.HubLogLevel
             );
             _hubConnector.OnMessage += _HandleMessage;
@@ -108,7 +109,7 @@ namespace Lachain.Networking
             }
 
             if (!Crypto.VerifySignature(batch.Content.ToByteArray(), batch.Signature.Encode(),
-                batch.Sender.EncodeCompressed()))
+                batch.Sender.EncodeCompressed(), true))
             {
                 Logger.LogError($"Incorrect signature received from sender {batch.Sender}, dropping");
                 return;

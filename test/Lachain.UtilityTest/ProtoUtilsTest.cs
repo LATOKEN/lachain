@@ -17,7 +17,7 @@ namespace Lachain.UtilityTest
         {
             List<TransactionReceipt> receipts = new List<TransactionReceipt>();
             for(int i = 0; i < 100; i++) {
-                receipts.Add(TestUtils.GetRandomTransaction());
+                receipts.Add(TestUtils.GetRandomTransaction(false));
             }
             var decoded = receipts.ToByteArray();
             var encoded = decoded.ToMessageArray<TransactionReceipt>();
@@ -30,7 +30,7 @@ namespace Lachain.UtilityTest
         {
             List<TransactionReceipt> receipts = new List<TransactionReceipt>();
             for(int i = 0; i < 100; i++) {
-                receipts.Add(TestUtils.GetRandomTransaction());
+                receipts.Add(TestUtils.GetRandomTransaction(false));
             }
             var decoded = receipts.ToByteArray();
             var junk = new byte[] {1, 2, 3};

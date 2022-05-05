@@ -5,6 +5,7 @@ using Lachain.Consensus;
 using Lachain.Consensus.ThresholdKeygen;
 using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -173,7 +174,7 @@ namespace Lachain.Core.Vault
                     return;
                 }
 
-                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_9Active(context.Receipt.Block)));
                 if (sender < 0)
                 {
                     Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
@@ -216,8 +217,13 @@ namespace Lachain.Core.Vault
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
-                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
-                if (sender < 0) return;
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_9Active(context.Receipt.Block)));
+                if (sender < 0) 
+                {
+                    Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
+                    return;
+                }
+
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenSendValue);
                 var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle for Confirm transaction");
                 var proposer = args[1] as UInt256 ??
@@ -255,8 +261,12 @@ namespace Lachain.Core.Vault
                 Logger.LogDebug($"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null) return;
-                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey());
-                if (sender < 0) return;
+                var sender = keygen.GetSenderByPublicKey(context.Receipt.RecoverPublicKey(HardforkHeights.IsHardfork_9Active(context.Receipt.Block)));
+                if (sender < 0) 
+                {
+                    Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
+                    return;
+                }
 
                 var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
                 var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle");
@@ -313,7 +323,7 @@ namespace Lachain.Core.Vault
                 keyring.TpkePublicKey.ToBytes(),
                 keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
             );
-            return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
+            return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
         }
 
         private TransactionReceipt MakeSendValueTransaction(UInt256 cycle, ValueMessage valueMessage)
@@ -329,7 +339,7 @@ namespace Lachain.Core.Vault
                 new BigInteger(valueMessage.Proposer).ToUInt256(),
                 valueMessage.EncryptedValues
             );
-            return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
+            return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
         }
 
         private TransactionReceipt MakeCommitTransaction(CommitMessage commitMessage, ulong cycle)
@@ -345,7 +355,7 @@ namespace Lachain.Core.Vault
                 commitMessage.Commitment.ToBytes(),
                 commitMessage.EncryptedRows
             );
-            return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair);
+            return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
         }
 
         private TrustlessKeygen? GetCurrentKeyGen()
@@ -380,7 +390,7 @@ namespace Lachain.Core.Vault
                     {
                         Logger.LogDebug(
                             $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenCommit}");
-                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey());
+                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_9Active(i)));
                         if (sender < 0)
                         {
                             Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
@@ -400,7 +410,7 @@ namespace Lachain.Core.Vault
                     {
                         Logger.LogDebug(
                             $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenSendValue}");
-                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey());
+                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_9Active(i)));
                         if (sender < 0)
                         {
                             Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
@@ -421,7 +431,7 @@ namespace Lachain.Core.Vault
                     {
                         Logger.LogDebug(
                             $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirm}");
-                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey());
+                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_9Active(i)));
                         if (sender < 0)
                         {
                             Logger.LogWarning($"Skipping call because of invalid sender: {sender}");

@@ -15,15 +15,15 @@ namespace Lachain.Core.Blockchain.Operations
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public TransactionReceipt Sign(Transaction transaction, EcdsaKeyPair keyPair)
+        public TransactionReceipt Sign(Transaction transaction, EcdsaKeyPair keyPair, bool useNewChainId)
         {
             /* use raw byte arrays to sign transaction hash */
-            var messageHash = transaction.RawHash();
-            var signature = Crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode()).ToSignature();
+            var messageHash = transaction.RawHash(useNewChainId);
+            var signature = Crypto.SignHashed(messageHash.ToBytes(), keyPair.PrivateKey.Encode(), useNewChainId).ToSignature(useNewChainId);
             var signed = new TransactionReceipt
             {
                 Transaction = transaction,
-                Hash = transaction.FullHash(signature),
+                Hash = transaction.FullHash(signature, useNewChainId),
                 Signature = signature
             };
             return signed;

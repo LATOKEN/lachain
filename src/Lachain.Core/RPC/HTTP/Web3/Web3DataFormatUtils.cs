@@ -214,7 +214,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             };
         }
 
-        public static JObject Web3UnsignedTransaction(Transaction tx)
+        public static JObject Web3UnsignedTransaction(Transaction tx, bool useNewChainId)
         {
             return new JObject
             {
@@ -225,7 +225,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["nonce"] = Web3Number(tx.Nonce),
                 ["to"] = tx.To.Buffer.IsEmpty ? null : Web3Data(tx.To),
                 ["value"] = Web3Number(tx.Value),
-                ["chainId"] = TransactionUtils.ChainId,
+                ["chainId"] = TransactionUtils.ChainId(useNewChainId),
             };
         }
 

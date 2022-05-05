@@ -11,7 +11,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 10;
+        private const ulong _CurrentVersion = 11;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -59,6 +59,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV9();
             if (version < 10)
                 _UpdateConfigToV10();
+            if (version < 11)
+                _UpdateConfigToV11();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -230,6 +232,16 @@ namespace Lachain.Core.Config
         {
             var network = GetConfig<NetworkConfig>("network") ??
                           throw new ApplicationException("No network section in config");
+            
+            network.NewChainId ??= network.NetworkName switch
+            {
+                "mainnet" => 225,
+                "testnet" => 226,
+                "devnet" => 227,
+                _ => 42
+            };
+            _config["network"] = JObject.FromObject(network);
+
             var hardforks = GetConfig<HardforkConfig>("hardfork") ??
                             throw new ApplicationException("No hardfork section in config");
             hardforks.Hardfork_6 ??= network.NetworkName switch
@@ -291,7 +303,31 @@ namespace Lachain.Core.Config
 
             var version = GetConfig<VersionConfig>("version") ??
                           throw new ApplicationException("No version section in config");
-            version.Version = 9;
+            version.Version = 10;
+            _config["version"] = JObject.FromObject(version);
+            
+            _SaveCurrentConfig();
+        }
+
+        // version 11 of config should contain hardfork height for hardfork_9
+        private void _UpdateConfigToV11()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_9 ??= network.NetworkName switch
+            {
+                "mainnet" => 3500300,
+                "testnet" => 3095300,
+                "devnet" => 743530,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 11;
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
