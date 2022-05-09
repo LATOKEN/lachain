@@ -5,14 +5,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Proto;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
-using Lachain.Core.RPC.HTTP.Web3;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -32,16 +33,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _hybridQueue = hybridQueue;
         }
 
-        public bool TryGetHashBatch(out List<string> hashBatch)
+        public bool TryGetHashBatch(out List<UInt256> hashBatch)
         {
-            hashBatch = new List<string>();
+            hashBatch = new List<UInt256>();
             lock(this)
             {
-                string hash;
+                UInt256? hash;
                 while(hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out hash) )
                 {
                 //    Console.WriteLine("In request manager: got hash: "+ hash);
-                    hashBatch.Add(hash);
+                    hashBatch.Add(hash!);
                 }
             }
             if (hashBatch.Count == 0){
@@ -72,21 +73,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //    System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
                 if(_nodeStorage.TryGetNode(cur, out IHashTrieNode? trieNode))
                 {
-                    JObject node = Web3DataFormatUtils.Web3Node(trieNode);
-                //    Console.WriteLine("printing Node");
-                //    Console.WriteLine(node);
-                    var nodeType = (string)node["NodeType"];
-            //        if (nodeType == null) return false; 
-
-                    if (nodeType.Equals("0x1")) // internal node 
+                    switch (trieNode)
                     {
-                        var jsonChildren = (JArray)node["Children"];
-                        foreach (var jsonChild in jsonChildren)
-                        {
-                            ulong childId = Convert.ToUInt64((string)jsonChild,16);
-                            Console.WriteLine("Enqueueing child: "+ childId);
-                            queue.Enqueue(childId);
-                        }
+                        case InternalNode node:
+                            foreach(var childId in node.Children)
+                            {
+                                Console.WriteLine("Enqueueing child: "+ childId);
+                                queue.Enqueue(childId);
+                            }
+                            break;
                     }
                 }
                 else
@@ -99,11 +94,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         //"response" is received from a peer for the "hashBatch" of nodes
-        public void HandleResponse(List<string> hashBatch, JArray response)
+        public void HandleResponse(List<UInt256> hashBatch, JArray response)
         {
-            List<string> successfulHashes = new List<string>();
+            List<UInt256> successfulHashes = new List<UInt256>();
             
-            List<string> failedHashes = new List<string>();
+            List<UInt256> failedHashes = new List<UInt256>();
             
             List<JObject> successfulNodes = new List<JObject>();
 
@@ -119,7 +114,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     var hash = hashBatch[i];
                     JObject node = (JObject)response[i];
                     //check if actually the node's content produce desired hash or data is corrupted
-                    if (_nodeStorage.IsConsistent(node) && hash == (string)node["Hash"])
+                    if (_nodeStorage.IsConsistent(node) && hash.ToHex() == (string)node["Hash"])
                     {
                         successfulHashes.Add(hash);
                         successfulNodes.Add(node);
@@ -164,7 +159,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             var jsonChildren = (JArray)node["ChildrenHash"];
                             foreach (var jsonChild in jsonChildren)
                             {
-                                _hybridQueue.Add((string)jsonChild);
+                                _hybridQueue.Add(((string)jsonChild).HexToUInt256());
                             }
                         }
 
@@ -177,7 +172,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 }
             }
         }
-        public void AddHash(string hash)
+        public void AddHash(UInt256 hash)
         {
             lock(_hybridQueue)
             {

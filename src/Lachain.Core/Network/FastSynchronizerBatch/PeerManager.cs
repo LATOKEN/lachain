@@ -4,11 +4,12 @@
     this peer for next timeout seconds. Now, timeout = 30 seconds.
 */
 using System;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Lachain.Proto;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -19,14 +20,29 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private Queue<DateTime> _lastResult = new Queue<DateTime>();
         private IDictionary<Peer, bool> _isPeerBusy = new Dictionary<Peer, bool>();
         private int Timeout = 30;
-        public PeerManager(List<string> urls)
+        private readonly IDictionary<Peer, ulong> _peerHeights = new Dictionary<Peer, ulong>();
+        public PeerManager(List<(ECDSAPublicKey,ulong)> peersWithHeight)
         {
-            foreach(var url in urls) _isPeerBusy[new Peer(url)] = false;
+            foreach(var peerWithHeight in peersWithHeight)
+            {
+                var peer = new Peer(peerWithHeight.Item1);
+                _isPeerBusy[peer] = false;
+                _peerHeights[peer] = peerWithHeight.Item2;
+            }
             foreach (var item in _isPeerBusy) _availableGoodPeers.Enqueue(item.Key);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetPeer(out Peer peer)
+        public void AddPeer(ECDSAPublicKey publicKey, ulong height)
+        {
+            var peer = new Peer(publicKey);
+            _isPeerBusy[peer] = false;
+            _peerHeights[peer] = height;
+            _availableGoodPeers.Enqueue(peer);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryGetPeer(out Peer? peer)
         {
             peer = null;
             if (_availableGoodPeers.Count + _availableBadPeers.Count == 0) return false;
@@ -63,6 +79,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public int GetTotalPeerCount()
         {
             return _isPeerBusy.Count;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public ulong? GetHeightForPeer(Peer peer)
+        {
+            if (_peerHeights.TryGetValue(peer, out var height))
+            {
+                return height;
+            }
+            return null;
         }
     }
 }

@@ -161,8 +161,8 @@ namespace Lachain.Console
                     addresses[i] = address.ToString();
                 }
 
-                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), blockNumber, addresses.ToList());
+                //FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
+                  //                              storageManager.GetVersionFactory(), blockNumber, addresses.ToList());
 
             }
 
