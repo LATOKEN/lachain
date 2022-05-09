@@ -4,28 +4,28 @@
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json.Linq;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
-using Lachain.Storage;
-using Lachain.Storage.Trie;
-using Lachain.Storage.State;
-using Lachain.Utility.Utils;
 using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Crypto;
-using Lachain.Utility.Serialization;
 using Lachain.Proto;
+using Lachain.Storage;
+using Lachain.Storage.State;
+using Lachain.Storage.Trie;
+using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
 
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     class NodeStorage
     {
-        private IDictionary<string, ulong> _idCache = new ConcurrentDictionary<string, ulong>();
+        private IDictionary<UInt256, ulong> _idCache = new ConcurrentDictionary<UInt256, ulong>();
         private uint _idCacheCapacity = 100000;
 
         private IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
@@ -47,7 +47,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             string nodeHash = (string)jsonNode["Hash"];
             if (nodeHash == null) return false;
             byte[] nodeHashBytes = HexUtils.HexToBytes(nodeHash);
-            bool foundId = GetIdByHash(nodeHash, out ulong id);
+            bool foundId = GetIdByHash(nodeHash.HexToUInt256(), out ulong id);
             IHashTrieNode? trieNode;
             if(foundId)
             {
@@ -60,7 +60,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return false;
         }
 
-        public bool ExistNode(string nodeHash)
+        public bool ExistNode(UInt256 nodeHash)
         {
             if(GetIdByHash(nodeHash, out ulong id))
             {
@@ -69,12 +69,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return false;
         }
 
-        public bool GetIdByHash(string nodeHash, out ulong id)
+        public bool GetIdByHash(UInt256 nodeHash, out ulong id)
         {
             id = 0;
             if(nodeHash.Equals(EmptyHash)) return true;
             if(_idCache.TryGetValue(nodeHash, out id)) return true;
-            var idByte = _dbContext.Get(EntryPrefix.VersionByHash.BuildPrefix(HexUtils.HexToBytes(nodeHash)));
+            var idByte = _dbContext.Get(EntryPrefix.VersionByHash.BuildPrefix(nodeHash.ToBytes()));
             if(!(idByte is null)){
                 id = UInt64Utils.FromBytes(idByte);
                 return true;
@@ -135,7 +135,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     string childHash = (string)jsonChildHash;
                     childrenHash.Add(HexUtils.HexToBytes(childHash));
-                    bool foundId = GetIdByHash(childHash, out ulong childId);
+                    bool foundId = GetIdByHash(childHash.HexToUInt256(), out ulong childId);
                     children.Add(childId);
                 }
                 uint mask = Convert.ToUInt32((string)jsonNode["ChildrenMask"], 16);
@@ -175,7 +175,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
             foreach(var item in _idCache)
             {
-                tx.Put(EntryPrefix.VersionByHash.BuildPrefix(HexUtils.HexToBytes(item.Key)), UInt64Utils.ToBytes(item.Value));
+                tx.Put(EntryPrefix.VersionByHash.BuildPrefix(item.Key.ToBytes()), UInt64Utils.ToBytes(item.Value));
             }
             ulong nextVersion = _versionFactory.CurrentVersion + 1;
             tx.Put(EntryPrefix.StorageVersionIndex.BuildPrefix((uint) RepositoryType.MetaRepository), nextVersion.ToBytes().ToArray());
