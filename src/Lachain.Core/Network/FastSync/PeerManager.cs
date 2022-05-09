@@ -70,5 +70,15 @@ namespace Lachain.Core.Network.FastSync
         {
             return _isPeerBusy.Count;
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public ulong? GetHeightForPeer(Peer peer)
+        {
+            if (_peerHeights.TryGetValue(peer, out var height))
+            {
+                return height;
+            }
+            return null;
+        }
     }
 }
