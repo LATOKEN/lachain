@@ -4,14 +4,16 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Lachain.Logger;
-using Lachain.Storage.State;
+using Lachain.Networking;
+using Lachain.Proto;
 using Lachain.Storage;
-using Lachain.Storage.Trie;
 using Lachain.Storage.Repositories;
+using Lachain.Storage.State;
+using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
-using System.Linq;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -31,9 +33,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public static void StartSync(IStateManager stateManager,
                                      IRocksDbContext dbContext,
                                      ISnapshotIndexRepository snapshotIndexRepository,
+                                     INetworkManager networkManager,
                                      VersionFactory versionFactory,
                                      ulong blockNumber,
-                                     List<string> urls)
+                                     List<(ECDSAPublicKey, ulong)> urls)
         {
             //At first we check if fast sync have started and completed before.
             // If it has completed previously, we don't let the user run it again.
@@ -55,7 +58,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
             ulong savedBlockNumber = GetBlockNumberFromDB(dbContext);
             if(savedBlockNumber!=0) blockNumber = savedBlockNumber;
-            Downloader downloader = new Downloader(peerManager, requestManager, blockNumber);
+            Downloader downloader = new Downloader(networkManager, peerManager, requestManager, blockNumber);
             //this line is only useful if fast_sync was not started previously and user wants to sync with latest block
             blockNumber = downloader.GetBlockNumber();
             
@@ -67,7 +70,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 Logger.LogWarning($"Starting trie {trieNames[i]}");
                 var rootHash = downloader.GetTrie(trieNames[i], nodeStorage);
-                bool foundRoot = nodeStorage.GetIdByHash(rootHash.ToHex(), out ulong curTrieRoot);
+                bool foundRoot = nodeStorage.GetIdByHash(rootHash, out ulong curTrieRoot);
             //    snapshots[i].SetCurrentVersion(curTrieRoot);
                 downloadedTries++;
                 dbContext.Save(EntryPrefix.LastDownloaded.BuildPrefix(), downloadedTries.ToBytes().ToArray());
@@ -92,7 +95,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
                 for(int i=0; i<trieNames.Length; i++)
                 {
-                    bool foundHash = nodeStorage.GetIdByHash(downloader.DownloadRootHashByTrieName(trieNames[i]).ToHex(), out ulong trieRoot);
+                    bool foundHash = nodeStorage.GetIdByHash(downloader.DownloadRootHashByTrieName(trieNames[i]), out ulong trieRoot);
                     snapshots[i].SetCurrentVersion(trieRoot);
                 }
 

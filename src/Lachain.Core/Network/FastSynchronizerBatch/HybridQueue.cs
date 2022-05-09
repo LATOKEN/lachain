@@ -5,19 +5,20 @@
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json.Linq;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Storage;
 using Lachain.Storage.Trie;
-using Lachain.Utility.Utils;
-using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Utility.Serialization;
-using Lachain.Logger;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -32,11 +33,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         //_loadedBatch means how many batch of nodeHashes have been loaded from database into _outgoingQueue(for requesting to peers) 
         private ulong _loadedBatch=0, _totalBatch=0, _savedBatch=0;
         //nodes which are requested but has not arrived yet resides in the _pending container, mapping is nodeHash -> node's batch        
-        private IDictionary<string, ulong> _pending = new Dictionary<string, ulong>();
+        private IDictionary<UInt256, ulong> _pending = new Dictionary<UInt256, ulong>();
         //every node at first enters to _incomingQueue before getting sent to database
-        private Queue<string> _incomingQueue = new Queue<string>();
+        private Queue<UInt256> _incomingQueue = new Queue<UInt256>();
         //when we take out nodes from database we keep it in _outgoingQueue and it's batch in the _batchQueue
-        private Queue<string> _outgoingQueue = new Queue<string>();
+        private Queue<UInt256> _outgoingQueue = new Queue<UInt256>();
         private Queue<ulong> _batchQueue = new Queue<ulong>();
 
         //we need to keep track of how many nodes for a batch has not arrived till now
@@ -60,7 +61,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Add(string key)
+        public void Add(UInt256 key)
         {
             if(_pending.ContainsKey(key)){
                 _outgoingQueue.Enqueue(key);
@@ -75,7 +76,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetValue(out string key)
+        public bool TryGetValue(out UInt256? key)
         {
         //    Console.WriteLine("Outgoing queue: "+_outgoingQueue.Count+" Incoming Queue: "+_incomingQueue.Count);
             key = null;
@@ -103,7 +104,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool ReceivedNode(string key)
+        public bool ReceivedNode(UInt256 key)
         {
             ulong batch = _pending[key];
             _pending.Remove(key);
@@ -134,7 +135,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool isPending(string key)
+        public bool isPending(UInt256 key)
         {
             return _pending.ContainsKey(key);
         }
@@ -147,10 +148,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             int sz = _incomingQueue.Count;
             while(_incomingQueue.Count>0)
             {
-                string hash = _incomingQueue.Dequeue();
+                var hash = _incomingQueue.Dequeue();
             //    bool foundHash = _nodeStorage.GetIdByHash(hash, out ulong id);
             //    Console.WriteLine("adding id for download: "+ id);
-                list.AddRange(HexUtils.HexToBytes(hash));
+                list.AddRange(hash.ToBytes());
             }
             _totalBatch++;
             _dbContext.Save(EntryPrefix.QueueBatch.BuildPrefix((ulong)_totalBatch), list.ToArray());
@@ -167,7 +168,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 byte[] array = new byte[32];
                 for(int j=0; j<32 ; j++,i++) array[j] = raw[i];
-                string hash = HexUtils.ToHex(array);
+                var hash = UInt256Utils.ToUInt256(array);
                 if(ExistNode(hash)) continue;
                 _outgoingQueue.Enqueue(hash);
                 _batchQueue.Enqueue(_curBatch);
@@ -178,7 +179,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             Logger.LogInformation($"Trying to download nodes from batch: {_curBatch}  size: {cnt}");
             if(cnt==0) TryToSaveBatch();
         }
-        bool ExistNode(string hash)
+        bool ExistNode(UInt256 hash)
         {
             if(_pending.ContainsKey(hash)) return true;
             return _nodeStorage.ExistNode(hash);

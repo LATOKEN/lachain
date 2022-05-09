@@ -41,14 +41,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetBatch(out List<string> batch)
+        public bool TryGetBatch(out List<ulong> batch)
         {
-            batch = new List<string>();
+            batch = new List<ulong>();
             for(ulong i=0; i<_batchSize && nextBlocksToDownload.Count>0; i++)
             {
                 ulong blockId = nextBlocksToDownload.Min;
                 _pending.Add(blockId);
-                batch.Add(HexUtils.ToHex(blockId));
+                batch.Add(blockId);
                 nextBlocksToDownload.Remove(blockId);
             } 
             if (batch.Count == 0) return false;
@@ -62,15 +62,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void HandleResponse(List<string> batch, JArray response)
+        public void HandleResponse(List<ulong> batch, JArray response)
         {
-            if(batch.Count>0) Logger.LogInformation("First Node in this batch: "+Convert.ToUInt64(batch[0], 16));
-
+            if(batch.Count>0) Logger.LogInformation("First Node in this batch: " + batch[0]);
             if(batch.Count != response.Count)
             {
-                foreach(var block in batch)
+                foreach(var blockId in batch)
                 {
-                    ulong blockId = Convert.ToUInt64(block, 16);
                     if(_pending.Contains(blockId))
                     {
                         _pending.Remove(blockId);
@@ -81,7 +79,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             else{
                 for(int i=0; i<batch.Count; i++)
                 {
-                    ulong blockId = Convert.ToUInt64(batch[i], 16);
+                    ulong blockId = batch[i];
                     if(_pending.Contains(blockId))
                     {
                         _pending.Remove(blockId);
