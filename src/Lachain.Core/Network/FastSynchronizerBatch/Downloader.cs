@@ -82,12 +82,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //    Console.WriteLine("GetTrie after TryGetPeer........");
                 if(!_requestManager.TryGetHashBatch(out var hashBatch))
                 {
-                    _peerManager.TryFreePeer(peer);
+                    _peerManager.TryFreePeer(peer!);
                     Thread.Sleep(500);
                     continue;
                 }
             //    Console.WriteLine("GetTrie after TryGetHashBatch........");
-                HandleNodeRequest(peer, hashBatch);
+                HandleNodeRequest(peer!, hashBatch);
             }
             _nodeStorage.Commit();
             if(!rootHash.Equals(EmptyHash))
@@ -101,14 +101,40 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public void HandleNodeRequest(Peer peer, List<UInt256> batch)
         {
-            var message = _networkManager.MessageFactory.TrieNodeByHashRequest(batch);
-            _networkManager.SendTo(peer._publicKey, message);
+            try
+            {
+                var message = _networkManager.MessageFactory.TrieNodeByHashRequest(batch);
+                _networkManager.SendTo(peer._publicKey, message);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("\nMain Exception raised!");
+                Logger.LogWarning("Source :{0} ", e.Source);
+                Logger.LogWarning("Message :{0} ", e.Message);
+                if(_peerManager.TryFreePeer(peer, 0))
+                {
+                    _requestManager.HandleResponse(batch, new JArray { });
+                }
+            }
         }
 
         public void HandleBlockRequest(Peer peer, List<ulong> batch)
         {
-            var message = _networkManager.MessageFactory.BlockBatchRequest(batch);
-            _networkManager.SendTo(peer._publicKey, message);
+            try
+            {
+                var message = _networkManager.MessageFactory.BlockBatchRequest(batch);
+                _networkManager.SendTo(peer._publicKey, message);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("\nMain Exception raised!");
+                Logger.LogWarning("Source :{0} ", e.Source);
+                Logger.LogWarning("Message :{0} ", e.Message);
+                if(_peerManager.TryFreePeer(peer, 0))
+                {
+                    _blockRequestManager.HandleResponse(batch, new JArray{ });
+                }
+            }
         }
 
 //         private void HandleRequest(Peer peer, List<string> batch, uint type)
@@ -328,11 +354,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 }
                 if(!_blockRequestManager.TryGetBatch(out var batch))
                 {
-                    _peerManager.TryFreePeer(peer);
+                    _peerManager.TryFreePeer(peer!);
                     Thread.Sleep(500);
                     continue;
                 }
-                HandleBlockRequest(peer, batch);
+                HandleBlockRequest(peer!, batch);
             }
         }
 
