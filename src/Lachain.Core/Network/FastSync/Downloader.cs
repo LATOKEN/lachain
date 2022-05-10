@@ -79,7 +79,7 @@ namespace Lachain.Core.Network.FastSync
                 var peer = GetPeer();
                 if(!_requestManager.TryGetHashBatch(out var hashBatch, out var batchId))
                 {
-                    _peerManager.TryFreePeer(peer);
+                    _peerManager.TryFreePeer(peer!);
                     Thread.Sleep(500);
                     continue;
                 }
@@ -100,41 +100,10 @@ namespace Lachain.Core.Network.FastSync
 
         public void HandleNodeRequest(Peer peer, List<UInt256> batch)
         {
-        //    System.Console.WriteLine(peer._url);
-            JArray batchJson = new JArray { };
-            foreach (var item in batch) batchJson.Add(item);
-
-            JObject options = new JObject
-            {
-                ["jsonrpc"] = "2.0",
-                ["id"] = "1",
-                ["params"] = new JArray { batchJson }
-            };
-            if(type==1) options["method"] = "la_getNodeByHashBatch";
-            else options["method"] = "la_getBlockRawByNumberBatch";
             try
             {
-                HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(peer._url);
-                myHttpWebRequest.ContentType = "application/json";
-                myHttpWebRequest.Method = "POST";
-                using (Stream dataStream = myHttpWebRequest.GetRequestStream())
-                {
-                    string payloadString = JsonConvert.SerializeObject(options);
-                    byte[] byteArray = Encoding.UTF8.GetBytes(payloadString);
-                    dataStream.Write(byteArray, 0, byteArray.Length);
-                }
-
-                RequestState myRequestState = new RequestState();
-                myRequestState.request = myHttpWebRequest;
-                myRequestState.batch = batch;
-                myRequestState.peer = peer;
-                myRequestState.type = type;
-                myRequestState.start = DateTime.Now;
-
-                IAsyncResult result =
-                    (IAsyncResult)myHttpWebRequest.BeginGetResponse(new AsyncCallback(RespCallback), myRequestState);
-
-                ThreadPool.RegisterWaitForSingleObject(result.AsyncWaitHandle, new WaitOrTimerCallback(TimeoutCallback), myRequestState, DefaultTimeout, true);
+                var message = _networkManager.MessageFactory.TrieNodeByHashRequest(batch);
+                _networkManager.SendTo(peer._publicKey, message);
             }
             catch (Exception e)
             {
@@ -143,16 +112,28 @@ namespace Lachain.Core.Network.FastSync
                 Logger.LogWarning("Message :{0} ", e.Message);
                 if(_peerManager.TryFreePeer(peer, 0))
                 {
-                    if(type==1) _requestManager.HandleResponse(batch, new JArray { });
-                    if(type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
+                    _requestManager.HandleResponse(batch, new JArray { });
                 }
             }
         }
 
         public void HandleBlockRequest(Peer peer, List<ulong> batch)
         {
-            var message = _networkManager.MessageFactory.BlockBatchRequest(batch);
-            _networkManager.SendTo(peer._publicKey, message);
+            try
+            {
+                var message = _networkManager.MessageFactory.BlockBatchRequest(batch);
+                _networkManager.SendTo(peer._publicKey, message);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("\nMain Exception raised!");
+                Logger.LogWarning("Source :{0} ", e.Source);
+                Logger.LogWarning("Message :{0} ", e.Message);
+                if(_peerManager.TryFreePeer(peer, 0))
+                {
+                    _blockRequestManager.HandleResponse(batch, new JArray{ });
+                }
+            }
         }
 
         private void RespCallback(IAsyncResult asynchronousResult)
@@ -351,8 +332,8 @@ namespace Lachain.Core.Network.FastSync
                 }
                 if(!_blockRequestManager.TryGetBatch(out var batch))
                 {
-                    _peerManager.TryFreePeer(peer);
-                    Thread.Sleep(100);
+                    _peerManager.TryFreePeer(peer!);
+                    Thread.Sleep(500);
                     continue;
                 }
                 Logger.LogInformation($"Preparing blocks request to send to peer {peer!._publicKey.ToHex()}");
