@@ -327,7 +327,8 @@ namespace Lachain.Core.Network
                 }
                 var reply = new BlockBatchReply
                 {
-                    BlockBatch = {blockBatch}
+                    BlockBatch = {blockBatch},
+                    RequestId = request.RequestId
                 };
                 callback(reply);
             }
@@ -336,7 +337,8 @@ namespace Lachain.Core.Network
                 Logger.LogWarning($"Got exception trying to get blocks : {exception}");
                 var reply = new BlockBatchReply
                 {
-                    BlockBatch = {new List<Block>()}
+                    BlockBatch = {new List<Block>()},
+                    RequestId = request.RequestId
                 };
                 callback(reply);
             }
@@ -388,7 +390,7 @@ namespace Lachain.Core.Network
                         case InternalNode internalNode:
                             var childrenHashes = new List<UInt256>();
                             foreach(var childHash in childrenHash) childrenHashes.Add(childHash.ToUInt256());
-                            nodeInfo.NonLeaf = new InternalNodeInfo
+                            nodeInfo.InternalNodeInfo = new InternalNodeInfo
                             {
                                 NodeType = ByteString.CopyFrom((byte) internalNode.Type),
                                 Hash = internalNode.Hash.ToUInt256(),
@@ -398,7 +400,7 @@ namespace Lachain.Core.Network
                             break;
 
                         case LeafNode leafNode:
-                            nodeInfo.Leaf = new LeafNodeInfo
+                            nodeInfo.LeafNodeInfo = new LeafNodeInfo
                             {
                                 NodeType = ByteString.CopyFrom((byte) leafNode.Type),
                                 Hash = leafNode.Hash.ToUInt256(),
@@ -412,7 +414,8 @@ namespace Lachain.Core.Network
 
                 var reply = new TrieNodeByHashReply
                 {
-                    TrieNodes = {trieNodeInfoList}
+                    TrieNodes = {trieNodeInfoList},
+                    RequestId = request.RequestId
                 };
                 callback(reply);
             }
@@ -421,7 +424,8 @@ namespace Lachain.Core.Network
                 Logger.LogWarning($"Got exception trying to get trie nodes: {exception}");
                 var reply = new TrieNodeByHashReply
                 {
-                    TrieNodes = {new List<TrieNodeInfo>()}
+                    TrieNodes = {new List<TrieNodeInfo>()},
+                    RequestId = request.RequestId
                 };
                 callback(reply);
             }

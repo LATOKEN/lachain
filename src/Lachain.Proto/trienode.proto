@@ -19,7 +19,7 @@ message InternalNodeInfo {
 
 message TrieNodeInfo {
     oneof message {
-        LeafNodeInfo leaf = 1;
-        InternalNodeInfo non_leaf = 2;
+        LeafNodeInfo leaf_node_info = 1;
+        InternalNodeInfo internal_node_info = 2;
     }
 }

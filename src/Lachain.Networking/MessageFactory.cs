@@ -89,24 +89,26 @@ namespace Lachain.Networking
             };
         }
 
-        public NetworkMessage BlockBatchRequest(List<ulong> blockNumbers)
+        public NetworkMessage BlockBatchRequest(List<ulong> blockNumbers, ulong requestId)
         {
             return new NetworkMessage
             {
                 BlockBatchRequest = new BlockBatchRequest
                 {
-                    BlockNumbers = {blockNumbers}
+                    BlockNumbers = {blockNumbers},
+                    RequestId = requestId
                 }
             };
         }
 
-        public NetworkMessage TrieNodeByHashRequest(List<UInt256> nodeHashes)
+        public NetworkMessage TrieNodeByHashRequest(List<UInt256> nodeHashes, ulong requestId)
         {
             return new NetworkMessage
             {
                 TrieNodeByHashRequest = new TrieNodeByHashRequest
                 {
-                    NodeHashes = {nodeHashes}
+                    NodeHashes = {nodeHashes},
+                    RequestId = requestId
                 }
             };
         }
