@@ -28,12 +28,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     {
 
         private ulong _blockNumber;
+        private UInt256 _blockHash;
+        private ulong _totalRequests; // must initialize from DB
         private readonly INetworkManager _networkManager;
         private PeerManager _peerManager;
         private RequestManager _requestManager;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         private const int DefaultTimeout = 5 * 1000; // 5 sec 
         private BlockRequestManager _blockRequestManager; 
+        private IDictionary<ulong, RequestState> _requests = new Dictionary<ulong, RequestState>();
         private static readonly ILogger<Downloader> Logger = LoggerFactory.GetLoggerForClass<Downloader>();
 
         public Downloader(INetworkManager networkManager, PeerManager peerManager, RequestManager requestManager)
@@ -99,12 +102,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return rootHash;
         }
 
-        public void HandleNodeRequest(Peer peer, List<UInt256> batch)
+        private void HandleNodeRequest(Peer peer, List<UInt256> batch)
         {
             try
             {
-                var message = _networkManager.MessageFactory.TrieNodeByHashRequest(batch);
+                _totalRequests++;
+                var myRequestState = new RequestState(RequestType.NodesRequest, batch, DateTime.Now, peer, _totalRequests);
+                _requests[_totalRequests] = myRequestState;
+                var message = _networkManager.MessageFactory.TrieNodeByHashRequest(batch, myRequestState._requestId);
                 _networkManager.SendTo(peer._publicKey, message);
+                TimeOut(myRequestState._peerHasReply, myRequestState._requestId);
             }
             catch (Exception e)
             {
@@ -113,17 +120,21 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogWarning("Message :{0} ", e.Message);
                 if(_peerManager.TryFreePeer(peer, 0))
                 {
-                    _requestManager.HandleResponse(batch, new JArray { });
+                    _requestManager.HandleResponse(batch, new List<TrieNodeInfo?>());
                 }
             }
         }
 
-        public void HandleBlockRequest(Peer peer, List<ulong> batch)
+        private void HandleBlockRequest(Peer peer, List<ulong> batch)
         {
             try
             {
-                var message = _networkManager.MessageFactory.BlockBatchRequest(batch);
+                _totalRequests++;
+                var myRequestState = new RequestState(RequestType.BlocksRequest, batch, DateTime.Now, peer, _totalRequests);
+                _requests[_totalRequests] = myRequestState;
+                var message = _networkManager.MessageFactory.BlockBatchRequest(batch, myRequestState._requestId);
                 _networkManager.SendTo(peer._publicKey, message);
+                TimeOut(myRequestState._peerHasReply, myRequestState._requestId);
             }
             catch (Exception e)
             {
@@ -135,6 +146,51 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     _blockRequestManager.HandleResponse(batch, new JArray{ });
                 }
             }
+        }
+
+        private async void TimeOut(object peerHasReply, ulong requestId)
+        {
+            await Task.Run(() =>
+            {
+                lock(peerHasReply)
+                {
+                    bool gotReply = Monitor.Wait(peerHasReply, TimeSpan.FromMilliseconds(DefaultTimeout));
+                    if (!gotReply && _requests.TryGetValue(requestId, out var request))
+                    {
+                        if (request != null)
+                        {
+                            var peer = request._peer;
+                            TimeSpan time = DateTime.Now - request._start; 
+                            Logger.LogWarning($"timed out from peer {peer._publicKey.ToHex()} spent {time.TotalMilliseconds}");
+                            _peerManager.TryFreePeer(peer, 0);
+                            switch (request._type)
+                            {
+                                case RequestType.NodesRequest:
+                                    _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo?>());
+                                    break;
+
+                                case RequestType.BlocksRequest:
+                                    _blockRequestManager.HandleResponse(request._blockBatch!, new JArray{ });
+                                    break;
+
+                                default:
+                                    Logger.LogWarning($"Unsupported request: {request._type}");
+                                    break;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        public void HandleBlocksFromPeer((BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            // handle blocks
+        }
+
+        public void HandleNodesFromPeer((TrieNodeByHashReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            // handle nodes
         }
 
 //         private void HandleRequest(Peer peer, List<string> batch, uint type)
