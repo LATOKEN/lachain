@@ -42,21 +42,35 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryAddNode(JObject jsonNode)
+        public bool TryAddNode(TrieNodeInfo nodeInfo)
         {
-            string nodeHash = (string)jsonNode["Hash"];
+            UInt256? nodeHash;
+            switch (nodeInfo.MessageCase)
+            {
+                case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
+                    nodeHash = nodeInfo.InternalNodeInfo.Hash;
+                    break;
+                
+                case TrieNodeInfo.MessageOneofCase.LeafNodeInfo:
+                    nodeHash =  nodeInfo.LeafNodeInfo.Hash;
+                    break;
+
+                default:
+                    nodeHash = null;
+                    break;
+            }
             if (nodeHash == null) return false;
-            byte[] nodeHashBytes = HexUtils.HexToBytes(nodeHash);
-            bool foundId = GetIdByHash(nodeHash.HexToUInt256(), out ulong id);
+            byte[] nodeHashBytes = nodeHash.ToBytes();
+            bool foundId = GetIdByHash(nodeHash, out ulong id);
             IHashTrieNode? trieNode;
             if(foundId)
             {
                 bool foundNode = TryGetNode(id, out trieNode);
-                if(!foundNode) trieNode = BuildHashTrieNode(jsonNode);
+                if(!foundNode) trieNode = BuildHashTrieNode(nodeInfo);
             }
-            else trieNode = BuildHashTrieNode(jsonNode);
-            _nodeCache[id] = trieNode;
-            if(_nodeCache.Count>=_nodeCacheCapacity) Commit();
+            else trieNode = BuildHashTrieNode(nodeInfo);
+            _nodeCache[id] = trieNode!;
+            if(_nodeCache.Count >= _nodeCacheCapacity) Commit();
             return false;
         }
 
@@ -96,56 +110,66 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             trieNode = NodeSerializer.FromBytes(rawNode);
             return true; 
         }
-        public bool IsConsistent(JObject node)
+        public bool IsConsistent(TrieNodeInfo? node, out UInt256? nodeHash)
         {
-            if(node is null || node.Count==0) return false;
-            if(((string)node["NodeType"]).Equals("0x1"))
+            nodeHash = null;
+            if(node is null) return false;
+            switch (node.MessageCase)
             {
-                uint mask = Convert.ToUInt32((string)node["ChildrenMask"], 16);
-                List<byte[]> childrenHashes = new List<byte[]>();
-                var jsonChildrenHash = (JArray)node["ChildrenHash"];
-                foreach(var jsonChildHash in jsonChildrenHash)
-                {
-                    string childHash = (string)jsonChildHash;
-                    childrenHashes.Add(HexUtils.HexToBytes(childHash));
-                }
-                byte[] hash = childrenHashes
-                .Zip(InternalNode.GetChildrenLabels(mask), (bytes, i) => new[] {i}.Concat(bytes))
-                .SelectMany(bytes => bytes)
-                .KeccakBytes();
-                return ((string)node["Hash"]).Equals(HexUtils.ToHex(hash));
-            }
-            else{
-                byte[] keyHash = HexUtils.HexToBytes(((string)node["KeyHash"]));
-                byte[] value = HexUtils.HexToBytes(((string)node["Value"]));
-                byte[] hash = keyHash.Length.ToBytes().Concat(keyHash).Concat(value).KeccakBytes(); 
-                return ((string)node["Hash"]).Equals(HexUtils.ToHex(hash));
+                case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
+                    uint mask = node.InternalNodeInfo.ChildrenMask;
+                    var hashes = node.InternalNodeInfo.ChildrenHash.ToList();
+                    var childrenHashes = new List<byte[]>();
+                    foreach (var childHash in hashes)
+                    {
+                        childrenHashes.Add(childHash.ToBytes());
+                    }
+                    byte[] hash = childrenHashes
+                    .Zip(InternalNode.GetChildrenLabels(mask), (bytes, i) => new[] {i}.Concat(bytes))
+                    .SelectMany(bytes => bytes)
+                    .KeccakBytes();
+                    nodeHash = hash.ToUInt256();
+                    return nodeHash.Equals(node.InternalNodeInfo.Hash);
+
+                case TrieNodeInfo.MessageOneofCase.LeafNodeInfo:
+                    byte[] keyHash = node.LeafNodeInfo.KeyHash.ToBytes();
+                    byte[] value = node.LeafNodeInfo.Value.ToArray();
+                    byte[] leafHash = keyHash.Length.ToBytes().Concat(keyHash).Concat(value).KeccakBytes(); 
+                    nodeHash = leafHash.ToUInt256();
+                    return nodeHash.Equals(node.LeafNodeInfo.Hash);
+
+                default:
+                    return false;
             }
         }
 
-        public IHashTrieNode BuildHashTrieNode(JObject jsonNode)
+        public IHashTrieNode BuildHashTrieNode(TrieNodeInfo nodeInfo)
         {
             IHashTrieNode? trieNode;
-            if(((string)jsonNode["NodeType"]).Equals("0x1") == true)
+            switch (nodeInfo.MessageCase)
             {
-                var jsonChildrenHash = (JArray)jsonNode["ChildrenHash"];
-                List<byte[]> childrenHash = new List<byte[]>();
-                List<ulong> children = new List<ulong>();
-                foreach(var jsonChildHash in jsonChildrenHash)
-                {
-                    string childHash = (string)jsonChildHash;
-                    childrenHash.Add(HexUtils.HexToBytes(childHash));
-                    bool foundId = GetIdByHash(childHash.HexToUInt256(), out ulong childId);
-                    children.Add(childId);
-                }
-                uint mask = Convert.ToUInt32((string)jsonNode["ChildrenMask"], 16);
-                trieNode = new InternalNode(mask, children, childrenHash);
-            }
-            else
-            {
-                byte[] keyHash = HexUtils.HexToBytes((string)jsonNode["KeyHash"]);
-                byte[] value = HexUtils.HexToBytes((string)jsonNode["Value"]);
-                trieNode = new LeafNode(keyHash, value);
+                case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
+                    var childrenHashes = nodeInfo.InternalNodeInfo.ChildrenHash.ToList();
+                    var childrenHashesBytes = new List<byte[]>();
+                    var children = new List<ulong>();
+                    foreach (var childHash in childrenHashes)
+                    {
+                        childrenHashesBytes.Add(childHash.ToBytes());
+                        bool foundId = GetIdByHash(childHash, out var childId);
+                        children.Add(childId);
+                    }
+                    var mask = nodeInfo.InternalNodeInfo.ChildrenMask;
+                    trieNode = new InternalNode(mask, children, childrenHashesBytes);
+                    break;
+
+                case TrieNodeInfo.MessageOneofCase.LeafNodeInfo:
+                    byte[] keyHash = nodeInfo.LeafNodeInfo.KeyHash.ToBytes();
+                    byte[] value = nodeInfo.LeafNodeInfo.Value.ToArray();
+                    trieNode = new LeafNode(keyHash, value);
+                    break;
+
+                default:
+                    throw new NullReferenceException("trie-node cannot be null here");
             }
             return trieNode;
         }
