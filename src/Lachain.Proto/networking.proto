@@ -63,18 +63,22 @@ message RootHashByTrieNameReply {
 
 message BlockBatchRequest {
     repeated uint64 block_numbers = 1;
+    uint64 request_id = 2;
 }
 
 message BlockBatchReply {
     repeated Block block_batch = 1;
+    uint64 request_id = 2;
 }
 
 message TrieNodeByHashRequest {
     repeated UInt256 node_hashes = 1;
+    uint64 request_id = 2;
 }
 
 message TrieNodeByHashReply {
     repeated TrieNodeInfo trie_nodes = 1;
+    uint64 request_id = 2;
 }
 
 message CheckpointRequest {
