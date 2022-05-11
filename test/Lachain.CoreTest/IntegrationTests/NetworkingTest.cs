@@ -104,7 +104,7 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 blocks.Add(i);
             }
-            var message = _networkManager.MessageFactory.BlockBatchRequest(blocks);
+            var message = _networkManager.MessageFactory.BlockBatchRequest(blocks, 0);
             CheckBlockBatchRequest(message);
         }
 
@@ -147,7 +147,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         nodeHashList.Add(node.Hash.ToUInt256());
                     }
 
-                    var message = _networkManager.MessageFactory.TrieNodeByHashRequest(nodeHashList);
+                    var message = _networkManager.MessageFactory.TrieNodeByHashRequest(nodeHashList, 0);
 
                     CheckTrieNodeByHashRequest(message, snapshot);
                 }
@@ -422,7 +422,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     case InternalNode internalNode:
                         var childrenHashes = new List<UInt256>();
                         foreach(var childHash in childrenHash) childrenHashes.Add(childHash.ToUInt256());
-                        nodeInfo.NonLeaf = new InternalNodeInfo
+                        nodeInfo.InternalNodeInfo = new InternalNodeInfo
                         {
                             NodeType = ByteString.CopyFrom((byte) internalNode.Type),
                             Hash = internalNode.Hash.ToUInt256(),
@@ -432,7 +432,7 @@ namespace Lachain.CoreTest.IntegrationTests
                         break;
 
                     case LeafNode leafNode:
-                        nodeInfo.Leaf = new LeafNodeInfo
+                        nodeInfo.LeafNodeInfo = new LeafNodeInfo
                         {
                             NodeType = ByteString.CopyFrom((byte) leafNode.Type),
                             Hash = leafNode.Hash.ToUInt256(),
@@ -463,13 +463,13 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 switch (nodeInfo.MessageCase)
                 {
-                    case TrieNodeInfo.MessageOneofCase.Leaf:
-                        var leafNode = GetLeafNodeFromInfo(nodeInfo.Leaf);
+                    case TrieNodeInfo.MessageOneofCase.LeafNodeInfo:
+                        var leafNode = GetLeafNodeFromInfo(nodeInfo.LeafNodeInfo);
                         nodeList.Add(leafNode);
                         break;
                     
-                    case TrieNodeInfo.MessageOneofCase.NonLeaf:
-                        var internalNode = GetInternalNodeFromInfo(nodeInfo.NonLeaf);
+                    case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
+                        var internalNode = GetInternalNodeFromInfo(nodeInfo.InternalNodeInfo);
                         nodeList.Add(internalNode);
                         break;
 
