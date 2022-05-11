@@ -98,6 +98,12 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void SendVal(byte[] publicKey, byte[] message)
+        {
+            CommunicationHub.Net.Hub.SendVal(publicKey, CompressUtils.DeflateCompress(message).ToArray());
+        }
+
         public void Dispose()
         {
             _running = false;
