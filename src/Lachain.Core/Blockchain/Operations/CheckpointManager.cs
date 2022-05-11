@@ -48,10 +48,11 @@ namespace Lachain.Core.Blockchain.Operations
             }
         }
 
+        // Check if checkpoint reached. No need to save checkpoint for genesis block
         private bool CheckpointReached(ulong blockId)
         {
             var period = CheckpointPeriod();
-            return blockId % period == 0 ;
+            return blockId > 0 && blockId % period == 0 ;
         }
 
         public void SaveCheckpoint(Block block)
@@ -64,7 +65,7 @@ namespace Lachain.Core.Blockchain.Operations
         {
             _checkpointBlockId = _repository.FetchCheckpointBlockId();
             _checkpointBlockHash = _repository.FetchCheckpointBlockHash();
-
+            if (_checkpointBlockId is null) return;
             var snapshotTypes = new List<RepositoryType>();
             snapshotTypes.Add(RepositoryType.BalanceRepository);
             snapshotTypes.Add(RepositoryType.ContractRepository);
