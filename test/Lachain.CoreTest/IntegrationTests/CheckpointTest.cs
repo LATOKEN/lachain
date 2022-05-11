@@ -102,8 +102,10 @@ namespace Lachain.CoreTest.IntegrationTests
         [Repeat(2)]
         public void Test_Checkpoint()
         {
+            Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
+            Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
             var block = _blockManager.GetByHeight(totalBlocks);
             _checkpointManager.SaveCheckpoint(block!);
             Assert.AreNotEqual(null , _checkpointManager.CheckpointBlockId, "checkpoint not saved");
