@@ -5,31 +5,37 @@ using System.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lachain.Proto;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     class RequestState
     {
         // This class stores the State of the request.
-        const int BUFFER_SIZE = 1024 * 128;
-        public StringBuilder requestData;
-        public byte[] BufferRead;
-        public HttpWebRequest request;
-        public HttpWebResponse response;
-        public Stream streamResponse;
-        public Peer peer;
-        public List<string> batch;
-        public uint type;
-        public DateTime start;
-        public RequestState()
+        public Peer _peer;
+        public List<ulong>? _blockBatch;
+        public List<UInt256>? _nodeBatch;
+        public RequestType _type;
+        public DateTime _start;
+        public ulong _requestId;
+        public object _peerHasReply;
+        public RequestState(RequestType type, List<ulong> blockBatch, DateTime time, Peer peer, ulong requestId)
         {
-            BufferRead = new byte[BUFFER_SIZE];
-            requestData = new StringBuilder("");
-            request = null;
-            streamResponse = null;
-            peer = null;
-            batch = null;
-            type = 1;
+            _blockBatch = blockBatch;
+            _type = type;
+            _start = time;
+            _peer = peer;
+            _requestId = requestId;
+            _peerHasReply = new object();
+        }
+        public RequestState(RequestType type, List<UInt256> nodeBatch, DateTime time, Peer peer, ulong requestId)
+        {
+            _nodeBatch = nodeBatch;
+            _type = type;
+            _start = time;
+            _peer = peer;
+            _requestId = requestId;
+            _peerHasReply = new object();
         }
     }
 }
