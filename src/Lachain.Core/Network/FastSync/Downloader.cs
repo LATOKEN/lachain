@@ -25,12 +25,15 @@ namespace Lachain.Core.Network.FastSync
     {
 
         private ulong _blockNumber;
+        private UInt256 _blockHash;
+        private ulong _totalRequests; // must initialize from DB
         private readonly INetworkManager _networkManager;
         private PeerManager _peerManager;
         private RequestManager _requestManager;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         private const int DefaultTimeout = 5 * 1000; // 5 sec 
         private BlockRequestManager _blockRequestManager; 
+        private IDictionary<ulong, RequestState> _requests = new Dictionary<ulong, RequestState>();
         private static readonly ILogger<Downloader> Logger = LoggerFactory.GetLoggerForClass<Downloader>();
         private Block? _checkpointBlock;
         private List<(UInt256, CheckpointType)>? _checkpointStateHashes;
@@ -98,12 +101,16 @@ namespace Lachain.Core.Network.FastSync
             return rootHash;
         }
 
-        public void HandleNodeRequest(Peer peer, List<UInt256> batch)
+        private void HandleNodeRequest(Peer peer, List<UInt256> batch)
         {
             try
             {
-                var message = _networkManager.MessageFactory.TrieNodeByHashRequest(batch);
+                _totalRequests++;
+                var myRequestState = new RequestState(RequestType.NodesRequest, batch, DateTime.Now, peer, _totalRequests);
+                _requests[_totalRequests] = myRequestState;
+                var message = _networkManager.MessageFactory.TrieNodeByHashRequest(batch, myRequestState._requestId);
                 _networkManager.SendTo(peer._publicKey, message);
+                TimeOut(myRequestState._peerHasReply, myRequestState._requestId);
             }
             catch (Exception e)
             {
@@ -112,17 +119,21 @@ namespace Lachain.Core.Network.FastSync
                 Logger.LogWarning("Message :{0} ", e.Message);
                 if(_peerManager.TryFreePeer(peer, 0))
                 {
-                    _requestManager.HandleResponse(batch, new JArray { });
+                    _requestManager.HandleResponse(batch, new List<TrieNodeInfo?>());
                 }
             }
         }
 
-        public void HandleBlockRequest(Peer peer, List<ulong> batch)
+        private void HandleBlockRequest(Peer peer, List<ulong> batch)
         {
             try
             {
-                var message = _networkManager.MessageFactory.BlockBatchRequest(batch);
+                _totalRequests++;
+                var myRequestState = new RequestState(RequestType.BlocksRequest, batch, DateTime.Now, peer, _totalRequests);
+                _requests[_totalRequests] = myRequestState;
+                var message = _networkManager.MessageFactory.BlockBatchRequest(batch, myRequestState._requestId);
                 _networkManager.SendTo(peer._publicKey, message);
+                TimeOut(myRequestState._peerHasReply, myRequestState._requestId);
             }
             catch (Exception e)
             {
@@ -136,43 +147,173 @@ namespace Lachain.Core.Network.FastSync
             }
         }
 
-        private void RespCallback(IAsyncResult asynchronousResult)
+        private async void TimeOut(object peerHasReply, ulong requestId)
         {
-            RequestState myRequestState = (RequestState)asynchronousResult.AsyncState;
-            TimeSpan time = DateTime.Now - myRequestState.start;
-            var peer = myRequestState.peer;
-            var batch = myRequestState.batch;
-            JArray result = new JArray { };
-
-            try
+            await Task.Run(() =>
             {
                 Logger.LogTrace("HandleBlocksFromPeer");
                 lock (request._peerHasReply)
                 {
-                    using (Stream str = webResponse.GetResponseStream()!)
+                    bool gotReply = Monitor.Wait(peerHasReply, TimeSpan.FromMilliseconds(DefaultTimeout));
+                    if (!gotReply && _requests.TryGetValue(requestId, out var request))
                     {
-                        using (StreamReader sr = new StreamReader(str))
+                        if (request != null)
                         {
-                            response = JsonConvert.DeserializeObject<JObject>(sr.ReadToEnd());
+                            var peer = request._peer;
+                            TimeSpan time = DateTime.Now - request._start; 
+                            Logger.LogWarning($"timed out from peer {peer._publicKey.ToHex()} spent {time.TotalMilliseconds}");
+                            _peerManager.TryFreePeer(peer, 0);
+                            switch (request._type)
+                            {
+                                case RequestType.NodesRequest:
+                                    _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo?>());
+                                    break;
+
+                                case RequestType.BlocksRequest:
+                                    _blockRequestManager.HandleResponse(request._blockBatch!, new JArray{ });
+                                    break;
+
+                                default:
+                                    Logger.LogWarning($"Unsupported request: {request._type}");
+                                    break;
+                            }
                         }
                     }
                 }
-                result = (JArray)response["result"];
-                Logger.LogInformation($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}");
-                _peerManager.TryFreePeer(peer, 1);
-                if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
-                if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
-            }
-            catch (Exception e)
-            {
-                Logger.LogWarning("\nRespCallback Exception raised!");
-                Logger.LogWarning("\nMessage:{0}", e.Message);
-                Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._url}  :  {batch[0]}");
-                _peerManager.TryFreePeer(peer, 0);
-                if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
-                if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
-            }
+            });
         }
+
+        public void HandleBlocksFromPeer((BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            // handle blocks
+        }
+
+        public void HandleNodesFromPeer((TrieNodeByHashReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            // handle nodes
+        }
+
+//         private void HandleRequest(Peer peer, List<string> batch, uint type)
+//         {
+//             DateTime t1 = DateTime.Now; 
+//             JArray batchJson = new JArray { };
+//             foreach (var item in batch) batchJson.Add(item);
+
+//             JObject options = new JObject
+//             {
+//                 ["jsonrpc"] = "2.0",
+//                 ["id"] = "1",
+//                 ["params"] = new JArray { batchJson }
+//             };
+//             if(type==1) options["method"] = "la_getNodeByHashBatch";
+//             else options["method"] = "la_getBlockRawByNumberBatch";
+//             try
+//             {
+//                 HttpWebRequest myHttpWebRequest = (HttpWebRequest)WebRequest.Create(peer._url);
+//                 myHttpWebRequest.ContentType = "application/json";
+//                 myHttpWebRequest.Method = "POST";
+//                 using (Stream dataStream = myHttpWebRequest.GetRequestStream())
+//                 {
+//                     string payloadString = JsonConvert.SerializeObject(options);
+//                     byte[] byteArray = Encoding.UTF8.GetBytes(payloadString);
+//                     dataStream.Write(byteArray, 0, byteArray.Length);
+//                 }
+
+//                 RequestState myRequestState = new RequestState();
+//                 myRequestState.request = myHttpWebRequest;
+//                 myRequestState.batch = batch;
+//                 myRequestState.peer = peer;
+//                 myRequestState.type = type;
+//                 myRequestState.start = DateTime.Now;
+
+//                 DateTime t2 = DateTime.Now;
+
+// //                Logger.LogInformation($"Object ready for sending to peer{peer._url}, spent time:{(t2-t1).TotalMilliseconds}");
+
+//                 IAsyncResult result =
+//                     (IAsyncResult)myHttpWebRequest.BeginGetResponse(new AsyncCallback(RespCallback), myRequestState);
+                
+
+//                 ThreadPool.RegisterWaitForSingleObject(result.AsyncWaitHandle, new WaitOrTimerCallback(TimeoutCallback), myRequestState, DefaultTimeout, true);
+//             }
+//             catch (Exception e)
+//             {
+//                 Logger.LogWarning("\nMain Exception raised!");
+//                 Logger.LogWarning("Source :{0} ", e.Source);
+//                 Logger.LogWarning("Message :{0} ", e.Message);
+//                 if(_peerManager.TryFreePeer(peer, 0))
+//                 {
+//                     if(type==1) _requestManager.HandleResponse(batch, new JArray { });
+//                     if(type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
+//                 }
+//             }
+//         }
+
+
+
+//         // Abort the request if the timer fires.
+//         private void TimeoutCallback(object state, bool timedOut)
+//         {
+//             if (timedOut)
+//             {
+//                 RequestState request = state as RequestState;
+//                 TimeSpan time = DateTime.Now - request.start; 
+//                 if (request != null)
+//                 {
+//                     request.request.Abort();
+//                     var peer = request.peer;
+//                     var batch = request.batch;
+//                     Logger.LogWarning($"timed out from peer {peer._url} spent {time.TotalMilliseconds}   : {batch[0]}");
+//                     _peerManager.TryFreePeer(peer, 0);
+//                     if(request.type==1) _requestManager.HandleResponse(batch, new JArray { });
+//                     if(request.type==2) _blockRequestManager.HandleResponse(batch, new JArray{ });
+//                 }
+//             }
+//         }
+
+        // private void RespCallback(IAsyncResult asynchronousResult)
+        // {
+        //     RequestState myRequestState = (RequestState)asynchronousResult.AsyncState;
+        //     TimeSpan time = DateTime.Now - myRequestState.start;
+        //     DateTime receiveTime = DateTime.Now;
+        //     var peer = myRequestState.peer;
+        //     var batch = myRequestState.batch;
+        //     JArray result = new JArray { };
+
+        //     try
+        //     {
+        //         // State of request is asynchronous.
+        //         HttpWebRequest myHttpWebRequest = myRequestState.request;
+        //         myRequestState.response = (HttpWebResponse)myHttpWebRequest.EndGetResponse(asynchronousResult);
+
+        //         WebResponse webResponse;
+        //         JObject response;
+        //         using (webResponse = myRequestState.response)
+        //         {
+        //             using (Stream str = webResponse.GetResponseStream()!)
+        //             {
+        //                 using (StreamReader sr = new StreamReader(str))
+        //                 {
+        //                     response = JsonConvert.DeserializeObject<JObject>(sr.ReadToEnd());
+        //                 }
+        //             }
+        //         }
+        //         result = (JArray)response["result"];
+        //         Logger.LogInformation($"Received data {myRequestState.type} size:{batch.Count}  time spent:{time.TotalMilliseconds} from peer:{peer._url}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
+        //         _peerManager.TryFreePeer(peer, 1);
+        //         if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
+        //         if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         Logger.LogWarning("\nRespCallback Exception raised!");
+        //         Logger.LogWarning("\nMessage:{0}", e.Message);
+        //         Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._url}  :  {batch[0]}");
+        //         _peerManager.TryFreePeer(peer, 0);
+        //         if(myRequestState.type==1) _requestManager.HandleResponse(batch, result);
+        //         if(myRequestState.type==2) _blockRequestManager.HandleResponse(batch, result);
+        //     }
+        // }
 
         private ulong DownloadLatestBlockNumber()
         {

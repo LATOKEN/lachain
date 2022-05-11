@@ -101,7 +101,7 @@ namespace Lachain.Core.Network.FastSync
             
             List<UInt256> failedHashes = new List<UInt256>();
             
-            List<JObject> successfulNodes = new List<JObject>();
+            List<TrieNodeInfo?> successfulNodes = new List<TrieNodeInfo?>();
 
             //discard the whole batch if we haven't got response for all the nodes(or more response, shouldn't happen though)
             if (hashBatch.Count != response.Count)
@@ -113,9 +113,9 @@ namespace Lachain.Core.Network.FastSync
                 for (var i = 0; i < hashBatch.Count; i++)
                 {
                     var hash = hashBatch[i];
-                    JObject node = (JObject)response[i];
+                    var node = response[i];
                     //check if actually the node's content produce desired hash or data is corrupted
-                    if (_nodeStorage.IsConsistent(node) && hash.ToHex() == (string)node["Hash"])
+                    if (_nodeStorage.IsConsistent(node, out var nodeHash) && hash == nodeHash)
                     {
                         successfulHashes.Add(hash);
                         successfulNodes.Add(node);
@@ -151,17 +151,16 @@ namespace Lachain.Core.Network.FastSync
                     }
                     else
                     {
-                        var nodeType = (string)node["NodeType"];
-                        if (nodeType == null) continue;
-
-                        //for internal node, we need to extract it's children and put it in the queue for downloading them next
-                        if (nodeType.Equals("0x1")) 
+                        switch (node!.MessageCase)
                         {
-                            var jsonChildren = (JArray)node["ChildrenHash"];
-                            foreach (var jsonChild in jsonChildren)
-                            {
-                                _hybridQueue.Add(((string)jsonChild).HexToUInt256());
-                            }
+                            //for internal node, we need to extract it's children and put it in the queue for downloading them next
+                            case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
+                                var childrenHashes = node.InternalNodeInfo.ChildrenHash.ToList();
+                                foreach (var childHash in childrenHashes)
+                                {
+                                    _hybridQueue.Add(childHash);
+                                }
+                                break;
                         }
 
                         //sending the node to nodeStorage for inserting it to database
