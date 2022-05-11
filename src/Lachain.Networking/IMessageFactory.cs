@@ -28,7 +28,7 @@ namespace Lachain.Networking
         /// Formats a NetworkMessage to request blocks in batch
         /// </summary>
         /// <param name = "fromBlock"> First block id of the batch </param>
-        /// <param name = "fromBlock"> Last block id of the batch </param>
+        /// <param name = "toBlock"> Last block id of the batch </param>
         /// <param name = "requestId"> Request Id </param>
         /// <returns>
         /// NetworkMessage
