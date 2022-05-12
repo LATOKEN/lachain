@@ -16,15 +16,6 @@ namespace Lachain.Networking
         NetworkMessage SyncPoolReply(IEnumerable<TransactionReceipt> transactions);
         NetworkMessage SyncBlocksRequest(ulong fromHeight, ulong toHeight);
         /// <summary>
-        /// Formats a NetworkMessage to request the root hash of a snapshot
-        /// </summary>
-        /// <param name = "block"> Block id </param>
-        /// <param name = "trieName"> Trie Name </param>
-        /// <returns>
-        /// NetworkMessage
-        /// </returns>
-        NetworkMessage RootHashByTrieNameRequest(ulong block, string trieName);
-        /// <summary>
         /// Formats a NetworkMessage to request blocks in batch
         /// </summary>
         /// <param name = "blockNumbers"> Block id </param>

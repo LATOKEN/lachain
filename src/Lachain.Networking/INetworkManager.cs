@@ -18,9 +18,6 @@ namespace Lachain.Networking
         event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
-        event EventHandler<(RootHashByTrieNameRequest message, Action<RootHashByTrieNameReply> callback)>? 
-            OnRootHashByTrieNameRequest;
-        event EventHandler<(RootHashByTrieNameReply message, ECDSAPublicKey address)>? OnRootHashByTrieNameReply;
         event EventHandler<(BlockBatchRequest message, Action<BlockBatchReply> callback)>? 
             OnBlockBatchRequest;
         event EventHandler<(BlockBatchReply message, ECDSAPublicKey address)>? OnBlockBatchReply;
