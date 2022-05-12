@@ -90,8 +90,6 @@ namespace Lachain.Core.Network
             _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
             _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
-            _networkManager.OnRootHashByTrieNameRequest += OnRootHashByTrieNameRequest;
-            _networkManager.OnRootHashByTrieNameReply += OnRootHashByTrieNameReply;
             _networkManager.OnBlockBatchRequest += OnBlockBatchRequest;
             _networkManager.OnBlockBatchReply += OnBlockBatchReply;
             _networkManager.OnTrieNodeByHashRequest += OnTrieNodeByHashRequest;
