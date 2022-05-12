@@ -90,8 +90,6 @@ namespace Lachain.Core.Network
             _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
             _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
-            _networkManager.OnRootHashByTrieNameRequest += OnRootHashByTrieNameRequest;
-            _networkManager.OnRootHashByTrieNameReply += OnRootHashByTrieNameReply;
             _networkManager.OnBlockBatchRequest += OnBlockBatchRequest;
             _networkManager.OnBlockBatchReply += OnBlockBatchReply;
             _networkManager.OnTrieNodeByHashRequest += OnTrieNodeByHashRequest;
@@ -242,59 +240,6 @@ namespace Lachain.Core.Network
 
                 Logger.LogTrace("Queued message too far in future...");
             }
-        }
-
-        private void OnRootHashByTrieNameReply(object sender, (RootHashByTrieNameReply reply, ECDSAPublicKey publicKey) @event)
-        {
-            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameReply").NewTimer();
-            Logger.LogTrace("Start processing OnRootHashByTrieNameReply");
-            var (reply, publicKey) = @event;
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    var rootHash = reply.RootHash;
-                    _downloader.HandleCheckpointStateHashFromPeer(rootHash, reply.RequestId, publicKey);
-                }
-                catch (Exception exception)
-                {
-                    Logger.LogError($"Error occured while handling root hash from peer {publicKey.ToHex()}: {exception}");
-                }
-            }, TaskCreationOptions.LongRunning);
-            Logger.LogTrace("Finished processing OnRootHashByTrieNameReply");
-        }
-
-        private void OnRootHashByTrieNameRequest(object sender,
-            (RootHashByTrieNameRequest request, Action<RootHashByTrieNameReply> callback) @event
-        )
-        {
-            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameRequest").NewTimer();
-            Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
-            var (request, callback) = @event;
-            try
-            {
-                var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
-                var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
-                var reply = new RootHashByTrieNameReply
-                {
-                    RootHash = (snapshot is null) ? null : snapshot.Hash,
-                    RequestId = request.RequestId
-                };
-                callback(reply);
-            }
-            catch (Exception exception)
-            {
-                Logger.LogWarning($"Got exception trying to get root hash for trie {request.TrieName}"
-                    + $" for block {request.Block} : {exception}");
-                var reply = new RootHashByTrieNameReply
-                {
-                    RootHash = null,
-                    RequestId = request.RequestId
-                };
-                callback(reply);
-            }
-
-            Logger.LogTrace("Finished processing OnRootHashByTrieNameRequest");
         }
 
         private void OnBlockBatchReply(object? sender, (BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
