@@ -7,7 +7,7 @@ using Lachain.Proto;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class Peer : IEquatable<Peer>
+    public class Peer : IEquatable<Peer>
     {
         public ECDSAPublicKey _publicKey;
         public string _url;

@@ -13,7 +13,7 @@ using Lachain.Proto;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class PeerManager
+    public class PeerManager : IPeerManager
     {
         private Queue<Peer> _availableGoodPeers = new Queue<Peer>();
         private Queue<Peer> _availableBadPeers = new Queue<Peer>();
@@ -21,21 +21,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private IDictionary<Peer, bool> _isPeerBusy = new Dictionary<Peer, bool>();
         private int Timeout = 30;
         private readonly IDictionary<Peer, ulong> _peerHeights = new Dictionary<Peer, ulong>();
-        public PeerManager(List<(ECDSAPublicKey,ulong)> peersWithHeight)
+        public PeerManager()
         {
-            foreach(var peerWithHeight in peersWithHeight)
-            {
-                var peer = new Peer(peerWithHeight.Item1);
-                _isPeerBusy[peer] = false;
-                _peerHeights[peer] = peerWithHeight.Item2;
-            }
-            foreach (var item in _isPeerBusy) _availableGoodPeers.Enqueue(item.Key);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddPeer(ECDSAPublicKey publicKey, ulong height)
         {
             var peer = new Peer(publicKey);
+            if (_isPeerBusy.ContainsKey(peer)) return;
             _isPeerBusy[peer] = false;
             _peerHeights[peer] = height;
             _availableGoodPeers.Enqueue(peer);
@@ -58,12 +52,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryFreePeer(Peer peer, int success = 1)
+        public bool TryFreePeer(Peer peer, bool success = true)
         {
             if(_isPeerBusy.TryGetValue(peer, out var isBusy))
             {
                 if (isBusy == false) return false;
-                if(success == 0)
+                if(success == false)
                 {
                     _availableBadPeers.Enqueue(peer);
                     _lastResult.Enqueue(DateTime.Now);

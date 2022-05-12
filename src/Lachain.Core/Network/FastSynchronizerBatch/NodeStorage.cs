@@ -15,6 +15,7 @@ using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Serialization;
@@ -23,22 +24,38 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class NodeStorage
+    public class NodeStorage : INodeStorage
     {
         private IDictionary<UInt256, ulong> _idCache = new ConcurrentDictionary<UInt256, ulong>();
         private uint _idCacheCapacity = 100000;
-
+        private uint _blockAddPeriod = 10000;
         private IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private uint _nodeCacheCapacity = 5000;
         private IRocksDbContext _dbContext;
         private VersionFactory _versionFactory;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
-        private NodeRetrieval nodeRetrieval;
-        public NodeStorage(IRocksDbContext dbContext, VersionFactory versionFactory)
+        public NodeStorage(IRocksDbContext dbContext, IStorageManager storageManager)
         {
             _dbContext = dbContext;
-            _versionFactory = versionFactory;
-            nodeRetrieval = new NodeRetrieval(_dbContext);
+            _versionFactory = storageManager.GetVersionFactory();;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Initialize(ulong blockNumber, UInt256 blockHash, List<(UInt256, CheckpointType)> stateHashes)
+        {
+            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
+            tx.Put(EntryPrefix.BlockNumber.BuildPrefix(), blockNumber.ToBytes().ToArray());
+            tx.Put(EntryPrefix.BlockHash.BuildPrefix(), blockHash.ToBytes());
+            foreach (var (stateHash, checkpointType) in stateHashes)
+            {
+                tx.Put(EntryPrefix.StateHashByCheckpointType.BuildPrefix((byte) checkpointType),
+                    stateHash.ToBytes());
+            }
+            ulong zero = 0;
+            tx.Put(EntryPrefix.SavedBatch.BuildPrefix(), zero.ToBytes().ToArray());
+            tx.Put(EntryPrefix.TotalBatch.BuildPrefix(), zero.ToBytes().ToArray());
+            tx.Put(EntryPrefix.LastDownloadedTries.BuildPrefix(), zero.ToBytes().ToArray());
+            tx.Commit();
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -133,7 +150,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
                 case TrieNodeInfo.MessageOneofCase.LeafNodeInfo:
                     byte[] keyHash = node.LeafNodeInfo.KeyHash.ToBytes();
-                    byte[] value = node.LeafNodeInfo.Value.ToArray();
+                    byte[] value = node.LeafNodeInfo.Value.ToByteArray();
                     byte[] leafHash = keyHash.Length.ToBytes().Concat(keyHash).Concat(value).KeccakBytes(); 
                     nodeHash = leafHash.ToUInt256();
                     return nodeHash.Equals(node.LeafNodeInfo.Hash);
@@ -143,7 +160,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
         }
 
-        public IHashTrieNode BuildHashTrieNode(TrieNodeInfo nodeInfo)
+        private IHashTrieNode BuildHashTrieNode(TrieNodeInfo nodeInfo)
         {
             IHashTrieNode? trieNode;
             switch (nodeInfo.MessageCase)
@@ -164,7 +181,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
                 case TrieNodeInfo.MessageOneofCase.LeafNodeInfo:
                     byte[] keyHash = nodeInfo.LeafNodeInfo.KeyHash.ToBytes();
-                    byte[] value = nodeInfo.LeafNodeInfo.Value.ToArray();
+                    byte[] value = nodeInfo.LeafNodeInfo.Value.ToByteArray();
                     trieNode = new LeafNode(keyHash, value);
                     break;
 
@@ -174,16 +191,35 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return trieNode;
         }
 
-        public void AddBlock(IBlockSnapshot blockSnapshot, string blockRawHex)
+        public ulong GetBlockNumber()
         {
-            byte[] raw = HexUtils.HexToBytes(blockRawHex);
-            Block block = Block.Parser.ParseFrom(raw);
-            blockSnapshot.AddBlock(block);
-            if(block.Header.Index%200==0) Console.WriteLine("Added BlockHeader: "+ block.Header.Index);
-            if(block.Header.Index%10000==0) blockSnapshot.Commit();
+            var rawBlockNumber = _dbContext.Get(EntryPrefix.BlockNumber.BuildPrefix());
+            if(rawBlockNumber == null) return 0;
+            return SerializationUtils.ToUInt64(rawBlockNumber);
         }
 
-        public void CommitNodes()
+        public UInt256? GetBlockHash()
+        {
+            var rawBlockHash = _dbContext.Get(EntryPrefix.BlockHash.BuildPrefix());
+            if (rawBlockHash is null) return null;
+            return UInt256Utils.ToUInt256(rawBlockHash);
+        }
+
+        public UInt256? GetStateHash(CheckpointType checkpointType)
+        {
+            var rawStateHash = _dbContext.Get(EntryPrefix.StateHashByCheckpointType.BuildPrefix((byte) checkpointType));
+            if (rawStateHash is null) return null;
+            return UInt256Utils.ToUInt256(rawStateHash);
+        }
+
+        public void AddBlock(IBlockSnapshot blockSnapshot, Block block)
+        {
+            blockSnapshot.AddBlock(block);
+            if(block.Header.Index%200 == 0) Console.WriteLine("Added BlockHeader: "+ block.Header.Index);
+            if(block.Header.Index%_blockAddPeriod == 0) blockSnapshot.Commit();
+        }
+
+        private void CommitNodes()
         {
             RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
             foreach(var item in _nodeCache)
@@ -211,6 +247,18 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             CommitIds();
             CommitNodes();
+        }
+
+        public int GetLastDownloadedTries()
+        {
+            var rawInfo = _dbContext.Get(EntryPrefix.LastDownloadedTries.BuildPrefix());
+            if (rawInfo == null) return 0;
+            return SerializationUtils.ToInt32(rawInfo);
+        }
+
+        public void SetLastDownloadedTries(int downloaded)
+        {
+            _dbContext.Save(EntryPrefix.LastDownloadedTries.BuildPrefix(), downloaded.ToBytes().ToArray());
         }
     }
 }

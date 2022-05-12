@@ -14,136 +14,168 @@ using Lachain.Storage.State;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
+using Google.Protobuf;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     
-    public class FastSynchronizerBatch
+    public class FastSynchronizerBatch : IFastSynchronizerBatch
     {
-        static string[] trieNames = new string[]
+        private string[] trieNames = new string[]
         {
                 "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
         };
         private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
+        private readonly IStateManager _stateManager;
+        private readonly IRocksDbContext _dbContext;
+        private readonly ISnapshotIndexRepository _snapshotIndexRepository;
+        private readonly INetworkManager _networkManager;
+        private readonly VersionFactory _versionFactory;
+        private readonly INodeStorage _nodeStorage;
+        private readonly IHybridQueue _hybridQueue;
+        private readonly IPeerManager _peerManager;
+        private readonly IRequestManager _requestManager;
+        private readonly IDownloader _downloader;
+        public FastSynchronizerBatch(
+            IStateManager stateManager,
+            IRocksDbContext dbContext,
+            ISnapshotIndexRepository snapshotIndexRepository,
+            INetworkManager networkManager,
+            IStorageManager storageManager,
+            INodeStorage nodeStorage,
+            IHybridQueue hybridQueue,
+            IPeerManager peerManager,
+            IRequestManager requestManager,
+            IDownloader downloader
+        )
+        {
+            _stateManager = stateManager;
+            _dbContext = dbContext;
+            _snapshotIndexRepository = snapshotIndexRepository;
+            _networkManager = networkManager;
+            _nodeStorage = nodeStorage;
+            _hybridQueue = hybridQueue;
+            _peerManager = peerManager;
+            _requestManager = requestManager;
+            _downloader = downloader;
+            _versionFactory = storageManager.GetVersionFactory();
+        }
 
         //Fast_sync is started from this function.
         //urls is the list of peer nodes, we'll be requesting for data throughtout this process
         //blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
         //start synching with that peer
-        public static void StartSync(IStateManager stateManager,
-                                     IRocksDbContext dbContext,
-                                     ISnapshotIndexRepository snapshotIndexRepository,
-                                     INetworkManager networkManager,
-                                     VersionFactory versionFactory,
-                                     ulong blockNumber,
-                                     List<(ECDSAPublicKey, ulong)> urls)
+        public void StartSync(ulong blockNumber, UInt256 blockHash, List<(UInt256, CheckpointType)> stateHashes)
         {
             //At first we check if fast sync have started and completed before.
             // If it has completed previously, we don't let the user run it again.
-            if(Alldone(dbContext))
+            if(Alldone())
             {
                 Console.WriteLine("Fast Sync was done previously\nReturning");
                 return;
             }
             
-            Console.WriteLine("Current Version: "+versionFactory.CurrentVersion);
-
-            NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
-            HybridQueue hybridQueue = new HybridQueue(dbContext, nodeStorage);
-            PeerManager peerManager = new PeerManager(urls);
-            
-            RequestManager requestManager = new RequestManager(nodeStorage, hybridQueue);
+            Console.WriteLine("Current Version: " + _versionFactory.CurrentVersion);
 
             //If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
             //If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
-            ulong savedBlockNumber = GetBlockNumberFromDB(dbContext);
-            if(savedBlockNumber!=0) blockNumber = savedBlockNumber;
-            Downloader downloader = new Downloader(networkManager, peerManager, requestManager, blockNumber);
-            //this line is only useful if fast_sync was not started previously and user wants to sync with latest block
-            blockNumber = downloader.GetBlockNumber();
+            ulong savedBlockNumber = _nodeStorage.GetBlockNumber();
+            var savedSateHashes = new List<(UInt256, CheckpointType)>();
+            if(savedBlockNumber != 0)
+            {
+                blockNumber = savedBlockNumber;
+                blockHash = _nodeStorage.GetBlockHash()!;
+                foreach (var checkpointInfo in stateHashes)
+                {
+                    var (stateHash, checkpointType) = checkpointInfo;
+                    stateHash = _nodeStorage.GetStateHash(checkpointType);
+                    if (stateHash is null)
+                        throw new ArgumentException($"Got null hash for checkpoint type: {checkpointType}");
+                    savedSateHashes.Add((stateHash!, checkpointType));
+                }
+                stateHashes = savedSateHashes;
+            }
+            if (stateHashes.Count != 6)
+                throw new ArgumentException($"There must be six state-hash, got {stateHashes.Count}");
+
+            // Checking if we have root hashes for all six tries.
+            foreach (var trieName in trieNames)
+            {
+                CheckRootHash(trieName, stateHashes);
+            }
             
-            //to keep track how many tries have been downloaded till now, saved in db with LastDownloaded prefix
-            int downloadedTries = Initialize(dbContext, blockNumber, (savedBlockNumber!=0));
-            hybridQueue.init();
+            if (savedBlockNumber == 0) _nodeStorage.Initialize(blockNumber, blockHash, stateHashes);
+            //to keep track how many tries have been downloaded till now, saved in db with LastDownloadedTries prefix
+            int downloadedTries = _nodeStorage.GetLastDownloadedTries();
+            _hybridQueue.Initialize();
 
             for(int i = downloadedTries; i < trieNames.Length; i++)
             {
-                Logger.LogWarning($"Starting trie {trieNames[i]}");
-                var rootHash = downloader.GetTrie(trieNames[i], nodeStorage);
-                bool foundRoot = nodeStorage.GetIdByHash(rootHash, out ulong curTrieRoot);
+                Logger.LogTrace($"Starting trie {trieNames[i]}");
+                var rootHash = GetRootHashForTrieName(trieNames[i], stateHashes);
+                _downloader.GetTrie(rootHash);
+                bool foundRoot = _nodeStorage.GetIdByHash(rootHash, out ulong curTrieRoot);
             //    snapshots[i].SetCurrentVersion(curTrieRoot);
                 downloadedTries++;
-                dbContext.Save(EntryPrefix.LastDownloaded.BuildPrefix(), downloadedTries.ToBytes().ToArray());
-                Logger.LogWarning($"Ending trie {trieNames[i]} : {curTrieRoot}");
+                _dbContext.Save(EntryPrefix.LastDownloadedTries.BuildPrefix(), downloadedTries.ToBytes().ToArray());
+                Logger.LogTrace($"Ending trie {trieNames[i]} : {curTrieRoot}");
             //    bool isConsistent = requestManager.CheckConsistency(curTrieRoot);
             //    Console.WriteLine("Is Consistent : "+isConsistent );
-                Logger.LogWarning($"Total Nodes downloaded: {versionFactory.CurrentVersion}");
+                Logger.LogTrace($"Total Nodes downloaded: {_versionFactory.CurrentVersion}");
             }
             
             if(downloadedTries==(int)trieNames.Length)
             {
-                var snapshot = stateManager.NewSnapshot();
-                ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
-                                                        snapshot.Contracts,
-                                                        snapshot.Storage,
-                                                        snapshot.Transactions,
-                                                        snapshot.Events,
-                                                        snapshot.Validators,
-                                                        };
-
-                downloader.DownloadBlocks(nodeStorage, snapshot.Blocks);
-
-                for(int i=0; i<trieNames.Length; i++)
+                var blockchainSnapshot = _stateManager.NewSnapshot();
+                _downloader.DownloadBlocks();
+                foreach (var trieName in trieNames)
                 {
-                    bool foundHash = nodeStorage.GetIdByHash(downloader.DownloadRootHashByTrieName(trieNames[i]), out ulong trieRoot);
-                    snapshots[i].SetCurrentVersion(trieRoot);
+                    var rootHash = GetRootHashForTrieName(trieName, stateHashes);
+                    bool foundHash = _nodeStorage.GetIdByHash(rootHash, out ulong trieRoot);
+                    var snapshot = blockchainSnapshot.GetSnapshot(trieName);
+                    snapshot!.SetCurrentVersion(trieRoot);
                 }
 
-                stateManager.Approve();
-                stateManager.Commit();
-                snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, snapshot);
+                _stateManager.Approve();
+                _stateManager.Commit();
+                _snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, blockchainSnapshot);
                 
                 downloadedTries++;
-                SetDownloaded(dbContext, downloadedTries);
+                _nodeStorage.SetLastDownloadedTries(downloadedTries);
                 
                 Logger.LogWarning($"Set state to block {blockNumber} complete");
             }
         }
 
-        static int Initialize(IRocksDbContext dbContext, ulong blockNumber, bool previousData)
+        private void CheckRootHash(string trieName, List<(UInt256, CheckpointType)> stateHashes)
         {
-            if(!previousData)
+            var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
+            foreach (var (stateHash, _checkpointType) in stateHashes)
             {
-                RocksDbAtomicWrite tx = new RocksDbAtomicWrite(dbContext);
-                tx.Put(EntryPrefix.BlockNumber.BuildPrefix(), blockNumber.ToBytes().ToArray());
-                ulong zero = 0;
-                tx.Put(EntryPrefix.SavedBatch.BuildPrefix(), zero.ToBytes().ToArray());
-                tx.Put(EntryPrefix.TotalBatch.BuildPrefix(), zero.ToBytes().ToArray());
-                tx.Put(EntryPrefix.LastDownloaded.BuildPrefix(), zero.ToBytes().ToArray());
-                tx.Commit();
-                return 0;
+                if (checkpointType == _checkpointType) return;
             }
-            var rawId = dbContext.Get(EntryPrefix.LastDownloaded.BuildPrefix());
-            return SerializationUtils.ToInt32(rawId);
+            throw new Exception($"Root hash for {trieName} not found in stateHashes");
         }
 
-        static ulong GetBlockNumberFromDB(IRocksDbContext dbContext)
+        private UInt256 GetRootHashForTrieName(string trieName, List<(UInt256, CheckpointType)> stateHashes)
         {
-            var rawBlockNumber = dbContext.Get(EntryPrefix.BlockNumber.BuildPrefix());
-            if(rawBlockNumber==null) return 0;
-            return SerializationUtils.ToUInt64(rawBlockNumber);
-        }
-        
-        static void SetDownloaded(IRocksDbContext dbContext, int downloaded)
-        {
-            dbContext.Save(EntryPrefix.LastDownloaded.BuildPrefix(), downloaded.ToBytes().ToArray());
+            var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
+            UInt256? stateHash = null;
+            foreach (var (_stateHash, _checkpointType) in stateHashes)
+            {
+                if (checkpointType == _checkpointType)
+                {
+                    stateHash = _stateHash;
+                    break;
+                }
+            }
+            return stateHash!;
         }
 
-        static bool Alldone(IRocksDbContext dbContext)
+        private bool Alldone()
         {
-            var rawInfo = dbContext.Get(EntryPrefix.LastDownloaded.BuildPrefix());
-            if(rawInfo == null) return false;
-            return SerializationUtils.ToInt32(rawInfo) == ((int)trieNames.Length + 1) ;
+            var tiresDownloaded = _nodeStorage.GetLastDownloadedTries();
+            return tiresDownloaded == (trieNames.Length + 1) ;
         }
     }
 }
