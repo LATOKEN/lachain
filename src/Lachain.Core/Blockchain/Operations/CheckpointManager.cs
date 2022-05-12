@@ -1,11 +1,13 @@
-using System.Runtime.CompilerServices;
+using System;
 using System.Collections.Generic;
-using Lachain.Logger;
+using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
+using Google.Protobuf;
 
 namespace Lachain.Core.Blockchain.Operations
 {
@@ -88,13 +90,27 @@ namespace Lachain.Core.Blockchain.Operations
             return _blockManager.GetByHeight(_checkpointBlockId.Value);
         }
 
-        public UInt256? GetStateHashForSnapshot(RepositoryType snapshotType)
+        public UInt256? GetStateHashForSnapshotType(RepositoryType snapshotType)
         {
             if (_stateHashes.TryGetValue(snapshotType, out var stateHash))
             {
                 return stateHash;
             }
             return null;
+        }
+
+        public UInt256? GetStateHashForCheckpointType(CheckpointType checkpointType)
+        {
+            var snapshotType = CheckpointUtils.GetSnapshotTypeForCheckpointType(checkpointType);
+            if (snapshotType == null) return null;
+            return GetStateHashForSnapshotType(snapshotType.Value);
+        }
+
+        public UInt256? GetStateHashForSnapshotName(string snapshotName)
+        {
+            var snapshotType = CheckpointUtils.GetSnapshotTypeForSnapshotName(snapshotName);
+            if (snapshotType == null) return null;
+            return GetStateHashForSnapshotType(snapshotType.Value);
         }
 
         public bool IsCheckpointConsistent()
@@ -138,7 +154,7 @@ namespace Lachain.Core.Blockchain.Operations
             foreach (var snapshot in snapshots)
             {
                 if (snapshot.RepositoryId == (uint) RepositoryType.BlockRepository) continue;
-                var stateHash = GetStateHashForSnapshot((RepositoryType) snapshot.RepositoryId);
+                var stateHash = GetStateHashForSnapshotType((RepositoryType) snapshot.RepositoryId);
                 if (stateHash is null)
                 {
                     Logger.LogInformation($"State hash is not saved for {(RepositoryType) snapshot.RepositoryId}, "
@@ -156,19 +172,45 @@ namespace Lachain.Core.Blockchain.Operations
             return true;
         }
 
-        public List<CheckpointType> GetAllCheckpointTypes()
+        public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
         {
-            var checkpointTypes = new List<CheckpointType>();
-            checkpointTypes.Add(CheckpointType.BlockHeight);
-            checkpointTypes.Add(CheckpointType.BlockHash);
-            checkpointTypes.Add(CheckpointType.BalanceStateHash);
-            checkpointTypes.Add(CheckpointType.ContractStateHash);
-            checkpointTypes.Add(CheckpointType.EventStateHash);
-            checkpointTypes.Add(CheckpointType.StorageStateHash);
-            checkpointTypes.Add(CheckpointType.TransactionStateHash);
-            checkpointTypes.Add(CheckpointType.ValidatorStateHash);
-            checkpointTypes.Add(CheckpointType.CheckpointExist);
-            return checkpointTypes;
+            var checkpoint = new CheckpointInfo();
+            switch (checkpointType)
+            {
+                case CheckpointType.BlockHeight:
+                    checkpoint.CheckpointBlockHeight = new CheckpointBlockHeight
+                    {
+                        BlockHeight = CheckpointBlockId!.Value,
+                        CheckpointType = ByteString.CopyFrom((byte) checkpointType)
+                    };
+                    break;
+                
+                case CheckpointType.BlockHash:
+                    checkpoint.CheckpointBlockHash = new CheckpointBlockHash
+                    {
+                        BlockHash = CheckpointBlockHash,
+                        CheckpointType = ByteString.CopyFrom((byte) checkpointType)
+                    };
+                    break;
+
+                case CheckpointType.CheckpointExist:
+                    checkpoint.CheckpointExist = new CheckpointExist
+                    {
+                        Exist = ( IsCheckpointConsistent() && CheckpointBlockId != null ),
+                        CheckpointType = ByteString.CopyFrom((byte) checkpointType)
+                    };
+                    break;
+
+                default:
+                    checkpoint.CheckpointStateHash = new CheckpointStateHash
+                    {
+                        StateHash = GetStateHashForCheckpointType(checkpointType) ?? 
+                            throw new NullReferenceException($"Got null state hash for checkpoint: {checkpointType}"),
+                        CheckpointType = ByteString.CopyFrom((byte) checkpointType)
+                    };
+                    break;                
+            }
+            return checkpoint;
         }
 
     }
