@@ -3,41 +3,50 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Logger;
+using Lachain.Proto;
+using Lachain.Storage.State;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
-using Lachain.Core.RPC.HTTP.Web3;
-using Lachain.Storage.State;
-using Lachain.Logger;
 
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class BlockRequestManager
+    public class BlockRequestManager : IBlockRequestManager
     {
         private static readonly ILogger<BlockRequestManager> Logger = LoggerFactory.GetLoggerForClass<BlockRequestManager>();
  //       private Queue<string> _queue = new Queue<string>();
         private SortedSet<ulong> _pending = new SortedSet<ulong>();
         private SortedSet<ulong> nextBlocksToDownload = new SortedSet<ulong>();
-        private IDictionary<ulong, string> downloaded = new Dictionary<ulong,string>();
+        private IDictionary<ulong, Block> downloaded = new Dictionary<ulong,Block>();
         private uint _batchSize = 1000;
-        ulong _done = 0;
-        ulong _maxBlock;
+        private ulong _done = 0;
+        private ulong _maxBlock = 0;
+        private readonly IBlockSnapshot _blockSnapshot;
+        private readonly INodeStorage _nodeStorage; 
+        public ulong MaxBlock => _maxBlock;
 
-        IBlockSnapshot _blockSnapshot;
-        NodeStorage _nodeStorage; 
-
-        public BlockRequestManager(IBlockSnapshot blockSnapshot, ulong maxBlock, NodeStorage nodeStorage)
+        public BlockRequestManager(IBlockSnapshot blockSnapshot, INodeStorage nodeStorage)
         {
             _nodeStorage = nodeStorage;
             _blockSnapshot = blockSnapshot;
             _done = blockSnapshot.GetTotalBlockHeight();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void SetMaxBlock(ulong maxBlock)
+        {
+            if (_maxBlock != 0)
+                throw new Exception("Trying to set max block second time.");
             _maxBlock = maxBlock;
-            for(ulong i=_done+1; i<=_maxBlock; i++) nextBlocksToDownload.Add(i);
+            if (_maxBlock < _done) throw new ArgumentOutOfRangeException("Max block is less then current block height");
+            for (ulong i = _done+1; i <= _maxBlock; i++) nextBlocksToDownload.Add(i);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -62,7 +71,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void HandleResponse(List<ulong> batch, JArray response)
+        public void HandleResponse(List<ulong> batch, List<Block> response)
         {
             if(batch.Count>0) Logger.LogInformation("First Node in this batch: " + batch[0]);
             if(batch.Count != response.Count)
@@ -83,7 +92,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     if(_pending.Contains(blockId))
                     {
                         _pending.Remove(blockId);
-                        downloaded[blockId] = (string)response[i];
+                        downloaded[blockId] = response[i];
                     }
                 }
             }
@@ -91,13 +100,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        void AddToDB()
+        private void AddToDB()
         {
-            ulong cnt = _done ;
-            DateTime start = DateTime.Now;
-            while(downloaded.TryGetValue(_done+1, out var blockRawHex))
+            while(downloaded.TryGetValue(_done+1, out var block))
             {
-                _nodeStorage.AddBlock(_blockSnapshot, blockRawHex);
+                _nodeStorage.AddBlock(_blockSnapshot, block);
                 _done++;
                 
                 downloaded.Remove(_done);
