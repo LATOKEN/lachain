@@ -17,17 +17,17 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Network.FastSync
 {
-    class RequestManager
+    public class RequestManager : IRequestManager
     {
  //       private Queue<string> _queue = new Queue<string>();
-        private NodeStorage _nodeStorage;
+        private readonly INodeStorage _nodeStorage;
 
         //how many nodes we should ask for in every request
         private uint _batchSize = 500;
 
-        HybridQueue _hybridQueue;
+        private readonly IHybridQueue _hybridQueue;
 
-        public RequestManager(NodeStorage nodeStorage, HybridQueue hybridQueue)
+        public RequestManager(INodeStorage nodeStorage, IHybridQueue hybridQueue)
         {
             _nodeStorage = nodeStorage;
             _hybridQueue = hybridQueue;
@@ -101,7 +101,7 @@ namespace Lachain.Core.Network.FastSync
             
             List<UInt256> failedHashes = new List<UInt256>();
             
-            List<TrieNodeInfo?> successfulNodes = new List<TrieNodeInfo?>();
+            List<TrieNodeInfo> successfulNodes = new List<TrieNodeInfo>();
 
             //discard the whole batch if we haven't got response for all the nodes(or more response, shouldn't happen though)
             if (hashBatch.Count != response.Count)

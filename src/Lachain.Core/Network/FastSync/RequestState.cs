@@ -9,7 +9,7 @@ using Lachain.Proto;
 
 namespace Lachain.Core.Network.FastSync
 {
-    class RequestState
+    public class RequestState
     {
         // This class stores the State of the request.
         public Peer _peer;
