@@ -85,8 +85,6 @@ namespace Lachain.Core.Network
             _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
             _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
-            _networkManager.OnRootHashByTrieNameRequest += OnRootHashByTrieNameRequest;
-            _networkManager.OnRootHashByTrieNameReply += OnRootHashByTrieNameReply;
             _networkManager.OnBlockBatchRequest += OnBlockBatchRequest;
             _networkManager.OnBlockBatchReply += OnBlockBatchReply;
             _networkManager.OnTrieNodeByHashRequest += OnTrieNodeByHashRequest;
@@ -237,58 +235,7 @@ namespace Lachain.Core.Network
             }
         }
 
-        private void OnRootHashByTrieNameReply(object sender, (RootHashByTrieNameReply reply, ECDSAPublicKey publicKey) @event)
-        {
-            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameReply").NewTimer();
-            Logger.LogTrace("Start processing OnRootHashByTrieNameReply");
-            var (reply, publicKey) = @event;
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    // start downloading the trie via fastsync
-                    // probably use _blockSynchronizer to integrate it in a better way
-                }
-                catch (Exception exception)
-                {
-                    Logger.LogError($"Error occured while handling root hash from peer {publicKey.ToHex()}: {exception}");
-                }
-            }, TaskCreationOptions.LongRunning);
-            Logger.LogTrace("Finished processing OnRootHashByTrieNameReply");
-        }
-
-        private void OnRootHashByTrieNameRequest(object sender,
-            (RootHashByTrieNameRequest request, Action<RootHashByTrieNameReply> callback) @event
-        )
-        {
-            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameRequest").NewTimer();
-            Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
-            var (request, callback) = @event;
-            try
-            {
-                var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
-                var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
-                var reply = new RootHashByTrieNameReply
-                {
-                    RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash
-                };
-                callback(reply);
-            }
-            catch (Exception exception)
-            {
-                Logger.LogWarning($"Got exception trying to get root hash for trie {request.TrieName}"
-                    + $" for block {request.Block} : {exception}");
-                var reply = new RootHashByTrieNameReply
-                {
-                    RootHash = UInt256Utils.Zero
-                };
-                callback(reply);
-            }
-
-            Logger.LogTrace("Finished processing OnRootHashByTrieNameRequest");
-        }
-
-        private void OnBlockBatchReply(object sender, (BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
+        private void OnBlockBatchReply(object? sender, (BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("OnBlockBatchReply").NewTimer();
             Logger.LogTrace("Start processing OnBlockBatchReply");
@@ -298,6 +245,7 @@ namespace Lachain.Core.Network
                 try
                 {
                     var blocks = reply.BlockBatch.ToList();
+                    var requestId = reply.RequestId;
                     // handle the blocks via fastsync
                     // probably use _blockSynchronizer to integrate it in a better way
                 }
@@ -309,7 +257,7 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing OnBlockBatchReply");
         }
 
-        private void OnBlockBatchRequest(object sender,
+        private void OnBlockBatchRequest(object? sender,
             (BlockBatchRequest request, Action<BlockBatchReply> callback) @event
         )
         {
@@ -346,7 +294,7 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing OnBlockBatchRequest");
         }
 
-        private void OnTrieNodeByHashReply(object sender, (TrieNodeByHashReply reply, ECDSAPublicKey publicKey) @event)
+        private void OnTrieNodeByHashReply(object? sender, (TrieNodeByHashReply reply, ECDSAPublicKey publicKey) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("OnTrieNodeByHashReply").NewTimer();
             Logger.LogTrace("Start processing OnTrieNodeByHashReply");
@@ -367,7 +315,7 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing OnTrieNodeByHashReply");
         }
 
-        private void OnTrieNodeByHashRequest(object sender, 
+        private void OnTrieNodeByHashRequest(object? sender, 
             (TrieNodeByHashRequest request, Action<TrieNodeByHashReply> callback) @event
         )
         {
@@ -433,7 +381,7 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing OnTrieNodeByHashRequest");
         }
 
-        private void OnCheckpointRequest(object sender, 
+        private void OnCheckpointRequest(object? sender, 
             (CheckpointRequest request, Action<CheckpointReply> callback) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("OnCheckpointRequest").NewTimer();
@@ -445,7 +393,7 @@ namespace Lachain.Core.Network
                 var checkpoints = new List<CheckpointInfo>();
                 foreach (var checkpointType in checkpointTypes)
                 {
-                    checkpoints.Add(GetCheckpointInfo((CheckpointType) checkpointType));
+                    checkpoints.Add(_checkpointManager.GetCheckpointInfo((CheckpointType) checkpointType));
                 }
                 var reply = new CheckpointReply
                 {
@@ -465,7 +413,7 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing OnCheckpointRequest");
         }
 
-        private void OnCheckpointReply(object sender, (CheckpointReply reply, ECDSAPublicKey publicKey) @event)
+        private void OnCheckpointReply(object? sender, (CheckpointReply reply, ECDSAPublicKey publicKey) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("OnCheckpointReply").NewTimer();
             Logger.LogTrace("Start processing OnCheckpointReply");
@@ -485,55 +433,5 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing OnCheckpointReply");
         }
 
-        private CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
-        {
-            var checkpoint = new CheckpointInfo();
-            switch (checkpointType)
-            {
-                case CheckpointType.BlockHeight:
-                    checkpoint.BlockHeight = _checkpointManager.CheckpointBlockId!.Value;
-                    break;
-                
-                case CheckpointType.BlockHash:
-                    checkpoint.BlockHash = _checkpointManager.CheckpointBlockHash;
-                    break;
-
-                case CheckpointType.BalanceStateHash:
-                    checkpoint.BalanceStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.BalanceRepository);
-                    break;
-                
-                case CheckpointType.ContractStateHash:
-                    checkpoint.ContractStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ContractRepository);
-                    break;
-                
-                case CheckpointType.EventStateHash:
-                    checkpoint.EventStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.EventRepository);
-                    break;
-
-                case CheckpointType.StorageStateHash:
-                    checkpoint.StorageStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.StorageRepository);
-                    break;
-
-                case CheckpointType.TransactionStateHash:
-                    checkpoint.TransactionStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.TransactionRepository);
-                    break;
-
-                case CheckpointType.ValidatorStateHash:
-                    checkpoint.ValidatorStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ValidatorRepository);
-                    break;
-
-                case CheckpointType.CheckpointExist:
-                    checkpoint.CheckpointExist = 
-                        ( _checkpointManager.IsCheckpointConsistent() && (_checkpointManager.CheckpointBlockId != null) );
-                    break;
-            }
-            return checkpoint;
-        }
     }
 }
