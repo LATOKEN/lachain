@@ -22,7 +22,8 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class HybridQueue{
+    public class HybridQueue : IHybridQueue
+    {
         private static readonly ILogger<HybridQueue> Logger = LoggerFactory.GetLoggerForClass<HybridQueue>();
         private IRocksDbContext _dbContext;
         //maximum how many nodes we should put into/out of db at once 
@@ -43,14 +44,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         //we need to keep track of how many nodes for a batch has not arrived till now
         private IDictionary<ulong, int> _remaining = new Dictionary<ulong, int>();
 
-        private NodeStorage _nodeStorage;
-        public HybridQueue(IRocksDbContext dbContext, NodeStorage nodeStorage)
+        private INodeStorage _nodeStorage;
+        public HybridQueue(IRocksDbContext dbContext, INodeStorage nodeStorage)
         {
             _dbContext = dbContext;
             _nodeStorage = nodeStorage;
         }
 
-        public void init()
+        public void Initialize()
         {
             _savedBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.SavedBatch.BuildPrefix()));
             _loadedBatch = _savedBatch;
@@ -114,7 +115,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return true;
         }
 
-        public void TryToSaveBatch()
+        private void TryToSaveBatch()
         {
             //batches are saved one by one, batch x+1 will not be saved until batch x is saved
             while(_remaining.ContainsKey(_savedBatch+1) && _remaining[_savedBatch+1]==0)
@@ -140,7 +141,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return _pending.ContainsKey(key);
         }
 
-        void PushToDB()
+        private void PushToDB()
         {
             if(_incomingQueue.Count==0) return;
             _nodeStorage.CommitIds();
@@ -159,7 +160,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             Logger.LogInformation($"Another hash batch downloaded: {_totalBatch}  size: {sz}");
         }
 
-        void LoadFromDB()
+        private void LoadFromDB()
         {
             ulong _curBatch = _loadedBatch+1;
             byte[] raw = _dbContext.Get(EntryPrefix.QueueBatch.BuildPrefix((ulong)_curBatch));
@@ -179,7 +180,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             Logger.LogInformation($"Trying to download nodes from batch: {_curBatch}  size: {cnt}");
             if(cnt==0) TryToSaveBatch();
         }
-        bool ExistNode(UInt256 hash)
+        private bool ExistNode(UInt256 hash)
         {
             if(_pending.ContainsKey(hash)) return true;
             return _nodeStorage.ExistNode(hash);
