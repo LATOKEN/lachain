@@ -133,7 +133,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
             foreach (var snapshotType in snapshotTypes)
             {
-                var hash = _checkpointManager.GetStateHashForSnapshot(snapshotType);
+                var hash = _checkpointManager.GetStateHashForSnapshotType(snapshotType);
                 if (hash is null)
                 {
                     Logger.LogInformation($"found null hash for {snapshotType}");

@@ -110,24 +110,6 @@ namespace Lachain.CoreTest.IntegrationTests
 
         [Test]
         [Repeat(2)]
-        public void Test_RootHashByTrieNameRequestAndReply()
-        {
-            ulong totalBlocks = 10;
-            GenerateBlocks(totalBlocks);
-            string[] snapshotNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
-            for (ulong i = 1 ; i <= totalBlocks; i++)
-            {
-                foreach (var snapshotName in snapshotNames)
-                {
-                    var message = _networkManager.MessageFactory.RootHashByTrieNameRequest(i , snapshotName);
-                    CheckRootHashByTrieNameRequest(message, i , snapshotName);
-                }
-            }
-            
-        }
-
-        [Test]
-        [Repeat(2)]
         public void Test_TrieNodeByHashRequestAndReply()
         {
             ulong totalBlocks = 10;
@@ -179,7 +161,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
         public byte[] GetCheckpointRequests()
         {
-            var types = _checkpointManager.GetAllCheckpointTypes();
+            var types = CheckpointUtils.GetAllCheckpointTypes();
             var request = new List<byte>();
             foreach (var type in types)
             {
@@ -202,7 +184,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var checkpoints = new List<CheckpointInfo>();
             foreach (var checkpointType in checkpointTypes)
             {
-                checkpoints.Add(GetCheckpointInfo((CheckpointType) checkpointType));
+                checkpoints.Add(_checkpointManager.GetCheckpointInfo((CheckpointType) checkpointType));
             }
             var reply = new CheckpointReply
             {
@@ -213,7 +195,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var checkpointInfo = reply.Checkpoints.ToList();
             Assert.AreEqual(1, checkpointInfo.Count);
             Assert.AreEqual(CheckpointInfo.MessageOneofCase.CheckpointExist, checkpointInfo[0].MessageCase);
-            Assert.AreEqual(true, checkpointInfo[0].CheckpointExist);
+            Assert.AreEqual(true, checkpointInfo[0].CheckpointExist.Exist);
 
             Logger.LogTrace("Finished processing OnCheckpointRequest");
         }
@@ -229,7 +211,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var checkpoints = new List<CheckpointInfo>();
             foreach (var checkpointType in checkpointTypes)
             {
-                checkpoints.Add(GetCheckpointInfo((CheckpointType) checkpointType));
+                checkpoints.Add(_checkpointManager.GetCheckpointInfo((CheckpointType) checkpointType));
             }
             var reply = new CheckpointReply
             {
@@ -241,57 +223,6 @@ namespace Lachain.CoreTest.IntegrationTests
             Logger.LogTrace("Finished processing OnCheckpointRequest");
         }
 
-        public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
-        {
-            var checkpoint = new CheckpointInfo();
-            switch (checkpointType)
-            {
-                case CheckpointType.BlockHeight:
-                    checkpoint.BlockHeight = _checkpointManager.CheckpointBlockId!.Value;
-                    break;
-                
-                case CheckpointType.BlockHash:
-                    checkpoint.BlockHash = _checkpointManager.CheckpointBlockHash;
-                    break;
-
-                case CheckpointType.BalanceStateHash:
-                    checkpoint.BalanceStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.BalanceRepository);
-                    break;
-                
-                case CheckpointType.ContractStateHash:
-                    checkpoint.ContractStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ContractRepository);
-                    break;
-                
-                case CheckpointType.EventStateHash:
-                    checkpoint.EventStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.EventRepository);
-                    break;
-
-                case CheckpointType.StorageStateHash:
-                    checkpoint.StorageStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.StorageRepository);
-                    break;
-
-                case CheckpointType.TransactionStateHash:
-                    checkpoint.TransactionStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.TransactionRepository);
-                    break;
-
-                case CheckpointType.ValidatorStateHash:
-                    checkpoint.ValidatorStateHash = 
-                        _checkpointManager.GetStateHashForSnapshot(RepositoryType.ValidatorRepository);
-                    break;
-
-                case CheckpointType.CheckpointExist:
-                    checkpoint.CheckpointExist = 
-                        ( _checkpointManager.IsCheckpointConsistent() && (_checkpointManager.CheckpointBlockId != null) );
-                    break;
-            }
-            return checkpoint;
-        }
-
         public void CheckCheckpointReply(CheckpointReply reply)
         {
             var checkpointInfos = reply.Checkpoints.ToList();
@@ -299,42 +230,18 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 switch (checkpointInfo.MessageCase)
                 {
-                    case CheckpointInfo.MessageOneofCase.BlockHeight:
-                        Assert.AreEqual(checkpointInfo.BlockHeight, _checkpointManager.CheckpointBlockId);
+                    case CheckpointInfo.MessageOneofCase.CheckpointBlockHeight:
+                        Assert.AreEqual(checkpointInfo.CheckpointBlockHeight.BlockHeight, _checkpointManager.CheckpointBlockId);
+                        break;
+
+                    case CheckpointInfo.MessageOneofCase.CheckpointBlockHash:
+                        Assert.AreEqual(checkpointInfo.CheckpointBlockHash.BlockHash, _checkpointManager.CheckpointBlockHash);
                         break;
                     
-                    case CheckpointInfo.MessageOneofCase.BlockHash:
-                        Assert.AreEqual(checkpointInfo.BlockHash, _checkpointManager.CheckpointBlockHash);
-                        break;
-                    
-                    case CheckpointInfo.MessageOneofCase.BalanceStateHash:
-                        Assert.AreEqual(checkpointInfo.BalanceStateHash, 
-                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.BalanceRepository));
-                        break;
-                    
-                    case CheckpointInfo.MessageOneofCase.ContractStateHash:
-                        Assert.AreEqual(checkpointInfo.ContractStateHash,
-                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.ContractRepository));
-                        break;
-
-                    case CheckpointInfo.MessageOneofCase.EventStateHash:
-                        Assert.AreEqual(checkpointInfo.EventStateHash,
-                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.EventRepository));
-                        break;
-
-                    case CheckpointInfo.MessageOneofCase.StorageStateHash:
-                        Assert.AreEqual(checkpointInfo.StorageStateHash,
-                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.StorageRepository));
-                        break;
-
-                    case CheckpointInfo.MessageOneofCase.TransactionStateHash:
-                        Assert.AreEqual(checkpointInfo.TransactionStateHash, 
-                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.TransactionRepository));
-                        break;
-
-                    case CheckpointInfo.MessageOneofCase.ValidatorStateHash:
-                        Assert.AreEqual(checkpointInfo.ValidatorStateHash, 
-                            _checkpointManager.GetStateHashForSnapshot(RepositoryType.ValidatorRepository));
+                    case CheckpointInfo.MessageOneofCase.CheckpointStateHash:
+                        var checkpointType = checkpointInfo.CheckpointStateHash.CheckpointType.ToArray()[0];
+                        Assert.AreEqual(checkpointInfo.CheckpointStateHash.StateHash,
+                            _checkpointManager.GetStateHashForCheckpointType((CheckpointType) checkpointType));
                         break;
 
                     default:
@@ -374,32 +281,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 var sameBlock = _blockManager.GetByHeight(blockId);
                 Assert.AreEqual(block, sameBlock, "block from reply and block from blockmanager did not match");
             }
-        }
-
-        public void CheckRootHashByTrieNameRequest(NetworkMessage message, ulong block, string snapshotName)
-        {
-            // most of it copy pasted from OnRootHashByTrieNameRequest from MessageHandler.cs 
-
-            Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
-            var request = message.RootHashByTrieNameRequest;
-            
-            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
-            var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
-            var reply = new RootHashByTrieNameReply
-            {
-                RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash
-            };
-            CheckRootHashByTrieNameReply(reply, block, snapshotName);
-
-            Logger.LogTrace("Finished processing OnRootHashByTrieNameRequest");
-        }
-
-        public void CheckRootHashByTrieNameReply(RootHashByTrieNameReply reply, ulong blockIndex, string snapshotName)
-        {
-            var snapshotRootHash = reply.RootHash;
-            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(blockIndex);
-            var snapshot = blockchainSnapshot.GetSnapshot(snapshotName);
-            Assert.AreEqual(snapshotRootHash , snapshot!.Hash, "snapshot root hash does not match");
         }
 
         public void CheckTrieNodeByHashRequest(NetworkMessage message, ISnapshot snapshot)
