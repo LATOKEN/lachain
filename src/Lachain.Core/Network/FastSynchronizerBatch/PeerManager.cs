@@ -20,18 +20,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private Queue<DateTime> _lastResult = new Queue<DateTime>();
         private IDictionary<Peer, bool> _isPeerBusy = new Dictionary<Peer, bool>();
         private int Timeout = 30;
-        private readonly IDictionary<Peer, ulong> _peerHeights = new Dictionary<Peer, ulong>();
         public PeerManager()
         {
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void AddPeer(ECDSAPublicKey publicKey, ulong height)
+        public void AddPeer(ECDSAPublicKey publicKey)
         {
             var peer = new Peer(publicKey);
             if (_isPeerBusy.ContainsKey(peer)) return;
             _isPeerBusy[peer] = false;
-            _peerHeights[peer] = height;
             _availableGoodPeers.Enqueue(peer);
         }
 
@@ -75,14 +73,5 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return _isPeerBusy.Count;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public ulong? GetHeightForPeer(Peer peer)
-        {
-            if (_peerHeights.TryGetValue(peer, out var height))
-            {
-                return height;
-            }
-            return null;
-        }
     }
 }
