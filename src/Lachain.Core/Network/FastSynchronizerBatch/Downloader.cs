@@ -29,9 +29,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         private ulong _totalRequests = 0; // must initialize from DB
         private readonly INetworkManager _networkManager;
-        private readonly IPeerManager _peerManager;
+        private readonly PeerManager _peerManager;
         private readonly IRequestManager _requestManager;
-        private readonly INodeStorage _nodeStorage;
+        private readonly IFastSyncRepository _repository;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         private const int DefaultTimeout = 5 * 1000; // 5 sec 
         private readonly IBlockRequestManager _blockRequestManager; 
@@ -40,17 +40,21 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public Downloader(
             INetworkManager networkManager,
-            IPeerManager peerManager,
             IRequestManager requestManager,
             IBlockRequestManager blockRequestManager,
-            INodeStorage nodeStorage
+            IFastSyncRepository repository
         )
         {
             _networkManager = networkManager;
-            _peerManager = peerManager;
             _requestManager = requestManager;
             _blockRequestManager = blockRequestManager;
-            _nodeStorage = nodeStorage;
+            _repository = repository;
+            _peerManager = new PeerManager();
+        }
+
+        public PeerManager GetPeerManager()
+        {
+            return _peerManager;
         }
 
         public void GetTrie(UInt256 rootHash)
@@ -58,7 +62,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             Logger.LogTrace($"Inside Get Trie. rootHash: {rootHash.ToHex()}");
             if (!rootHash.Equals(EmptyHash))
             {
-                bool foundHash = _nodeStorage.GetIdByHash(rootHash, out var id);
+                bool foundHash = _repository.GetIdByHash(rootHash, out var id);
                 if(!foundHash) _requestManager.AddHash(rootHash);
             }
             while(!_requestManager.Done())
@@ -82,10 +86,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _requests[_totalRequests] = myRequestState;
                 HandleRequest(myRequestState);
             }
-            _nodeStorage.Commit();
+            _repository.Commit();
             if(!rootHash.Equals(EmptyHash))
             {
-    //            bool res =_nodeStorage.GetIdByHash(rootHash,out ulong id);
+    //            bool res =_repository.GetIdByHash(rootHash,out ulong id);
     //            bool flag = _requestManager.CheckConsistency(id);
     //            System.Console.WriteLine(trieName + " : consistency: " + flag);
             }
@@ -108,11 +112,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _networkManager.SendTo(request._peer._publicKey, message);
                 TimeOut(request._peerHasReply, request._requestId);
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Logger.LogWarning("\nMain Exception raised!");
-                Logger.LogWarning("Source :{0} ", e.Source);
-                Logger.LogWarning("Message :{0} ", e.Message);
+                Logger.LogWarning($"Exception raised while trying to send request {request._type} "
+                    + $"to peer {request._peer._publicKey.ToHex()} : {exception}");
                 if(_peerManager.TryFreePeer(request._peer, false))
                 {
                     if (request._type == RequestType.BlocksRequest)
@@ -121,7 +124,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     }
                     else
                     {
-                        _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo?>());
+                        _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
                     }
                 }
             }
@@ -147,7 +150,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             switch (request._type)
                             {
                                 case RequestType.NodesRequest:
-                                    _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo?>());
+                                    _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
                                     break;
 
                                 case RequestType.BlocksRequest:
@@ -184,8 +187,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 }
                 catch (Exception exception)
                 {
-                    Logger.LogWarning("\nRespCallback Exception raised!");
-                    Logger.LogWarning("\nMessage:{0}", exception.Message);
+                    Logger.LogWarning($"Exception raised while handling blocks from peer: {publicKey.ToHex()} : {exception}");
                     Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._publicKey.ToHex()}");
                     _peerManager.TryFreePeer(peer, false);
                     _blockRequestManager.HandleResponse(batch!, new List<Block>());
@@ -219,11 +221,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 }
                 catch (Exception exception)
                 {
-                    Logger.LogWarning("\nRespCallback Exception raised!");
-                    Logger.LogWarning("\nMessage:{0}", exception.Message);
+                    Logger.LogWarning($"Exception raised while handling nodes from peer: {publicKey.ToHex()} : {exception}");
                     Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._publicKey.ToHex()}");
                     _peerManager.TryFreePeer(peer, false);
-                    _requestManager.HandleResponse(batch!, new List<TrieNodeInfo?>());
+                    _requestManager.HandleResponse(batch!, new List<TrieNodeInfo>());
                 }
 
                 // Let the TimeOut know that we got the response

@@ -44,11 +44,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         //we need to keep track of how many nodes for a batch has not arrived till now
         private IDictionary<ulong, int> _remaining = new Dictionary<ulong, int>();
 
-        private INodeStorage _nodeStorage;
-        public HybridQueue(IRocksDbContext dbContext, INodeStorage nodeStorage)
+        private IFastSyncRepository _repository;
+        public HybridQueue(IRocksDbContext dbContext, IFastSyncRepository repository)
         {
             _dbContext = dbContext;
-            _nodeStorage = nodeStorage;
+            _repository = repository;
         }
 
         public void Initialize()
@@ -70,7 +70,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _pending.Remove(key);
                 return;
             }
-        //    bool foundHash = _nodeStorage.GetIdByHash(key, out ulong id);
+        //    bool foundHash = _repository.GetIdByHash(key, out ulong id);
         //    Console.WriteLine("Added to incomingqueue: "+id);
             _incomingQueue.Enqueue(key);
             if(_incomingQueue.Count >= BatchSize) PushToDB();
@@ -122,7 +122,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 _remaining.Remove(_savedBatch+1);
                 PushToDB();
-                _nodeStorage.Commit();
+                _repository.Commit();
                 _savedBatch++;
                 _dbContext.Save(EntryPrefix.SavedBatch.BuildPrefix(), _savedBatch.ToBytes().ToArray());
                 Logger.LogInformation($"Another batch saved: {_savedBatch}");
@@ -144,13 +144,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private void PushToDB()
         {
             if(_incomingQueue.Count==0) return;
-            _nodeStorage.CommitIds();
+            _repository.CommitIds();
             List<byte> list = new List<byte>();
             int sz = _incomingQueue.Count;
             while(_incomingQueue.Count>0)
             {
                 var hash = _incomingQueue.Dequeue();
-            //    bool foundHash = _nodeStorage.GetIdByHash(hash, out ulong id);
+            //    bool foundHash = _repository.GetIdByHash(hash, out ulong id);
             //    Console.WriteLine("adding id for download: "+ id);
                 list.AddRange(hash.ToBytes());
             }
@@ -183,7 +183,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private bool ExistNode(UInt256 hash)
         {
             if(_pending.ContainsKey(hash)) return true;
-            return _nodeStorage.ExistNode(hash);
+            return _repository.ExistNode(hash);
         }
     }
 }

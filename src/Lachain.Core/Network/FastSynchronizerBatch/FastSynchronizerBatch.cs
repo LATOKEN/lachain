@@ -31,20 +31,19 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private readonly INetworkManager _networkManager;
         private readonly VersionFactory _versionFactory;
-        private readonly INodeStorage _nodeStorage;
+        private readonly IFastSyncRepository _repository;
         private readonly IHybridQueue _hybridQueue;
-        private readonly IPeerManager _peerManager;
         private readonly IRequestManager _requestManager;
         private readonly IDownloader _downloader;
+        private readonly PeerManager _peerManager;
         public FastSynchronizerBatch(
             IStateManager stateManager,
             IRocksDbContext dbContext,
             ISnapshotIndexRepository snapshotIndexRepository,
             INetworkManager networkManager,
             IStorageManager storageManager,
-            INodeStorage nodeStorage,
+            IFastSyncRepository repository,
             IHybridQueue hybridQueue,
-            IPeerManager peerManager,
             IRequestManager requestManager,
             IDownloader downloader
         )
@@ -53,12 +52,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _dbContext = dbContext;
             _snapshotIndexRepository = snapshotIndexRepository;
             _networkManager = networkManager;
-            _nodeStorage = nodeStorage;
+            _repository = repository;
             _hybridQueue = hybridQueue;
-            _peerManager = peerManager;
             _requestManager = requestManager;
             _downloader = downloader;
             _versionFactory = storageManager.GetVersionFactory();
+            _peerManager = _downloader.GetPeerManager();
         }
 
         //Fast_sync is started from this function.
@@ -79,16 +78,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
             //If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
             //If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
-            ulong savedBlockNumber = _nodeStorage.GetBlockNumber();
+            ulong savedBlockNumber = _repository.GetBlockNumber();
             var savedSateHashes = new List<(UInt256, CheckpointType)>();
             if(savedBlockNumber != 0)
             {
                 blockNumber = savedBlockNumber;
-                blockHash = _nodeStorage.GetBlockHash()!;
+                blockHash = _repository.GetBlockHash()!;
                 foreach (var checkpointInfo in stateHashes)
                 {
                     var (stateHash, checkpointType) = checkpointInfo;
-                    stateHash = _nodeStorage.GetStateHash(checkpointType);
+                    stateHash = _repository.GetStateHash(checkpointType);
                     if (stateHash is null)
                         throw new ArgumentException($"Got null hash for checkpoint type: {checkpointType}");
                     savedSateHashes.Add((stateHash!, checkpointType));
@@ -104,9 +103,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 CheckRootHashExist(trieName, stateHashes);
             }
             
-            if (savedBlockNumber == 0) _nodeStorage.Initialize(blockNumber, blockHash, stateHashes);
+            if (savedBlockNumber == 0) _repository.Initialize(blockNumber, blockHash, stateHashes);
             //to keep track how many tries have been downloaded till now, saved in db with LastDownloadedTries prefix
-            int downloadedTries = _nodeStorage.GetLastDownloadedTries();
+            int downloadedTries = _repository.GetLastDownloadedTries();
             _hybridQueue.Initialize();
 
             for(int i = downloadedTries; i < trieNames.Length; i++)
@@ -114,7 +113,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogTrace($"Starting trie {trieNames[i]}");
                 var rootHash = GetRootHashForTrieName(trieNames[i], stateHashes);
                 _downloader.GetTrie(rootHash);
-                bool foundRoot = _nodeStorage.GetIdByHash(rootHash, out ulong curTrieRoot);
+                bool foundRoot = _repository.GetIdByHash(rootHash, out ulong curTrieRoot);
             //    snapshots[i].SetCurrentVersion(curTrieRoot);
                 downloadedTries++;
                 _dbContext.Save(EntryPrefix.LastDownloadedTries.BuildPrefix(), downloadedTries.ToBytes().ToArray());
@@ -131,7 +130,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 foreach (var trieName in trieNames)
                 {
                     var rootHash = GetRootHashForTrieName(trieName, stateHashes);
-                    bool foundHash = _nodeStorage.GetIdByHash(rootHash, out ulong trieRoot);
+                    bool foundHash = _repository.GetIdByHash(rootHash, out ulong trieRoot);
                     var snapshot = blockchainSnapshot.GetSnapshot(trieName);
                     snapshot!.SetCurrentVersion(trieRoot);
                 }
@@ -141,7 +140,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, blockchainSnapshot);
                 
                 downloadedTries++;
-                _nodeStorage.SetLastDownloadedTries(downloadedTries);
+                _repository.SetLastDownloadedTries(downloadedTries);
                 
                 Logger.LogWarning($"Set state to block {blockNumber} complete");
             }
@@ -174,7 +173,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         private bool Alldone()
         {
-            var tiresDownloaded = _nodeStorage.GetLastDownloadedTries();
+            var tiresDownloaded = _repository.GetLastDownloadedTries();
             return tiresDownloaded == (trieNames.Length + 1) ;
         }
     }
