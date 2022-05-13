@@ -28,15 +28,26 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     {
         private IDictionary<UInt256, ulong> _idCache = new ConcurrentDictionary<UInt256, ulong>();
         private uint _idCacheCapacity = 100000;
-        private uint _blockAddPeriod = 10000;
+        private const uint _blockAddPeriod = 10000;
         private IDictionary<ulong, IHashTrieNode> _nodeCache = new ConcurrentDictionary<ulong, IHashTrieNode>();
         private uint _nodeCacheCapacity = 5000;
-        private IRocksDbContext _dbContext;
-        private VersionFactory _versionFactory;
+        private readonly IRocksDbContext _dbContext;
+        private readonly IStateManager _stateManager;
+        private readonly ISnapshotIndexRepository _snapshotIndexRepository;
+        private readonly VersionFactory _versionFactory;
+        private readonly IBlockchainSnapshot _blockchainSnapshot;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
-        public FastSyncRepository(IRocksDbContext dbContext, IStorageManager storageManager)
+        public FastSyncRepository(
+            IRocksDbContext dbContext,
+            IStateManager stateManager,
+            IStorageManager storageManager,
+            ISnapshotIndexRepository snapshotIndexRepository
+        )
         {
             _dbContext = dbContext;
+            _stateManager = stateManager;
+            _snapshotIndexRepository = snapshotIndexRepository;
+            _blockchainSnapshot = _stateManager.NewSnapshot();
             _versionFactory = storageManager.GetVersionFactory();;
         }
 
@@ -44,8 +55,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public void Initialize(ulong blockNumber, UInt256 blockHash, List<(UInt256, CheckpointType)> stateHashes)
         {
             RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
-            tx.Put(EntryPrefix.BlockNumber.BuildPrefix(), blockNumber.ToBytes().ToArray());
-            tx.Put(EntryPrefix.BlockHash.BuildPrefix(), blockHash.ToBytes());
+            tx.Put(EntryPrefix.BlockNumberFromCheckpoint.BuildPrefix(), blockNumber.ToBytes().ToArray());
+            tx.Put(EntryPrefix.BlockHashFromCheckpoint.BuildPrefix(), blockHash.ToBytes());
             foreach (var (stateHash, checkpointType) in stateHashes)
             {
                 tx.Put(EntryPrefix.StateHashByCheckpointType.BuildPrefix((byte) checkpointType),
@@ -193,14 +204,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public ulong GetBlockNumber()
         {
-            var rawBlockNumber = _dbContext.Get(EntryPrefix.BlockNumber.BuildPrefix());
+            var rawBlockNumber = _dbContext.Get(EntryPrefix.BlockNumberFromCheckpoint.BuildPrefix());
             if(rawBlockNumber == null) return 0;
             return SerializationUtils.ToUInt64(rawBlockNumber);
         }
 
         public UInt256? GetBlockHash()
         {
-            var rawBlockHash = _dbContext.Get(EntryPrefix.BlockHash.BuildPrefix());
+            var rawBlockHash = _dbContext.Get(EntryPrefix.BlockHashFromCheckpoint.BuildPrefix());
             if (rawBlockHash is null) return null;
             return UInt256Utils.ToUInt256(rawBlockHash);
         }
@@ -212,11 +223,17 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return UInt256Utils.ToUInt256(rawStateHash);
         }
 
-        public void AddBlock(IBlockSnapshot blockSnapshot, Block block)
+        public ulong GetBlockHeight()
         {
-            blockSnapshot.AddBlock(block);
-            if(block.Header.Index%200 == 0) Console.WriteLine("Added BlockHeader: "+ block.Header.Index);
-            if(block.Header.Index%_blockAddPeriod == 0) blockSnapshot.Commit();
+            return _blockchainSnapshot.Blocks.GetTotalBlockHeight();
+        }
+
+        public void AddBlock(Block block)
+        {
+            _blockchainSnapshot.Blocks.AddBlock(block);
+            if(block.Header.Index%200 == 0) Console.WriteLine("Added BlockHeader: " + block.Header.Index);
+            if(block.Header.Index%_blockAddPeriod == 0)
+                _blockchainSnapshot.Blocks.Commit();
         }
 
         private void CommitNodes()
@@ -276,6 +293,21 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public VersionFactory GetVersionFactory()
         {
             return _versionFactory;
+        }
+
+        public void SetSnapshotVersion(string trieName, UInt256 rootHash)
+        {
+            bool foundHash = GetIdByHash(rootHash, out ulong trieRoot);
+            var snapshot = _blockchainSnapshot.GetSnapshot(trieName);
+            snapshot!.SetCurrentVersion(trieRoot);
+        }
+
+        public void SetState()
+        {
+            _stateManager.Approve();
+            _stateManager.Commit();
+            _snapshotIndexRepository.SaveSnapshotForBlock(
+                _blockchainSnapshot.Blocks.GetTotalBlockHeight(), _blockchainSnapshot);
         }
     }
 }

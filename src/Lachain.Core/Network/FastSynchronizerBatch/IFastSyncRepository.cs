@@ -18,7 +18,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         ulong GetBlockNumber();
         UInt256? GetBlockHash();
         UInt256? GetStateHash(CheckpointType checkpointType);
-        void AddBlock(IBlockSnapshot blockSnapshot, Block block);
+        ulong GetBlockHeight();
+        void AddBlock(Block block);
         void CommitIds();
         void Commit();
         int GetLastDownloadedTries();
@@ -26,5 +27,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         ulong GetTotalRequests();
         void SetTotalRequests(ulong requests);
         VersionFactory GetVersionFactory();
+        void SetSnapshotVersion(string trieName, UInt256 rootHash);
+        void SetState();
     }
 }
