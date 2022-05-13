@@ -7,12 +7,14 @@ using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
 using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using NLog;
@@ -42,8 +44,13 @@ namespace Lachain.Core.Network
         private readonly object _peerHasBlocks = new object();
         private readonly object _blocksLock = new object();
         private readonly object _txLock = new object();
+        private readonly object _peerHashCheckpoint = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
         private bool _running;
+        private bool _checkpointExist;
+        private ulong? _checkpointBlockHeight;
+        private UInt256? _checkpointBlockHash;
+        private List<(UInt256, CheckpointType)>? _stateHashes;
         private readonly Thread _blockSyncThread;
         private readonly Thread _pingThread;
 
@@ -338,10 +345,168 @@ namespace Lachain.Core.Network
         public void Start()
         {
             _running = true;
-            _blockSyncThread.Start();
+            _checkpointExist = false;
             _pingThread.Start();
+            StartFastSync();
+            _blockSyncThread.Start();
         }
-        
+
+        private void StartFastSync()
+        {
+            if (_fastSync.IsRunning())
+            {
+                _fastSync.StartSync(null, null, null);
+                return;
+            }
+            while (true)
+            {
+                if (_peerHeights.Count == 0)
+                {
+                    Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+                    continue;
+                }
+                break;
+            }
+            var maxHeight = _peerHeights.Values.Max();
+            if (IsFastSyncNeeded(_blockManager.GetHeight(), maxHeight))
+            {
+                // checkpoint should exist
+                CheckIfCheckpointExist();
+                if (_checkpointExist == false)
+                {
+                    Logger.LogWarning($"Peer has max height: {maxHeight} which suggests peer has checkpoint."
+                        + " But cannot get checkpoint. Is peer malicious?");
+                    throw new Exception("invalid reply");
+                }
+                GetCheckpoint();
+                if ((_checkpointBlockHash is null) || (_checkpointBlockHeight is null) || (_stateHashes is null))
+                {
+                    Logger.LogWarning($"Peer has max height: {maxHeight} which suggests peer has checkpoint."
+                        + " But cannot get checkpoint. Is peer malicious?");
+                    throw new Exception("invalid reply");
+                }
+                lock (_peerHashCheckpoint)
+                {
+                    _fastSync.StartSync(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes);
+                    _checkpointExist = false;
+                    _checkpointBlockHash = null;
+                    _checkpointBlockHeight = null;
+                    _stateHashes = null;
+                }
+            }
+        }
+
+        private bool IsFastSyncNeeded(ulong myHeight, ulong maxHeight)
+        {
+            if (myHeight >= maxHeight) return false;
+            var syncHeight = CheckpointManager.GetClosestCheckpointHeight(maxHeight);
+            return syncHeight - myHeight >= CheckpointManager._checkpointPeriod;
+        }
+
+        private void GetCheckpoint()
+        {
+            const int maxPeersToAsk = 1;
+            var rnd = new Random();
+            while(true)
+            {
+                var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
+                var peers = _peerHeights
+                    .Where(entry => entry.Value >= maxHeight)
+                    .Select(entry => entry.Key)
+                    .OrderBy(_ => rnd.Next())
+                    .Take(maxPeersToAsk)
+                    .ToArray();
+
+                Logger.LogTrace($"Sending query for checkpoint to {peers.Length} peers");
+                var checkpointTypes = CheckpointUtils.GetAllCheckpointTypes();
+                var request = new List<byte>();
+                foreach (var checkpointType in checkpointTypes)
+                {
+                    if (checkpointType != CheckpointType.CheckpointExist)
+                    {
+                        request.Add((byte) checkpointType);
+                    }
+                }
+                var message = _networkManager.MessageFactory.CheckpointRequest(request.ToArray());
+                foreach (var peer in peers) _networkManager.SendTo(peer, message);
+                lock (_peerHashCheckpoint)
+                {
+                    var gotReply = Monitor.Wait(_peerHashCheckpoint, TimeSpan.FromMilliseconds(5000));
+                    if (gotReply)
+                    {
+                        return;
+                    }
+                    _checkpointBlockHeight = null;
+                    _checkpointBlockHash = null;
+                    _stateHashes = null;
+                }
+            }
+        }
+
+        private void CheckIfCheckpointExist()
+        {
+            const int maxPeersToAsk = 1;
+            var rnd = new Random();
+            while(true)
+            {
+                var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
+                var peers = _peerHeights
+                    .Where(entry => entry.Value >= maxHeight)
+                    .Select(entry => entry.Key)
+                    .OrderBy(_ => rnd.Next())
+                    .Take(maxPeersToAsk)
+                    .ToArray();
+
+                Logger.LogTrace($"Sending query for checkpoint to {peers.Length} peers");
+                var request = new byte[1];
+                request[0] = (byte) CheckpointType.CheckpointExist;
+                var message = _networkManager.MessageFactory.CheckpointRequest(request);
+                foreach (var peer in peers) _networkManager.SendTo(peer, message);
+                lock (_peerHashCheckpoint)
+                {
+                    var gotReply = Monitor.Wait(_peerHashCheckpoint, TimeSpan.FromMilliseconds(5000));
+                    if (gotReply)
+                    {
+                        return;
+                    }
+                    _checkpointExist = false;
+                }
+            }
+        }
+
+        public void HandleCheckpointFromPeer(List<CheckpointInfo> checkpoints, ECDSAPublicKey publicKey)
+        {
+            lock (_peerHashCheckpoint)
+            {
+                foreach (var checkpointInfo in checkpoints)
+                {
+                    switch (checkpointInfo.MessageCase)
+                    {
+                        case CheckpointInfo.MessageOneofCase.CheckpointExist:
+                            _checkpointExist = checkpointInfo.CheckpointExist.Exist;
+                            break;
+
+                        case CheckpointInfo.MessageOneofCase.CheckpointBlockHeight:
+                            _checkpointBlockHeight = checkpointInfo.CheckpointBlockHeight.BlockHeight;
+                            break;
+
+                        case CheckpointInfo.MessageOneofCase.CheckpointBlockHash:
+                            _checkpointBlockHash = checkpointInfo.CheckpointBlockHash.BlockHash;
+                            break;
+                        
+                        case CheckpointInfo.MessageOneofCase.CheckpointStateHash:
+                            if (_stateHashes is null) _stateHashes = new List<(UInt256, CheckpointType)>();
+                            var checkpointType = checkpointInfo.CheckpointStateHash.CheckpointType.ToByteArray();
+                            _stateHashes.Add(
+                                (checkpointInfo.CheckpointStateHash.StateHash,
+                                (CheckpointType) checkpointType[0]));
+                            break;
+                    }
+                }
+                Monitor.PulseAll(_peerHashCheckpoint);
+            }
+        }
+
         public void Dispose()
         {
             _running = false;

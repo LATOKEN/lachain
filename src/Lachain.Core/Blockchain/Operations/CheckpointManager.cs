@@ -13,6 +13,7 @@ namespace Lachain.Core.Blockchain.Operations
 {
     public class CheckpointManager : ICheckpointManager
     {
+        public static readonly uint _checkpointPeriod = 1000000; // 10^6
         private static readonly ILogger<CheckpointManager> Logger = LoggerFactory.GetLoggerForClass<CheckpointManager>();
         private readonly IBlockManager _blockManager;
         private readonly ICheckpointRepository _repository;
@@ -35,10 +36,14 @@ namespace Lachain.Core.Blockchain.Operations
             _blockManager.OnBlockPersisted += UpdateCheckpoint;
         }
 
-        // if the period is p, then the checkpoint will be updated after each p blocks;
-        public ulong CheckpointPeriod()
+        public static ulong GetNextCheckpointHeight(ulong height)
         {
-            return 1000000;
+            return _checkpointPeriod * (height / _checkpointPeriod + 1);
+        }
+
+        public static ulong GetClosestCheckpointHeight(ulong height)
+        {
+            return _checkpointPeriod * (height / _checkpointPeriod);
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -53,8 +58,7 @@ namespace Lachain.Core.Blockchain.Operations
         // Check if checkpoint reached. No need to save checkpoint for genesis block
         private bool CheckpointReached(ulong blockId)
         {
-            var period = CheckpointPeriod();
-            return blockId > 0 && blockId % period == 0 ;
+            return blockId > 0 && blockId % _checkpointPeriod == 0 ;
         }
 
         public void SaveCheckpoint(Block block)
@@ -119,8 +123,8 @@ namespace Lachain.Core.Blockchain.Operations
             if ( (_checkpointBlockId is null) && (_checkpointBlockHash is null) && _stateHashes.Count == 0 )
             {
                 Logger.LogInformation("nothing is saved as checkpoint. "
-                    + $"Current block height: {_blockManager.GetHeight()}, checkpoint period: {CheckpointPeriod()}");
-                return (_blockManager.GetHeight() <= CheckpointPeriod());
+                    + $"Current block height: {_blockManager.GetHeight()}, checkpoint period: {_checkpointPeriod}");
+                return (_blockManager.GetHeight() <= _checkpointPeriod);
             }
 
             if (_checkpointBlockId is null)
