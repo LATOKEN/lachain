@@ -20,16 +20,16 @@ namespace Lachain.Core.Network.FastSync
     public class RequestManager : IRequestManager
     {
  //       private Queue<string> _queue = new Queue<string>();
-        private readonly INodeStorage _nodeStorage;
+        private readonly IFastSyncRepository _repository;
 
         //how many nodes we should ask for in every request
         private uint _batchSize = 500;
 
         private readonly IHybridQueue _hybridQueue;
 
-        public RequestManager(INodeStorage nodeStorage, IHybridQueue hybridQueue)
+        public RequestManager(IFastSyncRepository repository, IHybridQueue hybridQueue)
         {
-            _nodeStorage = nodeStorage;
+            _repository = repository;
             _hybridQueue = hybridQueue;
         }
 
@@ -70,8 +70,8 @@ namespace Lachain.Core.Network.FastSync
             {
                 ulong cur = queue.Dequeue();
                 System.Console.WriteLine("id: " + cur);
-            //    System.Console.WriteLine($"id: {_nodeStorage.GetIdByHash(cur)}");
-                if(_nodeStorage.TryGetNode(cur, out IHashTrieNode? trieNode))
+            //    System.Console.WriteLine($"id: {_repository.GetIdByHash(cur)}");
+                if(_repository.TryGetNode(cur, out IHashTrieNode? trieNode))
                 {
                     switch (trieNode)
                     {
@@ -115,7 +115,7 @@ namespace Lachain.Core.Network.FastSync
                     var hash = hashBatch[i];
                     var node = response[i];
                     //check if actually the node's content produce desired hash or data is corrupted
-                    if (_nodeStorage.IsConsistent(node, out var nodeHash) && hash == nodeHash)
+                    if (_repository.IsConsistent(node, out var nodeHash) && hash == nodeHash)
                     {
                         successfulHashes.Add(hash);
                         successfulNodes.Add(node);
@@ -163,9 +163,9 @@ namespace Lachain.Core.Network.FastSync
                                 break;
                         }
 
-                        //sending the node to nodeStorage for inserting it to database
+                        //sending the node to repository for inserting it to database
                         //(maybe temporarily it will reside in memory but flushed to db later)
-                        bool res = _nodeStorage.TryAddNode(node);
+                        bool res = _repository.TryAddNode(node);
                         //informing the hybridQueue that node is received successfully
                         _hybridQueue.ReceivedNode(hash);
                     }
