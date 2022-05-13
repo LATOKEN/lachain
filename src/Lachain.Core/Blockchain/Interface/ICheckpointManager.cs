@@ -43,10 +43,6 @@ namespace Lachain.Core.Blockchain.Operations
         /// State hash of last checkpoint
         /// </returns>
         UInt256? GetStateHashForSnapshotName(string snapshotName);
-        /// <returns>
-        /// The period to updated the checkpoint
-        /// </returns>
-        ulong CheckpointPeriod();
         /// <summary>
         /// Takes the given block as a checkpoint-block and writes necessary information in DB
         /// </summary>
