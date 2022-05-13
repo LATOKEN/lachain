@@ -11,6 +11,7 @@ using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Consensus;
+using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -34,6 +35,7 @@ namespace Lachain.Core.Network
         private readonly INodeRetrieval _nodeRetrieval;
         private readonly ICheckpointManager _checkpointManager;
         private readonly INetworkManager _networkManager;
+        private readonly IDownloader _downloader;
         
         private static readonly Summary IncomingMessageHandlingTime = Metrics.CreateSummary(
             "lachain_message_handling_duration_seconds",
@@ -65,7 +67,8 @@ namespace Lachain.Core.Network
             INetworkManager networkManager,
             ISnapshotIndexRepository snapshotIndexer,
             INodeRetrieval nodeRetrieval,
-            ICheckpointManager checkpointManager
+            ICheckpointManager checkpointManager,
+            IDownloader downloader
         )
         {
             _blockSynchronizer = blockSynchronizer;
@@ -77,6 +80,7 @@ namespace Lachain.Core.Network
             _snapshotIndexer = snapshotIndexer;
             _nodeRetrieval = nodeRetrieval;
             _checkpointManager = checkpointManager;
+            _downloader = downloader;
             blockManager.OnBlockPersisted += BlockManagerOnBlockPersisted;
             transactionPool.TransactionAdded += TransactionPoolOnTransactionAdded;
             _networkManager.OnPingReply += OnPingReply;
@@ -246,8 +250,7 @@ namespace Lachain.Core.Network
                 {
                     var blocks = reply.BlockBatch.ToList();
                     var requestId = reply.RequestId;
-                    // handle the blocks via fastsync
-                    // probably use _blockSynchronizer to integrate it in a better way
+                    _downloader.HandleBlocksFromPeer(blocks, requestId, publicKey);
                 }
                 catch (Exception exception)
                 {
@@ -304,8 +307,8 @@ namespace Lachain.Core.Network
                 try
                 {
                     var trieNodes = reply.TrieNodes.ToList();
-                    // handle the blocks via fastsync
-                    // probably use _blockSynchronizer to integrate it in a better way
+                    var requestId = reply.RequestId;
+                    _downloader.HandleNodesFromPeer(trieNodes, requestId, publicKey);
                 }
                 catch (Exception exception)
                 {

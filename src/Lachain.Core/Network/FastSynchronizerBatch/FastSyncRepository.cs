@@ -260,5 +260,22 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             _dbContext.Save(EntryPrefix.LastDownloadedTries.BuildPrefix(), downloaded.ToBytes().ToArray());
         }
+
+        public ulong GetTotalRequests()
+        {
+            var rawInfo = _dbContext.Get(EntryPrefix.TotalRequests.BuildPrefix());
+            if (rawInfo is null) return 0;
+            return SerializationUtils.ToUInt64(rawInfo);
+        }
+
+        public void SetTotalRequests(ulong requests)
+        {
+            _dbContext.Save(EntryPrefix.TotalRequests.BuildPrefix(), requests.ToBytes());
+        }
+
+        public VersionFactory GetVersionFactory()
+        {
+            return _versionFactory;
+        }
     }
 }
