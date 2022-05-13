@@ -1,6 +1,6 @@
 /*
-    We don't add to db everytime we get a node, we accumulate data and make write in batches. NodeStorage helps to hold data 
-    temporary in memory and periodically flushes it to database.
+    We don't add to db everytime we get a node, we accumulate data and make write in batches. FastSyncRepository helps to hold data 
+    temporary in memory and periodically flushes it to database. It also handles all db read and write operations.
 */
 
 using System;
@@ -24,7 +24,7 @@ using Lachain.Utility.Utils;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    public class NodeStorage : INodeStorage
+    public class FastSyncRepository : IFastSyncRepository
     {
         private IDictionary<UInt256, ulong> _idCache = new ConcurrentDictionary<UInt256, ulong>();
         private uint _idCacheCapacity = 100000;
@@ -34,7 +34,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private IRocksDbContext _dbContext;
         private VersionFactory _versionFactory;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
-        public NodeStorage(IRocksDbContext dbContext, IStorageManager storageManager)
+        public FastSyncRepository(IRocksDbContext dbContext, IStorageManager storageManager)
         {
             _dbContext = dbContext;
             _versionFactory = storageManager.GetVersionFactory();;

@@ -6,7 +6,7 @@ using Lachain.Storage.Trie;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    public interface INodeStorage
+    public interface IFastSyncRepository
     {
         void Initialize(ulong blockNumber, UInt256 blockHash, List<(UInt256, CheckpointType)> stateHashes);
         bool TryAddNode(TrieNodeInfo nodeInfo);
