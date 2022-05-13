@@ -52,12 +52,12 @@
         PeerByPublicKey = 0x0e01,
 
         /*fast_sync status*/
-        BlockNumber = 0x0701,
+        BlockNumberFromCheckpoint = 0x0701,
         LastDownloadedTries = 0x0702,
         SavedBatch = 0x0703,
         TotalBatch = 0x0704,
         QueueBatch = 0x0705,
-        BlockHash = 0x0706,
+        BlockHashFromCheckpoint = 0x0706,
         StateHashByCheckpointType = 0x0707,
         TotalRequests = 0x0708,
 

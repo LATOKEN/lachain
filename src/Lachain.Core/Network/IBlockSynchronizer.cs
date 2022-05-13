@@ -23,5 +23,6 @@ namespace Lachain.Core.Network
         void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers);
 
         void Start();
+        void HandleCheckpointFromPeer(List<CheckpointInfo> checkpoints, ECDSAPublicKey publicKey);
     }
 }

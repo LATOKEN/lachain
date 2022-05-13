@@ -1,6 +1,12 @@
 /*
     This file controls the fast_sync, other necessary classes are instantiated here.
     We will be downloading 6 tree data structures, one at a time. Block headers will be downloaded differently, not as a tree.    
+
+    **SCOPE TO IMPROVE**:   Blocks are downloaded one by one. This creates lots of unnecessary nodes which can be deleted after
+                            set state is complete.
+
+    **FEATURE TO ADD**:     Fastsync is possible only for the first time. If fastsync is done before, fastsync is not allowed.
+                            It can be studied if it is necessary and add features to allow fastsync anytime.
 */
 using System;
 using System.Collections.Generic;
@@ -26,26 +32,23 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
         };
         private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
-        private readonly IStateManager _stateManager;
-        private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private readonly VersionFactory _versionFactory;
         private readonly IFastSyncRepository _repository;
         private readonly IHybridQueue _hybridQueue;
         private readonly IDownloader _downloader;
+        private readonly IBlockRequestManager _blockRequestManager;
         private readonly PeerManager _peerManager;
         public FastSynchronizerBatch(
-            IStateManager stateManager,
-            ISnapshotIndexRepository snapshotIndexRepository,
             IFastSyncRepository repository,
             IHybridQueue hybridQueue,
-            IDownloader downloader
+            IDownloader downloader,
+            IBlockRequestManager blockRequestManager
         )
         {
-            _stateManager = stateManager;
-            _snapshotIndexRepository = snapshotIndexRepository;
             _repository = repository;
             _hybridQueue = hybridQueue;
             _downloader = downloader;
+            _blockRequestManager = blockRequestManager;
             _versionFactory = _repository.GetVersionFactory();
             _peerManager = _downloader.GetPeerManager();
         }
@@ -54,7 +57,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         //urls is the list of peer nodes, we'll be requesting for data throughtout this process
         //blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
         //start synching with that peer
-        public void StartSync(ulong blockNumber, UInt256 blockHash, List<(UInt256, CheckpointType)> stateHashes)
+        public void StartSync(ulong? blockNumber, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
             //At first we check if fast sync have started and completed before.
             // If it has completed previously, we don't let the user run it again.
@@ -70,21 +73,23 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             //If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
             ulong savedBlockNumber = _repository.GetBlockNumber();
             var savedSateHashes = new List<(UInt256, CheckpointType)>();
-            if(savedBlockNumber != 0)
+            if (savedBlockNumber != 0)
             {
                 blockNumber = savedBlockNumber;
                 blockHash = _repository.GetBlockHash()!;
-                foreach (var checkpointInfo in stateHashes)
+                foreach (var trieName in trieNames)
                 {
-                    var (stateHash, checkpointType) = checkpointInfo;
-                    stateHash = _repository.GetStateHash(checkpointType);
+                    var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
+                    if (checkpointType is null)
+                        throw new Exception($"trie name {trieName} is not correct");
+                    var stateHash = _repository.GetStateHash(checkpointType.Value);
                     if (stateHash is null)
                         throw new ArgumentException($"Got null hash for checkpoint type: {checkpointType}");
-                    savedSateHashes.Add((stateHash!, checkpointType));
+                    savedSateHashes.Add((stateHash!, checkpointType.Value));
                 }
                 stateHashes = savedSateHashes;
             }
-            if (stateHashes.Count != 6)
+            if (stateHashes!.Count != 6)
                 throw new ArgumentException($"There must be six state-hash, got {stateHashes.Count}");
 
             // Checking if we have root hashes for all six tries.
@@ -93,7 +98,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 CheckRootHashExist(trieName, stateHashes);
             }
             
-            if (savedBlockNumber == 0) _repository.Initialize(blockNumber, blockHash, stateHashes);
+            if (savedBlockNumber == 0) _repository.Initialize(blockNumber!.Value, blockHash!, stateHashes);
             //to keep track how many tries have been downloaded till now, saved in db with LastDownloadedTries prefix
             int downloadedTries = _repository.GetLastDownloadedTries();
             _hybridQueue.Initialize();
@@ -115,20 +120,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             
             if (downloadedTries == (int) trieNames.Length)
             {
-                var blockchainSnapshot = _stateManager.NewSnapshot();
+                _blockRequestManager.SetMaxBlock(blockNumber!.Value);
                 _downloader.DownloadBlocks();
                 foreach (var trieName in trieNames)
                 {
                     var rootHash = GetRootHashForTrieName(trieName, stateHashes);
-                    bool foundHash = _repository.GetIdByHash(rootHash, out ulong trieRoot);
-                    var snapshot = blockchainSnapshot.GetSnapshot(trieName);
-                    snapshot!.SetCurrentVersion(trieRoot);
+                    _repository.SetSnapshotVersion(trieName, rootHash);
                 }
 
-                _stateManager.Approve();
-                _stateManager.Commit();
-                _snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, blockchainSnapshot);
-                
+                _repository.SetState();
                 downloadedTries++;
                 _repository.SetLastDownloadedTries(downloadedTries);
                 
@@ -139,6 +139,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public void AddPeer(ECDSAPublicKey publicKey)
         {
             _peerManager.AddPeer(publicKey);
+        }
+
+        public void RemovePeer(ECDSAPublicKey publicKey)
+        {
+            
         }
 
         private void CheckRootHashExist(string trieName, List<(UInt256, CheckpointType)> stateHashes)
@@ -170,6 +175,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             var tiresDownloaded = _repository.GetLastDownloadedTries();
             return tiresDownloaded == (trieNames.Length + 1) ;
+        }
+
+        public bool IsRunning()
+        {
+            return _repository.GetBlockNumber() > 0;
         }
     }
 }

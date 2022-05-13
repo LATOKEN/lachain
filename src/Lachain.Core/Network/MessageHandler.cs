@@ -426,7 +426,7 @@ namespace Lachain.Core.Network
                 try
                 {
                     var checkpoints = reply.Checkpoints.ToList();
-                    // handle checkpoint info
+                    _blockSynchronizer.HandleCheckpointFromPeer(checkpoints, publicKey);
                 }
                 catch (Exception exception)
                 {
