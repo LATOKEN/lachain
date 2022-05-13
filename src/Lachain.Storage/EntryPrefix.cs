@@ -73,6 +73,7 @@
         QueueBatch = 0x0705,
         BlockHashFromCheckpoint = 0x0706,
         StateHashByCheckpointType = 0x0707,
+        TotalRequests = 0x0708,
 
         /* checkpoint info */
         CheckpointBlockHeights = 0x0f01,
