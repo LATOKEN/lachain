@@ -24,7 +24,8 @@ namespace Lachain.Core.Network.FastSync
     public class Downloader : IDownloader
     {
 
-        private ulong _totalRequests = 0; // must initialize from DB
+        private ulong _totalRequests;
+        private const uint _requestUpdatePeriod = 10000;
         private readonly INetworkManager _networkManager;
         private readonly PeerManager _peerManager;
         private readonly IRequestManager _requestManager;
@@ -110,7 +111,9 @@ namespace Lachain.Core.Network.FastSync
                 else
                 {
                     message = _networkManager.MessageFactory.TrieNodeByHashRequest(request._nodeBatch!, request._requestId);
-                }
+                } ;
+                Logger.LogInformation($"Object ready for sending to peer{request._peer._publicKey.ToHex()}, "
+                    + $"spent time:{(DateTime.Now - request._start).TotalMilliseconds}");
                 _networkManager.SendTo(request._peer._publicKey, message);
                 TimeOut(request._peerHasReply, request._requestId);
             }
@@ -179,10 +182,19 @@ namespace Lachain.Core.Network.FastSync
                 DateTime receiveTime = DateTime.Now;
                 var peer = request._peer;
                 var batch = request._blockBatch;
+                // Let the TimeOut know that we got the response
+                lock (request._peerHasReply)
+                {
+                    Monitor.PulseAll(request._peerHasReply);
+                }
                 try
                 {
-                    if (peer._publicKey != publicKey || request._type != RequestType.BlocksRequest) 
-                        throw new ArgumentException($"Got blocks reply for request type: {request._type} from peer: {publicKey.ToHex()}");
+                    if (peer._publicKey != publicKey || request._type != RequestType.BlocksRequest)
+                    {
+                        Logger.LogWarning($"Asked for blocks to peer: {peer._publicKey.ToHex()} with  request id: "
+                            + $"{request._requestId} and request type: {request._type}, got reply from peer: {publicKey.ToHex()}");
+                        throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
+                    }
                     Logger.LogInformation($"Received data {request._type} size:{batch!.Count}  time spent:{time.TotalMilliseconds}"
                         + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
                     _peerManager.TryFreePeer(peer, true);
@@ -194,12 +206,6 @@ namespace Lachain.Core.Network.FastSync
                     Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._publicKey.ToHex()}");
                     _peerManager.TryFreePeer(peer, false);
                     _blockRequestManager.HandleResponse(batch!, new List<Block>());
-                }
-
-                // Let the TimeOut know that we got the response
-                lock (request._peerHasReply)
-                {
-                    Monitor.PulseAll(request._peerHasReply);
                 }
             }
         }
@@ -213,10 +219,19 @@ namespace Lachain.Core.Network.FastSync
                 DateTime receiveTime = DateTime.Now;
                 var peer = request._peer;
                 var batch = request._nodeBatch;
+                // Let the TimeOut know that we got the response
+                lock (request._peerHasReply)
+                {
+                    Monitor.PulseAll(request._peerHasReply);
+                }
                 try
                 {
                     if (peer._publicKey != publicKey || request._type != RequestType.NodesRequest) 
-                        throw new ArgumentException($"Got trie-nodes reply for request type: {request._type} from peer: {publicKey.ToHex()}");
+                    {
+                        Logger.LogWarning($"Asked for nodes to peer: {peer._publicKey.ToHex()} with  request id: "
+                            + $"{request._requestId} and request type: {request._type}, got reply from peer: {publicKey.ToHex()}");
+                        throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
+                    }
                     Logger.LogInformation($"Received data {request._type} size:{batch!.Count}  time spent:{time.TotalMilliseconds}"
                         + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
                     _peerManager.TryFreePeer(peer, true);
@@ -228,12 +243,6 @@ namespace Lachain.Core.Network.FastSync
                     Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._publicKey.ToHex()}");
                     _peerManager.TryFreePeer(peer, false);
                     _requestManager.HandleResponse(batch!, new List<TrieNodeInfo>());
-                }
-
-                // Let the TimeOut know that we got the response
-                lock (request._peerHasReply)
-                {
-                    Monitor.PulseAll(request._peerHasReply);
                 }
             }
         }
@@ -577,6 +586,12 @@ namespace Lachain.Core.Network.FastSync
         {
             _checkpointBlock = null;
             _checkpointStateHashes = null;
+        }
+
+        private void UpdateTotalRequest()
+        {
+            if (_totalRequests % _requestUpdatePeriod == 0)
+                _repository.SetTotalRequests(_totalRequests);
         }
 
     }
