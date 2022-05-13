@@ -27,36 +27,26 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         };
         private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
         private readonly IStateManager _stateManager;
-        private readonly IRocksDbContext _dbContext;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
-        private readonly INetworkManager _networkManager;
         private readonly VersionFactory _versionFactory;
         private readonly IFastSyncRepository _repository;
         private readonly IHybridQueue _hybridQueue;
-        private readonly IRequestManager _requestManager;
         private readonly IDownloader _downloader;
         private readonly PeerManager _peerManager;
         public FastSynchronizerBatch(
             IStateManager stateManager,
-            IRocksDbContext dbContext,
             ISnapshotIndexRepository snapshotIndexRepository,
-            INetworkManager networkManager,
-            IStorageManager storageManager,
             IFastSyncRepository repository,
             IHybridQueue hybridQueue,
-            IRequestManager requestManager,
             IDownloader downloader
         )
         {
             _stateManager = stateManager;
-            _dbContext = dbContext;
             _snapshotIndexRepository = snapshotIndexRepository;
-            _networkManager = networkManager;
             _repository = repository;
             _hybridQueue = hybridQueue;
-            _requestManager = requestManager;
             _downloader = downloader;
-            _versionFactory = storageManager.GetVersionFactory();
+            _versionFactory = _repository.GetVersionFactory();
             _peerManager = _downloader.GetPeerManager();
         }
 
@@ -116,14 +106,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 bool foundRoot = _repository.GetIdByHash(rootHash, out ulong curTrieRoot);
             //    snapshots[i].SetCurrentVersion(curTrieRoot);
                 downloadedTries++;
-                _dbContext.Save(EntryPrefix.LastDownloadedTries.BuildPrefix(), downloadedTries.ToBytes().ToArray());
+                _repository.SetLastDownloadedTries(downloadedTries);
                 Logger.LogTrace($"Ending trie {trieNames[i]} : {curTrieRoot}");
             //    bool isConsistent = requestManager.CheckConsistency(curTrieRoot);
             //    Console.WriteLine("Is Consistent : "+isConsistent );
                 Logger.LogTrace($"Total Nodes downloaded: {_versionFactory.CurrentVersion}");
             }
             
-            if(downloadedTries==(int)trieNames.Length)
+            if (downloadedTries == (int) trieNames.Length)
             {
                 var blockchainSnapshot = _stateManager.NewSnapshot();
                 _downloader.DownloadBlocks();
@@ -144,6 +134,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 
                 Logger.LogWarning($"Set state to block {blockNumber} complete");
             }
+        }
+
+        public void AddPeer(ECDSAPublicKey publicKey)
+        {
+            _peerManager.AddPeer(publicKey);
         }
 
         private void CheckRootHashExist(string trieName, List<(UInt256, CheckpointType)> stateHashes)

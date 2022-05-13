@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Google.Protobuf;
-using Lachain.Logger;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
+using Lachain.Core.Network.FastSynchronizerBatch;
+using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -35,6 +36,7 @@ namespace Lachain.Core.Network
         private readonly INetworkManager _networkManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
+        private readonly IFastSynchronizerBatch _fastSync;
 
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
@@ -54,7 +56,8 @@ namespace Lachain.Core.Network
             INetworkBroadcaster networkBroadcaster,
             INetworkManager networkManager,
             ITransactionPool transactionPool,
-            IStateManager stateManager
+            IStateManager stateManager,
+            IFastSynchronizerBatch fastSync
         )
         {
             _transactionManager = transactionManager;
@@ -63,6 +66,7 @@ namespace Lachain.Core.Network
             _networkManager = networkManager;
             _transactionPool = transactionPool;
             _stateManager = stateManager;
+            _fastSync = fastSync;
             _blockSyncThread = new Thread(BlockSyncWorker);
             _pingThread = new Thread(PingWorker);
         }
@@ -186,6 +190,7 @@ namespace Lachain.Core.Network
                 if (_peerHeights.TryGetValue(publicKey, out var peerHeight) && blockHeight <= peerHeight)
                     return;
                 _peerHeights[publicKey] = blockHeight;
+                _fastSync.AddPeer(publicKey);
                 Monitor.PulseAll(_peerHasBlocks);
             }
         }
