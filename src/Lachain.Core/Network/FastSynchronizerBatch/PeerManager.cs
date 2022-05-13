@@ -13,7 +13,7 @@ using Lachain.Proto;
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    public class PeerManager : IPeerManager
+    public class PeerManager
     {
         private Queue<Peer> _availableGoodPeers = new Queue<Peer>();
         private Queue<Peer> _availableBadPeers = new Queue<Peer>();

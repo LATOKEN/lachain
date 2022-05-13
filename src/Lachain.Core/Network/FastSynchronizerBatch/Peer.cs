@@ -10,7 +10,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     public class Peer : IEquatable<Peer>
     {
         public ECDSAPublicKey _publicKey;
-        public string _url;
         public Peer(ECDSAPublicKey publicKey)
         {
             _publicKey = publicKey;
