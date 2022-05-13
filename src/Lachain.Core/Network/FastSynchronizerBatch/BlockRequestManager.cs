@@ -28,15 +28,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private uint _batchSize = 1000;
         private ulong _done = 0;
         private ulong _maxBlock = 0;
-        private readonly IBlockSnapshot _blockSnapshot;
         private readonly IFastSyncRepository _repository; 
         public ulong MaxBlock => _maxBlock;
 
-        public BlockRequestManager(IBlockSnapshot blockSnapshot, IFastSyncRepository repository)
+        public BlockRequestManager(IFastSyncRepository repository)
         {
             _repository = repository;
-            _blockSnapshot = blockSnapshot;
-            _done = blockSnapshot.GetTotalBlockHeight();
+            _done = _repository.GetBlockHeight();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -53,7 +51,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public bool TryGetBatch(out List<ulong> batch)
         {
             batch = new List<ulong>();
-            for(ulong i=0; i<_batchSize && nextBlocksToDownload.Count>0; i++)
+            for(ulong i=0; i < _batchSize && nextBlocksToDownload.Count > 0; i++)
             {
                 ulong blockId = nextBlocksToDownload.Min;
                 _pending.Add(blockId);
@@ -67,7 +65,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         
         public bool Done()
         {
-            return _done==_maxBlock && _pending.Count==0;
+            return _done == _maxBlock && _pending.Count==0;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -87,7 +85,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 }
             }
             else{
-                for(int i=0; i<batch.Count; i++)
+                for(int i=0; i < batch.Count; i++)
                 {
                     ulong blockId = batch[i];
                     if(_pending.Contains(blockId))
@@ -107,7 +105,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             DateTime start = DateTime.Now;
             while(downloaded.TryGetValue(_done+1, out var blockRawHex))
             {
-                _repository.AddBlock(_blockSnapshot, block);
+                _repository.AddBlock(block);
                 _done++;
                 
                 downloaded.Remove(_done);

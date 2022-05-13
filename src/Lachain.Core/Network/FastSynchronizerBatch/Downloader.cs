@@ -34,7 +34,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private readonly IRequestManager _requestManager;
         private readonly IFastSyncRepository _repository;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
-        private const int DefaultTimeout = 5 * 1000; // 5 sec 
+        private const int DefaultTimeout = 5 * 1000; // 5000 millisecond 
         private readonly IBlockRequestManager _blockRequestManager; 
         private IDictionary<ulong, RequestState> _requests = new Dictionary<ulong, RequestState>();
         private static readonly ILogger<Downloader> Logger = LoggerFactory.GetLoggerForClass<Downloader>();
@@ -51,6 +51,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _blockRequestManager = blockRequestManager;
             _repository = repository;
             _peerManager = new PeerManager();
+            _totalRequests = _repository.GetTotalRequests();
         }
 
         public PeerManager GetPeerManager()

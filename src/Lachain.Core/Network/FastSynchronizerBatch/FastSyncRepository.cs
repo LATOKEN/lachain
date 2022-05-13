@@ -344,5 +344,20 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             if (_blockchainSnapshot is null) _blockchainSnapshot = _stateManager.NewSnapshot();
         }
+
+        public void SetSnapshotVersion(string trieName, UInt256 rootHash)
+        {
+            bool foundHash = GetIdByHash(rootHash, out ulong trieRoot);
+            var snapshot = _blockchainSnapshot.GetSnapshot(trieName);
+            snapshot!.SetCurrentVersion(trieRoot);
+        }
+
+        public void SetState()
+        {
+            _stateManager.Approve();
+            _stateManager.Commit();
+            _snapshotIndexRepository.SaveSnapshotForBlock(
+                _blockchainSnapshot.Blocks.GetTotalBlockHeight(), _blockchainSnapshot);
+        }
     }
 }
