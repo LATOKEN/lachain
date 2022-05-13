@@ -101,7 +101,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             // Checking if we have root hashes for all six tries.
             foreach (var trieName in trieNames)
             {
-                CheckRootHash(trieName, stateHashes);
+                CheckRootHashExist(trieName, stateHashes);
             }
             
             if (savedBlockNumber == 0) _nodeStorage.Initialize(blockNumber, blockHash, stateHashes);
@@ -147,7 +147,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
         }
 
-        private void CheckRootHash(string trieName, List<(UInt256, CheckpointType)> stateHashes)
+        private void CheckRootHashExist(string trieName, List<(UInt256, CheckpointType)> stateHashes)
         {
             var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
             foreach (var (stateHash, _checkpointType) in stateHashes)
