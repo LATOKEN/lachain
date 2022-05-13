@@ -29,12 +29,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private ulong _done = 0;
         private ulong _maxBlock = 0;
         private readonly IBlockSnapshot _blockSnapshot;
-        private readonly INodeStorage _nodeStorage; 
+        private readonly IFastSyncRepository _repository; 
         public ulong MaxBlock => _maxBlock;
 
-        public BlockRequestManager(IBlockSnapshot blockSnapshot, INodeStorage nodeStorage)
+        public BlockRequestManager(IBlockSnapshot blockSnapshot, IFastSyncRepository repository)
         {
-            _nodeStorage = nodeStorage;
+            _repository = repository;
             _blockSnapshot = blockSnapshot;
             _done = blockSnapshot.GetTotalBlockHeight();
         }
@@ -104,7 +104,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             while(downloaded.TryGetValue(_done+1, out var block))
             {
-                _nodeStorage.AddBlock(_blockSnapshot, block);
+                _repository.AddBlock(_blockSnapshot, block);
                 _done++;
                 downloaded.Remove(_done);
             }

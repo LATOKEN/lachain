@@ -139,33 +139,6 @@ namespace Lachain.Console
             Logger.LogInformation($"Node public key: {wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex()}");
             Logger.LogInformation($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
 
-            if (options.SetStateTo.Any())
-            {
-                List<string> args = options.SetStateTo.ToList();
-            //    System.Console.WriteLine(args);
-                ulong blockNumber = 0;
-                if( !(args is null) && args.Count>0)
-                {
-                    blockNumber = Convert.ToUInt64(args[0]);
-                }
-
-                var addresses = configManager.GetConfig<NetworkConfig>("network")?.BootstrapAddresses;
-                for(int i=0; i<addresses?.Length; i++)
-                {
-                    string tempAddress = addresses[i];
-                    StringBuilder address = new StringBuilder("http://");
-                    int j=0;
-                    while(tempAddress[j]!='@') j++;
-                    for( j++; tempAddress[j]!=':'; j++) address.Append(tempAddress[j]);
-                    address.Append(":7070");
-                    addresses[i] = address.ToString();
-                }
-
-                //FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                  //                              storageManager.GetVersionFactory(), blockNumber, addresses.ToList());
-
-            }
-
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
 
