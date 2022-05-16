@@ -90,6 +90,8 @@ namespace Lachain.Core.Network
             _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
             _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
+            _networkManager.OnRootHashByTrieNameRequest += OnRootHashByTrieNameRequest;
+            _networkManager.OnRootHashByTrieNameReply += OnRootHashByTrieNameReply;
             _networkManager.OnBlockBatchRequest += OnBlockBatchRequest;
             _networkManager.OnBlockBatchReply += OnBlockBatchReply;
             _networkManager.OnTrieNodeByHashRequest += OnTrieNodeByHashRequest;
@@ -349,12 +351,27 @@ namespace Lachain.Core.Network
                         blockBatch.Add(block);
                     }
                 }
-                var reply = new BlockBatchReply
+                else
                 {
-                    BlockBatch = {blockBatch},
-                    RequestId = request.RequestId
-                };
-                callback(reply);
+                    foreach (var blockNumber in blockNumbers)
+                    {
+                        var block = _blockManager.GetByHeight(blockNumber);
+                        if (block == null)
+                        {
+                            Logger.LogWarning($"Found null block for {blockNumber} which should not happen. My height: "
+                                + $"{_blockManager.GetHeight()}, max block number requested: {blockNumbers.Last()}. So chose not to reply.");
+                            blockBatch.Clear();
+                            break;
+                        }
+                        blockBatch.Add(block);
+                    }
+                    var reply = new BlockBatchReply
+                    {
+                        BlockBatch = {blockBatch},
+                        RequestId = request.RequestId
+                    };
+                    callback(reply);
+                }
             }
             catch (Exception exception)
             {
