@@ -110,6 +110,24 @@ namespace Lachain.CoreTest.IntegrationTests
 
         [Test]
         [Repeat(2)]
+        public void Test_RootHashByTrieNameRequestAndReply()
+        {
+            ulong totalBlocks = 10;
+            GenerateBlocks(totalBlocks);
+            string[] snapshotNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
+            for (ulong i = 1 ; i <= totalBlocks; i++)
+            {
+                foreach (var snapshotName in snapshotNames)
+                {
+                    var message = _networkManager.MessageFactory.RootHashByTrieNameRequest(i , snapshotName, 0);
+                    CheckRootHashByTrieNameRequest(message, i , snapshotName);
+                }
+            }
+
+        }
+
+        [Test]
+        [Repeat(2)]
         public void Test_TrieNodeByHashRequestAndReply()
         {
             ulong totalBlocks = 10;
@@ -266,7 +284,8 @@ namespace Lachain.CoreTest.IntegrationTests
             }
             var reply = new BlockBatchReply
             {
-                BlockBatch = {blockBatch}
+                BlockBatch = {blockBatch},
+                RequestId = request.RequestId
             };
             CheckBlockBatchReply(reply);
             
@@ -281,6 +300,33 @@ namespace Lachain.CoreTest.IntegrationTests
                 var sameBlock = _blockManager.GetByHeight(blockId);
                 Assert.AreEqual(block, sameBlock, "block from reply and block from blockmanager did not match");
             }
+        }
+
+        public void CheckRootHashByTrieNameRequest(NetworkMessage message, ulong block, string snapshotName)
+        {
+            // most of it copy pasted from OnRootHashByTrieNameRequest from MessageHandler.cs 
+
+            Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
+            var request = message.RootHashByTrieNameRequest;
+
+            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
+            var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
+            var reply = new RootHashByTrieNameReply
+            {
+                RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash,
+                RequestId = request.RequestId
+            };
+            CheckRootHashByTrieNameReply(reply, block, snapshotName);
+
+            Logger.LogTrace("Finished processing OnRootHashByTrieNameRequest");
+        }
+
+        public void CheckRootHashByTrieNameReply(RootHashByTrieNameReply reply, ulong blockIndex, string snapshotName)
+        {
+            var snapshotRootHash = reply.RootHash;
+            var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(blockIndex);
+            var snapshot = blockchainSnapshot.GetSnapshot(snapshotName);
+            Assert.AreEqual(snapshotRootHash , snapshot!.Hash, "snapshot root hash does not match");
         }
 
         public void CheckTrieNodeByHashRequest(NetworkMessage message, ISnapshot snapshot)
@@ -327,7 +373,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var reply = new TrieNodeByHashReply
             {
-                TrieNodes = {trieNodeInfoList}
+                TrieNodes = {trieNodeInfoList},
+                RequestId = request.RequestId
             };
             CheckTrieNodeByHashReply(reply, snapshot);
             
