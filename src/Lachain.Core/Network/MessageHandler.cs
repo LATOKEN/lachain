@@ -90,6 +90,8 @@ namespace Lachain.Core.Network
             _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
             _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
+            _networkManager.OnRootHashByTrieNameRequest += OnRootHashByTrieNameRequest;
+            _networkManager.OnRootHashByTrieNameReply += OnRootHashByTrieNameReply;
             _networkManager.OnBlockBatchRequest += OnBlockBatchRequest;
             _networkManager.OnBlockBatchReply += OnBlockBatchReply;
             _networkManager.OnTrieNodeByHashRequest += OnTrieNodeByHashRequest;
@@ -242,6 +244,59 @@ namespace Lachain.Core.Network
             }
         }
 
+        private void OnRootHashByTrieNameReply(object sender, (RootHashByTrieNameReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameReply").NewTimer();
+            Logger.LogTrace("Start processing OnRootHashByTrieNameReply");
+            var (reply, publicKey) = @event;
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    // start downloading the trie via fastsync
+                    // probably use _blockSynchronizer to integrate it in a better way
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError($"Error occured while handling root hash from peer {publicKey.ToHex()}: {exception}");
+                }
+            }, TaskCreationOptions.LongRunning);
+            Logger.LogTrace("Finished processing OnRootHashByTrieNameReply");
+        }
+
+        private void OnRootHashByTrieNameRequest(object sender,
+            (RootHashByTrieNameRequest request, Action<RootHashByTrieNameReply> callback) @event
+        )
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameRequest").NewTimer();
+            Logger.LogTrace("Start processing OnRootHashByTrieNameRequest");
+            var (request, callback) = @event;
+            try
+            {
+                var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(request.Block);
+                var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
+                var reply = new RootHashByTrieNameReply
+                {
+                    RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash,
+                    RequestId = request.RequestId
+                };
+                callback(reply);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception trying to get root hash for trie {request.TrieName}"
+                    + $" for block {request.Block} : {exception}");
+                var reply = new RootHashByTrieNameReply
+                {
+                    RootHash = UInt256Utils.Zero,
+                    RequestId = request.RequestId
+                };
+                callback(reply);
+            }
+
+            Logger.LogTrace("Finished processing OnRootHashByTrieNameRequest");
+        }
+
         private void OnBlockBatchReply(object? sender, (BlockBatchReply reply, ECDSAPublicKey publicKey) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("OnBlockBatchReply").NewTimer();
@@ -313,10 +368,25 @@ namespace Lachain.Core.Network
                 }
                 var reply = new BlockBatchReply
                 {
-                    BlockBatch = {blockBatch},
-                    RequestId = request.RequestId
-                };
-                callback(reply);
+                    foreach (var blockNumber in blockNumbers)
+                    {
+                        var block = _blockManager.GetByHeight(blockNumber);
+                        if (block == null)
+                        {
+                            Logger.LogWarning($"Found null block for {blockNumber} which should not happen. My height: "
+                                + $"{_blockManager.GetHeight()}, max block number requested: {blockNumbers.Last()}. So chose not to reply.");
+                            blockBatch.Clear();
+                            break;
+                        }
+                        blockBatch.Add(block);
+                    }
+                    var reply = new BlockBatchReply
+                    {
+                        BlockBatch = {blockBatch},
+                        RequestId = request.RequestId
+                    };
+                    callback(reply);
+                }
             }
             catch (Exception exception)
             {

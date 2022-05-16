@@ -49,10 +49,6 @@ namespace Lachain.Core.Network
         private readonly object _peerHasCheckpoint = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
         private bool _running;
-        private bool _checkpointExist;
-        private ulong? _checkpointBlockHeight;
-        private UInt256? _checkpointBlockHash;
-        private List<(UInt256, CheckpointType)>? _stateHashes;
         private readonly Thread _blockSyncThread;
         private readonly Thread _pingThread;
 
