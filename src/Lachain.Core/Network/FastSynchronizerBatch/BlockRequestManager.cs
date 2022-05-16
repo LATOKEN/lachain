@@ -34,12 +34,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public BlockRequestManager(IFastSyncRepository repository)
         {
             _repository = repository;
-            _done = _repository.GetBlockHeight();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetMaxBlock(ulong maxBlock)
         {
+            _done = _repository.GetBlockHeight();
             if (_maxBlock != 0)
                 throw new Exception("Trying to set max block second time.");
             _maxBlock = maxBlock;

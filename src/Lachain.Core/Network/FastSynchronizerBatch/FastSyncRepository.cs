@@ -35,7 +35,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private readonly IStateManager _stateManager;
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
         private readonly VersionFactory _versionFactory;
-        private readonly IBlockchainSnapshot _blockchainSnapshot;
+        private IBlockchainSnapshot? _blockchainSnapshot;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         public FastSyncRepository(
             IRocksDbContext dbContext,
@@ -47,7 +47,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _dbContext = dbContext;
             _stateManager = stateManager;
             _snapshotIndexRepository = snapshotIndexRepository;
-            _blockchainSnapshot = _stateManager.NewSnapshot();
             _versionFactory = storageManager.GetVersionFactory();;
         }
 
@@ -225,12 +224,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public ulong GetBlockHeight()
         {
-            return _blockchainSnapshot.Blocks.GetTotalBlockHeight();
+            Initialize();
+            return _blockchainSnapshot!.Blocks.GetTotalBlockHeight();
         }
 
         public void AddBlock(Block block)
         {
-            _blockchainSnapshot.Blocks.AddBlock(block);
+            Initialize();
+            _blockchainSnapshot!.Blocks.AddBlock(block);
             if(block.Header.Index%200 == 0) Console.WriteLine("Added BlockHeader: " + block.Header.Index);
             if(block.Header.Index%_blockAddPeriod == 0)
                 _blockchainSnapshot.Blocks.Commit();
@@ -297,17 +298,24 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public void SetSnapshotVersion(string trieName, UInt256 rootHash)
         {
+            Initialize();
             bool foundHash = GetIdByHash(rootHash, out ulong trieRoot);
-            var snapshot = _blockchainSnapshot.GetSnapshot(trieName);
+            var snapshot = _blockchainSnapshot!.GetSnapshot(trieName);
             snapshot!.SetCurrentVersion(trieRoot);
         }
 
         public void SetState()
         {
+            Initialize();
             _stateManager.Approve();
             _stateManager.Commit();
             _snapshotIndexRepository.SaveSnapshotForBlock(
-                _blockchainSnapshot.Blocks.GetTotalBlockHeight(), _blockchainSnapshot);
+                _blockchainSnapshot!.Blocks.GetTotalBlockHeight(), _blockchainSnapshot);
+        }
+
+        private void Initialize()
+        {
+            if (_blockchainSnapshot is null) _blockchainSnapshot = _stateManager.NewSnapshot();
         }
     }
 }
