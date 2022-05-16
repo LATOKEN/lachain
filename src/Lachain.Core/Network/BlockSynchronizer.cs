@@ -47,15 +47,21 @@ namespace Lachain.Core.Network
         private readonly object _peerHashCheckpoint = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
         private bool _running;
-        private bool _checkpointExist;
-        private ulong? _checkpointBlockHeight;
-        private UInt256? _checkpointBlockHash;
-        private List<(UInt256, CheckpointType)>? _stateHashes;
         private readonly Thread _blockSyncThread;
         private readonly Thread _pingThread;
 
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
+
+        // These are checkpoint info
+        // We will get these info from other peers via network messaging.
+        // But we cannot start fast sync whenever we get these info because then any peer can start fastsync
+        // by sending valid checkpoint informations from outside. We don't want that.
+        // So we need to control when to start fastsync and some logic to for that.
+        private bool? _checkpointExist;
+        private ulong? _checkpointBlockHeight;
+        private UInt256? _checkpointBlockHash;
+        private List<(UInt256, CheckpointType)>? _stateHashes;
 
         public BlockSynchronizer(
             ITransactionManager transactionManager,
@@ -345,7 +351,6 @@ namespace Lachain.Core.Network
         public void Start()
         {
             _running = true;
-            _checkpointExist = false;
             _pingThread.Start();
             StartFastSync();
             _blockSyncThread.Start();
@@ -372,23 +377,20 @@ namespace Lachain.Core.Network
             {
                 // checkpoint should exist
                 CheckIfCheckpointExist();
-                if (_checkpointExist == false)
+                lock (_peerHashCheckpoint)
                 {
-                    Logger.LogWarning($"Peer has max height: {maxHeight} which suggests peer has checkpoint."
-                        + " But cannot get checkpoint. Is peer malicious?");
-                    throw new Exception("invalid reply");
+                    if (_checkpointExist == false || _checkpointExist is null)
+                    {
+                        Logger.LogWarning($"Peer has max height: {maxHeight} which suggests peer has checkpoint."
+                            + " But cannot get checkpoint. Is peer malicious?");
+                        throw new Exception("invalid reply");
+                    }
                 }
                 GetCheckpoint();
-                if ((_checkpointBlockHash is null) || (_checkpointBlockHeight is null) || (_stateHashes is null))
-                {
-                    Logger.LogWarning($"Peer has max height: {maxHeight} which suggests peer has checkpoint."
-                        + " But cannot get checkpoint. Is peer malicious?");
-                    throw new Exception("invalid reply");
-                }
                 lock (_peerHashCheckpoint)
                 {
                     _fastSync.StartSync(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes);
-                    _checkpointExist = false;
+                    _checkpointExist = null;
                     _checkpointBlockHash = null;
                     _checkpointBlockHeight = null;
                     _stateHashes = null;
@@ -400,7 +402,7 @@ namespace Lachain.Core.Network
         {
             if (myHeight >= maxHeight) return false;
             var syncHeight = CheckpointManager.GetClosestCheckpointHeight(maxHeight);
-            return syncHeight - myHeight >= CheckpointManager._checkpointPeriod;
+            return syncHeight > myHeight && syncHeight - myHeight >= CheckpointManager._checkpointPeriod;
         }
 
         private void GetCheckpoint()
@@ -469,7 +471,7 @@ namespace Lachain.Core.Network
                     {
                         return;
                     }
-                    _checkpointExist = false;
+                    _checkpointExist = null;
                 }
             }
         }
@@ -478,6 +480,11 @@ namespace Lachain.Core.Network
         {
             lock (_peerHashCheckpoint)
             {
+                // remove info from previous reply
+                _checkpointExist = null;
+                _checkpointBlockHash = null;
+                _checkpointBlockHeight = null;
+                _stateHashes = null;
                 foreach (var checkpointInfo in checkpoints)
                 {
                     switch (checkpointInfo.MessageCase)
@@ -502,6 +509,10 @@ namespace Lachain.Core.Network
                                 (CheckpointType) checkpointType[0]));
                             break;
                     }
+                }
+                if (_checkpointBlockHeight != null && !_fastSync.IsCheckpointOk(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes))
+                {
+                    throw new Exception($"Got invalid checkpoint information from peer: {publicKey.ToHex()}. Is peer malicious?");
                 }
                 Monitor.PulseAll(_peerHashCheckpoint);
             }

@@ -9,5 +9,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         void StartSync(ulong? blockNumber, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes);
         void AddPeer(ECDSAPublicKey publicKey);
         bool IsRunning();
+        bool IsCheckpointOk(ulong? blockHeight, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes);
     }
 }
