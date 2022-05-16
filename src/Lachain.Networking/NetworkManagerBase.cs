@@ -150,6 +150,8 @@ namespace Lachain.Networking
                     SyncBlocksReply syncBlockReply => new NetworkMessage {SyncBlocksReply = syncBlockReply},
                     SyncPoolReply syncPoolReply => new NetworkMessage {SyncPoolReply = syncPoolReply},
                     GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
+                    RootHashByTrieNameReply rootHashByTrieNameReply => 
+                        new NetworkMessage {RootHashByTrieNameReply = rootHashByTrieNameReply},
                     BlockBatchReply blockBatchReply => new NetworkMessage {BlockBatchReply = blockBatchReply},
                     TrieNodeByHashReply trieNodeByHashReply => new NetworkMessage {TrieNodeByHashReply = trieNodeByHashReply},
                     CheckpointReply checkpointReply => new NetworkMessage {CheckpointReply = checkpointReply},
@@ -189,6 +191,12 @@ namespace Lachain.Networking
                     break;
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
                     OnConsensusMessage?.Invoke(this, (message.ConsensusMessage, envelope.PublicKey));
+                    break;
+                case NetworkMessage.MessageOneofCase.RootHashByTrieNameRequest:
+                    OnRootHashByTrieNameRequest?.Invoke(this, (message.RootHashByTrieNameRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.RootHashByTrieNameReply:
+                    OnRootHashByTrieNameReply?.Invoke(this, (message.RootHashByTrieNameReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.BlockBatchRequest:
                     OnBlockBatchRequest?.Invoke(this, (message.BlockBatchRequest, SendTo(envelope.RemotePeer)));
@@ -259,6 +267,9 @@ namespace Lachain.Networking
         public event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         public event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        public event EventHandler<(RootHashByTrieNameRequest message, Action<RootHashByTrieNameReply> callback)>? 
+            OnRootHashByTrieNameRequest;
+        public event EventHandler<(RootHashByTrieNameReply message, ECDSAPublicKey address)>? OnRootHashByTrieNameReply;
         public event EventHandler<(BlockBatchRequest message, Action<BlockBatchReply> callback)>? 
             OnBlockBatchRequest;
         public event EventHandler<(BlockBatchReply message, ECDSAPublicKey address)>? OnBlockBatchReply;
