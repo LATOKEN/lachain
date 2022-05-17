@@ -45,10 +45,20 @@ namespace Lachain.Networking
         /// Formats a NetworkMessage to request checkpoint info
         /// </summary>
         /// <param name = "request"> Array of bytes consisting of CheckpointType </param>
+        /// <param name = "requestId"> Request Id </param>
         /// <returns>
         /// NetworkMessage
         /// </returns>
-        NetworkMessage CheckpointRequest(byte[] request);
+        NetworkMessage CheckpointRequest(byte[] request, ulong requestId);
+         /// <summary>
+        /// Formats a NetworkMessage to request checkpoint block without transaction receipts
+        /// </summary>
+        /// <param name = "blockNumber"> Block height of the checkpoint block </param>
+        /// <param name = "requestId"> Request Id </param>
+        /// <returns>
+        /// NetworkMessage
+        /// </returns>
+        NetworkMessage CheckpointBlockRequest(ulong blockNumber, ulong requestId);
 
         MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages);
 

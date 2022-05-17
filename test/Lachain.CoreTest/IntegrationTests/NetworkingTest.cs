@@ -169,10 +169,10 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.AreEqual(blockNo, _checkpointManager.CheckpointBlockId!.Value);
                 var request = new byte[1];
                 request[0] = (byte) CheckpointType.CheckpointExist;
-                var message = _networkManager.MessageFactory.CheckpointRequest(request);
+                var message = _networkManager.MessageFactory.CheckpointRequest(request, 0);
                 CheckCheckpointExist(message);
                 request = GetCheckpointRequests();
-                message = _networkManager.MessageFactory.CheckpointRequest(request);
+                message = _networkManager.MessageFactory.CheckpointRequest(request, 0);
                 CheckCheckpointRequest(message);
             }
         }
@@ -233,7 +233,8 @@ namespace Lachain.CoreTest.IntegrationTests
             }
             var reply = new CheckpointReply
             {
-                Checkpoints = { checkpoints }
+                Checkpoints = { checkpoints },
+                RequestId = request.RequestId
             };
             
             CheckCheckpointReply(reply);

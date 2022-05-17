@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
@@ -16,6 +17,7 @@ using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using NLog;
 
@@ -62,6 +64,7 @@ namespace Lachain.Core.Network
         private ulong? _checkpointBlockHeight;
         private UInt256? _checkpointBlockHash;
         private List<(UInt256, CheckpointType)>? _stateHashes;
+        private ulong? _checkpointRequesId;
 
         public BlockSynchronizer(
             ITransactionManager transactionManager,
@@ -429,7 +432,8 @@ namespace Lachain.Core.Network
                         request.Add((byte) checkpointType);
                     }
                 }
-                var message = _networkManager.MessageFactory.CheckpointRequest(request.ToArray());
+                GenerateRequestId();
+                var message = _networkManager.MessageFactory.CheckpointRequest(request.ToArray(), _checkpointRequesId!.Value);
                 foreach (var peer in peers) _networkManager.SendTo(peer, message);
                 lock (_peerHashCheckpoint)
                 {
@@ -441,6 +445,7 @@ namespace Lachain.Core.Network
                     _checkpointBlockHeight = null;
                     _checkpointBlockHash = null;
                     _stateHashes = null;
+                    ResetRequestId();
                 }
             }
         }
@@ -462,7 +467,8 @@ namespace Lachain.Core.Network
                 Logger.LogTrace($"Sending query for checkpoint to {peers.Length} peers");
                 var request = new byte[1];
                 request[0] = (byte) CheckpointType.CheckpointExist;
-                var message = _networkManager.MessageFactory.CheckpointRequest(request);
+                GenerateRequestId();
+                var message = _networkManager.MessageFactory.CheckpointRequest(request, _checkpointRequesId!.Value);
                 foreach (var peer in peers) _networkManager.SendTo(peer, message);
                 lock (_peerHashCheckpoint)
                 {
@@ -472,14 +478,17 @@ namespace Lachain.Core.Network
                         return;
                     }
                     _checkpointExist = null;
+                    ResetRequestId();
                 }
             }
         }
 
-        public void HandleCheckpointFromPeer(List<CheckpointInfo> checkpoints, ECDSAPublicKey publicKey)
+        public void HandleCheckpointFromPeer(List<CheckpointInfo> checkpoints, ECDSAPublicKey publicKey, ulong requestId)
         {
             lock (_peerHashCheckpoint)
             {
+                // check if the reply matches the request id from request
+                if (requestId != _checkpointRequesId) return;
                 // remove info from previous reply
                 _checkpointExist = null;
                 _checkpointBlockHash = null;
@@ -516,6 +525,19 @@ namespace Lachain.Core.Network
                 }
                 Monitor.PulseAll(_peerHashCheckpoint);
             }
+        }
+
+        private void GenerateRequestId()
+        {
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            var random = new byte[8];
+            rng.GetBytes(random);
+            _checkpointRequesId = SerializationUtils.ToUInt64(random);
+        }
+
+        private void ResetRequestId()
+        {
+            _checkpointRequesId = null;
         }
 
         public void Dispose()

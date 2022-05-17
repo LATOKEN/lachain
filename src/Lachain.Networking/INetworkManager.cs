@@ -29,5 +29,8 @@ namespace Lachain.Networking
         event EventHandler<(TrieNodeByHashReply message, ECDSAPublicKey address)>? OnTrieNodeByHashReply;
         event EventHandler<(CheckpointRequest message, Action<CheckpointReply> callback)>? OnCheckpointRequest;
         event EventHandler<(CheckpointReply message, ECDSAPublicKey address)>? OnCheckpointReply;
+        event EventHandler<(CheckpointBlockRequest message, Action<CheckpointBlockReply> callback)>?
+            OnCheckpointBlockRequest;
+        event EventHandler<(CheckpointBlockReply message, ECDSAPublicKey address)>? OnCheckpointBlockReply;
     }
 }
