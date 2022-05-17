@@ -110,6 +110,17 @@ message CheckpointRequest {
 
 message CheckpointReply {
     repeated CheckpointInfo checkpoints = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointBlockRequest {
+    uint64 block_height = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointBlockReply {
+    Block block = 1;
+    uint64 request_id = 2;
 }
 
 message NetworkMessage {
