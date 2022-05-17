@@ -24,8 +24,6 @@ namespace Lachain.Core.Network.FastSync
     public class Downloader : IDownloader
     {
 
-        private ulong _totalRequests;
-        private const uint _requestUpdatePeriod = 10000;
         private readonly INetworkManager _networkManager;
         private readonly PeerManager _peerManager;
         private readonly IRequestManager _requestManager;
@@ -52,7 +50,6 @@ namespace Lachain.Core.Network.FastSync
             _blockRequestManager = blockRequestManager;
             _repository = repository;
             _peerManager = new PeerManager();
-            _totalRequests = _repository.GetTotalRequests();
         }
 
         public PeerManager GetPeerManager()
@@ -104,33 +101,71 @@ namespace Lachain.Core.Network.FastSync
         {
             try
             {
-                NetworkMessage message;
-                if (request._type == RequestType.BlocksRequest)
+                _requests[request._requestId] = request;
+                NetworkMessage? message = null;
+                switch (request._type)
                 {
-                    message = _networkManager.MessageFactory.BlockBatchRequest(request._blockBatch!, request._requestId);
+                    case RequestType.BlocksRequest:
+                        message = _networkManager.MessageFactory.BlockBatchRequest(request._blockBatch!, request._requestId);
+                        break;
+
+                    case RequestType.NodesRequest:
+                        message = _networkManager.MessageFactory.TrieNodeByHashRequest(request._nodeBatch!, request._requestId);
+                        break;
+
+                    case RequestType.RootHashRequest:
+                        message = _networkManager.MessageFactory.RootHashByTrieNameRequest(
+                            request._blockNumber!.Value, request._trieName!, request._requestId);
+                        break;
+
+                    case RequestType.SingleBlockRequest:
+                        // TODO: handle request
+                        break;
+
+                    default:
+                        Logger.LogWarning($"No implementation for request type: {request._type}");
+                        break;
+                }
+                if (message != null)
+                {
+                    Logger.LogInformation($"Object ready for sending to peer{request._peer._publicKey.ToHex()}, "
+                    + $"spent time:{(DateTime.Now - request._start).TotalMilliseconds}");
+                    _networkManager.SendTo(request._peer._publicKey, message);
+                    TimeOut(request._peerHasReply, request._requestId);
                 }
                 else
                 {
-                    message = _networkManager.MessageFactory.TrieNodeByHashRequest(request._nodeBatch!, request._requestId);
-                } ;
-                Logger.LogInformation($"Object ready for sending to peer{request._peer._publicKey.ToHex()}, "
-                    + $"spent time:{(DateTime.Now - request._start).TotalMilliseconds}");
-                _networkManager.SendTo(request._peer._publicKey, message);
-                TimeOut(request._peerHasReply, request._requestId);
+                    Logger.LogWarning($"Unsupported request {request._type}");
+                }
             }
             catch (Exception exception)
             {
                 Logger.LogWarning($"Exception raised while trying to send request {request._type} "
                     + $"to peer {request._peer._publicKey.ToHex()} : {exception}");
+                _requests.Remove(request._requestId);
                 if(_peerManager.TryFreePeer(request._peer, false))
                 {
-                    if (request._type == RequestType.BlocksRequest)
+                    switch (request._type)
                     {
-                        _blockRequestManager.HandleResponse(request._blockBatch!, new List<Block>());
-                    }
-                    else
-                    {
-                        _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
+                        case RequestType.BlocksRequest:
+                            _blockRequestManager.HandleResponse(request._blockBatch!, new List<Block>());
+                            break;
+
+                        case RequestType.NodesRequest:
+                            _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
+                            break;
+
+                        case RequestType.SingleBlockRequest:
+                            DownloadCheckpointBlock(request._blockNumber!.Value);
+                            break;
+
+                        case RequestType.RootHashRequest:
+                            DownloadCheckpointStateHash(request._blockNumber!.Value, request._trieName!);
+                            break;
+
+                        default:
+                            Logger.LogWarning($"Nothing to do for request: {request._type}");
+                            break;
                     }
                 }
             }
@@ -164,8 +199,16 @@ namespace Lachain.Core.Network.FastSync
                                     _blockRequestManager.HandleResponse(request._blockBatch!, new List<Block>());
                                     break;
 
+                                case RequestType.SingleBlockRequest:
+                                    DownloadCheckpointBlock(request._blockNumber!.Value);
+                                    break;
+
+                                case RequestType.RootHashRequest:
+                                    DownloadCheckpointStateHash(request._blockNumber!.Value, request._trieName!);
+                                    break;
+
                                 default:
-                                    Logger.LogWarning($"Unsupported request: {request._type}");
+                                    Logger.LogWarning($"TimeOut not implemented for request: {request._type}");
                                     break;
                             }
                         }
@@ -589,10 +632,26 @@ namespace Lachain.Core.Network.FastSync
             _checkpointStateHashes = null;
         }
 
-        private void UpdateTotalRequest()
+        private void DownloadCheckpointBlock(ulong blockNumber)
         {
-            if (_totalRequests % _requestUpdatePeriod == 0)
-                _repository.SetTotalRequests(_totalRequests);
+            // TODO
+        }
+
+        private void DownloadCheckpointStateHash(ulong blockNumber, string trieName)
+        {
+            // TODO
+        }
+
+        public async void IsCheckpointOk(ulong blockNumber, string[] trieNames)
+        {
+            await Task.Run(() =>
+            {
+                DownloadCheckpointBlock(blockNumber);
+                foreach (var trieName in trieNames)
+                {
+                    DownloadCheckpointStateHash(blockNumber, trieName);
+                }
+            });
         }
 
     }
