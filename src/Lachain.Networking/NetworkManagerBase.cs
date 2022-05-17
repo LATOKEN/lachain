@@ -154,6 +154,8 @@ namespace Lachain.Networking
                     BlockBatchReply blockBatchReply => new NetworkMessage {BlockBatchReply = blockBatchReply},
                     TrieNodeByHashReply trieNodeByHashReply => new NetworkMessage {TrieNodeByHashReply = trieNodeByHashReply},
                     CheckpointReply checkpointReply => new NetworkMessage {CheckpointReply = checkpointReply},
+                    CheckpointBlockReply checkpointBlockReply =>
+                        new NetworkMessage {CheckpointBlockReply = checkpointBlockReply},
                     _ => throw new InvalidOperationException()
                 };
                 peer.AddMsgToQueue(msg);
@@ -210,6 +212,12 @@ namespace Lachain.Networking
                 case NetworkMessage.MessageOneofCase.CheckpointReply:
                     OnCheckpointReply?.Invoke(this, (message.CheckpointReply, envelope.PublicKey));
                     break;
+                case NetworkMessage.MessageOneofCase.CheckpointBlockRequest:
+                    OnCheckpointBlockRequest?.Invoke(this, (message.CheckpointBlockRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.CheckpointBlockReply:
+                    OnCheckpointBlockReply?.Invoke(this, (message.CheckpointBlockReply, envelope.PublicKey));
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),
                         "Unable to resolve message type (" + message.MessageCase + ") from protobuf structure");
@@ -263,5 +271,8 @@ namespace Lachain.Networking
         public event EventHandler<(TrieNodeByHashReply message, ECDSAPublicKey address)>? OnTrieNodeByHashReply;
         public event EventHandler<(CheckpointRequest message, Action<CheckpointReply> callback)>? OnCheckpointRequest;
         public event EventHandler<(CheckpointReply message, ECDSAPublicKey address)>? OnCheckpointReply;
+        public event EventHandler<(CheckpointBlockRequest message, Action<CheckpointBlockReply> callback)>?
+            OnCheckpointBlockRequest;
+        public event EventHandler<(CheckpointBlockReply message, ECDSAPublicKey address)>? OnCheckpointBlockReply;
     }
 }
