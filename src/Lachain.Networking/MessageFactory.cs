@@ -145,7 +145,20 @@ namespace Lachain.Networking
             {
                 CheckpointRequest = new CheckpointRequest
                 {
-                    CheckpointType = ByteString.CopyFrom(request)
+                    CheckpointType = ByteString.CopyFrom(request),
+                    RequestId = requestId
+                }
+            };
+        }
+
+        public NetworkMessage CheckpointBlockRequest(ulong blockNumber, ulong requestId)
+        {
+            return new NetworkMessage
+            {
+                CheckpointBlockRequest = new CheckpointBlockRequest
+                {
+                    BlockHeight = blockNumber,
+                    RequestId = requestId
                 }
             };
         }
