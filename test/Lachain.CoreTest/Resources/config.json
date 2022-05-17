@@ -3,6 +3,7 @@
     "chainId": 25,
     "newChainId": 225,
     "cycleDuration": 40,
+    "validatorsCount": 1,
     "peers": [
     ],
     "forceIPv6": false,

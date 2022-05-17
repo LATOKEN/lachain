@@ -39,7 +39,7 @@ namespace Lachain.CoreTest.IntegrationTests
     {
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private static readonly ITransactionSigner Signer = new TransactionSigner();
-        private static readonly ulong CycleDuration = StakingContract.CycleDuration;
+        private static ulong CycleDuration = StakingContract.CycleDuration;
 
         private IBlockManager _blockManager = null!;
         private ITransactionBuilder _transactionBuilder = null!;
@@ -92,6 +92,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
                 HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network") ?? throw new InvalidOperationException());
+                CycleDuration = StakingContract.CycleDuration;
             }
         }
 
