@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 
-
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public interface IDownloader

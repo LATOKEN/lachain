@@ -185,6 +185,19 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public bool IsCheckpointOk(ulong? blockHeight, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
             if (blockHash is null || blockHeight is null || stateHashes is null || stateHashes.Count != 6) return false;
+            // Checking if we have root hashes for all six tries.
+            try
+            {
+                foreach (var trieName in trieNames)
+                {
+                    CheckRootHashExist(trieName, stateHashes);
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Got exception while checking root hash: {exception}");
+                return false;
+            }
             // TODO: check block hash and state hashes
             return true;
         }
