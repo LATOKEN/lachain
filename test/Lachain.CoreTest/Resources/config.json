@@ -2,6 +2,7 @@
   "network": {
     "chainId": 25,
     "newChainId": 225,
+    "cycleDuration": 40,
     "peers": [
     ],
     "forceIPv6": false,
