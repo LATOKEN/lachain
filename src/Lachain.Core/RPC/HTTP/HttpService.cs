@@ -41,8 +41,8 @@ namespace Lachain.Core.RPC.HTTP
             // TODO: remove this comment after the working auth
             //"validator_stop",
             "fe_sendTransaction",
-            "deleteTransactionPoolRepository",
-            "clearInMemoryPool",
+            //"deleteTransactionPoolRepository",
+            //"clearInMemoryPool",
             "eth_sendTransaction",
             "eth_signTransaction",
         };
