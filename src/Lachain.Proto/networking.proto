@@ -85,10 +85,22 @@ message TrieNodeByHashReply {
 
 message CheckpointRequest {
     bytes checkpoint_type = 1;
+    uint64 request_id = 2;
 }
 
 message CheckpointReply {
     repeated CheckpointInfo checkpoints = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointBlockRequest {
+    uint64 block_height = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointBlockReply {
+    Block block = 1;
+    uint64 request_id = 2;
 }
 
 message NetworkMessage {
@@ -110,6 +122,8 @@ message NetworkMessage {
         TrieNodeByHashReply trie_node_by_hash_reply = 36;
         CheckpointRequest checkpoint_request = 37;
         CheckpointReply checkpoint_reply = 38;
+        CheckpointBlockRequest checkpoint_block_request = 39;
+        CheckpointBlockReply checkpoint_block_reply = 40;
     }
     reserved 12, 14 to 19, 25, 26; // deleted
 }

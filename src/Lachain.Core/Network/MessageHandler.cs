@@ -97,6 +97,8 @@ namespace Lachain.Core.Network
             _networkManager.OnTrieNodeByHashReply += OnTrieNodeByHashReply;
             _networkManager.OnCheckpointRequest += OnCheckpointRequest;
             _networkManager.OnCheckpointReply += OnCheckpointReply;
+            _networkManager.OnCheckpointBlockRequest += OnCheckpointBlockRequest;
+            _networkManager.OnCheckpointBlockReply += OnCheckpointBlockReply;
         }
 
         private void TransactionPoolOnTransactionAdded(object sender, TransactionReceipt e)
@@ -481,7 +483,8 @@ namespace Lachain.Core.Network
                 }
                 var reply = new CheckpointReply
                 {
-                    Checkpoints = { checkpoints }
+                    Checkpoints = { checkpoints },
+                    RequestId = request.RequestId
                 };
                 callback(reply);
             }
@@ -507,7 +510,7 @@ namespace Lachain.Core.Network
                 try
                 {
                     var checkpoints = reply.Checkpoints.ToList();
-                    _blockSynchronizer.HandleCheckpointFromPeer(checkpoints, publicKey);
+                    _blockSynchronizer.HandleCheckpointFromPeer(checkpoints, publicKey, reply.RequestId);
                 }
                 catch (Exception exception)
                 {
@@ -515,6 +518,42 @@ namespace Lachain.Core.Network
                 }
             }, TaskCreationOptions.LongRunning);
             Logger.LogTrace("Finished processing OnCheckpointReply");
+        }
+
+        private void OnCheckpointBlockRequest(object? sender, 
+            (CheckpointBlockRequest request, Action<CheckpointBlockReply> callback) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnCheckpointBlockRequest").NewTimer();
+            Logger.LogTrace("Start processing OnCheckpointBlockRequest");
+            var (request, callback) = @event;
+            var blockHeight = request.BlockHeight;
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+            var reply = new CheckpointBlockReply
+            {
+                Block = block,
+                RequestId = request.RequestId
+            };
+            callback(reply);
+            Logger.LogTrace("Finished processing OnCheckpointBlockRequest");
+        }
+
+        private void OnCheckpointBlockReply(object? sender, (CheckpointBlockReply reply, ECDSAPublicKey publicKey) @event)
+        {
+            using var timer = IncomingMessageHandlingTime.WithLabels("OnCheckpointBlockReply").NewTimer();
+            Logger.LogTrace("Start processing OnCheckpointBlockReply");
+            var (reply, publicKey) = @event;
+            Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    // TODO
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError($"Error occured while handling checkpoints from peer {publicKey.ToHex()}: {exception}");
+                }
+            }, TaskCreationOptions.LongRunning);
+            Logger.LogTrace("Finished processing OnCheckpointBlockReply");
         }
 
     }
