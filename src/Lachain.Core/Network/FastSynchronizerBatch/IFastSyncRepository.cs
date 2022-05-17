@@ -24,8 +24,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         void Commit();
         int GetLastDownloadedTries();
         void SetLastDownloadedTries(int downloaded);
-        ulong GetTotalRequests();
-        void SetTotalRequests(ulong requests);
         VersionFactory GetVersionFactory();
         void SetSnapshotVersion(string trieName, UInt256 rootHash);
         void SetState();
