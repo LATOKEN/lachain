@@ -5,10 +5,14 @@ namespace Lachain.Storage.Repositories
 {
     public interface ICheckpointRepository
     {
+        /// <summary>
+        /// Tries to save checkpoint for given block
+        /// </summary>
+        /// <param name = "block"> Block </param>
         /// <returns>
-        /// Saves Checkpoint
+        /// True if checkpoint is saved successfully, False otherwise
         /// </returns>
-        void SaveCheckpoint(Block block);
+        bool SaveCheckpoint(Block block);
         /// <returns>
         /// Block Id of last checkpoint, null if no checkpoint was saved
         /// </returns>
