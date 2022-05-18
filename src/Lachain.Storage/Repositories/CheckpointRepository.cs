@@ -46,7 +46,7 @@ namespace Lachain.Storage.Repositories
             return stateHash.ToUInt256();
         }
 
-        public void SaveCheckpoint(Block block)
+        public bool SaveCheckpoint(Block block)
         {
             try
             {
@@ -61,11 +61,13 @@ namespace Lachain.Storage.Repositories
                 SaveBlockId(batch, block.Header.Index);
                 SaveBlockHash(batch, block.Hash);
                 batch.Commit();
+                return true;
             }
             catch (Exception exception)
             {
                 Logger.LogWarning($"Could not save checkpoint for block {block.Header.Index}"
                     +$" with hash {block.Hash.ToHex()}. Exception: {exception}");
+                return false;
             }
         }
 
