@@ -252,8 +252,8 @@ namespace Lachain.Core.Network
             {
                 try
                 {
-                    // start downloading the trie via fastsync
-                    // probably use _blockSynchronizer to integrate it in a better way
+                    var rootHash = reply.RootHash;
+                    _downloader.HandleCheckpointStateHashFromPeer(rootHash, reply.RequestId, publicKey);
                 }
                 catch (Exception exception)
                 {
@@ -307,6 +307,7 @@ namespace Lachain.Core.Network
                 {
                     var blocks = reply.BlockBatch.ToList();
                     var requestId = reply.RequestId;
+                    if (blocks is null) blocks = new List<Block>();
                     _downloader.HandleBlocksFromPeer(blocks, requestId, publicKey);
                 }
                 catch (Exception exception)
@@ -385,6 +386,7 @@ namespace Lachain.Core.Network
                 try
                 {
                     var trieNodes = reply.TrieNodes.ToList();
+                    if (trieNodes is null) trieNodes = new List<TrieNodeInfo>();
                     var requestId = reply.RequestId;
                     _downloader.HandleNodesFromPeer(trieNodes, requestId, publicKey);
                 }
@@ -493,7 +495,8 @@ namespace Lachain.Core.Network
                 Logger.LogWarning($"Got exception trying to get checkpoints: {exception}");
                 var reply = new CheckpointReply
                 {
-                    Checkpoints = { new List<CheckpointInfo>() }
+                    Checkpoints = { new List<CheckpointInfo>() },
+                    RequestId = request.RequestId
                 };
                 callback(reply);
             }
@@ -510,6 +513,7 @@ namespace Lachain.Core.Network
                 try
                 {
                     var checkpoints = reply.Checkpoints.ToList();
+                    if (checkpoints is null) checkpoints = new List<CheckpointInfo>();
                     _blockSynchronizer.HandleCheckpointFromPeer(checkpoints, publicKey, reply.RequestId);
                 }
                 catch (Exception exception)
@@ -546,7 +550,8 @@ namespace Lachain.Core.Network
             {
                 try
                 {
-                    // TODO
+                    var block = reply.Block;
+                    _downloader.HandleCheckpointBlockFromPeer(block, reply.RequestId, publicKey);
                 }
                 catch (Exception exception)
                 {

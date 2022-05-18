@@ -10,9 +10,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         void GetTrie(UInt256 rootHash);
         void HandleBlocksFromPeer(List<Block> response, ulong requestId, ECDSAPublicKey publicKey);
         void HandleNodesFromPeer(List<TrieNodeInfo> response, ulong requestId, ECDSAPublicKey publicKey);
+        void HandleCheckpointBlockFromPeer(Block? block, ulong requestId, ECDSAPublicKey publicKey);
+        void HandleCheckpointStateHashFromPeer(UInt256? rootHash, ulong requestId, ECDSAPublicKey publicKey);
         void DownloadBlocks();
         ulong? CheckpointBlockHash { get; }
         List<(UInt256, CheckpointType)>? CheckpointStateHashes { get; }
-        void IsCheckpointOk(ulong blockNumber, string[] trieNames);
+        void DownloadCheckpoint(ulong blockNumber, string[] trieNames);
     }
 }

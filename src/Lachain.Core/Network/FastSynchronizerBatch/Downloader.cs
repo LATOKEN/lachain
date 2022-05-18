@@ -72,11 +72,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             while(!_requestManager.Done())
             {
             //    Console.WriteLine("GetTrie........");
-                if(!_peerManager.TryGetPeer(out var peer))
-                {
-                    Thread.Sleep(500);
-                    continue;
-                }
+                var peer = GetPeer();
             //    Console.WriteLine("GetTrie after TryGetPeer........");
                 if(!_requestManager.TryGetHashBatch(out var hashBatch))
                 {
@@ -115,13 +111,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         message = _networkManager.MessageFactory.TrieNodeByHashRequest(request._nodeBatch!, request._requestId);
                         break;
 
-                    case RequestType.RootHashRequest:
+                    case RequestType.CheckpointStateHashRequest:
                         message = _networkManager.MessageFactory.RootHashByTrieNameRequest(
                             request._blockNumber!.Value, request._trieName!, request._requestId);
                         break;
 
-                    case RequestType.SingleBlockRequest:
-                        // TODO: handle request
+                    case RequestType.CheckpointBlockRequest:
+                        message = _networkManager.MessageFactory.CheckpointBlockRequest(
+                            request._blockNumber!.Value, request._requestId);
                         break;
 
                     default:
@@ -133,7 +130,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     Logger.LogInformation($"Object ready for sending to peer{request._peer._publicKey.ToHex()}, "
                     + $"spent time:{(DateTime.Now - request._start).TotalMilliseconds}");
                     _networkManager.SendTo(request._peer._publicKey, message);
-                    TimeOut(request._peerHasReply, request._requestId);
+                    Task.Factory.StartNew(() =>
+                    {
+                        TimeOut(request._peerHasReply, request._requestId);
+                    }, TaskCreationOptions.LongRunning);
                 }
                 else
                 {
@@ -157,11 +157,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
                             break;
 
-                        case RequestType.SingleBlockRequest:
+                        case RequestType.CheckpointBlockRequest:
                             DownloadCheckpointBlock(request._blockNumber!.Value);
                             break;
 
-                        case RequestType.RootHashRequest:
+                        case RequestType.CheckpointStateHashRequest:
                             DownloadCheckpointStateHash(request._blockNumber!.Value, request._trieName!);
                             break;
 
@@ -173,49 +173,46 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
         }
 
-        private async void TimeOut(object peerHasReply, ulong requestId)
+        private void TimeOut(object peerHasReply, ulong requestId)
         {
-            await Task.Run(() =>
+            lock (peerHasReply)
             {
-                lock(peerHasReply)
+                bool gotReply = Monitor.Wait(peerHasReply, TimeSpan.FromMilliseconds(DefaultTimeout));
+                // Abort the request if the timer fires.
+                if (!gotReply && _requests.TryGetValue(requestId, out var request))
                 {
-                    bool gotReply = Monitor.Wait(peerHasReply, TimeSpan.FromMilliseconds(DefaultTimeout));
-                    // Abort the request if the timer fires.
-                    if (!gotReply && _requests.TryGetValue(requestId, out var request))
+                    _requests.Remove(requestId);
+                    if (request != null)
                     {
-                        _requests.Remove(requestId);
-                        if (request != null)
+                        var peer = request._peer;
+                        TimeSpan time = DateTime.Now - request._start; 
+                        Logger.LogWarning($"timed out from peer {peer._publicKey.ToHex()} spent {time.TotalMilliseconds}");
+                        _peerManager.TryFreePeer(peer, false);
+                        switch (request._type)
                         {
-                            var peer = request._peer;
-                            TimeSpan time = DateTime.Now - request._start; 
-                            Logger.LogWarning($"timed out from peer {peer._publicKey.ToHex()} spent {time.TotalMilliseconds}");
-                            _peerManager.TryFreePeer(peer, false);
-                            switch (request._type)
-                            {
-                                case RequestType.NodesRequest:
-                                    _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
-                                    break;
+                            case RequestType.NodesRequest:
+                                _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
+                                break;
 
-                                case RequestType.BlocksRequest:
-                                    _blockRequestManager.HandleResponse(request._blockBatch!, new List<Block>());
-                                    break;
+                            case RequestType.BlocksRequest:
+                                _blockRequestManager.HandleResponse(request._blockBatch!, new List<Block>());
+                                break;
 
-                                case RequestType.SingleBlockRequest:
-                                    DownloadCheckpointBlock(request._blockNumber!.Value);
-                                    break;
+                            case RequestType.CheckpointBlockRequest:
+                                DownloadCheckpointBlock(request._blockNumber!.Value);
+                                break;
 
-                                case RequestType.RootHashRequest:
-                                    DownloadCheckpointStateHash(request._blockNumber!.Value, request._trieName!);
-                                    break;
+                            case RequestType.CheckpointStateHashRequest:
+                                DownloadCheckpointStateHash(request._blockNumber!.Value, request._trieName!);
+                                break;
 
-                                default:
-                                    Logger.LogWarning($"TimeOut not implemented for request: {request._type}");
-                                    break;
-                            }
+                            default:
+                                Logger.LogWarning($"TimeOut not implemented for request: {request._type}");
+                                break;
                         }
                     }
                 }
-            });
+            }
         }
 
         public void HandleBlocksFromPeer(List<Block> response, ulong requestId, ECDSAPublicKey publicKey)
@@ -290,6 +287,49 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     _requestManager.HandleResponse(batch!, new List<TrieNodeInfo>());
                 }
             }
+        }
+
+        public void HandleCheckpointBlockFromPeer(Block? block, ulong requestId, ECDSAPublicKey publicKey)
+        {
+            if (_requests.TryGetValue(requestId, out var request))
+            {
+                _requests.Remove(requestId);
+                TimeSpan time = DateTime.Now - request._start;
+                DateTime receiveTime = DateTime.Now;
+                var peer = request._peer;
+                var blockNumber = request._blockNumber;
+                // Let the TimeOut know that we got the response
+                lock (request._peerHasReply)
+                {
+                    Monitor.PulseAll(request._peerHasReply);
+                }
+                try
+                {
+                    if (peer._publicKey != publicKey || request._type != RequestType.CheckpointBlockRequest) 
+                    {
+                        Logger.LogWarning($"Asked for checkpoint block to peer: {peer._publicKey.ToHex()} with request id: "
+                            + $"{request._requestId} and request type: {request._type}, got reply from peer: {publicKey.ToHex()}");
+                        throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
+                    }
+                    Logger.LogInformation($"Received data {request._type} time spent:{time.TotalMilliseconds}"
+                        + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
+                    _peerManager.TryFreePeer(peer, true);
+                    // TODO
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogWarning($"Exception raised while handling nodes from peer: {publicKey.ToHex()} : {exception}");
+                    Logger.LogWarning($"Wasted time:{time.TotalMilliseconds} from peer:{peer._publicKey.ToHex()}");
+                    _peerManager.TryFreePeer(peer, false);
+                    // TODO
+                }
+            }
+            
+        }
+
+        public void HandleCheckpointStateHashFromPeer(UInt256? rootHash, ulong requestId, ECDSAPublicKey publicKey)
+        {
+            // TODO
         }
 
 //         private void HandleRequest(Peer peer, List<string> batch, uint type)
@@ -419,11 +459,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
             while (!_blockRequestManager.Done())
             {
-                if(!_peerManager.TryGetPeer(out var peer))
-                {
-                    Thread.Sleep(200);
-                    continue;
-                }
+                var peer = GetPeer();
                 if(!_blockRequestManager.TryGetBatch(out var batch))
                 {
                     _peerManager.TryFreePeer(peer!);
@@ -438,24 +474,40 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         private void DownloadCheckpointBlock(ulong blockNumber)
         {
-            // TODO
+            Logger.LogTrace($"Trying to download checkpoint block {blockNumber}");
+            var peer = GetPeer();
+            var request = new RequestState(RequestType.CheckpointBlockRequest, blockNumber, peer);
+            HandleRequest(request);
         }
 
         private void DownloadCheckpointStateHash(ulong blockNumber, string trieName)
         {
-            // TODO
+            Logger.LogTrace($"Trying to download checkpoint state hash for block {blockNumber} and snapshot {trieName}");
+            var peer = GetPeer();
+            var request = new RequestState(RequestType.CheckpointStateHashRequest, blockNumber, trieName, peer);
+            HandleRequest(request);
         }
 
-        public async void IsCheckpointOk(ulong blockNumber, string[] trieNames)
+        public void DownloadCheckpoint(ulong blockNumber, string[] trieNames)
         {
-            await Task.Run(() =>
+            DownloadCheckpointBlock(blockNumber);
+            foreach (var trieName in trieNames)
             {
-                DownloadCheckpointBlock(blockNumber);
-                foreach (var trieName in trieNames)
+                DownloadCheckpointStateHash(blockNumber, trieName);
+            }
+        }
+
+        private Peer GetPeer()
+        {
+            while (true)
+            {
+                if (!_peerManager.TryGetPeer(out var peer))
                 {
-                    DownloadCheckpointStateHash(blockNumber, trieName);
+                    Thread.Sleep(200);
+                    continue;
                 }
-            });
+                return peer!;
+            }
         }
 
     }
