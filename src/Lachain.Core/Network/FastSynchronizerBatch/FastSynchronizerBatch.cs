@@ -10,19 +10,15 @@
 */
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Logger;
-using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
-using Lachain.Storage.State;
-using Lachain.Storage.Trie;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
-using Google.Protobuf;
+
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
@@ -55,24 +51,24 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _peerManager = _downloader.GetPeerManager();
         }
 
-        //Fast_sync is started from this function.
-        //urls is the list of peer nodes, we'll be requesting for data throughtout this process
-        //blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
-        //start synching with that peer
+        // Fast_sync is started from this function.
+        // urls is the list of peer nodes, we'll be requesting for data throughtout this process
+        // blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
+        // start synching with that peer
         public void StartSync(ulong? blockNumber, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
-            //At first we check if fast sync have started and completed before.
+            // At first we check if fast sync have started and completed before.
             // If it has completed previously, we don't let the user run it again.
             if(Alldone())
             {
-                Console.WriteLine("Fast Sync was done previously\nReturning");
+                Logger.LogTrace("Fast Sync was done previously\nReturning");
                 return;
             }
             
-            Console.WriteLine("Current Version: " + _versionFactory.CurrentVersion);
+            Logger.LogTrace("Current Version: " + _versionFactory.CurrentVersion);
 
-            //If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
-            //If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
+            // If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
+            // If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
             ulong savedBlockNumber = _repository.GetBlockNumber();
             var savedSateHashes = new List<(UInt256, CheckpointType)>();
             if (savedBlockNumber != 0)
@@ -101,7 +97,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             
             if (savedBlockNumber == 0) _repository.Initialize(blockNumber!.Value, blockHash!, stateHashes);
-            //to keep track how many tries have been downloaded till now, saved in db with LastDownloadedTries prefix
+            // to keep track how many tries have been downloaded till now, saved in db with LastDownloadedTries prefix
             int downloadedTries = _repository.GetLastDownloadedTries();
             _hybridQueue.Initialize();
 
@@ -111,12 +107,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 var rootHash = GetRootHashForTrieName(trieNames[i], stateHashes);
                 _downloader.GetTrie(rootHash);
                 bool foundRoot = _repository.GetIdByHash(rootHash, out ulong curTrieRoot);
-            //    snapshots[i].SetCurrentVersion(curTrieRoot);
                 downloadedTries++;
                 _repository.SetLastDownloadedTries(downloadedTries);
                 Logger.LogTrace($"Ending trie {trieNames[i]} : {curTrieRoot}");
-            //    bool isConsistent = requestManager.CheckConsistency(curTrieRoot);
-            //    Console.WriteLine("Is Consistent : "+isConsistent );
                 Logger.LogTrace($"Total Nodes downloaded: {_versionFactory.CurrentVersion}");
             }
             
@@ -216,7 +209,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogWarning($"Got exception while checking root hash: {exception}");
                 return false;
             }
-            
+
             Task.Factory.StartNew(() =>
             {
                 _downloader.DownloadCheckpoint(blockHeight.Value, trieNames);

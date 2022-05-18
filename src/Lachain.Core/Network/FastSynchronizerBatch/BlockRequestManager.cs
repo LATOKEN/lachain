@@ -4,16 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Logger;
 using Lachain.Proto;
-using Lachain.Storage.State;
-using Lachain.Storage.Trie;
-using Lachain.Utility.Utils;
 
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
@@ -21,7 +13,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     public class BlockRequestManager : IBlockRequestManager
     {
         private static readonly ILogger<BlockRequestManager> Logger = LoggerFactory.GetLoggerForClass<BlockRequestManager>();
- //       private Queue<string> _queue = new Queue<string>();
         private SortedSet<ulong> _pending = new SortedSet<ulong>();
         private SortedSet<ulong> nextBlocksToDownload = new SortedSet<ulong>();
         private IDictionary<ulong, Block> downloaded = new Dictionary<ulong,Block>();

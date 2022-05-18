@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
-using Lachain.Storage.State;
 using Lachain.Storage.Trie;
+
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
