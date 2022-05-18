@@ -253,8 +253,8 @@ namespace Lachain.Core.Network
             {
                 try
                 {
-                    // start downloading the trie via fastsync
-                    // probably use _blockSynchronizer to integrate it in a better way
+                    var rootHash = reply.RootHash;
+                    _downloader.HandleCheckpointStateHashFromPeer(rootHash, reply.RequestId, publicKey);
                 }
                 catch (Exception exception)
                 {
