@@ -2,27 +2,23 @@
     It provides the downloader which nodes to download and also processes the downloaded nodes.
 */
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Trie;
-using Lachain.Utility.Utils;
+
 
 namespace Lachain.Core.Network.FastSync
 {
     public class RequestManager : IRequestManager
     {
- //       private Queue<string> _queue = new Queue<string>();
+        private static readonly ILogger<RequestManager>
+            Logger = LoggerFactory.GetLoggerForClass<RequestManager>();
         private readonly IFastSyncRepository _repository;
 
-        //how many nodes we should ask for in every request
+        // how many nodes we should ask for in every request
         private uint _batchSize = 500;
 
         private readonly IHybridQueue _hybridQueue;
@@ -40,14 +36,13 @@ namespace Lachain.Core.Network.FastSync
             lock (this)
             {
                 UInt256? hash;
-                while(hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out hash) )
+                while (hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out hash))
                 {
-                //    Console.WriteLine("In request manager: got hash: "+ hash);
                     hashBatch.Add(hash!);
                 }
             }
-            if (hashBatch.Count == 0){
-            //    Console.WriteLine("could not get hash");
+            if (hashBatch.Count == 0)
+            {
                 return false;
             }
 
@@ -60,17 +55,16 @@ namespace Lachain.Core.Network.FastSync
             return _hybridQueue.Complete();
         }
 
-        //useful for debugging purpose, use it to check if some tree is downloaded properly
+        // useful for debugging purpose, use it to check if some tree is downloaded properly
         public bool CheckConsistency(ulong rootId)
         {
-            if(rootId==0) return true;
+            if(rootId == 0) return true;
             Queue<ulong> queue = new Queue<ulong>();
             queue.Enqueue(rootId);
             while(queue.Count > 0)
             {
                 ulong cur = queue.Dequeue();
-                System.Console.WriteLine("id: " + cur);
-            //    System.Console.WriteLine($"id: {_repository.GetIdByHash(cur)}");
+                Logger.LogTrace("id: " + cur);
                 if(_repository.TryGetNode(cur, out IHashTrieNode? trieNode))
                 {
                     switch (trieNode)
@@ -78,7 +72,7 @@ namespace Lachain.Core.Network.FastSync
                         case InternalNode node:
                             foreach(var childId in node.Children)
                             {
-                                Console.WriteLine("Enqueueing child: "+ childId);
+                                Logger.LogTrace("Enqueueing child: "+ childId);
                                 queue.Enqueue(childId);
                             }
                             break;
@@ -86,7 +80,7 @@ namespace Lachain.Core.Network.FastSync
                 }
                 else
                 {
-                    Console.WriteLine("Not Found: " + cur);
+                    Logger.LogTrace("Not Found: " + cur);
                     return false;
                 }
             }
@@ -103,7 +97,7 @@ namespace Lachain.Core.Network.FastSync
             
             List<TrieNodeInfo> successfulNodes = new List<TrieNodeInfo>();
 
-            //discard the whole batch if we haven't got response for all the nodes(or more response, shouldn't happen though)
+            // discard the whole batch if we haven't got response for all the nodes(or more response, shouldn't happen though)
             if (hashBatch.Count != response.Count)
             {
                 failedHashes = hashBatch;
@@ -114,7 +108,7 @@ namespace Lachain.Core.Network.FastSync
                 {
                     var hash = hashBatch[i];
                     var node = response[i];
-                    //check if actually the node's content produce desired hash or data is corrupted
+                    // check if actually the node's content produce desired hash or data is corrupted
                     if (_repository.IsConsistent(node, out var nodeHash) && hash == nodeHash)
                     {
                         successfulHashes.Add(hash);
@@ -153,7 +147,7 @@ namespace Lachain.Core.Network.FastSync
                     {
                         switch (node!.MessageCase)
                         {
-                            //for internal node, we need to extract it's children and put it in the queue for downloading them next
+                            // for internal node, we need to extract it's children and put it in the queue for downloading them next
                             case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
                                 var childrenHashes = node.InternalNodeInfo.ChildrenHash.ToList();
                                 foreach (var childHash in childrenHashes)
@@ -163,10 +157,10 @@ namespace Lachain.Core.Network.FastSync
                                 break;
                         }
 
-                        //sending the node to repository for inserting it to database
-                        //(maybe temporarily it will reside in memory but flushed to db later)
+                        // sending the node to repository for inserting it to database
+                        // (maybe temporarily it will reside in memory but flushed to db later)
                         bool res = _repository.TryAddNode(node);
-                        //informing the hybridQueue that node is received successfully
+                        // informing the hybridQueue that node is received successfully
                         _hybridQueue.ReceivedNode(hash);
                     }
                 }

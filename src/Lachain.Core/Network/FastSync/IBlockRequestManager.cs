@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
-using Lachain.Storage.State;
+
 
 
 namespace Lachain.Core.Network.FastSync
