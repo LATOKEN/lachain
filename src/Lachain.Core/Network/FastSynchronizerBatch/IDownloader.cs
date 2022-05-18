@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 
+
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public interface IDownloader
@@ -13,7 +14,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         void HandleCheckpointBlockFromPeer(Block? block, ulong requestId, ECDSAPublicKey publicKey);
         void HandleCheckpointStateHashFromPeer(UInt256? rootHash, ulong requestId, ECDSAPublicKey publicKey);
         void DownloadBlocks();
-        ulong? CheckpointBlockHash { get; }
+        UInt256? CheckpointBlockHash { get; }
         List<(UInt256, CheckpointType)>? CheckpointStateHashes { get; }
         void DownloadCheckpoint(ulong blockNumber, string[] trieNames);
     }
