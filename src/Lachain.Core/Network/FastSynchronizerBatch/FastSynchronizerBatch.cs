@@ -69,18 +69,18 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
             // If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
             // If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
-            ulong savedBlockNumber = _repository.GetBlockNumber();
+            ulong savedBlockNumber = _repository.GetCheckpointBlockNumber();
             var savedSateHashes = new List<(UInt256, CheckpointType)>();
             if (savedBlockNumber != 0)
             {
                 blockNumber = savedBlockNumber;
-                blockHash = _repository.GetBlockHash()!;
+                blockHash = _repository.GetCheckpointBlockHash()!;
                 foreach (var trieName in trieNames)
                 {
                     var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
                     if (checkpointType is null)
                         throw new Exception($"trie name {trieName} is not correct");
-                    var stateHash = _repository.GetStateHash(checkpointType.Value);
+                    var stateHash = _repository.GetCheckpointStateHash(checkpointType.Value);
                     if (stateHash is null)
                         throw new ArgumentException($"Got null hash for checkpoint type: {checkpointType}");
                     savedSateHashes.Add((stateHash!, checkpointType.Value));
@@ -115,7 +115,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             
             if (downloadedTries == (int) trieNames.Length)
             {
-                _blockRequestManager.SetMaxBlock(blockNumber!.Value);
+                _blockRequestManager.Initialize();
                 _downloader.DownloadBlocks();
                 foreach (var trieName in trieNames)
                 {
@@ -127,18 +127,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 downloadedTries++;
                 _repository.SetLastDownloadedTries(downloadedTries);
                 
-                Logger.LogWarning($"Set state to block {blockNumber} complete");
+                Logger.LogTrace($"Set state to block {blockNumber} complete");
             }
         }
 
         public void AddPeer(ECDSAPublicKey publicKey)
         {
             _peerManager.AddPeer(publicKey);
-        }
-
-        public void RemovePeer(ECDSAPublicKey publicKey)
-        {
-            
         }
 
         private void CheckRootHashExist(string trieName, List<(UInt256, CheckpointType)> stateHashes)
@@ -174,7 +169,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public bool IsRunning()
         {
-            return _repository.GetBlockNumber() > 0;
+            return _repository.GetCheckpointBlockNumber() > 0;
         }
 
         private bool MatchStateHash(
