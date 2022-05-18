@@ -47,7 +47,10 @@ namespace Lachain.Core.Blockchain.Operations
         /// Takes the given block as a checkpoint-block and writes necessary information in DB
         /// </summary>
         /// <param name = "block"> Block </param>
-        void SaveCheckpoint(Block block);
+        /// <returns>
+        /// True if checkpoint is saved successfully, False otherwise
+        /// </returns>
+        bool SaveCheckpoint(Block block);
         /// <summary>
         /// Checks all checkpoint information: block index, hash and state hash for all six snapshots
         /// </summary>

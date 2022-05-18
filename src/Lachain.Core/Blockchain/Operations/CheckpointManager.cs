@@ -61,10 +61,17 @@ namespace Lachain.Core.Blockchain.Operations
             return blockId > 0 && blockId % _checkpointPeriod == 0 ;
         }
 
-        public void SaveCheckpoint(Block block)
+        public bool SaveCheckpoint(Block block)
         {
-            _repository.SaveCheckpoint(block);
-            UpdateCache();
+            if (_checkpointBlockId >= block.Header.Index)
+            {
+                Logger.LogWarning($"We have checkpoint block {_checkpointBlockId}, trying to save checkpoint block "
+                    + $"{block.Header.Index}. Aborting save.");
+                return false;
+            }
+            var saved = _repository.SaveCheckpoint(block);
+            if (saved) UpdateCache();
+            return saved;
         }
 
         private void UpdateCache()
