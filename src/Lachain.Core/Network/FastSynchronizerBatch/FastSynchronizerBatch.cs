@@ -11,6 +11,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -182,6 +184,22 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return _repository.GetBlockNumber() > 0;
         }
 
+        private bool MatchStateHash(
+            UInt256 expectedStateHash,
+            CheckpointType checkpointType,
+            List<(UInt256, CheckpointType)> stateHashes
+        )
+        {
+            foreach (var (stateHash, checkpoint) in stateHashes)
+            {
+                if (checkpointType == checkpoint)
+                {
+                    return stateHash.Equals(expectedStateHash);
+                }
+            }
+            return false;
+        }
+
         public bool IsCheckpointOk(ulong? blockHeight, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
             if (blockHash is null || blockHeight is null || stateHashes is null || stateHashes.Count != 6) return false;
@@ -198,8 +216,37 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogWarning($"Got exception while checking root hash: {exception}");
                 return false;
             }
-            // TODO: check block hash and state hashes
-            return true;
+            
+            Task.Factory.StartNew(() =>
+            {
+                _downloader.DownloadCheckpoint(blockHeight.Value, trieNames);
+            }, TaskCreationOptions.LongRunning);
+
+            while (_downloader.CheckpointBlockHash is null)
+            {
+                Thread.Sleep(1000);
+            }
+            if (!_downloader.CheckpointBlockHash.Equals(blockHash)) return false;
+
+            while (_downloader.CheckpointStateHashes is null || _downloader.CheckpointStateHashes.Count < 6)
+            {
+                Thread.Sleep(1000);
+            }
+            if (_downloader.CheckpointStateHashes.Count != 6)
+            {
+                Logger.LogDebug($"Got {_downloader.CheckpointStateHashes.Count} state hash for checkpoint, need only 6.");
+                foreach (var (stateHash, checkpointType) in _downloader.CheckpointStateHashes)
+                {
+                    Logger.LogDebug($"Got state hash {stateHash.ToHex()} for {checkpointType}");
+                }
+                throw new Exception("Something went wrong while downloading checkpoint state hashes.");
+            }
+            bool match = true;
+            foreach (var (expectedStateHash, checkpointType) in stateHashes)
+            {
+                match &= MatchStateHash(expectedStateHash, checkpointType, _downloader.CheckpointStateHashes);
+            }
+            return match;
         }
     }
 }

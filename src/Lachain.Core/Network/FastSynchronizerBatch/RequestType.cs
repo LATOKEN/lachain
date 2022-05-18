@@ -4,7 +4,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     {
         BlocksRequest = 0,
         NodesRequest = 1,
-        SingleBlockRequest = 2,
-        RootHashRequest = 3,
+        CheckpointBlockRequest = 2,
+        CheckpointStateHashRequest = 3,
     }
 }
