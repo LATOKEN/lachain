@@ -713,6 +713,7 @@ namespace Lachain.Core.Network
                 {
                     throw new Exception($"Got invalid checkpoint information from peer: {publicKey.ToHex()}. Is peer malicious?");
                 }
+                ResetRequestId();
                 Monitor.PulseAll(_peerHashCheckpoint);
             }
         }
