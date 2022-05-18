@@ -2,14 +2,12 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Collections.Generic;
+using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
@@ -18,19 +16,17 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.Misc;
+using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage;
 using Lachain.Storage.Trie;
 using Lachain.Storage.State;
 using Lachain.Storage.Repositories;
-using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using NUnit.Framework;
-using Lachain.Logger;
-using Google.Protobuf;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
@@ -156,7 +152,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
         [Test]
         [Repeat(2)]
-        public void Test_CheckpoinRequestAndReply()
+        public void Test_CheckpointRequestAndReply()
         {
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
@@ -175,6 +171,48 @@ namespace Lachain.CoreTest.IntegrationTests
                 message = _networkManager.MessageFactory.CheckpointRequest(request, 0);
                 CheckCheckpointRequest(message);
             }
+        }
+
+        [Test]
+        [Repeat(2)]
+        public void Test_CheckpointBlockRequestAndReply()
+        {
+            ulong totalBlocks = 10;
+            GenerateBlocks(totalBlocks);
+            for (ulong blockNo = 1; blockNo <= totalBlocks; blockNo++)
+            {
+                _checkpointManager.SaveCheckpoint(_blockManager.GetByHeight(blockNo)!);
+                Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent());
+                Assert.AreNotEqual(null, _checkpointManager.CheckpointBlockId);
+                Assert.AreEqual(blockNo, _checkpointManager.CheckpointBlockId!.Value);
+                var message = _networkManager.MessageFactory.CheckpointBlockRequest(blockNo, 0);
+                CheckCheckpointBlockRequest(message, blockNo);
+            }
+        }
+
+        public void CheckCheckpointBlockRequest(NetworkMessage message, ulong blockNo)
+        {
+            // most of it copy pasted from CheckCheckpointBlockRequest from MessageHandler.cs 
+
+            Logger.LogTrace("Start processing OnCheckpointBlockRequest");
+            var request = message.CheckpointBlockRequest;
+            var blockHeight = request.BlockHeight;
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(blockHeight);
+            var reply = new CheckpointBlockReply
+            {
+                Block = block,
+                RequestId = request.RequestId
+            };
+            CheckCheckpointBlockReply(reply, blockNo);
+            Logger.LogTrace("Finished processing OnCheckpointBlockRequest");
+        }
+
+        public void CheckCheckpointBlockReply(CheckpointBlockReply reply, ulong blockNo)
+        {
+            var block = reply.Block;
+            Assert.AreEqual(blockNo, block.Header.Index);
+            var result = _blockManager.VerifySignatures(block, true);
+            Assert.AreEqual(OperatingError.Ok, result);
         }
 
         public byte[] GetCheckpointRequests()
@@ -206,7 +244,8 @@ namespace Lachain.CoreTest.IntegrationTests
             }
             var reply = new CheckpointReply
             {
-                Checkpoints = { checkpoints }
+                Checkpoints = { checkpoints },
+                RequestId = request.RequestId
             };
             
             // Checking reply
