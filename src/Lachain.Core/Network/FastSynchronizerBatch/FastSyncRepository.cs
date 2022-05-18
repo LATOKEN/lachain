@@ -8,11 +8,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
-using Newtonsoft.Json.Linq;
-using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Crypto;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
@@ -26,6 +23,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public class FastSyncRepository : IFastSyncRepository
     {
+        private static readonly ILogger<FastSyncRepository>
+            Logger = LoggerFactory.GetLoggerForClass<FastSyncRepository>();
         private IDictionary<UInt256, ulong> _idCache = new ConcurrentDictionary<UInt256, ulong>();
         private uint _idCacheCapacity = 100000;
         private const uint _blockAddPeriod = 10000;
@@ -232,7 +231,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             Initialize();
             _blockchainSnapshot!.Blocks.AddBlock(block);
-            if(block.Header.Index%200 == 0) Console.WriteLine("Added BlockHeader: " + block.Header.Index);
+            if(block.Header.Index%200 == 0) Logger.LogInformation("Added BlockHeader: " + block.Header.Index);
             if(block.Header.Index%_blockAddPeriod == 0)
                 _blockchainSnapshot.Blocks.Commit();
         }
@@ -243,7 +242,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             foreach(var item in _nodeCache)
             {
                 tx.Put(EntryPrefix.PersistentHashMap.BuildPrefix(item.Key), NodeSerializer.ToBytes(item.Value));
-          //      Console.WriteLine("Adding node to DB : "+item.Key);
             }
             tx.Commit();
             _nodeCache.Clear();

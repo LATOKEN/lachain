@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;
 
+
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public class RequestState
