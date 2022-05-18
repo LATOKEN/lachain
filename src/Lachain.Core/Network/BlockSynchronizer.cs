@@ -46,7 +46,7 @@ namespace Lachain.Core.Network
         private readonly object _peerHasBlocks = new object();
         private readonly object _blocksLock = new object();
         private readonly object _txLock = new object();
-        private readonly object _peerHashCheckpoint = new object();
+        private readonly object _peerHasCheckpoint = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
         private bool _running;
         private readonly Thread _blockSyncThread;
@@ -59,7 +59,7 @@ namespace Lachain.Core.Network
         // We will get these info from other peers via network messaging.
         // But we cannot start fast sync whenever we get these info because then any peer can start fastsync
         // by sending valid checkpoint informations from outside. We don't want that.
-        // So we need to control when to start fastsync and some logic to for that.
+        // So we need to control when to start fastsync and some logic for that.
         private bool? _checkpointExist;
         private ulong? _checkpointBlockHeight;
         private UInt256? _checkpointBlockHash;
@@ -380,7 +380,7 @@ namespace Lachain.Core.Network
             {
                 // checkpoint should exist
                 CheckIfCheckpointExist();
-                lock (_peerHashCheckpoint)
+                lock (_peerHasCheckpoint)
                 {
                     if (_checkpointExist == false || _checkpointExist is null)
                     {
@@ -390,7 +390,7 @@ namespace Lachain.Core.Network
                     }
                 }
                 GetCheckpoint();
-                lock (_peerHashCheckpoint)
+                lock (_peerHasCheckpoint)
                 {
                     _fastSync.StartSync(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes);
                     _checkpointExist = null;
@@ -435,9 +435,9 @@ namespace Lachain.Core.Network
                 GenerateRequestId();
                 var message = _networkManager.MessageFactory.CheckpointRequest(request.ToArray(), _checkpointRequesId!.Value);
                 foreach (var peer in peers) _networkManager.SendTo(peer, message);
-                lock (_peerHashCheckpoint)
+                lock (_peerHasCheckpoint)
                 {
-                    var gotReply = Monitor.Wait(_peerHashCheckpoint, TimeSpan.FromMilliseconds(5000));
+                    var gotReply = Monitor.Wait(_peerHasCheckpoint, TimeSpan.FromMilliseconds(5000));
                     if (gotReply)
                     {
                         return;
@@ -470,9 +470,9 @@ namespace Lachain.Core.Network
                 GenerateRequestId();
                 var message = _networkManager.MessageFactory.CheckpointRequest(request, _checkpointRequesId!.Value);
                 foreach (var peer in peers) _networkManager.SendTo(peer, message);
-                lock (_peerHashCheckpoint)
+                lock (_peerHasCheckpoint)
                 {
-                    var gotReply = Monitor.Wait(_peerHashCheckpoint, TimeSpan.FromMilliseconds(5000));
+                    var gotReply = Monitor.Wait(_peerHasCheckpoint, TimeSpan.FromMilliseconds(5000));
                     if (gotReply)
                     {
                         return;
@@ -485,7 +485,7 @@ namespace Lachain.Core.Network
 
         public void HandleCheckpointFromPeer(List<CheckpointInfo> checkpoints, ECDSAPublicKey publicKey, ulong requestId)
         {
-            lock (_peerHashCheckpoint)
+            lock (_peerHasCheckpoint)
             {
                 // check if the reply matches the request id from request
                 if (requestId != _checkpointRequesId) return;
@@ -524,7 +524,7 @@ namespace Lachain.Core.Network
                     throw new Exception($"Got invalid checkpoint information from peer: {publicKey.ToHex()}. Is peer malicious?");
                 }
                 ResetRequestId();
-                Monitor.PulseAll(_peerHashCheckpoint);
+                Monitor.PulseAll(_peerHasCheckpoint);
             }
         }
 

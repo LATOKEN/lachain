@@ -15,10 +15,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         bool GetIdByHash(UInt256 nodeHash, out ulong id);
         bool TryGetNode(ulong id, out IHashTrieNode? trieNode);
         bool IsConsistent(TrieNodeInfo? node, out UInt256? nodeHash);
-        ulong GetBlockNumber();
-        UInt256? GetBlockHash();
-        UInt256? GetStateHash(CheckpointType checkpointType);
-        ulong GetBlockHeight();
+        ulong GetCheckpointBlockNumber();
+        UInt256? GetCheckpointBlockHash();
+        UInt256? GetCheckpointStateHash(CheckpointType checkpointType);
+        ulong GetCurrentBlockHeight();
         void AddBlock(Block block);
         void CommitIds();
         void Commit();

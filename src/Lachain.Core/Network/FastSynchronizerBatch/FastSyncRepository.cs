@@ -200,28 +200,28 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return trieNode;
         }
 
-        public ulong GetBlockNumber()
+        public ulong GetCheckpointBlockNumber()
         {
             var rawBlockNumber = _dbContext.Get(EntryPrefix.BlockNumberFromCheckpoint.BuildPrefix());
             if(rawBlockNumber == null) return 0;
             return SerializationUtils.ToUInt64(rawBlockNumber);
         }
 
-        public UInt256? GetBlockHash()
+        public UInt256? GetCheckpointBlockHash()
         {
             var rawBlockHash = _dbContext.Get(EntryPrefix.BlockHashFromCheckpoint.BuildPrefix());
             if (rawBlockHash is null) return null;
             return UInt256Utils.ToUInt256(rawBlockHash);
         }
 
-        public UInt256? GetStateHash(CheckpointType checkpointType)
+        public UInt256? GetCheckpointStateHash(CheckpointType checkpointType)
         {
             var rawStateHash = _dbContext.Get(EntryPrefix.StateHashByCheckpointType.BuildPrefix((byte) checkpointType));
             if (rawStateHash is null) return null;
             return UInt256Utils.ToUInt256(rawStateHash);
         }
 
-        public ulong GetBlockHeight()
+        public ulong GetCurrentBlockHeight()
         {
             Initialize();
             return _blockchainSnapshot!.Blocks.GetTotalBlockHeight();

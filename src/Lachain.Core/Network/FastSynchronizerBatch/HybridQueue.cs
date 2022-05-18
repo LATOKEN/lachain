@@ -51,8 +51,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _loadedBatch = _savedBatch;
             _totalBatch = SerializationUtils.ToUInt64(_dbContext.Get(EntryPrefix.TotalBatch.BuildPrefix()));
             
-            Logger.LogInformation($"Starting with....");
-            Logger.LogInformation($"Done Batch: {_loadedBatch} Total Batch: {_totalBatch}");
+            Logger.LogTrace($"Starting with....");
+            Logger.LogTrace($"Done Batch: {_loadedBatch} Total Batch: {_totalBatch}");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
