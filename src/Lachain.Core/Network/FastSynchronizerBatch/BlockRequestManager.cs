@@ -28,12 +28,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void SetMaxBlock(ulong maxBlock)
+        public void Initialize()
         {
-            _done = _repository.GetBlockHeight();
+            _done = _repository.GetCurrentBlockHeight();
             if (_maxBlock != 0)
-                throw new Exception("Trying to set max block second time.");
-            _maxBlock = maxBlock;
+                throw new Exception("Trying to initialize second time.");
+            _maxBlock = _repository.GetCheckpointBlockNumber();
             if (_maxBlock < _done) throw new ArgumentOutOfRangeException("Max block is less then current block height");
             for (ulong i = _done+1; i <= _maxBlock; i++) nextBlocksToDownload.Add(i);
         }
