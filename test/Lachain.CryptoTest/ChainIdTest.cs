@@ -229,6 +229,8 @@ namespace Lachain.CryptoTest
 
                 var parsedSig = new byte[65];
                 var recId = (RestoreEncodedRecIdFromSignatureBuffer(signature) - 36) / 2 / ChainId (useNewChainId);
+                if (recId < 0 || recId > 3)
+                    throw new Exception($"Invalid recId={recId}: : recId >= 0 && recId <= 3 ");
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     return false;
 
@@ -290,6 +292,8 @@ namespace Lachain.CryptoTest
                 var pk = new byte[64];
                 var encodedRecId = RestoreEncodedRecIdFromSignatureBuffer(signature);
                 var recId = (encodedRecId - 36) / 2 / ChainId(useNewChainId);
+                if (recId < 0 || recId > 3)
+                    throw new Exception($"Invalid recId={recId}: : recId >= 0 && recId <= 3 ");
                 if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
                     throw new ArgumentException(nameof(signature));
                 if (!Secp256K1.Recover(pk, parsedSig, messageHash))
