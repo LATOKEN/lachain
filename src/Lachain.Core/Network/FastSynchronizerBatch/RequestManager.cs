@@ -29,15 +29,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _hybridQueue = hybridQueue;
         }
 
-        public bool TryGetHashBatch(out List<UInt256> hashBatch)
+        public bool TryGetHashBatch(out List<UInt256> hashBatch, out List<ulong> batchId)
         {
             hashBatch = new List<UInt256>();
+            batchId = new List<ulong>();
             lock(this)
             {
-                UInt256? hash;
-                while (hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out hash))
+                while (hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out var hash, out var batch))
                 {
                     hashBatch.Add(hash!);
+                    batchId.Add(batch!.Value);
                 }
             }
             if (hashBatch.Count == 0)
@@ -88,80 +89,68 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         // "response" is received from a peer for the "hashBatch" of nodes
-        public void HandleResponse(List<UInt256> hashBatch, List<TrieNodeInfo> response)
+        public void HandleResponse(List<UInt256> hashBatch, List<ulong> batchId, List<TrieNodeInfo> response)
         {
-            List<UInt256> successfulHashes = new List<UInt256>();
-            
-            List<UInt256> failedHashes = new List<UInt256>();
-            
+            List<(UInt256, ulong)> successfulHashes = new List<(UInt256, ulong)>();
+            List<(UInt256, ulong)> failedHashes = new List<(UInt256, ulong)>();
             List<TrieNodeInfo> successfulNodes = new List<TrieNodeInfo>();
 
             // discard the whole batch if we haven't got response for all the nodes(or more response, shouldn't happen though)
             if (hashBatch.Count != response.Count)
             {
-                failedHashes = hashBatch;
+                for (int i = 0 ; i < hashBatch.Count; i++)
+                {
+                    failedHashes.Add((hashBatch[i], batchId[i]));
+                }
             }
             else
             {
                 for (var i = 0; i < hashBatch.Count; i++)
                 {
                     var hash = hashBatch[i];
+                    var batch = batchId[i];
                     var node = response[i];
                     // check if actually the node's content produce desired hash or data is corrupted
-                    if (_repository.IsConsistent(node, out var nodeHash) && hash == nodeHash)
+                    if (_repository.IsConsistent(node, out var nodeHash) && hash.Equals(nodeHash))
                     {
-                        successfulHashes.Add(hash);
+                        successfulHashes.Add((hash, batch));
                         successfulNodes.Add(node);
                     }
                     else
                     {
-                        failedHashes.Add(hash);
+                        failedHashes.Add((hash, batch));
                     }
                 }
             }
             lock (this)
             {
-                foreach (var hash in failedHashes)
+                foreach (var (hash, batch) in failedHashes)
                 {
-                    if (!_hybridQueue.isPending(hash))
-                    {
-                        // do nothing, this request was probably already served
-                    }
-                    else
-                    {
-                        _hybridQueue.Add(hash);   
-                    }
+                    _hybridQueue.AddToOutgoingQueue(hash, batch);
                 }
 
 
                 for(var i = 0; i < successfulHashes.Count; i++)
                 {
-                    var hash = successfulHashes[i];
+                    var (hash, batch) = successfulHashes[i];
                     var node = successfulNodes[i];
-                    if (!_hybridQueue.isPending(hash))
+                    switch (node!.MessageCase)
                     {
-                        // do nothing, this request was probably already served
+                        // for internal node, we need to extract it's children and put it in the queue for downloading them next
+                        case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
+                            var childrenHashes = node.InternalNodeInfo.ChildrenHash.ToList();
+                            foreach (var childHash in childrenHashes)
+                            {
+                                _hybridQueue.AddToIncomingQueue(childHash);
+                            }
+                            break;
                     }
-                    else
-                    {
-                        switch (node!.MessageCase)
-                        {
-                            // for internal node, we need to extract it's children and put it in the queue for downloading them next
-                            case TrieNodeInfo.MessageOneofCase.InternalNodeInfo:
-                                var childrenHashes = node.InternalNodeInfo.ChildrenHash.ToList();
-                                foreach (var childHash in childrenHashes)
-                                {
-                                    _hybridQueue.Add(childHash);
-                                }
-                                break;
-                        }
 
-                        // sending the node to repository for inserting it to database
-                        // (maybe temporarily it will reside in memory but flushed to db later)
-                        bool res = _repository.TryAddNode(node);
-                        // informing the hybridQueue that node is received successfully
-                        _hybridQueue.ReceivedNode(hash);
-                    }
+                    // sending the node to repository for inserting it to database
+                    // (maybe temporarily it will reside in memory but flushed to db later)
+                    bool res = _repository.TryAddNode(node);
+                    // informing the hybridQueue that node is received successfully
+                    _hybridQueue.ReceivedNode(hash, batch);
                 }
             }
         }
@@ -169,7 +158,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             lock(_hybridQueue)
             {
-                _hybridQueue.Add(hash);
+                _hybridQueue.AddToIncomingQueue(hash);
             }
         }
     }
