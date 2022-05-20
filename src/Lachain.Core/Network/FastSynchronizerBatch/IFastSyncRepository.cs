@@ -10,6 +10,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     public interface IFastSyncRepository
     {
         void Initialize(ulong blockNumber, UInt256 blockHash, List<(UInt256, CheckpointType)> stateHashes);
+        ulong GetSavedBatch();
+        ulong GetTotalIncomingBatch();
+        void UpdateSavedBatch(ulong savedBatch);
+        void SaveIncomingQueueBatch(List<byte> incomingQueue, ulong totalIncomingBatch);
+        byte[] GetHashBatchRaw(ulong batch);
         bool TryAddNode(TrieNodeInfo nodeInfo);
         bool ExistNode(UInt256 nodeHash);
         bool GetIdByHash(UInt256 nodeHash, out ulong id);

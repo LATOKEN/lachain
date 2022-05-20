@@ -104,7 +104,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             for(int i = downloadedTries; i < trieNames.Length; i++)
             {
                 Logger.LogTrace($"Starting trie {trieNames[i]}");
-                var rootHash = GetRootHashForTrieName(trieNames[i], stateHashes);
+                UInt256 rootHash = GetRootHashForTrieName(trieNames[i], stateHashes)!;
                 _downloader.GetTrie(rootHash);
                 bool foundRoot = _repository.GetIdByHash(rootHash, out ulong curTrieRoot);
                 downloadedTries++;
@@ -113,13 +113,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogTrace($"Total Nodes downloaded: {_versionFactory.CurrentVersion}");
             }
             
-            if (downloadedTries == (int) trieNames.Length)
+            if (downloadedTries == trieNames.Length)
             {
                 _blockRequestManager.Initialize();
                 _downloader.DownloadBlocks();
                 foreach (var trieName in trieNames)
                 {
-                    var rootHash = GetRootHashForTrieName(trieName, stateHashes);
+                    UInt256 rootHash = GetRootHashForTrieName(trieName, stateHashes)!;
                     _repository.SetSnapshotVersion(trieName, rootHash);
                 }
 
@@ -146,7 +146,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             throw new Exception($"Root hash for {trieName} not found in stateHashes");
         }
 
-        private UInt256 GetRootHashForTrieName(string trieName, List<(UInt256, CheckpointType)> stateHashes)
+        private UInt256? GetRootHashForTrieName(string trieName, List<(UInt256, CheckpointType)> stateHashes)
         {
             var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
             UInt256? stateHash = null;
@@ -158,7 +158,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     break;
                 }
             }
-            return stateHash!;
+            return stateHash;
         }
 
         private bool Alldone()
@@ -227,7 +227,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     Logger.LogDebug($"Got state hash {stateHash.ToHex()} for {checkpointType}");
                 }
-                throw new Exception("Something went wrong while downloading checkpoint state hashes.");
+                Logger.LogDebug("Something went wrong while downloading checkpoint state hashes.");
+                return false;
             }
             bool match = true;
             foreach (var (expectedStateHash, checkpointType) in stateHashes)
