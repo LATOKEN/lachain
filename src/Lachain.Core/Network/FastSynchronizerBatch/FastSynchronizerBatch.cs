@@ -190,7 +190,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public bool IsCheckpointOk(ulong? blockHeight, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
-            if (blockHash is null || blockHeight is null || stateHashes is null || stateHashes.Count != 6) return false;
+            Logger.LogTrace("Verifying checkpoint information...");
+            if (blockHash is null || blockHeight is null || stateHashes is null || stateHashes.Count != 6)
+            {
+                Logger.LogTrace("Checkpoint information missing");
+                return false;
+            }
             // Checking if we have root hashes for all six tries.
             try
             {
@@ -214,7 +219,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 Thread.Sleep(1000);
             }
-            if (!_downloader.CheckpointBlockHash.Equals(blockHash)) return false;
+            if (!_downloader.CheckpointBlockHash.Equals(blockHash))
+            {
+                Logger.LogTrace("Checkpoint block hash mismatch");
+                return false;
+            }
 
             while (_downloader.CheckpointStateHashes is null || _downloader.CheckpointStateHashes.Count < 6)
             {
@@ -235,6 +244,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             {
                 match &= MatchStateHash(expectedStateHash, checkpointType, _downloader.CheckpointStateHashes);
             }
+            if (!match) Logger.LogTrace("Checkpoint state hash mismatch");
+            Logger.LogTrace($"Finished verifying checkpoint information, result: {match}");
             return match;
         }
     }
