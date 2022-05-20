@@ -351,27 +351,12 @@ namespace Lachain.Core.Network
                         blockBatch.Add(block);
                     }
                 }
-                else
+                var reply = new BlockBatchReply
                 {
-                    foreach (var blockNumber in blockNumbers)
-                    {
-                        var block = _blockManager.GetByHeight(blockNumber);
-                        if (block == null)
-                        {
-                            Logger.LogWarning($"Found null block for {blockNumber} which should not happen. My height: "
-                                + $"{_blockManager.GetHeight()}, max block number requested: {blockNumbers.Last()}. So chose not to reply.");
-                            blockBatch.Clear();
-                            break;
-                        }
-                        blockBatch.Add(block);
-                    }
-                    var reply = new BlockBatchReply
-                    {
-                        BlockBatch = {blockBatch},
-                        RequestId = request.RequestId
-                    };
-                    callback(reply);
-                }
+                    BlockBatch = {blockBatch},
+                    RequestId = request.RequestId
+                };
+                callback(reply);
             }
             catch (Exception exception)
             {

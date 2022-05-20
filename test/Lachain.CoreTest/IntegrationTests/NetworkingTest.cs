@@ -123,24 +123,6 @@ namespace Lachain.CoreTest.IntegrationTests
 
         [Test]
         [Repeat(2)]
-        public void Test_RootHashByTrieNameRequestAndReply()
-        {
-            ulong totalBlocks = 10;
-            GenerateBlocks(totalBlocks);
-            string[] snapshotNames = new string[] { "Balances", "Contracts", "Storage", "Transactions", "Blocks", "Events", "Validators" };
-            for (ulong i = 1 ; i <= totalBlocks; i++)
-            {
-                foreach (var snapshotName in snapshotNames)
-                {
-                    var message = _networkManager.MessageFactory.RootHashByTrieNameRequest(i , snapshotName, 0);
-                    CheckRootHashByTrieNameRequest(message, i , snapshotName);
-                }
-            }
-
-        }
-
-        [Test]
-        [Repeat(2)]
         public void Test_TrieNodeByHashRequestAndReply()
         {
             ulong totalBlocks = 10;

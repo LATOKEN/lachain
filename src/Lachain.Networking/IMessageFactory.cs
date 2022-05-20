@@ -32,7 +32,7 @@ namespace Lachain.Networking
         /// <returns>
         /// NetworkMessage
         /// </returns>
-        NetworkMessage BlockBatchRequest(List<ulong> blockNumbers, ulong requestId);
+        NetworkMessage BlockBatchRequest(ulong fromBlock, ulong toBlock, ulong requestId);
         /// <summary>
         /// Formats a NetworkMessage to request trie-nodes in batch
         /// </summary>

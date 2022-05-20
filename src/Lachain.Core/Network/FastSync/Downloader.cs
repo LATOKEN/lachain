@@ -29,6 +29,7 @@ namespace Lachain.Core.Network.FastSync
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         private const int DefaultTimeout = 5 * 1000; // 5000 millisecond 
         private readonly IBlockRequestManager _blockRequestManager; 
+        // Any request that has been made resides in _requests dictionary. Mapping is requestId -> request.
         private IDictionary<ulong, RequestState> _requests = new Dictionary<ulong, RequestState>();
         private static readonly ILogger<Downloader> Logger = LoggerFactory.GetLoggerForClass<Downloader>();
         private Block? _checkpointBlock;
@@ -106,7 +107,8 @@ namespace Lachain.Core.Network.FastSync
                 switch (request._type)
                 {
                     case RequestType.BlocksRequest:
-                        message = _networkManager.MessageFactory.BlockBatchRequest(request._blockBatch!, request._requestId);
+                        message = _networkManager.MessageFactory.BlockBatchRequest(
+                            request._fromBlock!.Value, request._toBlock!.Value, request._requestId);
                         break;
 
                     case RequestType.NodesRequest:
@@ -127,7 +129,7 @@ namespace Lachain.Core.Network.FastSync
                         Logger.LogWarning($"No implementation for request type: {request._type}");
                         break;
                 }
-                if (message != null)
+                if (!(message is null))
                 {
                     Logger.LogInformation($"Object ready for sending to peer{request._peer._publicKey.ToHex()}, with request id:"
                     + $" {request._requestId}, spent time:{(DateTime.Now - request._start).TotalMilliseconds}");
@@ -152,11 +154,12 @@ namespace Lachain.Core.Network.FastSync
                     switch (request._type)
                     {
                         case RequestType.BlocksRequest:
-                            _blockRequestManager.HandleResponse(request._blockBatch!, new List<Block>());
+                            _blockRequestManager.HandleResponse(
+                                request._fromBlock!.Value, request._toBlock!.Value, new List<Block>());
                             break;
 
                         case RequestType.NodesRequest:
-                            _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
+                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>());
                             break;
 
                         case RequestType.CheckpointBlockRequest:
@@ -184,7 +187,7 @@ namespace Lachain.Core.Network.FastSync
                 if (!gotReply && _requests.TryGetValue(requestId, out var request))
                 {
                     _requests.Remove(requestId);
-                    if (request != null)
+                    if (!(request is null))
                     {
                         var peer = request._peer;
                         TimeSpan time = DateTime.Now - request._start; 
@@ -195,14 +198,15 @@ namespace Lachain.Core.Network.FastSync
                             case RequestType.NodesRequest:
                                 Task.Factory.StartNew(() =>
                                 {
-                                    _requestManager.HandleResponse(request._nodeBatch!, new List<TrieNodeInfo>());
+                                    _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>());
                                 }, TaskCreationOptions.LongRunning);
                                 break;
 
                             case RequestType.BlocksRequest:
                                 Task.Factory.StartNew(() =>
                                 {
-                                    _blockRequestManager.HandleResponse(request._blockBatch!, new List<Block>());
+                                    _blockRequestManager.HandleResponse(
+                                        request._fromBlock!.Value, request._toBlock!.Value, new List<Block>());
                                 }, TaskCreationOptions.LongRunning);
                                 break;
 
@@ -239,7 +243,8 @@ namespace Lachain.Core.Network.FastSync
                     TimeSpan time = DateTime.Now - request._start;
                     DateTime receiveTime = DateTime.Now;
                     var peer = request._peer;
-                    var batch = request._blockBatch;
+                    var fromBlock = request._fromBlock;
+                    var toBlock = request._toBlock;
                     // Let the TimeOut know that we got the response
                     Monitor.PulseAll(request._peerHasReply);
                 
@@ -259,12 +264,13 @@ namespace Lachain.Core.Network.FastSync
                             }
                             throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
                         }
-                        Logger.LogInformation($"Received data {request._type} size:{batch!.Count}  time spent:{time.TotalMilliseconds}"
-                            + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
+                        Logger.LogInformation($"Received data {request._type} size: {BlockRequestManager.ExpectedBlockCount(fromBlock!.Value, toBlock!.Value)}"
+                            + $" time spent:{time.TotalMilliseconds} from peer:{peer._publicKey.ToHex()}, preparation time: "
+                            + $"{(DateTime.Now-receiveTime).TotalMilliseconds}");
                         _peerManager.TryFreePeer(peer, true);
                         Task.Factory.StartNew(() =>
                         {
-                            _blockRequestManager.HandleResponse(batch!, response);
+                            _blockRequestManager.HandleResponse(fromBlock.Value, toBlock.Value, response);
                         }, TaskCreationOptions.LongRunning);
                     }
                     catch (Exception exception)
@@ -274,7 +280,7 @@ namespace Lachain.Core.Network.FastSync
                         _peerManager.TryFreePeer(peer, false);
                         Task.Factory.StartNew(() =>
                         {
-                            _blockRequestManager.HandleResponse(batch!, new List<Block>());
+                            _blockRequestManager.HandleResponse(fromBlock!.Value, toBlock!.Value, new List<Block>());
                         }, TaskCreationOptions.LongRunning);
                     }
                 }
@@ -291,7 +297,6 @@ namespace Lachain.Core.Network.FastSync
                     TimeSpan time = DateTime.Now - request._start;
                     DateTime receiveTime = DateTime.Now;
                     var peer = request._peer;
-                    var batch = request._nodeBatch;
                     // Let the TimeOut know that we got the response
                     Monitor.PulseAll(request._peerHasReply);
                 
@@ -311,12 +316,12 @@ namespace Lachain.Core.Network.FastSync
                             }
                             throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
                         }
-                        Logger.LogInformation($"Received data {request._type} size:{batch!.Count}  time spent:{time.TotalMilliseconds}"
+                        Logger.LogInformation($"Received data {request._type} size:{request._nodeBatch!.Count}  time spent:{time.TotalMilliseconds}"
                             + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
                         _peerManager.TryFreePeer(peer, true);
                         Task.Factory.StartNew(() =>
                         {
-                            _requestManager.HandleResponse(batch!, response);
+                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, response);
                         }, TaskCreationOptions.LongRunning);
                     }
                     catch (Exception exception)
@@ -326,7 +331,7 @@ namespace Lachain.Core.Network.FastSync
                         _peerManager.TryFreePeer(peer, false);
                         Task.Factory.StartNew(() =>
                         {
-                            _requestManager.HandleResponse(batch!, new List<TrieNodeInfo>());
+                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>());
                         }, TaskCreationOptions.LongRunning);
                     }
                 }
@@ -551,6 +556,7 @@ namespace Lachain.Core.Network.FastSync
             return DownloadRootHashByTrieName(trieName, _blockNumber);
         }
 
+<<<<<<< HEAD:src/Lachain.Core/Network/FastSync/Downloader.cs
         private UInt256 DownloadRootHashByTrieName(string trieName, ulong blockNumber)
         {
             return DownloadRootHashByTrieNameFromApi(trieName, Web3DataFormatUtils.Web3Number(blockNumber)).HexToUInt256();
@@ -562,6 +568,9 @@ namespace Lachain.Core.Network.FastSync
             string rootHash;
 
             while (true)
+=======
+            while (_requests.Count != 0 || !_blockRequestManager.Done())
+>>>>>>> optimized from in memory usage, removed some info from db after they were not needed anymore, moved all db related operations in dedicated class:src/Lachain.Core/Network/FastSynchronizerBatch/Downloader.cs
             {
                 Logger.LogTrace("HandleCheckpointStateHashFromPeer");
                 lock (request._peerHasReply)
@@ -617,7 +626,7 @@ namespace Lachain.Core.Network.FastSync
 =======
 >>>>>>> integrated fastsync with blocksynchronizer:src/Lachain.Core/Network/FastSynchronizerBatch/Downloader.cs
                 var peer = GetPeer();
-                if(!_blockRequestManager.TryGetBatch(out var batch))
+                if(!_blockRequestManager.TryGetBatch(out var fromBlock, out var toBlock))
                 {
                     _peerManager.TryFreePeer(peer!);
                     Thread.Sleep(500);
