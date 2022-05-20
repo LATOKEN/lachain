@@ -120,8 +120,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 }
                 if (message != null)
                 {
-                    Logger.LogInformation($"Object ready for sending to peer{request._peer._publicKey.ToHex()}, "
-                    + $"spent time:{(DateTime.Now - request._start).TotalMilliseconds}");
+                    Logger.LogInformation($"Object ready for sending to peer{request._peer._publicKey.ToHex()}, with request id:"
+                    + $" {request._requestId}, spent time:{(DateTime.Now - request._start).TotalMilliseconds}");
                     _networkManager.SendTo(request._peer._publicKey, message);
                     Task.Factory.StartNew(() =>
                     {
@@ -236,10 +236,18 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 
                     try
                     {
-                        if (peer._publicKey != publicKey || request._type != RequestType.BlocksRequest)
+                        if (!peer._publicKey.Equals(publicKey) || request._type != RequestType.BlocksRequest)
                         {
                             Logger.LogWarning($"Asked for blocks to peer: {peer._publicKey.ToHex()} with  request id: "
                                 + $"{request._requestId} and request type: {request._type}, got reply from peer: {publicKey.ToHex()}");
+                            if (!peer._publicKey.Equals(publicKey))
+                            {
+                                Logger.LogWarning($"Sent to {peer._publicKey.ToHex()}, but got reply from {publicKey.ToHex()}");
+                            }
+                            if (request._type != RequestType.BlocksRequest)
+                            {
+                                Logger.LogWarning($"Got request type: {request._type} instead of {RequestType.BlocksRequest}");
+                            }
                             throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
                         }
                         Logger.LogInformation($"Received data {request._type} size:{batch!.Count}  time spent:{time.TotalMilliseconds}"
@@ -280,10 +288,18 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 
                     try
                     {
-                        if (peer._publicKey != publicKey || request._type != RequestType.NodesRequest) 
+                        if (!peer._publicKey.Equals(publicKey) || request._type != RequestType.NodesRequest) 
                         {
                             Logger.LogWarning($"Asked for nodes to peer: {peer._publicKey.ToHex()} with  request id: "
                                 + $"{request._requestId} and request type: {request._type}, got reply from peer: {publicKey.ToHex()}");
+                            if (!peer._publicKey.Equals(publicKey))
+                            {
+                                Logger.LogWarning($"Sent to {peer._publicKey.ToHex()}, but got reply from {publicKey.ToHex()}");
+                            }
+                            if (request._type != RequestType.NodesRequest)
+                            {
+                                Logger.LogWarning($"Got request type: {request._type} instead of {RequestType.NodesRequest}");
+                            }
                             throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
                         }
                         Logger.LogInformation($"Received data {request._type} size:{batch!.Count}  time spent:{time.TotalMilliseconds}"
@@ -324,10 +340,19 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 
                     try
                     {
-                        if (block is null || peer._publicKey != publicKey || request._type != RequestType.CheckpointBlockRequest) 
+                        if (block is null || !peer._publicKey.Equals(publicKey) || request._type != RequestType.CheckpointBlockRequest) 
                         {
                             Logger.LogWarning($"Asked for checkpoint block {blockNumber} to peer: {peer._publicKey.ToHex()} with request id: "
                                 + $"{request._requestId} and request type: {request._type}, got reply from peer: {publicKey.ToHex()}");
+                            if (block is null) Logger.LogWarning("Found null block");
+                            if (!peer._publicKey.Equals(publicKey))
+                            {
+                                Logger.LogWarning($"Sent to {peer._publicKey.ToHex()}, but got reply from {publicKey.ToHex()}");
+                            }
+                            if (request._type != RequestType.CheckpointBlockRequest)
+                            {
+                                Logger.LogWarning($"Got request type: {request._type} instead of {RequestType.CheckpointBlockRequest}");
+                            }
                             throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
                         }
                         Logger.LogInformation($"Received data {request._type} time spent:{time.TotalMilliseconds}"
@@ -341,6 +366,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             throw new Exception("Block verification failed");
                         }
                         _peerManager.TryFreePeer(peer, true);
+                        Logger.LogInformation("Fetched checkpoint block successfully");
                         _checkpointBlockHash = block.Hash;
                     }
                     catch (Exception exception)
@@ -375,11 +401,20 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 
                     try
                     {
-                        if (rootHash is null || peer._publicKey != publicKey || request._type != RequestType.CheckpointStateHashRequest) 
+                        if (rootHash is null || !peer._publicKey.Equals(publicKey) || request._type != RequestType.CheckpointStateHashRequest) 
                         {
                             Logger.LogWarning($"Asked for checkpoint state hash for block {blockNumber} and snapshot {trieName} to peer: "
                                 + $"{peer._publicKey.ToHex()} with request id: {request._requestId} and request type: {request._type}, "
                                 + $"got reply from peer: {publicKey.ToHex()}");
+                            if (rootHash is null) Logger.LogWarning($"Found null root hash for {trieName}");
+                            if (!peer._publicKey.Equals(publicKey))
+                            {
+                                Logger.LogWarning($"Sent to {peer._publicKey.ToHex()}, but got reply from {publicKey.ToHex()}");
+                            }
+                            if (request._type != RequestType.CheckpointStateHashRequest)
+                            {
+                                Logger.LogWarning($"Got request type: {request._type} instead of {RequestType.CheckpointStateHashRequest}");
+                            }
                             throw new Exception($"Invalid reply from peer: {publicKey.ToHex()}");
                         }
                         Logger.LogInformation($"Received data {request._type} time spent:{time.TotalMilliseconds}"
@@ -389,6 +424,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         if (_checkpointStateHashes is null)
                             _checkpointStateHashes = new List<(UInt256, CheckpointType)>();
                         var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName!);
+                        Logger.LogInformation($"Fetched checkpoint state hash for {trieName} successfully");
                         _checkpointStateHashes.Add((rootHash, checkpointType!.Value));
                     }
                     catch (Exception exception)
