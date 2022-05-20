@@ -13,7 +13,7 @@ namespace Lachain.Core.Blockchain.Operations
 {
     public class CheckpointManager : ICheckpointManager
     {
-        public static readonly uint _checkpointPeriod = 100; // 10^6
+        public static readonly uint _checkpointPeriod = 1000000; // 10^6
         private static readonly ILogger<CheckpointManager> Logger = LoggerFactory.GetLoggerForClass<CheckpointManager>();
         private readonly IBlockManager _blockManager;
         private readonly ICheckpointRepository _repository;
