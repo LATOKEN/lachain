@@ -8,8 +8,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     {
         ulong MaxBlock { get; }
         void Initialize();
-        bool TryGetBatch(out List<ulong> batch);
+        bool TryGetBatch(out ulong fromBlock, out ulong toBlock);
         bool Done();
-        void HandleResponse(List<ulong> batch, List<Block> response);
+        void HandleResponse(ulong fromBlock, ulong toBlock, List<Block> response);
     }
 }

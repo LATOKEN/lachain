@@ -62,11 +62,51 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             ulong zero = 0;
             tx.Put(EntryPrefix.SavedBatch.BuildPrefix(), zero.ToBytes().ToArray());
-            tx.Put(EntryPrefix.TotalBatch.BuildPrefix(), zero.ToBytes().ToArray());
+            tx.Put(EntryPrefix.TotalIncomingBatch.BuildPrefix(), zero.ToBytes().ToArray());
             tx.Put(EntryPrefix.LastDownloadedTries.BuildPrefix(), zero.ToBytes().ToArray());
             tx.Commit();
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public ulong GetSavedBatch()
+        {
+            var rawInfo = _dbContext.Get(EntryPrefix.SavedBatch.BuildPrefix());
+            if (rawInfo is null) return 0;
+            return SerializationUtils.ToUInt64(rawInfo);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public ulong GetTotalIncomingBatch()
+        {
+            var rawInfo = _dbContext.Get(EntryPrefix.TotalIncomingBatch.BuildPrefix());
+            if (rawInfo is null) return 0;
+            return SerializationUtils.ToUInt64(rawInfo);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void UpdateSavedBatch(ulong savedBatch)
+        {
+            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
+            tx.Delete(EntryPrefix.QueueBatch.BuildPrefix(savedBatch));
+            tx.Put(EntryPrefix.SavedBatch.BuildPrefix(), savedBatch.ToBytes().ToArray());
+            tx.Commit();
+        }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void SaveIncomingQueueBatch(List<byte> incomingQueue, ulong totalIncomingBatch)
+        {
+            RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
+            tx.Put(EntryPrefix.QueueBatch.BuildPrefix(totalIncomingBatch), incomingQueue.ToArray());
+            tx.Put(EntryPrefix.TotalIncomingBatch.BuildPrefix(), totalIncomingBatch.ToBytes().ToArray());
+            tx.Commit();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public byte[] GetHashBatchRaw(ulong batch)
+        {
+            return _dbContext.Get(EntryPrefix.QueueBatch.BuildPrefix(batch));
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryAddNode(TrieNodeInfo nodeInfo)
         {
@@ -85,7 +125,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     nodeHash = null;
                     break;
             }
-            if (nodeHash == null) return false;
+            if (nodeHash is null) return false;
             byte[] nodeHashBytes = nodeHash.ToBytes();
             bool foundId = GetIdByHash(nodeHash, out ulong id);
             IHashTrieNode? trieNode;
@@ -132,7 +172,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             if(_nodeCache.TryGetValue(id, out trieNode)) return true;
             var rawNode = _dbContext.Get(EntryPrefix.PersistentHashMap.BuildPrefix(id));
             trieNode = null;
-            if (rawNode == null) return false; 
+            if (rawNode is null) return false; 
             trieNode = NodeSerializer.FromBytes(rawNode);
             return true; 
         }
@@ -203,7 +243,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public ulong GetCheckpointBlockNumber()
         {
             var rawBlockNumber = _dbContext.Get(EntryPrefix.BlockNumberFromCheckpoint.BuildPrefix());
-            if(rawBlockNumber == null) return 0;
+            if(rawBlockNumber is null) return 0;
             return SerializationUtils.ToUInt64(rawBlockNumber);
         }
 
@@ -268,7 +308,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public int GetLastDownloadedTries()
         {
             var rawInfo = _dbContext.Get(EntryPrefix.LastDownloadedTries.BuildPrefix());
-            if (rawInfo == null) return 0;
+            if (rawInfo is null) return 0;
             return SerializationUtils.ToInt32(rawInfo);
         }
 

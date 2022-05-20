@@ -90,13 +90,14 @@ namespace Lachain.Networking
             };
         }
 
-        public NetworkMessage BlockBatchRequest(List<ulong> blockNumbers, ulong requestId)
+        public NetworkMessage BlockBatchRequest(ulong fromBlock, ulong toBlock, ulong requestId)
         {
             return new NetworkMessage
             {
                 BlockBatchRequest = new BlockBatchRequest
                 {
-                    BlockNumbers = {blockNumbers},
+                    FromHeight = fromBlock,
+                    ToHeight = toBlock,
                     RequestId = requestId
                 }
             };

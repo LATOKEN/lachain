@@ -327,40 +327,35 @@ namespace Lachain.Core.Network
             var (request, callback) = @event;
             try
             {
-                var blockNumbers = request.BlockNumbers.ToList();
+                var fromBlock = request.FromHeight;
+                var toBlock = request.ToHeight;
                 List<Block> blockBatch = new List<Block>();
-                if (blockNumbers.Count > 0 && blockNumbers.Last() > _blockManager.GetHeight())
+                if (toBlock > _blockManager.GetHeight())
                 {
-                    Logger.LogWarning($"I don't have all blocks. Requested max block: {blockNumbers.Last()}"
+                    Logger.LogWarning($"I don't have all blocks. Requested max block: {toBlock}"
                         + $" and my height: {_blockManager.GetHeight()}. So chose not to reply.");
-                    var reply = new BlockBatchReply
-                    {
-                        BlockBatch = {},
-                        RequestId = request.RequestId
-                    };
-                    callback(reply);
                 }
-                else
+                else if(fromBlock <= toBlock)
                 {
-                    foreach (var blockNumber in blockNumbers)
+                    for (var blockId = fromBlock; blockId <= toBlock; blockId++)
                     {
-                        var block = _blockManager.GetByHeight(blockNumber);
+                        var block = _blockManager.GetByHeight(blockId);
                         if (block == null)
                         {
-                            Logger.LogWarning($"Found null block for {blockNumber} which should not happen. My height: "
-                                + $"{_blockManager.GetHeight()}, max block number requested: {blockNumbers.Last()}. So chose not to reply.");
+                            Logger.LogWarning($"Found null block for {blockId} which should not happen. My height: "
+                                + $"{_blockManager.GetHeight()}, max block number requested: {toBlock}. So chose not to reply.");
                             blockBatch.Clear();
                             break;
                         }
                         blockBatch.Add(block);
                     }
-                    var reply = new BlockBatchReply
-                    {
-                        BlockBatch = {blockBatch},
-                        RequestId = request.RequestId
-                    };
-                    callback(reply);
                 }
+                var reply = new BlockBatchReply
+                {
+                    BlockBatch = {blockBatch},
+                    RequestId = request.RequestId
+                };
+                callback(reply);
             }
             catch (Exception exception)
             {
