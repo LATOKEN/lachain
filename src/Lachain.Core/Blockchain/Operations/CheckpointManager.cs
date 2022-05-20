@@ -13,7 +13,7 @@ namespace Lachain.Core.Blockchain.Operations
 {
     public class CheckpointManager : ICheckpointManager
     {
-        public static readonly uint _checkpointPeriod = 1000000; // 10^6
+        public static readonly uint _checkpointPeriod = 100; // 10^6
         private static readonly ILogger<CheckpointManager> Logger = LoggerFactory.GetLoggerForClass<CheckpointManager>();
         private readonly IBlockManager _blockManager;
         private readonly ICheckpointRepository _repository;
@@ -69,8 +69,14 @@ namespace Lachain.Core.Blockchain.Operations
                     + $"{block.Header.Index}. Aborting save.");
                 return false;
             }
+            Logger.LogTrace($"Saving checkpoint for block {block.Header.Index}");
             var saved = _repository.SaveCheckpoint(block);
-            if (saved) UpdateCache();
+            if (saved)
+            {
+                Logger.LogTrace("Saved checkpoint successfully");
+                UpdateCache();
+            }
+            else Logger.LogTrace("Could not save checkpoint");
             return saved;
         }
 
