@@ -64,8 +64,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogTrace("Fast Sync was done previously\nReturning");
                 return;
             }
-            
-            Logger.LogTrace("Current Version: " + _versionFactory.CurrentVersion);
 
             // If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
             // If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
@@ -97,6 +95,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             
             if (savedBlockNumber == 0) _repository.Initialize(blockNumber!.Value, blockHash!, stateHashes);
+            Logger.LogTrace($"Starting fast sync with checkpoint block {blockNumber!.Value}");
+            Logger.LogTrace("Current Version: " + _versionFactory.CurrentVersion);
             // to keep track how many tries have been downloaded till now, saved in db with LastDownloadedTries prefix
             int downloadedTries = _repository.GetLastDownloadedTries();
             _hybridQueue.Initialize();
