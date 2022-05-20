@@ -566,6 +566,7 @@ namespace Lachain.Core.Network
         {
             if (_fastSync.IsRunning())
             {
+                Logger.LogTrace("Fast sync was started previously. Starting again...");
                 _fastSync.StartSync(null, null, null);
                 return;
             }
@@ -579,7 +580,9 @@ namespace Lachain.Core.Network
                 break;
             }
             var maxHeight = _peerHeights.Values.Max();
-            if (IsFastSyncNeeded(_blockManager.GetHeight(), maxHeight))
+            var fastSycnNeeded = IsFastSyncNeeded(_blockManager.GetHeight(), maxHeight);
+            Logger.LogInformation($"Fast sync needed: {fastSycnNeeded}");
+            if (fastSycnNeeded)
             {
                 // checkpoint should exist
                 CheckIfCheckpointExist();
@@ -606,8 +609,10 @@ namespace Lachain.Core.Network
 
         private bool IsFastSyncNeeded(ulong myHeight, ulong maxHeight)
         {
+            Logger.LogInformation($"My height: {myHeight}, max height among peers: {maxHeight}");
             if (myHeight >= maxHeight) return false;
             var syncHeight = CheckpointManager.GetClosestCheckpointHeight(maxHeight);
+            Logger.LogInformation($"Expected sync height: {syncHeight}");
             return syncHeight > myHeight && syncHeight - myHeight >= CheckpointManager._checkpointPeriod;
         }
 
@@ -649,6 +654,7 @@ namespace Lachain.Core.Network
                     _checkpointBlockHash = null;
                     _stateHashes = null;
                     ResetRequestId();
+                    Logger.LogInformation("Could not fetch checkpoint, timeout occured. Trying again...");
                 }
             }
         }
@@ -682,6 +688,7 @@ namespace Lachain.Core.Network
                     }
                     _checkpointExist = null;
                     ResetRequestId();
+                    Logger.LogInformation("Could not fetch checkpoint, timeout occured. Trying again...");
                 }
             }
         }
