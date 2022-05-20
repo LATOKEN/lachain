@@ -64,8 +64,9 @@ message RootHashByTrieNameReply {
 }
 
 message BlockBatchRequest {
-    repeated uint64 block_numbers = 1;
-    uint64 request_id = 2;
+    uint64 from_height = 1;
+    uint64 to_height = 2;
+    uint64 request_id = 3;
 }
 
 message BlockBatchReply {

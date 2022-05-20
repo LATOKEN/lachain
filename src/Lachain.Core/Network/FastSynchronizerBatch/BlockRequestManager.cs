@@ -38,17 +38,20 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetBatch(out List<ulong> batch)
+        public bool TryGetBatch(out ulong fromBlock, out ulong toBlock)
         {
-            batch = new List<ulong>();
-            for(ulong i=0; i < _batchSize && nextBlocksToDownload.Count > 0; i++)
+            fromBlock = _done + 1;
+            toBlock = _done;
+            if (nextBlocksToDownload.Count == 0) return false;
+            fromBlock = toBlock = nextBlocksToDownload.Min;
+            nextBlocksToDownload.Remove(fromBlock);
+            for(var i = 1; i < _batchSize && nextBlocksToDownload.Count > 0; i++)
             {
                 ulong blockId = nextBlocksToDownload.Min;
-                batch.Add(blockId);
+                if (blockId != toBlock + 1) break;
+                toBlock = blockId;
                 nextBlocksToDownload.Remove(blockId);
             } 
-            if (batch.Count == 0) return false;
-
             return true;
         }
         
@@ -58,15 +61,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void HandleResponse(List<ulong> batch, List<Block> response)
+        public void HandleResponse(ulong fromBlock, ulong toBlock, List<Block> response)
         {
             try
             {
-                if(batch.Count > 0) Logger.LogInformation("First Node in this batch: " + batch[0]);
-                if(batch.Count != response.Count) throw new Exception("Invalid response");
-                for(int i = 0; i < batch.Count; i++)
+                if(fromBlock <= toBlock) Logger.LogInformation("First Node in this batch: " + fromBlock);
+                if(ExpectedBlockCount(fromBlock, toBlock) != response.Count) throw new Exception("Invalid response");
+                for(int i = 0; i < response.Count; i++)
                 {
-                    ulong blockId = batch[i];
+                    ulong blockId = (ulong) i + fromBlock;
                     var block = response[i];
                     if (block is null || blockId != block.Header.Index)
                         throw new Exception("Invalid response");
@@ -79,11 +82,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             catch (Exception)
             {
-                foreach(var blockId in batch)
+                for (var blockId = fromBlock; blockId <= toBlock; blockId++)
                 {
                     nextBlocksToDownload.Add(blockId);
                 }
             }
+        }
+
+        public static int ExpectedBlockCount(ulong fromBlock, ulong toBlock)
+        {
+            return (int) (toBlock - fromBlock + 1);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

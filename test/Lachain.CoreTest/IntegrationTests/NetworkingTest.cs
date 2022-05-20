@@ -95,12 +95,7 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
-            var blocks = new List<ulong>();
-            for (ulong i = 1 ; i <= totalBlocks; i++)
-            {
-                blocks.Add(i);
-            }
-            var message = _networkManager.MessageFactory.BlockBatchRequest(blocks, 0);
+            var message = _networkManager.MessageFactory.BlockBatchRequest(1, totalBlocks, 0);
             CheckBlockBatchRequest(message);
         }
 
@@ -315,12 +310,13 @@ namespace Lachain.CoreTest.IntegrationTests
             
             Logger.LogTrace("Start processing OnBlockBatchRequest");
             var request = message.BlockBatchRequest;
-            var blockNumbers = request.BlockNumbers.ToList();
+            var fromBlock = request.FromHeight;
+            var toBlock = request.ToHeight;
             List<Block> blockBatch = new List<Block>();
-            foreach (var blockNumber in blockNumbers)
+            for (var blockId = fromBlock; blockId <= toBlock; blockId++)
             {
-                var block = _blockManager.GetByHeight(blockNumber);
-                if (block != null) blockBatch.Add(block);
+                var block = _blockManager.GetByHeight(blockId);
+                blockBatch.Add(block!);
             }
             var reply = new BlockBatchReply
             {

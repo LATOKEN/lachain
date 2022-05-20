@@ -26,12 +26,13 @@ namespace Lachain.Networking
         /// <summary>
         /// Formats a NetworkMessage to request blocks in batch
         /// </summary>
-        /// <param name = "blockNumbers"> Block id </param>
+        /// <param name = "fromBlock"> First block id of the batch </param>
+        /// <param name = "fromBlock"> Last block id of the batch </param>
         /// <param name = "requestId"> Request Id </param>
         /// <returns>
         /// NetworkMessage
         /// </returns>
-        NetworkMessage BlockBatchRequest(List<ulong> blockNumbers, ulong requestId);
+        NetworkMessage BlockBatchRequest(ulong fromBlock, ulong toBlock, ulong requestId);
         /// <summary>
         /// Formats a NetworkMessage to request trie-nodes in batch
         /// </summary>

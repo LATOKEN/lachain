@@ -53,7 +53,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             if(_isPeerBusy.TryGetValue(peer, out var isBusy))
             {
                 if (isBusy == false) return false;
-                if(success == false)
+                if (success == false)
                 {
                     _availableBadPeers.Enqueue(peer);
                     _lastResult.Enqueue(DateTime.Now);
