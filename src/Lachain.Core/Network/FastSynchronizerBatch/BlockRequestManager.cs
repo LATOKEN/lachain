@@ -13,7 +13,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     public class BlockRequestManager : IBlockRequestManager
     {
         private static readonly ILogger<BlockRequestManager> Logger = LoggerFactory.GetLoggerForClass<BlockRequestManager>();
-        private SortedSet<ulong> _pending = new SortedSet<ulong>();
         private SortedSet<ulong> nextBlocksToDownload = new SortedSet<ulong>();
         private IDictionary<ulong, Block> downloaded = new Dictionary<ulong,Block>();
         private uint _batchSize = 1000;
@@ -45,7 +44,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             for(ulong i=0; i < _batchSize && nextBlocksToDownload.Count > 0; i++)
             {
                 ulong blockId = nextBlocksToDownload.Min;
-                _pending.Add(blockId);
                 batch.Add(blockId);
                 nextBlocksToDownload.Remove(blockId);
             } 
@@ -56,36 +54,36 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         
         public bool Done()
         {
-            return _done == _maxBlock && _pending.Count==0;
+            return _done == _maxBlock;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandleResponse(List<ulong> batch, List<Block> response)
         {
-            if(batch.Count>0) Logger.LogInformation("First Node in this batch: " + batch[0]);
-            if(batch.Count != response.Count)
+            try
+            {
+                if(batch.Count > 0) Logger.LogInformation("First Node in this batch: " + batch[0]);
+                if(batch.Count != response.Count) throw new Exception("Invalid response");
+                for(int i = 0; i < batch.Count; i++)
+                {
+                    ulong blockId = batch[i];
+                    var block = response[i];
+                    if (block is null || blockId != block.Header.Index)
+                        throw new Exception("Invalid response");
+                }
+                foreach (var block in response)
+                {
+                    downloaded[block.Header.Index] = block;
+                }
+                AddToDB();
+            }
+            catch (Exception)
             {
                 foreach(var blockId in batch)
                 {
-                    if(_pending.Contains(blockId))
-                    {
-                        _pending.Remove(blockId);
-                        nextBlocksToDownload.Add(blockId);
-                    }
+                    nextBlocksToDownload.Add(blockId);
                 }
             }
-            else{
-                for(int i=0; i < batch.Count; i++)
-                {
-                    ulong blockId = batch[i];
-                    if(_pending.Contains(blockId))
-                    {
-                        _pending.Remove(blockId);
-                        downloaded[blockId] = response[i];
-                    }
-                }
-            }
-            AddToDB();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
