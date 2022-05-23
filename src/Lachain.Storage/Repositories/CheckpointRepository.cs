@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
-using Lachain.Storage.State;
-using Lachain.Logger;
+
 
 namespace Lachain.Storage.Repositories
 {
@@ -22,25 +25,26 @@ namespace Lachain.Storage.Repositories
             _snapshotIndexer = snapshotIndexer;
         }
 
-        public ulong? FetchCheckpointBlockId()
+        public List<ulong> FetchCheckpointBlockHeights()
         {
-            var key = EntryPrefix.CheckpointBlockHeight.BuildPrefix();
-            var blockId = _rocksDbContext.Get(key);
-            if (blockId is null) return null;
-            return UInt64Utils.FromBytes(blockId);
+            var key = EntryPrefix.CheckpointBlockHeights.BuildPrefix();
+            var rawInfo = _rocksDbContext.Get(key);
+            if (rawInfo is null) return new List<ulong>();
+            return SerializationUtils.ToUInt64Array(rawInfo).ToList();
         }
 
-        public UInt256? FetchCheckpointBlockHash()
+        public UInt256? FetchCheckpointBlockHash(ulong blockHeight)
         {
-            var key = EntryPrefix.CheckpointBlockHash.BuildPrefix();
+            var key = EntryPrefix.CheckpointBlockHash.BuildPrefix(blockHeight);
             var blockHash = _rocksDbContext.Get(key);
             if (blockHash is null) return null;
             return blockHash.ToUInt256();
         }
         
-        public UInt256? FetchSnapshotStateHash(RepositoryType repositoryId)
+        public UInt256? FetchSnapshotStateHash(RepositoryType repositoryId, ulong blockHeight)
         {
-            var key = EntryPrefix.CheckpointSnapshotState.BuildPrefix((uint) repositoryId);
+            var key = EntryPrefix.CheckpointSnapshotState.BuildPrefix(
+                ((uint) repositoryId).ToBytes().Concat(blockHeight.ToBytes()).ToArray());
             var stateHash = _rocksDbContext.Get(key);
             if (stateHash is null) return null;
             return stateHash.ToUInt256();
@@ -56,10 +60,10 @@ namespace Lachain.Storage.Repositories
                 foreach (var snapshot in snapshots)
                 {
                     if (snapshot.RepositoryId == (uint) RepositoryType.BlockRepository) continue;
-                    SaveSnapshotStateHash(batch, snapshot);
+                    SaveSnapshotStateHash(batch, snapshot, block.Header.Index);
                 }
-                SaveBlockId(batch, block.Header.Index);
-                SaveBlockHash(batch, block.Hash);
+                SaveBlockHeight(batch, block.Header.Index);
+                SaveBlockHash(batch, block.Hash, block.Header.Index);
                 batch.Commit();
                 return true;
             }
@@ -71,23 +75,27 @@ namespace Lachain.Storage.Repositories
             }
         }
 
-        private void SaveBlockId(RocksDbAtomicWrite batch, ulong blockId)
+        private void SaveBlockHeight(RocksDbAtomicWrite batch, ulong blockHeight)
         {
-            var key = EntryPrefix.CheckpointBlockHeight.BuildPrefix();
-            var value = UInt64Utils.ToBytes(blockId);
-            batch.Put(key, value);
+            var key = EntryPrefix.CheckpointBlockHeights.BuildPrefix();
+            var rawInfo = _rocksDbContext.Get(key);
+            var list = new List<ulong>();
+            if (!(rawInfo is null)) list = SerializationUtils.ToUInt64Array(rawInfo).ToList();
+            list.Add(blockHeight);
+            batch.Put(key, SerializationUtils.ToBytes(list.ToArray()));
         }
 
-        private void SaveBlockHash(RocksDbAtomicWrite batch, UInt256 blockHash)
+        private void SaveBlockHash(RocksDbAtomicWrite batch, UInt256 blockHash, ulong blockHeight)
         {
-            var key = EntryPrefix.CheckpointBlockHash.BuildPrefix();
+            var key = EntryPrefix.CheckpointBlockHash.BuildPrefix(blockHeight);
             var value = blockHash.ToBytes();
             batch.Put(key, value);
         }
 
-        private void SaveSnapshotStateHash(RocksDbAtomicWrite batch, ISnapshot snapshot)
+        private void SaveSnapshotStateHash(RocksDbAtomicWrite batch, ISnapshot snapshot, ulong blockHeight)
         {
-            var key = EntryPrefix.CheckpointSnapshotState.BuildPrefix(snapshot.RepositoryId);
+            var key = EntryPrefix.CheckpointSnapshotState.BuildPrefix(
+                snapshot.RepositoryId.ToBytes().Concat(blockHeight.ToBytes()).ToArray());
             var stateHash = snapshot.Hash.ToBytes();
             batch.Put(key, stateHash);
         }

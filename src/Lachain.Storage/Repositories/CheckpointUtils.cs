@@ -20,6 +20,14 @@ namespace Lachain.Storage.Repositories
             return checkpointTypes;
         }
 
+        /// <Returns>
+        /// All snapshot names except "Blocks"
+        /// </Returns>
+        public static string[] GetAllStateNames()
+        {
+            return new string[] { "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators" };
+        }
+
         public static string GetSnapshotNameForCheckpointType(CheckpointType checkpointType)
         {
             switch (checkpointType)

@@ -1,9 +1,8 @@
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Storage.Repositories;
-using System.Collections.Generic;
 
-namespace Lachain.Core.Blockchain.Operations
+namespace Lachain.Core.Blockchain.Checkpoint
 {
     public interface ICheckpointManager
     {
@@ -18,7 +17,7 @@ namespace Lachain.Core.Blockchain.Operations
         /// <summary>
         /// Fetches the last checkpoint-block, null if no checkpoint was saved
         /// </summary>
-        Block? GetCheckPointBlock();
+        UInt256? GetCheckPointBlockHash(ulong blockHeight);
         /// <summary>
         /// Takes the snapshot repository type as input and returns the state hash of that snapshot of the last checkpoint
         /// </summary>
@@ -26,7 +25,7 @@ namespace Lachain.Core.Blockchain.Operations
         /// <returns>
         /// State hash of last checkpoint
         /// </returns>
-        UInt256? GetStateHashForSnapshotType(RepositoryType snapshotType);
+        UInt256? GetStateHashForSnapshotType(RepositoryType snapshotType, ulong blockHeight);
         /// <summary>
         /// Takes the checkpoint type of some snapshot as input and returns the state hash of that snapshot of the last checkpoint
         /// </summary>
@@ -34,7 +33,7 @@ namespace Lachain.Core.Blockchain.Operations
         /// <returns>
         /// State hash of last checkpoint
         /// </returns>
-        UInt256? GetStateHashForCheckpointType(CheckpointType checkpointType);
+        UInt256? GetStateHashForCheckpointType(CheckpointType checkpointType, ulong blockHeight);
         /// <summary>
         /// Takes the checkpoint type of some snapshot as input and returns the state hash of that snapshot of the last checkpoint
         /// </summary>
@@ -42,15 +41,15 @@ namespace Lachain.Core.Blockchain.Operations
         /// <returns>
         /// State hash of last checkpoint
         /// </returns>
-        UInt256? GetStateHashForSnapshotName(string snapshotName);
-        /// <summary>
-        /// Takes the given block as a checkpoint-block and writes necessary information in DB
-        /// </summary>
-        /// <param name = "block"> Block </param>
-        /// <returns>
-        /// True if checkpoint is saved successfully, False otherwise
-        /// </returns>
-        bool SaveCheckpoint(Block block);
+        UInt256? GetStateHashForSnapshotName(string snapshotName, ulong blockHeight);
+        // /// <summary>
+        // /// Takes the given block as a checkpoint-block and writes necessary information in DB
+        // /// </summary>
+        // /// <param name = "block"> Block </param>
+        // /// <returns>
+        // /// True if checkpoint is saved successfully, False otherwise
+        // /// </returns>
+        // bool SaveCheckpoint(Block block);
         /// <summary>
         /// Checks all checkpoint information: block index, hash and state hash for all six snapshots
         /// </summary>
