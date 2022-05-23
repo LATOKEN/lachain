@@ -212,6 +212,16 @@ namespace Lachain.Utility.Serialization
             return BitConverter.IsLittleEndian ? BitConverter.GetBytes(x) : BitConverter.GetBytes(x).Reverse();
         }
 
+        public static byte[] ToBytes(this ReadOnlySpan<ulong> list)
+        {
+            var bytes = new byte[0];
+            foreach (var item in list)
+            {
+                bytes = bytes.Concat(item.ToBytes()).ToArray();
+            }
+            return bytes;
+        }
+
         public static void Serialize(this long x, Memory<byte> bytes)
         {
             BitConverter.TryWriteBytes(bytes.Span, x);
@@ -276,6 +286,24 @@ namespace Lachain.Utility.Serialization
         public static ushort ToUInt16(this ReadOnlySpan<byte> bytes)
         {
             return BitConverter.ToUInt16(ToLittleEndian(bytes));
+        }
+
+        public static ulong[] ToUInt64Array(this ReadOnlySpan<byte> bytes)
+        {
+            // check if Length of bytes is a multiple of 8
+            if ((bytes.Length & 7) != 0)
+                throw new ArgumentOutOfRangeException("Size of list of bytes should be a multiple of 8");
+            var list = new List<ulong>();
+            for (int i = 0 ; i < bytes.Length; i += 8)
+            {
+                var segment = new byte[8];
+                for (int j = 0 ; j < 8 ; j++)
+                {
+                    segment[j] = bytes[i + j];
+                }
+                list.Add(ToUInt64(segment));
+            }
+            return list.ToArray();
         }
 
         public static ReadOnlySpan<byte> ToReadOnly(this Span<byte> span)
