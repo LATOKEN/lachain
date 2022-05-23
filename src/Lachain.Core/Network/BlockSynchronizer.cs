@@ -596,11 +596,13 @@ namespace Lachain.Core.Network
 
         private bool IsFastSyncNeeded(ulong myHeight, ulong maxHeight)
         {
-            Logger.LogInformation($"My height: {myHeight}, max height among peers: {maxHeight}");
-            if (myHeight >= maxHeight) return false;
-            var syncHeight = CheckpointManager.GetClosestCheckpointHeight(maxHeight);
-            Logger.LogInformation($"Expected sync height: {syncHeight}");
-            return syncHeight > myHeight && syncHeight - myHeight >= CheckpointManager._checkpointPeriod;
+            return true;
+            // TODO
+            // Logger.LogInformation($"My height: {myHeight}, max height among peers: {maxHeight}");
+            // if (myHeight >= maxHeight) return false;
+            // var syncHeight = CheckpointManager.GetClosestCheckpointHeight(maxHeight);
+            // Logger.LogInformation($"Expected sync height: {syncHeight}");
+            // return syncHeight > myHeight && syncHeight - myHeight >= CheckpointManager._checkpointPeriod;
         }
 
         private void GetCheckpoint()
