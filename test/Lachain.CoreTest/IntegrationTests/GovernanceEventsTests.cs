@@ -105,6 +105,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        []
         public void Test_EventFormat()
         {
             _blockManager.TryBuildGenesisBlock();
