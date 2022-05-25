@@ -45,7 +45,7 @@ namespace Lachain.CoreTest.IntegrationTests
         public ValidatorStatusTest()
         {
             var containerBuilder = new SimpleInjectorContainerBuilder(new ConfigManager(
-                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
+                Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config2.json"),
                 new RunOptions()
             ));
 
