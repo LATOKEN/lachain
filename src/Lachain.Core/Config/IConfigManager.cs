@@ -11,5 +11,6 @@ namespace Lachain.Core.Config
         string ConfigPath { get; }
 
         RunOptions CommandLineOptions { get; }
+        void UpdateCheckpointConfig(List<CheckpointConfigInfo> checkpoints);
     }
 }
