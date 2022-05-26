@@ -1,6 +1,6 @@
 using Lachain.Core.Config;
 using Lachain.Core.Network;
-using Lachain.Core.Network.FastSynchronizerBatch;
+using Lachain.Core.Network.FastSync;
 using Lachain.Networking;
 
 namespace Lachain.Core.DI.Modules

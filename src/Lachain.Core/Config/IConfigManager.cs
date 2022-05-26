@@ -1,4 +1,6 @@
-﻿using Lachain.Core.CLI;
+﻿using System.Collections.Generic;
+using Lachain.Core.Blockchain.Checkpoint;
+using Lachain.Core.CLI;
 
 namespace Lachain.Core.Config
 {
@@ -9,5 +11,6 @@ namespace Lachain.Core.Config
         string ConfigPath { get; }
 
         RunOptions CommandLineOptions { get; }
+        void UpdateCheckpointConfig(List<CheckpointConfigInfo> checkpoints);
     }
 }

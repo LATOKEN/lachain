@@ -3,14 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Google.Protobuf;
+using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.SystemContracts.ContractManager;
-using Lachain.Core.Blockchain.SystemContracts.Interface;
-using Lachain.Core.Blockchain.VM;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
@@ -18,12 +14,11 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
-using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
 using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
-using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using NUnit.Framework;
@@ -36,13 +31,12 @@ namespace Lachain.CoreTest.IntegrationTests
     {
         private static readonly ILogger<CheckpointTest> Logger = LoggerFactory.GetLoggerForClass<CheckpointTest>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
-        private static readonly ITransactionSigner Signer = new TransactionSigner();
-
         private ICheckpointManager _checkpointManager = null!;
         private IBlockManager _blockManager = null!;
         private ITransactionPool _transactionPool = null!;
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
+        private ISnapshotIndexRepository _snapshotIndexer = null!;
         private IConfigManager _configManager = null!;
         private IContainer? _container;
 
@@ -80,6 +74,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _stateManager = _container.Resolve<IStateManager>();
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
+            _snapshotIndexer = _container.Resolve<ISnapshotIndexRepository>();
             _configManager = _container.Resolve<IConfigManager>();
 
             // set chainId from config
@@ -106,12 +101,20 @@ namespace Lachain.CoreTest.IntegrationTests
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
             Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
-            var block = _blockManager.GetByHeight(totalBlocks);
-            _checkpointManager.SaveCheckpoint(block!);
-            Assert.AreNotEqual(null , _checkpointManager.CheckpointBlockId, "checkpoint not saved");
-            Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
-            var sameBlock = _checkpointManager.GetCheckPointBlock();
-            Assert.AreEqual(block, sameBlock, "checkpoint block differs from original block");
+            var blockHeights = new List<ulong>();
+            for (ulong height = 1; height <= totalBlocks; height++)
+            {
+                blockHeights.Add(height);
+                var checkpointList = CreateCheckpointConfig(blockHeights);
+                _checkpointManager.AddCheckpoints(checkpointList);
+                Assert.AreNotEqual(null , _checkpointManager.CheckpointBlockHeight, "checkpoint not saved");
+                Assert.AreEqual(height, _checkpointManager.CheckpointBlockHeight, "checkpoint block height mismatch");
+                Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
+            }
+
+            var checkpoints = _checkpointManager.GetAllSavedCheckpoint();
+            Assert.AreEqual(blockHeights.Count, checkpoints.Count,
+                $"Tried to save {blockHeights.Count} checkpoints but saved only {checkpoints.Count} checkpoints");
         }
 
         [Test]
@@ -120,30 +123,47 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
-            var block = _blockManager.GetByHeight(totalBlocks);
-            _checkpointManager.SaveCheckpoint(block!);
-
-            var snapshotTypes = new List<RepositoryType>();
-            snapshotTypes.Add(RepositoryType.BalanceRepository);
-            snapshotTypes.Add(RepositoryType.ContractRepository);
-            snapshotTypes.Add(RepositoryType.EventRepository);
-            snapshotTypes.Add(RepositoryType.StorageRepository);
-            snapshotTypes.Add(RepositoryType.TransactionRepository);
-            snapshotTypes.Add(RepositoryType.ValidatorRepository);
-
-            foreach (var snapshotType in snapshotTypes)
+            var blockHeights = new List<ulong>();
+            for (ulong height = 1; height <= totalBlocks; height++)
             {
-                var hash = _checkpointManager.GetStateHashForSnapshotType(snapshotType);
-                if (hash is null)
+                var block = _blockManager.GetByHeight(height);
+                blockHeights.Add(height);
+                var checkpointList = CreateCheckpointConfig(blockHeights);
+                _checkpointManager.AddCheckpoints(checkpointList);
+                Assert.AreEqual(height, _checkpointManager.CheckpointBlockHeight);
+                Assert.AreEqual(block!.Hash, _checkpointManager.CheckpointBlockHash);
+                
+                var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(height);
+                var snapshots = blockchainSnapshot.GetAllSnapshot();
+                foreach (var snapshot in snapshots)
                 {
-                    Logger.LogInformation($"found null hash for {snapshotType}");
-                }
-                else
-                {
-                    Logger.LogInformation($"state hash for {snapshotType}: {hash!.ToHex()}");
-                    CheckHex(hash.ToHex());
+                    var repositoryType = (RepositoryType) snapshot.RepositoryId;
+                    if (repositoryType ==  RepositoryType.BlockRepository) continue;
+                    var hash = _checkpointManager.GetStateHashForSnapshotType(repositoryType, height);
+                    if (hash is null)
+                    {
+                        Logger.LogInformation($"found null hash for {repositoryType} for block {height}");
+                        Assert.That(false);
+                    }
+                    else
+                    {
+                        Logger.LogInformation($"state hash for block {height} and for {repositoryType}: {hash.ToHex()}");
+                        CheckHex(hash.ToHex());
+                        Assert.AreEqual(snapshot.Hash, hash, $"Hash mismatch for {repositoryType} for block {height}");
+                    }
                 }
             }
+        }
+
+        private List<CheckpointConfigInfo> CreateCheckpointConfig(List<ulong> blockHeights)
+        {
+            var checkpoints = new List<CheckpointConfigInfo>();
+            foreach (var height in blockHeights)
+            {
+                checkpoints.Add(new CheckpointConfigInfo(height));
+            }
+
+            return checkpoints;
         }
 
         private void CheckHex(string hex)
