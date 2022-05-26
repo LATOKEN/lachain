@@ -10,7 +10,7 @@ using Lachain.Proto;
 using Lachain.Storage.Trie;
 
 
-namespace Lachain.Core.Network.FastSynchronizerBatch
+namespace Lachain.Core.Network.FastSync
 {
     public class RequestManager : IRequestManager
     {

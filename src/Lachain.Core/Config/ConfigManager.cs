@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
 using Lachain.Networking;
@@ -388,6 +389,23 @@ namespace Lachain.Core.Config
         private void _SaveCurrentConfig()
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
+        }
+
+        public void UpdateCheckpointConfig(List<CheckpointConfigInfo> checkpoints)
+        {
+            var checkpointConfig = GetConfig<CheckpointConfig>("checkpoint") ??
+                throw new Exception("No checkpoint section in config");
+            checkpointConfig.AllCheckpoints = checkpoints;
+            foreach (var checkpoint in checkpoints)
+            {
+                if (checkpointConfig.LastCheckpoint is null ||
+                    checkpointConfig.LastCheckpoint.BlockHeight < checkpoint.BlockHeight)
+                {
+                    checkpointConfig.LastCheckpoint = checkpoint;
+                }
+            }
+            _config["checkpoint"] = JObject.FromObject(checkpointConfig);
+            _SaveCurrentConfig();
         }
     }
 }

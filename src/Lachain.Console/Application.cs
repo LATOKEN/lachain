@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
+﻿using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.Pool;
@@ -17,7 +15,7 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
-using Lachain.Core.Network.FastSynchronizerBatch;
+using Lachain.Core.Network.FastSync;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;
@@ -29,13 +27,16 @@ using NLog;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
 using Lachain.Storage;
 using Lachain.Core.Blockchain;
 using Lachain.Storage.DbCompact;
+using System.Threading;
 
 namespace Lachain.Console
 {
@@ -81,10 +82,8 @@ namespace Lachain.Console
             var metricsService = _container.Resolve<IMetricsService>();
             var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
-            var NodeRetrieval = _container.Resolve<INodeRetrieval>();
-            var dbContext = _container.Resolve<IRocksDbContext>();
-            var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
+            var checkpointManager = _container.Resolve<ICheckpointManager>();
 
             // check if compacting db was started but not finished
             var dbShrink = _container.Resolve<IDbShrink>();
@@ -113,6 +112,13 @@ namespace Lachain.Console
             var hardforkConfig = configManager.GetConfig<HardforkConfig>("hardfork") ??
                     throw new Exception("No 'hardfork' section in config file");
             HardforkHeights.SetHardforkHeights(hardforkConfig);
+            
+            // set checkcpoints
+            Logger.LogInformation($"Saving checkpoints.");
+            var checkpointConfig = configManager.GetConfig<CheckpointConfig>("checkpoint") ??
+                   throw new Exception("No checkpoint section in config file");
+            checkpointManager.AddCheckpoints(checkpointConfig.AllCheckpoints);
+            configManager.UpdateCheckpointConfig(checkpointManager.GetAllSavedCheckpoint());
 
             rpcManager.Start();
             

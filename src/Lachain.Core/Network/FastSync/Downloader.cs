@@ -16,7 +16,7 @@ using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 
 
-namespace Lachain.Core.Network.FastSynchronizerBatch
+namespace Lachain.Core.Network.FastSync
 {
     public class Downloader : IDownloader
     {

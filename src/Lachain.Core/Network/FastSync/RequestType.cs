@@ -1,4 +1,4 @@
-namespace Lachain.Core.Network.FastSynchronizerBatch
+namespace Lachain.Core.Network.FastSync
 {
     public enum RequestType : byte
     {

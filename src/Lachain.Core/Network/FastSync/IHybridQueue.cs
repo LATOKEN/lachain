@@ -1,7 +1,7 @@
 using Lachain.Proto;
 
 
-namespace Lachain.Core.Network.FastSynchronizerBatch
+namespace Lachain.Core.Network.FastSync
 {
     public interface IHybridQueue
     {
