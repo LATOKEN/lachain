@@ -9,7 +9,6 @@ using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
 using Lachain.Core.Network.FastSync;
