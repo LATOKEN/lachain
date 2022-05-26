@@ -9,7 +9,6 @@ using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
 using Lachain.Core.Network.FastSync;
@@ -584,18 +583,6 @@ namespace Lachain.Core.Network
             Logger.LogInformation($"Fast sync needed: {fastSycnNeeded}");
             if (fastSycnNeeded)
             {
-                // checkpoint should exist
-                CheckIfCheckpointExist();
-                lock (_peerHasCheckpoint)
-                {
-                    if (_checkpointExist == false || _checkpointExist is null)
-                    {
-                        Logger.LogWarning($"Peer has max height: {maxHeight} which suggests peer has checkpoint."
-                            + " But cannot get checkpoint. Is peer malicious?");
-                        throw new Exception("invalid reply");
-                    }
-                }
-                GetCheckpoint();
                 lock (_peerHasCheckpoint)
                 {
                     _fastSync.StartSync(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes);
@@ -607,15 +594,21 @@ namespace Lachain.Core.Network
             }
         }
 
+        // Here we decide if we need to do fast sync
         private bool IsFastSyncNeeded(ulong myHeight, ulong maxHeight)
         {
-            return true;
-            // TODO
-            // Logger.LogInformation($"My height: {myHeight}, max height among peers: {maxHeight}");
-            // if (myHeight >= maxHeight) return false;
-            // var syncHeight = CheckpointManager.GetClosestCheckpointHeight(maxHeight);
-            // Logger.LogInformation($"Expected sync height: {syncHeight}");
-            // return syncHeight > myHeight && syncHeight - myHeight >= CheckpointManager._checkpointPeriod;
+            if (myHeight + FastSynchronizerBatch.FastSyncBlockDiff > maxHeight) return false;
+            CheckIfCheckpointExist();
+            lock (_peerHasCheckpoint)
+            {
+                if (_checkpointExist == false) return false;
+            }
+            GetCheckpoint();
+            lock (_peerHasCheckpoint)
+            {
+                if (_checkpointBlockHeight is null) return false;
+                return myHeight + FastSynchronizerBatch.FastSyncBlockDiff <= _checkpointBlockHeight;
+            }
         }
 
         private void GetCheckpoint()
@@ -725,15 +718,19 @@ namespace Lachain.Core.Network
                         case CheckpointInfo.MessageOneofCase.CheckpointStateHash:
                             if (_stateHashes is null) _stateHashes = new List<(UInt256, CheckpointType)>();
                             var checkpointType = checkpointInfo.CheckpointStateHash.CheckpointType.ToByteArray();
-                            _stateHashes.Add(
-                                (checkpointInfo.CheckpointStateHash.StateHash,
-                                (CheckpointType) checkpointType[0]));
+                            _stateHashes.Add((checkpointInfo.CheckpointStateHash.StateHash,
+                                (CheckpointType)checkpointType[0]));
                             break;
                     }
                 }
                 if (_checkpointBlockHeight != null && !_fastSync.IsCheckpointOk(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes))
                 {
-                    throw new Exception($"Got invalid checkpoint information from peer: {publicKey.ToHex()}. Is peer malicious?");
+                    Logger.LogInformation(
+                        $"Got invalid checkpoint information from peer: {publicKey.ToHex()}. Is peer malicious? Aborting fast sync");
+                    _checkpointExist = null;
+                    _checkpointBlockHash = null;
+                    _checkpointBlockHeight = null;
+                    _stateHashes = null;
                 }
                 ResetRequestId();
                 Monitor.PulseAll(_peerHasCheckpoint);

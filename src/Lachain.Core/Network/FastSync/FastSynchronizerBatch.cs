@@ -2,41 +2,34 @@
     This file controls the fast_sync, other necessary classes are instantiated here.
     We will be downloading 6 tree data structures, one at a time. Block headers will be downloaded differently, not as a tree.    
 
-    **SCOPE TO IMPROVE**:   1) Blocks are downloaded one by one. This creates lots of unnecessary nodes which can be deleted after
+    **SCOPE TO IMPROVE**:   Blocks are downloaded one by one. This creates lots of unnecessary nodes which can be deleted after
                             set state is complete.
-                            2) Tries are downloaded one by one and some trie (Event, Transaction) has many nodes where other tries
-                            have few nodes. So the asynchronous process may not fully utilize all available threads. We can try to
-                            download tries parallelly (maybe with weight, like Event will go first) to speed up
 
     **FEATURE TO ADD**:     Fastsync is possible only for the first time. If fastsync is done before, fastsync is not allowed.
                             It can be studied if it is necessary and add features to allow fastsync anytime.
 */
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Lachain.Core.Blockchain.Checkpoints;
-using Lachain.Crypto;
 using Lachain.Logger;
-using Lachain.Storage.State;
+using Lachain.Proto;
 using Lachain.Storage;
+using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
-using System.Linq;
+
 
 namespace Lachain.Core.Network.FastSync
 {
     
-    public class FastSynchronizerBatch
+    public class FastSynchronizerBatch : IFastSynchronizerBatch
     {
-        // the order of trieNames is important to create StateHash
-        private readonly string[] trieNames = new string[]
+        private string[] trieNames = new string[]
         {
                 "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
         };
-        private static readonly ILogger<FastSynchronizerBatch> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizerBatch>();
+        private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
         private readonly VersionFactory _versionFactory;
         private readonly IFastSyncRepository _repository;
         private readonly IHybridQueue _hybridQueue;
@@ -65,106 +58,128 @@ namespace Lachain.Core.Network.FastSync
         // urls is the list of peer nodes, we'll be requesting for data throughtout this process
         // blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
         // start synching with that peer
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void StartSync(ulong? blockNumber, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
-            if(Alldone(dbContext))
+            // At first we check if fast sync have started and completed before.
+            // If it has completed previously, we don't let the user run it again.
+            if(Alldone())
             {
-                Logger.LogTrace("Fast Sync was done previously...Returning");
+                Logger.LogTrace("Fast Sync was done previously\nReturning");
                 return;
             }
-            dbContext.Save(EntryPrefix.NodesDownloadedTillNow.BuildPrefix(), UInt64Utils.ToBytes(0));
+
+            // If fast_sync was started previously, then this variable should contain which block number we are trying to sync with, otherwise 0.
+            // If it is non-zero, then we will forcefully sync with that block irrespective of what the user input for blockNumber is now.
+            ulong savedBlockNumber = _repository.GetCheckpointBlockNumber();
+            var savedSateHashes = new List<(UInt256, CheckpointType)>();
+            if (savedBlockNumber != 0)
+            {
+                blockNumber = savedBlockNumber;
+                blockHash = _repository.GetCheckpointBlockHash()!;
+                foreach (var trieName in trieNames)
+                {
+                    var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
+                    if (checkpointType is null)
+                        throw new Exception($"trie name {trieName} is not correct");
+                    var stateHash = _repository.GetCheckpointStateHash(checkpointType.Value);
+                    if (stateHash is null)
+                        throw new ArgumentException($"Got null hash for checkpoint type: {checkpointType}");
+                    savedSateHashes.Add((stateHash!, checkpointType.Value));
+                }
+                stateHashes = savedSateHashes;
+            }
+            if (stateHashes!.Count != 6)
+                throw new ArgumentException($"There must be six state-hash, got {stateHashes.Count}");
+
+            // Checking if we have root hashes for all six tries.
+            foreach (var trieName in trieNames)
+            {
+                CheckRootHashExist(trieName, stateHashes);
+            }
             
-            Console.WriteLine("Current Version: "+versionFactory.CurrentVersion);
-
-            NodeStorage nodeStorage = new NodeStorage(dbContext, versionFactory);
-            HybridQueue hybridQueue = new HybridQueue(dbContext, nodeStorage);
-            PeerManager peerManager = new PeerManager(urls);
-            
-            RequestManager requestManager = new RequestManager(nodeStorage, hybridQueue);
-
-            ulong savedBlockNumber = GetBlockNumberFromDB(dbContext);
-            if(savedBlockNumber!=0) blockNumber = savedBlockNumber;
-            Downloader downloader = new Downloader(peerManager, requestManager, blockNumber);
-
-            blockNumber = Convert.ToUInt64(downloader.GetBlockNumber(), 16);
-            int downloadedTries = Initialize(dbContext, blockNumber, (savedBlockNumber!=0));
-            hybridQueue.init();
+            if (savedBlockNumber == 0) _repository.Initialize(blockNumber!.Value, blockHash!, stateHashes);
+            Logger.LogTrace($"Starting fast sync with checkpoint block {blockNumber!.Value}");
+            Logger.LogTrace("Current Version: " + _versionFactory.CurrentVersion);
+            // to keep track how many tries have been downloaded till now, saved in db with LastDownloadedTries prefix
+            int downloadedTries = _repository.GetLastDownloadedTries();
+            _hybridQueue.Initialize();
 
             for(int i = downloadedTries; i < trieNames.Length; i++)
             {
-                Logger.LogWarning($"Starting trie {trieNames[i]}");
-                string rootHash = downloader.GetTrie(trieNames[i], nodeStorage);
-                bool foundRoot = nodeStorage.GetIdByHash(rootHash, out ulong curTrieRoot);
-            //    snapshots[i].SetCurrentVersion(curTrieRoot);
+                Logger.LogTrace($"Starting trie {trieNames[i]}");
+                UInt256 rootHash = GetRootHashForTrieName(trieNames[i], stateHashes)!;
+                _downloader.GetTrie(rootHash);
+                bool foundRoot = _repository.GetIdByHash(rootHash, out ulong curTrieRoot);
                 downloadedTries++;
-                dbContext.Save(EntryPrefix.LastDownloaded.BuildPrefix(), downloadedTries.ToBytes().ToArray());
-                Logger.LogWarning($"Ending trie {trieNames[i]} : {curTrieRoot}");
-            //    bool isConsistent = requestManager.CheckConsistency(curTrieRoot);
-            //    Console.WriteLine("Is Consistent : "+isConsistent );
-                Logger.LogWarning($"Total Nodes downloaded: {versionFactory.CurrentVersion}");
+                _repository.SetLastDownloadedTries(downloadedTries);
+                Logger.LogTrace($"Ending trie {trieNames[i]} : {curTrieRoot}");
+                Logger.LogTrace($"Total Nodes downloaded: {_versionFactory.CurrentVersion}");
             }
             
-            if(downloadedTries==(int)trieNames.Length)
+            if (downloadedTries == trieNames.Length)
             {
-                var snapshot = stateManager.NewSnapshot();
-                ISnapshot[] snapshots = new ISnapshot[]{snapshot.Balances,
-                                                        snapshot.Contracts,
-                                                        snapshot.Storage,
-                                                        snapshot.Transactions,
-                                                        snapshot.Events,
-                                                        snapshot.Validators,
-                                                        };
-
-                downloader.DownloadBlocks(nodeStorage, snapshot.Blocks);
-
-                for(int i=0; i<trieNames.Length; i++)
+                _blockRequestManager.Initialize();
+                _downloader.DownloadBlocks();
+                foreach (var trieName in trieNames)
                 {
-                    bool foundHash = nodeStorage.GetIdByHash(downloader.DownloadRootHashByTrieName(trieNames[i]), out ulong trieRoot);
-                    snapshots[i].SetCurrentVersion(trieRoot);
+                    UInt256 rootHash = GetRootHashForTrieName(trieName, stateHashes)!;
+                    _repository.SetSnapshotVersion(trieName, rootHash);
                 }
 
-                stateManager.Approve();
-                stateManager.Commit();
-                snapshotIndexRepository.SaveSnapshotForBlock(blockNumber, snapshot);
-                
+                _repository.SetState();
                 downloadedTries++;
-                SetDownloaded(dbContext, downloadedTries);
+                _repository.SetLastDownloadedTries(downloadedTries);
                 
-                Logger.LogWarning($"Set state to block {blockNumber} complete");
+                Logger.LogTrace($"Set state to block {blockNumber} complete");
             }
         }
 
-        static int Initialize(IRocksDbContext dbContext, ulong blockNumber, bool previousData)
+        public void AddPeer(ECDSAPublicKey publicKey)
         {
-            if(!previousData)
+            _peerManager.AddPeer(publicKey);
+        }
+
+        private void CheckRootHashExist(string trieName, List<(UInt256, CheckpointType)> stateHashes)
+        {
+            var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
+            foreach (var (stateHash, _checkpointType) in stateHashes)
             {
-                RocksDbAtomicWrite tx = new RocksDbAtomicWrite(dbContext);
-                tx.Put(EntryPrefix.BlockNumber.BuildPrefix(), blockNumber.ToBytes().ToArray());
-                ulong zero = 0;
-                tx.Put(EntryPrefix.SavedBatch.BuildPrefix(), zero.ToBytes().ToArray());
-                tx.Put(EntryPrefix.TotalBatch.BuildPrefix(), zero.ToBytes().ToArray());
-                tx.Put(EntryPrefix.LastDownloaded.BuildPrefix(), zero.ToBytes().ToArray());
-                tx.Commit();
-                return 0;
+                if (checkpointType == _checkpointType) return;
             }
-            var rawId = dbContext.Get(EntryPrefix.LastDownloaded.BuildPrefix());
-            return SerializationUtils.ToInt32(rawId);
+            throw new Exception($"Root hash for {trieName} not found in stateHashes");
         }
 
-        static ulong GetBlockNumberFromDB(IRocksDbContext dbContext)
+        private UInt256? GetRootHashForTrieName(string trieName, List<(UInt256, CheckpointType)> stateHashes)
         {
-            var rawBlockNumber = dbContext.Get(EntryPrefix.BlockNumber.BuildPrefix());
-            if(rawBlockNumber==null) return 0;
-            return SerializationUtils.ToUInt64(rawBlockNumber);
-        }
-        
-        static void SetDownloaded(IRocksDbContext dbContext, int downloaded)
-        {
-            return _repository.GetCheckpointBlockNumber() > 0  && !Alldone();
+            var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
+            UInt256? stateHash = null;
+            foreach (var (_stateHash, _checkpointType) in stateHashes)
+            {
+                if (checkpointType == _checkpointType)
+                {
+                    stateHash = _stateHash;
+                    break;
+                }
+            }
+            return stateHash;
         }
 
-        static bool Alldone(IRocksDbContext dbContext)
+        private bool Alldone()
+        {
+            var tiresDownloaded = _repository.GetLastDownloadedTries();
+            return tiresDownloaded == (trieNames.Length + 1) ;
+        }
+
+        public bool IsRunning()
+        {
+            return _repository.GetCheckpointBlockNumber() > 0;
+        }
+
+        private bool MatchStateHash(
+            UInt256 expectedStateHash,
+            CheckpointType checkpointType,
+            List<(UInt256, CheckpointType)> stateHashes
+        )
         {
             foreach (var (stateHash, checkpoint) in stateHashes)
             {
@@ -173,14 +188,11 @@ namespace Lachain.Core.Network.FastSync
                     return stateHash.Equals(expectedStateHash);
                 }
             }
-            Logger.LogWarning($"Could not find {checkpointType} in stateHashes");
             return false;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool IsCheckpointOk(ulong? blockHeight, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
-            _downloader.ResetCheckpointInfo();
             Logger.LogTrace("Verifying checkpoint information...");
             if (blockHash is null || blockHeight is null || stateHashes is null || stateHashes.Count != 6)
             {
@@ -206,11 +218,11 @@ namespace Lachain.Core.Network.FastSync
                 _downloader.DownloadCheckpoint(blockHeight.Value, trieNames);
             }, TaskCreationOptions.LongRunning);
 
-            while (_downloader.CheckpointBlock is null)
+            while (_downloader.CheckpointBlockHash is null)
             {
                 Thread.Sleep(1000);
             }
-            if (!_downloader.CheckpointBlock.Hash.Equals(blockHash))
+            if (!_downloader.CheckpointBlockHash.Equals(blockHash))
             {
                 Logger.LogTrace("Checkpoint block hash mismatch");
                 return false;
@@ -230,16 +242,6 @@ namespace Lachain.Core.Network.FastSync
                 Logger.LogDebug("Something went wrong while downloading checkpoint state hashes.");
                 return false;
             }
-
-            var calculatedStateHash = CalculateStateHash(stateHashes);
-            if (!calculatedStateHash.Equals(_downloader.CheckpointBlock.Header.StateHash))
-            {
-                Logger.LogWarning($"StateHash mis match. StateHash from CheckpointBlock: "
-                    + $"{_downloader.CheckpointBlock.Header.StateHash.ToHex()}, StateHash from CheckpointStateHashes:"
-                    + $" {calculatedStateHash.ToHex()}");
-                return false;
-            }
-
             bool match = true;
             foreach (var (expectedStateHash, checkpointType) in stateHashes)
             {
@@ -248,31 +250,6 @@ namespace Lachain.Core.Network.FastSync
             if (!match) Logger.LogTrace("Checkpoint state hash mismatch");
             Logger.LogTrace($"Finished verifying checkpoint information, result: {match}");
             return match;
-        }
-
-        private UInt256 CalculateStateHash(List<(UInt256, CheckpointType)>? stateHashes)
-        {
-            if (stateHashes is null || stateHashes.Count != 6)
-            {
-                Logger.LogDebug($"Invalid list of state hashes. List is {(stateHashes is null ? "null" : "not null")}");
-                if (!(stateHashes is null))
-                {
-                    Logger.LogDebug($"List size: {stateHashes.Count}");
-                }
-                throw new Exception("Invalid list of state hashes");
-            }
-            var stateHashesList = new List<UInt256>();
-            foreach (var trieName in trieNames)
-            {
-                var hash = GetRootHashForTrieName(trieName, stateHashes);
-                if (hash is null)
-                {
-                    Logger.LogDebug("Invalid list of state hashes: null hash for " + trieName);
-                    throw new Exception("Invalid list of state hashes");
-                }
-                stateHashesList.Add(hash);
-            }
-            return stateHashesList.Select(hash => hash.ToBytes()).Flatten().Keccak();
         }
     }
 }
