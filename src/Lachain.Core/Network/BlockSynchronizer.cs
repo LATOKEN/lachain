@@ -548,7 +548,7 @@ namespace Lachain.Core.Network
             _checkpointRequesId = null;
         }
 
-        private void StartFastSync()
+        private void StartFastSync(bool startFastSync)
         {
             if (_fastSync.IsRunning())
             {
@@ -556,6 +556,7 @@ namespace Lachain.Core.Network
                 _fastSync.StartSync(null, null, null);
                 return;
             }
+            if (!startFastSync) return;
             while (true)
             {
                 if (_peerHeights.Count == 0)
