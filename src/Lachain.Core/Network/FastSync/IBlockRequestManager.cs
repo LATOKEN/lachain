@@ -3,7 +3,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Proto;
 
 
-namespace Lachain.Core.Network.FastSynchronizerBatch
+namespace Lachain.Core.Network.FastSync
 {
     public interface IBlockRequestManager
     {

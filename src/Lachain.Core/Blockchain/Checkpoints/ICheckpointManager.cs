@@ -18,6 +18,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
         /// Takes the snapshot repository type as input and returns the state hash of that snapshot of the last checkpoint
         /// </summary>
         /// <param name = "snapshotType"> Repository type of one of these snapshots: balance, contract, event, storage, transaction, validator </param>
+        /// <param name = "blockHeight"> Height of a checkpoint block </param>
         /// <returns>
         /// State hash of last checkpoint
         /// </returns>
@@ -26,6 +27,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
         /// Takes the checkpoint type of some snapshot as input and returns the state hash of that snapshot of the last checkpoint
         /// </summary>
         /// <param name = "checkpointType"> Checkpoint type for one of these snapshots: balance, contract, event, storage, transaction, validator </param>
+        /// <param name = "blockHeight"> Height of a checkpoint block </param>
         /// <returns>
         /// State hash of last checkpoint
         /// </returns>
@@ -34,6 +36,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
         /// Takes the checkpoint type of some snapshot as input and returns the state hash of that snapshot of the last checkpoint
         /// </summary>
         /// <param name = "snapshotName"> Trie name of one of these snapshots: balance, contract, event, storage, transaction, validator </param>
+        /// <param name = "blockHeight"> Height of a checkpoint block </param>
         /// <returns>
         /// State hash of last checkpoint
         /// </returns>

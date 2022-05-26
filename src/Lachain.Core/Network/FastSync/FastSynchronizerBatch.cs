@@ -26,7 +26,7 @@ using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 
 
-namespace Lachain.Core.Network.FastSynchronizerBatch
+namespace Lachain.Core.Network.FastSync
 {
     
     public class FastSynchronizerBatch : IFastSynchronizerBatch

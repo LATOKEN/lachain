@@ -397,12 +397,12 @@ namespace Lachain.Core.Config
         {
             var network = GetConfig<NetworkConfig>("network") ??
                           throw new ApplicationException("No network section in config");
-            var checkpoints = new CheckpointConfig
+            var checkpoints = GetConfig<CheckpointConfig>("checkpoint");
+            checkpoints = new CheckpointConfig
             {
                 LastCheckpoint = null,
                 AllCheckpoints = new List<CheckpointConfigInfo>()
             };
-            
             _config["checkpoint"] = JObject.FromObject(checkpoints);
 
             var version = GetConfig<VersionConfig>("version") ??
@@ -506,6 +506,23 @@ namespace Lachain.Core.Config
         private void _SaveCurrentConfig()
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
+        }
+
+        public void UpdateCheckpointConfig(List<CheckpointConfigInfo> checkpoints)
+        {
+            var checkpointConfig = GetConfig<CheckpointConfig>("checkpoint") ??
+                throw new Exception("No checkpoint section in config");
+            checkpointConfig.AllCheckpoints = checkpoints;
+            foreach (var checkpoint in checkpoints)
+            {
+                if (checkpointConfig.LastCheckpoint is null ||
+                    checkpointConfig.LastCheckpoint.BlockHeight < checkpoint.BlockHeight)
+                {
+                    checkpointConfig.LastCheckpoint = checkpoint;
+                }
+            }
+            _config["checkpoint"] = JObject.FromObject(checkpointConfig);
+            _SaveCurrentConfig();
         }
     }
 }
