@@ -165,7 +165,7 @@ namespace Lachain.Console
             // it's important to restore pool after transactionVerifier and before blockSynchronizer starts
             transactionPool.Restore();
 
-            blockSynchronizer.Start();
+            blockSynchronizer.Start(options.StartFastSync);
             Logger.LogInformation("Synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
                 validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())

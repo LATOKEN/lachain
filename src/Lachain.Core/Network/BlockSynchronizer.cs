@@ -350,15 +350,15 @@ namespace Lachain.Core.Network
             }
         }
 
-        public void Start()
+        public void Start(bool startFastSync)
         {
             _running = true;
             _pingThread.Start();
-            StartFastSync();
+            StartFastSync(startFastSync);
             _blockSyncThread.Start();
         }
 
-        private void StartFastSync()
+        private void StartFastSync(bool startFastSync)
         {
             if (_fastSync.IsRunning())
             {
@@ -366,6 +366,7 @@ namespace Lachain.Core.Network
                 _fastSync.StartSync(null, null, null);
                 return;
             }
+            if (!startFastSync) return;
             while (true)
             {
                 if (_peerHeights.Count == 0)
