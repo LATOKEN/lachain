@@ -20,7 +20,7 @@ using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 
 
-namespace Lachain.Core.Network.FastSynchronizerBatch
+namespace Lachain.Core.Network.FastSync
 {
     
     public class FastSynchronizerBatch : IFastSynchronizerBatch
@@ -36,6 +36,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private readonly IDownloader _downloader;
         private readonly IBlockRequestManager _blockRequestManager;
         private readonly PeerManager _peerManager;
+        // This will is the difference of block height between nodes when fast sync is needed
+        // If the difference is less than this the fast sync will not be triggered
+        public static readonly ulong FastSyncBlockDiff = 1000000;
         public FastSynchronizerBatch(
             IFastSyncRepository repository,
             IHybridQueue hybridQueue,

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using Google.Protobuf;
+using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
@@ -151,13 +152,15 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
-
+            var blockHeights = new List<ulong>();
             for (ulong blockNo = 1; blockNo <= totalBlocks ; blockNo++)
             {
-                _checkpointManager.SaveCheckpoint(_blockManager.GetByHeight(blockNo)!);
+                blockHeights.Add(blockNo);
+                var checkpointList = CreateCheckpointConfig(blockHeights);
+                _checkpointManager.AddCheckpoints(checkpointList);
                 Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent());
-                Assert.AreNotEqual(null, _checkpointManager.CheckpointBlockId);
-                Assert.AreEqual(blockNo, _checkpointManager.CheckpointBlockId!.Value);
+                Assert.AreNotEqual(null, _checkpointManager.CheckpointBlockHeight);
+                Assert.AreEqual(blockNo, _checkpointManager.CheckpointBlockHeight);
                 var request = new byte[1];
                 request[0] = (byte) CheckpointType.CheckpointExist;
                 var message = _networkManager.MessageFactory.CheckpointRequest(request, 0);
@@ -174,15 +177,29 @@ namespace Lachain.CoreTest.IntegrationTests
         {
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
+            var blockHeights = new List<ulong>();
             for (ulong blockNo = 1; blockNo <= totalBlocks; blockNo++)
             {
-                _checkpointManager.SaveCheckpoint(_blockManager.GetByHeight(blockNo)!);
+                blockHeights.Add(blockNo);
+                var checkpointList = CreateCheckpointConfig(blockHeights);
+                _checkpointManager.AddCheckpoints(checkpointList);
                 Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent());
-                Assert.AreNotEqual(null, _checkpointManager.CheckpointBlockId);
-                Assert.AreEqual(blockNo, _checkpointManager.CheckpointBlockId!.Value);
+                Assert.AreNotEqual(null, _checkpointManager.CheckpointBlockHeight);
+                Assert.AreEqual(blockNo, _checkpointManager.CheckpointBlockHeight!.Value);
                 var message = _networkManager.MessageFactory.CheckpointBlockRequest(blockNo, 0);
                 CheckCheckpointBlockRequest(message, blockNo);
             }
+        }
+        
+        private List<CheckpointConfigInfo> CreateCheckpointConfig(List<ulong> blockHeights)
+        {
+            var checkpoints = new List<CheckpointConfigInfo>();
+            foreach (var height in blockHeights)
+            {
+                checkpoints.Add(new CheckpointConfigInfo(height));
+            }
+
+            return checkpoints;
         }
 
         public void CheckCheckpointBlockRequest(NetworkMessage message, ulong blockNo)
@@ -284,7 +301,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 switch (checkpointInfo.MessageCase)
                 {
                     case CheckpointInfo.MessageOneofCase.CheckpointBlockHeight:
-                        Assert.AreEqual(checkpointInfo.CheckpointBlockHeight.BlockHeight, _checkpointManager.CheckpointBlockId);
+                        Assert.AreEqual(checkpointInfo.CheckpointBlockHeight.BlockHeight, _checkpointManager.CheckpointBlockHeight);
                         break;
 
                     case CheckpointInfo.MessageOneofCase.CheckpointBlockHash:
@@ -293,8 +310,9 @@ namespace Lachain.CoreTest.IntegrationTests
                     
                     case CheckpointInfo.MessageOneofCase.CheckpointStateHash:
                         var checkpointType = checkpointInfo.CheckpointStateHash.CheckpointType.ToArray()[0];
-                        Assert.AreEqual(checkpointInfo.CheckpointStateHash.StateHash,
-                            _checkpointManager.GetStateHashForCheckpointType((CheckpointType) checkpointType));
+                        var stateHash = _checkpointManager.GetStateHashForCheckpointType((CheckpointType) checkpointType,
+                            _checkpointManager.CheckpointBlockHeight!.Value);
+                        Assert.AreEqual(checkpointInfo.CheckpointStateHash.StateHash, stateHash);
                         break;
 
                     default:

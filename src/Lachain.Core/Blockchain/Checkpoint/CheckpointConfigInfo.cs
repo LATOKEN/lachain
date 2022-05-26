@@ -13,7 +13,7 @@ namespace Lachain.Core.Blockchain.Checkpoint
         {
             BlockHeight = blockHeight;
         }
-        public CheckpointConfigInfo(ulong blockHeight, string blockHash, Dictionary<string, string> stateHashes)
+        public CheckpointConfigInfo(ulong blockHeight, string blockHash, IDictionary<string, string> stateHashes)
         {
             BlockHeight = blockHeight;
             BlockHash = blockHash;
