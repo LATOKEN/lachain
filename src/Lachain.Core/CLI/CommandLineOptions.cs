@@ -97,8 +97,8 @@ namespace Lachain.Core.CLI
         [Option('b', "rollbackto", Required = false, HelpText = "Rollback node to specific block on start")]
         public ulong? RollBackTo { get; set; }
 
-        [Option('s', "fastsync", Required = false, Separator = ' ', HelpText = "Performs fast-sync to a specific block on start")]
-        public IEnumerable<string> SetStateTo { get; set; } = Enumerable.Empty<string>();
+        [Option('s', "fastsync", Required = false, HelpText = "Permission to perform fast-sync")]
+        public bool StartFastSync { get; set; } = false;
     }
     
     [Verb("db", HelpText = "cleanups in db")]

@@ -20,7 +20,7 @@ namespace Lachain.Core.Network
 
         void SynchronizeWith(IEnumerable<ECDSAPublicKey> peers);
 
-        void Start();
+        void Start(bool startFastSync);
         void HandleCheckpointFromPeer(List<CheckpointInfo> checkpoints, ECDSAPublicKey publicKey, ulong requestId);
     }
 }
