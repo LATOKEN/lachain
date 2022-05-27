@@ -16,7 +16,7 @@ namespace Lachain.Core.Blockchain.Checkpoint
             BlockHeight = blockHeight;
         }
         [JsonConstructor]
-        public CheckpointConfigInfo(ulong blockHeight, string blockHash, IDictionary<string, string> stateHashes)
+        public CheckpointConfigInfo(ulong blockHeight, string? blockHash, IDictionary<string, string> stateHashes)
         {
             BlockHeight = blockHeight;
             BlockHash = blockHash;
