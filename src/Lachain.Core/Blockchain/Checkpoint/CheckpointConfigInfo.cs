@@ -5,14 +5,17 @@ namespace Lachain.Core.Blockchain.Checkpoint
 {
     public class CheckpointConfigInfo
     {
-        [JsonProperty("blockHeight")] public ulong BlockHeight;
-        [JsonProperty("blockHash")] public string? BlockHash;
-        [JsonProperty("stateHashes")] public IDictionary<string, string> StateHashes = new Dictionary<string, string>();
+        [JsonProperty("blockHeight")] public ulong BlockHeight { get; set; }
+        [JsonProperty("blockHash")] public string? BlockHash { get; set; }
 
+        [JsonProperty("stateHashes")]
+        public IDictionary<string, string> StateHashes { get; set; } = new Dictionary<string, string>();
+        
         public CheckpointConfigInfo(ulong blockHeight)
         {
             BlockHeight = blockHeight;
         }
+        [JsonConstructor]
         public CheckpointConfigInfo(ulong blockHeight, string blockHash, IDictionary<string, string> stateHashes)
         {
             BlockHeight = blockHeight;
