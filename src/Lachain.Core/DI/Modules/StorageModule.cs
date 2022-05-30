@@ -1,6 +1,6 @@
 using Lachain.Core.Config;
 using System.IO;
-using Lachain.Core.Network.FastSync;
+using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
