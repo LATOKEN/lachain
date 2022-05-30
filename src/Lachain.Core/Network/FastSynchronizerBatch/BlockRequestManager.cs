@@ -8,7 +8,7 @@ using Lachain.Logger;
 using Lachain.Proto;
 
 
-namespace Lachain.Core.Network.FastSync
+namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public class BlockRequestManager : IBlockRequestManager
     {

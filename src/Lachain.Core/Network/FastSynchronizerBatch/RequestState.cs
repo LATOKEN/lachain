@@ -5,7 +5,7 @@ using Lachain.Proto;
 using Lachain.Utility.Serialization;
 
 
-namespace Lachain.Core.Network.FastSync
+namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public class RequestState
     {
