@@ -25,7 +25,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private readonly PeerManager _peerManager;
         private readonly IRequestManager _requestManager;
         private readonly IFastSyncRepository _repository;
-        private readonly IBlockManager _blockManager;
         private readonly UInt256 EmptyHash = UInt256Utils.Zero;
         private const int DefaultTimeout = 5 * 1000; // 5000 millisecond 
         private readonly IBlockRequestManager _blockRequestManager; 
@@ -41,15 +40,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             INetworkManager networkManager,
             IRequestManager requestManager,
             IBlockRequestManager blockRequestManager,
-            IFastSyncRepository repository,
-            IBlockManager blockManager
+            IFastSyncRepository repository
         )
         {
             _networkManager = networkManager;
             _requestManager = requestManager;
             _blockRequestManager = blockRequestManager;
             _repository = repository;
-            _blockManager = blockManager;
             _peerManager = new PeerManager();
         }
 
@@ -118,7 +115,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
                     default:
                         Logger.LogWarning($"No implementation for request type: {request._type}");
-                        break;
+                        throw new Exception($"Invalid request type: {request._type}");
                 }
                 if (!(message is null))
                 {
@@ -133,6 +130,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 else
                 {
                     Logger.LogWarning($"Unsupported request {request._type}");
+                    throw new Exception($"Invalid request type: {request._type}");
                 }
             }
             catch (Exception exception)
@@ -146,11 +144,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     {
                         case RequestType.BlocksRequest:
                             _blockRequestManager.HandleResponse(
-                                request._fromBlock!.Value, request._toBlock!.Value, new List<Block>());
+                                request._fromBlock!.Value, request._toBlock!.Value, new List<Block>(), request._peer._publicKey);
                             break;
 
                         case RequestType.NodesRequest:
-                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>());
+                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>(), request._peer._publicKey);
                             break;
 
                         case RequestType.CheckpointBlockRequest:
@@ -162,7 +160,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             break;
 
                         default:
-                            Logger.LogWarning($"Nothing to do for request: {request._type}");
+                            Logger.LogWarning($"No implementation for request type: {request._type}");
                             break;
                     }
                 }
@@ -189,7 +187,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             case RequestType.NodesRequest:
                                 Task.Factory.StartNew(() =>
                                 {
-                                    _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>());
+                                    _requestManager.HandleResponse(
+                                        request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>(), request._peer._publicKey);
                                 }, TaskCreationOptions.LongRunning);
                                 break;
 
@@ -197,7 +196,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                                 Task.Factory.StartNew(() =>
                                 {
                                     _blockRequestManager.HandleResponse(
-                                        request._fromBlock!.Value, request._toBlock!.Value, new List<Block>());
+                                        request._fromBlock!.Value, request._toBlock!.Value, new List<Block>(), request._peer._publicKey);
                                 }, TaskCreationOptions.LongRunning);
                                 break;
 
@@ -261,7 +260,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         _peerManager.TryFreePeer(peer, true);
                         Task.Factory.StartNew(() =>
                         {
-                            _blockRequestManager.HandleResponse(fromBlock.Value, toBlock.Value, response);
+                            _blockRequestManager.HandleResponse(fromBlock.Value, toBlock.Value, response, publicKey);
                         }, TaskCreationOptions.LongRunning);
                     }
                     catch (Exception exception)
@@ -271,7 +270,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         _peerManager.TryFreePeer(peer, false);
                         Task.Factory.StartNew(() =>
                         {
-                            _blockRequestManager.HandleResponse(fromBlock!.Value, toBlock!.Value, new List<Block>());
+                            _blockRequestManager.HandleResponse(fromBlock!.Value, toBlock!.Value, new List<Block>(), publicKey);
                         }, TaskCreationOptions.LongRunning);
                     }
                 }
@@ -312,7 +311,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         _peerManager.TryFreePeer(peer, true);
                         Task.Factory.StartNew(() =>
                         {
-                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, response);
+                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, response, request._peer._publicKey);
                         }, TaskCreationOptions.LongRunning);
                     }
                     catch (Exception exception)
@@ -322,7 +321,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         _peerManager.TryFreePeer(peer, false);
                         Task.Factory.StartNew(() =>
                         {
-                            _requestManager.HandleResponse(request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>());
+                            _requestManager.HandleResponse(
+                                request._nodeBatch!, request._batchId!, new List<TrieNodeInfo>(), request._peer._publicKey);
                         }, TaskCreationOptions.LongRunning);
                     }
                 }
@@ -364,7 +364,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
                         
                         // Setting checkValidatorSet = false because we don't have validator set.
-                        var result = _blockManager.VerifySignatures(block, false);
+                        var result = _blockRequestManager.VerifySignatures(block);
                         if (result != OperatingError.Ok)
                         {
                             Logger.LogDebug($"Block Verification failed with: {result}");
