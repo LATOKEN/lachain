@@ -3,7 +3,7 @@ using Lachain.Proto;
 using Lachain.Storage.Repositories;
 
 
-namespace Lachain.Core.Network.FastSync
+namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public interface IFastSynchronizerBatch
     {
