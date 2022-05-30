@@ -11,7 +11,7 @@ using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
-using Lachain.Core.Network.FastSync;
+using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
