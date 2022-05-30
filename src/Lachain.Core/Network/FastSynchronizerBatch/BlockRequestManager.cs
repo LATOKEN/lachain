@@ -109,6 +109,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public OperatingError VerifySignatures(Block? block)
+        {
+            if (block is null) return OperatingError.InvalidBlock;
+            // Setting checkValidatorSet = false because we don't have validator set.
+            return _blockManager.VerifySignatures(block, false);
+        }
+
         public static int ExpectedBlockCount(ulong fromBlock, ulong toBlock)
         {
             return (int) (toBlock - fromBlock + 1);
