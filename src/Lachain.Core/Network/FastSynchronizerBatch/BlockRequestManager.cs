@@ -4,8 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
@@ -18,12 +21,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         private uint _batchSize = 1000;
         private ulong _done = 0;
         private ulong _maxBlock = 0;
-        private readonly IFastSyncRepository _repository; 
+        private readonly IFastSyncRepository _repository;
+        private readonly IBlockManager _blockManager;
         public ulong MaxBlock => _maxBlock;
 
-        public BlockRequestManager(IFastSyncRepository repository)
+        public BlockRequestManager(IFastSyncRepository repository, IBlockManager blockManager)
         {
             _repository = repository;
+            _blockManager = blockManager;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -61,8 +66,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void HandleResponse(ulong fromBlock, ulong toBlock, List<Block> response)
+        public void HandleResponse(ulong fromBlock, ulong toBlock, List<Block> response, ECDSAPublicKey? peer)
         {
+            string peerPubkey = (peer is null) ? "null" : peer.ToHex();
             try
             {
                 if(fromBlock <= toBlock) Logger.LogInformation("First Node in this batch: " + fromBlock);
@@ -71,8 +77,22 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 {
                     ulong blockId = (ulong) i + fromBlock;
                     var block = response[i];
-                    if (block is null || blockId != block.Header.Index)
-                        throw new Exception("Invalid response");
+                    if (block is null)
+                    {
+                        Logger.LogWarning($"Got null block from peer {peerPubkey}");
+                        throw new Exception($"Invalid response from peer {peerPubkey}");
+                    }
+                    if (blockId != block.Header.Index)
+                    {
+                        Logger.LogWarning($"Got invalid block index from peer {peerPubkey}");
+                        throw new Exception($"Invalid response from peer {peerPubkey}");
+                    }
+                    var result = VerifySignatures(block);
+                    if (result != OperatingError.Ok)
+                    {
+                        Logger.LogDebug($"Block Verification failed with: {result} from peer {peerPubkey}");
+                        throw new Exception($"Block verification failed from peer {peerPubkey}");
+                    }
                 }
                 foreach (var block in response)
                 {
@@ -87,6 +107,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     nextBlocksToDownload.Add(blockId);
                 }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public OperatingError VerifySignatures(Block? block)
+        {
+            if (block is null) return OperatingError.InvalidBlock;
+            // Setting checkValidatorSet = false because we don't have validator set.
+            return _blockManager.VerifySignatures(block, false);
         }
 
         public static int ExpectedBlockCount(ulong fromBlock, ulong toBlock)

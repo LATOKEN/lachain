@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Trie;
+using Lachain.Utility.Utils;
 
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
@@ -89,8 +90,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         // "response" is received from a peer for the "hashBatch" of nodes
-        public void HandleResponse(List<UInt256> hashBatch, List<ulong> batchId, List<TrieNodeInfo> response)
+        public void HandleResponse(List<UInt256> hashBatch, List<ulong> batchId, List<TrieNodeInfo> response, ECDSAPublicKey? peer)
         {
+            string peerPubkey = (peer is null) ? "null" : peer.ToHex();
             List<(UInt256, ulong)> successfulHashes = new List<(UInt256, ulong)>();
             List<(UInt256, ulong)> failedHashes = new List<(UInt256, ulong)>();
             List<TrieNodeInfo> successfulNodes = new List<TrieNodeInfo>();
@@ -124,6 +126,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             lock (this)
             {
+                Logger.LogInformation($"Got {failedHashes.Count} failed response and {successfulHashes.Count} response out of"
+                    + $" {hashBatch.Count} requests from peer {peerPubkey}");
                 foreach (var (hash, batch) in failedHashes)
                 {
                     _hybridQueue.AddToOutgoingQueue(hash, batch);
