@@ -11,7 +11,7 @@ using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
-using Lachain.Core.Network.FastSync;
+using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
@@ -598,7 +598,7 @@ namespace Lachain.Core.Network
         // Here we decide if we need to do fast sync
         private bool IsFastSyncNeeded(ulong myHeight, ulong maxHeight)
         {
-            if (myHeight + FastSynchronizerBatch.FastSyncBlockDiff > maxHeight) return false;
+            if (myHeight + FastSynchronizerBatch.FastSynchronizerBatch.FastSyncBlockDiff > maxHeight) return false;
             CheckIfCheckpointExist();
             lock (_peerHasCheckpoint)
             {
@@ -608,7 +608,7 @@ namespace Lachain.Core.Network
             lock (_peerHasCheckpoint)
             {
                 if (_checkpointBlockHeight is null) return false;
-                return myHeight + FastSynchronizerBatch.FastSyncBlockDiff <= _checkpointBlockHeight;
+                return myHeight + FastSynchronizerBatch.FastSynchronizerBatch.FastSyncBlockDiff <= _checkpointBlockHeight;
             }
         }
 

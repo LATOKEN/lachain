@@ -13,7 +13,8 @@ using Lachain.Storage;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
-namespace Lachain.Core.Network.FastSync
+
+namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public class HybridQueue : IHybridQueue
     {

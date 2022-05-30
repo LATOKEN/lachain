@@ -5,7 +5,7 @@ using Lachain.Storage;
 using Lachain.Storage.Trie;
 
 
-namespace Lachain.Core.Network.FastSync
+namespace Lachain.Core.Network.FastSynchronizerBatch
 {
     public interface IFastSyncRepository
     {
