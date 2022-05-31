@@ -14,7 +14,6 @@ using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using Lachain.Storage.State;
 using Lachain.Utility;
-using NLog.Fluent;
 
 namespace Lachain.Core.Blockchain.Pool
 {
@@ -235,9 +234,9 @@ namespace Lachain.Core.Blockchain.Pool
             /* write transaction to persistence storage */
             if (!oldTxExist && !_poolRepository.ContainsTransactionByHash(receipt.Hash))
                 _poolRepository.AddTransaction(receipt);
-            if (oldTxExist)
+            else if (oldTxExist)
             {
-                _poolRepository.AddAndRemoveTx(receipt, oldTx!);
+                _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
             }
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
             if (notify) TransactionAdded?.Invoke(this, receipt);
@@ -245,7 +244,7 @@ namespace Lachain.Core.Blockchain.Pool
         }
         private bool IsGovernanceTx(TransactionReceipt receipt)
         {
-            return receipt.Transaction.To == ContractRegisterer.GovernanceContract;
+            return receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract);
         }
 
         private bool IsBalanceValid(TransactionReceipt receipt)

@@ -49,7 +49,7 @@ namespace Lachain.Storage.Repositories
         /// </summary>
         /// <param name="txToAdd">Transaction receipt to add in DB</param>
         /// <param name="txToRemove">Transaction receipt to remove from DB</param>
-        void AddAndRemoveTx(TransactionReceipt txToAdd, TransactionReceipt txToRemove);
+        void AddAndRemoveTransaction(TransactionReceipt txToAdd, TransactionReceipt txToRemove);
 
         void ClearPool();
     }

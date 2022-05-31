@@ -102,7 +102,7 @@ namespace Lachain.Storage.Repositories
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void AddAndRemoveTx(TransactionReceipt txToAdd, TransactionReceipt txToRemove)
+        public void AddAndRemoveTransaction(TransactionReceipt txToAdd, TransactionReceipt txToRemove)
         {
             /* write transaction to storage */
             var batch = new RocksDbAtomicWrite(_rocksDbContext);
