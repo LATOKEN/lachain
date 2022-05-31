@@ -150,17 +150,27 @@ namespace Lachain.Core.Blockchain.Pool
             if (_transactions.ContainsKey(receipt.Hash))
                 return OperatingError.AlreadyExists;
             /* verify transaction before adding */
-            if (!(GetNextNonceForAddress(receipt.Transaction.From) == receipt.Transaction.Nonce))
+            if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
+                _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
+            {
                 return OperatingError.InvalidNonce;
-            
+            }
+
             /* special case for system transactions */
             if (receipt.Transaction.From.IsZero())
             {
+                /* system transaction will not be replaced by same nonce */
+                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                    return OperatingError.InvalidNonce;
                 if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
             }
-            
+
+            /* check if the address has enough gas */
+            if (!IsBalanceValid(receipt))
+                return OperatingError.InsufficientBalance;
+
             // Stop accept regular txes 100 blocks before Hardfork_6
             if (HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 100) &&
                 !HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
@@ -169,10 +179,6 @@ namespace Lachain.Core.Blockchain.Pool
                     !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
                     return OperatingError.UnsupportedTransaction;
             }
-
-            /* check if the address has enough gas */ 
-            if(!IsBalanceValid(receipt))
-                return OperatingError.InsufficientBalance;
             
             // we use next height here because block header should be signed with the same chainId
             // and this txes will go to the next block
@@ -181,16 +187,25 @@ namespace Lachain.Core.Blockchain.Pool
             if (result != OperatingError.Ok)
                 return result;
             _transactionVerifier.VerifyTransaction(receipt, useNewChainId);
-            /* put transaction to pool queue */
-            _transactions[receipt.Hash] = receipt;
-            _transactionsQueue.Add(receipt);
+
+            lock (_transactions)
+            {
+                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                {
+                    /* this tx will try to replace an old one */
+                    var s = _nonceCalculator.GetHashCode();
+                }
+                /* put transaction to pool queue */
+                _transactions[receipt.Hash] = receipt;
+                _transactionsQueue.Add(receipt);
+
+                /* add to the _nonceCalculator to efficiently calculate nonce */
+                _nonceCalculator.TryAdd(receipt);
+            }
 
             /* write transaction to persistence storage */
             if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                 _poolRepository.AddTransaction(receipt);
-            
-            /* add to the _nonceCalculator to efficiently calculate nonce */
-            _nonceCalculator.TryAdd(receipt);
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
             if (notify) TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
