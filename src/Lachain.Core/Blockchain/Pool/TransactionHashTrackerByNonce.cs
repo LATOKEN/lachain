@@ -10,7 +10,7 @@ using Lachain.Proto;
 
 namespace Lachain.Core.Blockchain.Pool
 {
-    public class TransactionHashTrackerByNonce
+    public class TransactionHashTrackerByNonce : ITransactionHashTrackerByNonce
     {
         private static readonly ILogger<TransactionHashTrackerByNonce> Logger 
             = LoggerFactory.GetLoggerForClass<TransactionHashTrackerByNonce>();
@@ -53,14 +53,34 @@ namespace Lachain.Core.Blockchain.Pool
         }
     }
 
-    public class AddressWithNonce
+    
+    // This is just a helper class to create key combining address and nonce
+    // to track transaction by address and nonce
+    public class AddressWithNonce : IEquatable<AddressWithNonce>
     {
-        public UInt160 _address;
-        public ulong _nonce;
+        private readonly UInt160 _address;
+        private readonly ulong _nonce;
         public AddressWithNonce(UInt160 address, ulong nonce)
         {
             _address = address;
             _nonce = nonce;
+        }
+        
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((AddressWithNonce) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_address, _nonce);
+        }
+
+        public bool Equals(AddressWithNonce? other)
+        {
+            return !(other is null) && _nonce == other._nonce && _address.Equals(other._address);
         }
     }
 }
