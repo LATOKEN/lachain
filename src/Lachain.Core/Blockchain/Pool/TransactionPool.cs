@@ -328,6 +328,7 @@ namespace Lachain.Core.Blockchain.Pool
         }
         private IReadOnlyCollection<TransactionReceipt> Take(HashSet<UInt256> txHashesTaken, ulong era)
         {
+            // Should we add lock (_transactions) here? Because old txes can be replaced by new ones
             List<TransactionReceipt> result = new List<TransactionReceipt>();
             foreach(var hash in txHashesTaken)
             {
@@ -363,6 +364,7 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake, ulong era)
         {
+            // Should we add lock (_transactions) here? Because old txes can be replaced by new ones
             Logger.LogTrace($"Proposing Transactions from pool");
             // try sanitizing mempool ...
             lock (_toDeleteRepo)
@@ -394,7 +396,7 @@ namespace Lachain.Core.Blockchain.Pool
             // We first greedily take some most profitable transactions. Let's group by sender and
             // peek the best by gas price (so we do not break nonce order)
             var txsBySender = new Dictionary<UInt160, List<TransactionReceipt>>();
-            var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer());
+            var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).Reverse();
             foreach(var receipt in orderedTransactionsQueue)
             {
                 if(IsGovernanceTx(receipt))
@@ -419,7 +421,7 @@ namespace Lachain.Core.Blockchain.Pool
             var bestTxs = new List<TransactionReceipt>();
             for (var i = 0; i < txsToLook && !heap.IsEmpty; ++i)
             {
-                var tx = heap.DeleteMin(); // peek best available tx
+                var tx = heap.DeleteMax(); // peek best available tx
                 bestTxs.Add(tx);
                 var txsFrom = txsBySender[tx.Transaction.From];
                 txsFrom.RemoveAt(txsFrom.Count - 1);

@@ -24,6 +24,7 @@ namespace Lachain.Utility.Utils
 
     public class GasPriceReceiptComparer : IComparer<TransactionReceipt>
     {
+        // sort by gas price from smaller to larger
         public int Compare(TransactionReceipt x, TransactionReceipt y)
         {
             if (x is null) return y is null ? 0 : -1; // nulls first, just in case
