@@ -52,6 +52,8 @@ namespace Lachain.CoreTest.IntegrationTests
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
 
             _container = containerBuilder.Build();
         }
@@ -68,6 +70,8 @@ namespace Lachain.CoreTest.IntegrationTests
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _stateManager = _container.Resolve<IStateManager>();
