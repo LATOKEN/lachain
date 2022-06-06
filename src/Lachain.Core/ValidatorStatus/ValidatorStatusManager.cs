@@ -48,6 +48,7 @@ namespace Lachain.Core.ValidatorStatus
         private bool _started;
         private Thread? _thread;
         private bool _stopRequested;
+        private bool _connectedToValidatorChannel;
         private readonly ITransactionPool _transactionPool;
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
@@ -79,6 +80,7 @@ namespace Lachain.Core.ValidatorStatus
             _started = false;
             _thread = null;
             _stopRequested = false;
+            _connectedToValidatorChannel = false;
             _networkManager.OnClientWorkerAdded += OnClientWorkerAdded;
         }
 
@@ -141,6 +143,10 @@ namespace Lachain.Core.ValidatorStatus
                 {
                     if (_stopRequested)
                         break;
+                    
+                    if (IsNextValidator()) ConnectValidatorChannel();
+                    else DisconnectValidatorChannel();
+
                     if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() ||
                         GetCurrentCycle() == passingCycle)
                     {
@@ -250,6 +256,10 @@ namespace Lachain.Core.ValidatorStatus
                 {
                     if (_stopRequested)
                         break;
+                    
+                    if (IsNextValidator()) ConnectValidatorChannel();
+                    else DisconnectValidatorChannel();
+                    
                     if (_sendingTxHash != null)
                     {
                         if (_stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(_sendingTxHash) ==
@@ -321,6 +331,7 @@ namespace Lachain.Core.ValidatorStatus
                         $"Stake withdrawal transaction submitted. Waiting for the next block to ensure withdrawal succeeded.");
                 }
 
+                DisconnectValidatorChannel();
                 _started = false;
                 Logger.LogWarning($"Stake withdrawn. Validator status manager stopped.");
             }
@@ -504,6 +515,22 @@ namespace Lachain.Core.ValidatorStatus
             var (publicKey, callback) = @event;
             var isNextValidator = IsNextValidator() && _systemContractReader.IsNextValidator(publicKey);
             callback(isNextValidator);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void DisconnectValidatorChannel()
+        {
+            if (!_connectedToValidatorChannel) return;
+            _networkManager.DisconnectValidatorChannel();
+            _connectedToValidatorChannel = false;
+        }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void ConnectValidatorChannel()
+        {
+            if (_connectedToValidatorChannel) return;
+            _networkManager.ConnectValidatorChannel();
+            _connectedToValidatorChannel = true;
         }
     }
 }
