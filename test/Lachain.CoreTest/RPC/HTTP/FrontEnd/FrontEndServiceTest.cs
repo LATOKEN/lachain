@@ -51,6 +51,8 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
             _container = containerBuilder.Build();
 
             _configManager = _container.Resolve<IConfigManager>();
