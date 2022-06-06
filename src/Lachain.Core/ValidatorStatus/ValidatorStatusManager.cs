@@ -13,6 +13,8 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Networking;
+using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -50,10 +52,12 @@ namespace Lachain.Core.ValidatorStatus
         private readonly ITransactionSigner _transactionSigner;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ISystemContractReader _systemContractReader;
+        private readonly INetworkManager _networkManager;
         private UInt256? _sendingTxHash;
         private BigInteger? _stakeSize;
 
         public ValidatorStatusManager(
+            INetworkManager networkManager,
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
             ITransactionBuilder transactionBuilder,
@@ -70,10 +74,12 @@ namespace Lachain.Core.ValidatorStatus
             _stateManager = stateManager;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _systemContractReader = systemContractReader;
+            _networkManager = networkManager;
             _withdrawTriggered = false;
             _started = false;
             _thread = null;
             _stopRequested = false;
+            _networkManager.OnClientWorkerAdded += OnClientWorkerAdded;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -484,6 +490,20 @@ namespace Lachain.Core.ValidatorStatus
             var indexInCycle = block % StakingContract.CycleDuration;
             return ValidatorAttendance.FromBytes(bytes, cycle,
                 indexInCycle >= StakingContract.AttendanceDetectionDuration);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void OnClientWorkerAdded(object? sender, ClientWorker clientWorker)
+        {
+            clientWorker.OnSend += OnSend;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void OnSend(object? sender, (byte[] publicKey, Action<bool> callback) @event)
+        {
+            var (publicKey, callback) = @event;
+            var isNextValidator = IsNextValidator() && _systemContractReader.IsNextValidator(publicKey);
+            callback(isNextValidator);
         }
     }
 }
