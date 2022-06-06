@@ -313,12 +313,15 @@ namespace Lachain.Core.Blockchain.Pool
                     nextNonce[address]++;
             }
 
-            foreach(var receipt in toErase)
+            lock (_transactions)
             {
-                _transactionsQueue.Remove(receipt);
-                _nonceCalculator.TryRemove(receipt);
-                _transactions.TryRemove(receipt.Hash, out var _);
-                _toDeleteRepo.Add(receipt);
+                foreach (var receipt in toErase)
+                {
+                    _transactionsQueue.Remove(receipt);
+                    _nonceCalculator.TryRemove(receipt);
+                    _transactions.TryRemove(receipt.Hash, out var _);
+                    _toDeleteRepo.Add(receipt);
+                }
             }
 
             if (wasTransactionsQueue != _transactionsQueue.Count)
