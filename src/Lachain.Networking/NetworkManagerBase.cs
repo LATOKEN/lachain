@@ -75,6 +75,18 @@ namespace Lachain.Networking
             _hubConnector.Start();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ConnectValidatorChannel()
+        {
+            _hubConnector.ConnectValidatorChannel();
+        }
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void DisconnectValidatorChannel()
+        {
+            _hubConnector.DisconnectValidatorChannel();
+        }
+
         private ClientWorker? GetClientWorker(ECDSAPublicKey publicKey)
         {
             if (_messageFactory.GetPublicKey().Equals(publicKey)) return null;

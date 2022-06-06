@@ -84,11 +84,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
                 StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
             }
-            _validatorStatusManager = new ValidatorStatusManager(
-                _transactionPool, _container.Resolve<ITransactionSigner>(), _container.Resolve<ITransactionBuilder>(),
-                _wallet, _stateManager, _container.Resolve<IValidatorAttendanceRepository>(),
-                _container.Resolve<ISystemContractReader>()
-            );
+            _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
         }
 
         [TearDown]
