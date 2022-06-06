@@ -55,6 +55,7 @@ namespace Lachain.Networking
             _hubConnector.OnMessage += _HandleMessage;
 
             _broadcaster = new ClientWorker(new byte[33], _messageFactory, _hubConnector);
+            OnClientWorkerAdded?.Invoke(this, _broadcaster);
         }
 
         public void AdvanceEra(ulong era)
@@ -88,6 +89,7 @@ namespace Lachain.Networking
         {
             Logger.LogTrace($"Connecting to peer {publicKey.ToHex()}");
             var worker = new ClientWorker(publicKey, _messageFactory, _hubConnector);
+            OnClientWorkerAdded?.Invoke(this, worker);
             _clientWorkers.Add(publicKey, worker);
             worker.Start();
             return worker;
@@ -231,5 +233,6 @@ namespace Lachain.Networking
         public event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         public event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        public event EventHandler<ClientWorker>? OnClientWorkerAdded;
     }
 }

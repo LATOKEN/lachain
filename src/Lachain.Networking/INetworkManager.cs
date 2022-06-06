@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Utility;
 
@@ -20,5 +20,6 @@ namespace Lachain.Networking
         event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        event EventHandler<ClientWorker>? OnClientWorkerAdded;
     }
 }
