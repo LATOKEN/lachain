@@ -36,10 +36,20 @@ namespace Lachain.Storage.Repositories
         /// </summary>
         /// <param name="txHash"></param>
         /// <returns></returns>
-
-        int RemoveTransactions(IEnumerable<UInt256> txHashes);
-
         bool ContainsTransactionByHash(UInt256 txHash);
+        /// <summary>
+        /// Removes the list of transaction hashes from pool
+        /// </summary>
+        /// <param name="txHashes"></param>
+        /// <returns>The number of transactions removed</returns>
+        int RemoveTransactions(IEnumerable<UInt256> txHashes);
+        /// <summary>
+        /// Tries to add transaction <c>txToAdd</c> and remove transaction <c>txToRemove</c>
+        /// from DB
+        /// </summary>
+        /// <param name="txToAdd">Transaction receipt to add in DB</param>
+        /// <param name="txToRemove">Transaction receipt to remove from DB</param>
+        void AddAndRemoveTransaction(TransactionReceipt txToAdd, TransactionReceipt txToRemove);
 
         void ClearPool();
     }

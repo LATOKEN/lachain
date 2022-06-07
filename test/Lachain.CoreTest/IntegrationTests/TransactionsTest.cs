@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
@@ -13,16 +9,21 @@ using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Vault;
-using Lachain.Storage.State;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
 using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
@@ -148,6 +149,63 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.AreEqual(OperatingError.Ok, result);
             }
             TestTxPoolAdding();
+        }
+
+        [Test]
+        public void Test_Tx_Pool_Replacement()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            TestTxPoolAdding();
+            
+            var privateKey = Crypto.GeneratePrivateKey().ToPrivateKey();
+            var keyPair = new EcdsaKeyPair(privateKey);
+            AddRandomTxesToPool(keyPair, out var randomTxes);
+            var rnd = new Random();
+            randomTxes = randomTxes.OrderBy(item => rnd.Next()).ToList();
+            bool useNewChainId = HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1);
+            var signer = new TransactionSigner();
+            foreach (var tx in randomTxes)
+            {
+                Console.WriteLine($"nonce: {tx.Transaction.Nonce}");
+                var newTx = new Transaction(tx.Transaction);
+                // lower price
+                newTx.GasPrice = tx.Transaction.GasPrice - 1;
+                var randomTx = TestUtils.GetRandomTransaction(useNewChainId).Transaction;
+                newTx.To = randomTx.To;
+                newTx.Value = randomTx.Value;
+                newTx.GasLimit = randomTx.GasLimit;
+                var newTxReceipt = signer.Sign(newTx, keyPair, useNewChainId);
+                var result = _transactionPool.Add(newTxReceipt);
+                Console.WriteLine($"old gas price: {tx.Transaction.GasPrice}, new gas price: {newTxReceipt.Transaction.GasPrice}");
+                Assert.AreEqual(OperatingError.Underpriced, result);
+                // equal price
+                newTx.GasPrice = tx.Transaction.GasPrice;
+                newTxReceipt = signer.Sign(newTx, keyPair, useNewChainId);
+                result = _transactionPool.Add(newTxReceipt);
+                Console.WriteLine($"old gas price: {tx.Transaction.GasPrice}, new gas price: {newTxReceipt.Transaction.GasPrice}");
+                Assert.AreEqual(OperatingError.Underpriced, result);
+                // higher price
+                newTx.GasPrice = tx.Transaction.GasPrice + 1;
+                newTxReceipt = signer.Sign(newTx, keyPair, useNewChainId);
+                result = _transactionPool.Add(newTxReceipt);
+                Console.WriteLine($"old gas price: {tx.Transaction.GasPrice}, new gas price: {newTxReceipt.Transaction.GasPrice}");
+                Assert.AreEqual(OperatingError.Ok, result);
+            }
+        }
+
+        public void AddRandomTxesToPool(EcdsaKeyPair keyPair, out List<TransactionReceipt> txes)
+        {
+            bool useNewChainId = HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1);
+            var txCount = 100;
+            txes = new List<TransactionReceipt>();
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(), Money.Parse("1000"));
+            for (var i = 0; i < txCount; i++)
+            {
+                var tx = TestUtils.GetRandomTransactionFromAddress(keyPair, (ulong)i, useNewChainId);
+                var result = _transactionPool.Add(tx);
+                Assert.AreEqual(OperatingError.Ok, result);
+                txes.Add(tx);
+            }
         }
 
         public void TestTxPoolAdding()

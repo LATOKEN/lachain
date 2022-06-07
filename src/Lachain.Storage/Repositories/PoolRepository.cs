@@ -102,6 +102,25 @@ namespace Lachain.Storage.Repositories
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public void AddAndRemoveTransaction(TransactionReceipt txToAdd, TransactionReceipt txToRemove)
+        {
+            /* write transaction to storage */
+            var batch = new RocksDbAtomicWrite(_rocksDbContext);
+            var prefixTx = EntryPrefix.TransactionByHash.BuildPrefix(txToRemove.Hash);
+            batch.Delete(prefixTx);
+            prefixTx = EntryPrefix.TransactionByHash.BuildPrefix(txToAdd.Hash);
+            batch.Put(prefixTx, txToAdd.ToByteArray());
+            /* add transaction to pool */
+            var pool = GetTransactionPool();
+            pool.Remove(txToRemove.Hash);
+            if (!pool.Contains(txToAdd.Hash))
+                pool.Add(txToAdd.Hash);
+            prefixTx = EntryPrefix.TransactionPool.BuildPrefix();
+            batch.Put(prefixTx, pool.TransactionHashListToByteArray());
+            batch.Commit();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void ClearPool()
         {
             var pool = GetTransactionPool();
