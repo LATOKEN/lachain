@@ -165,15 +165,23 @@ namespace Lachain.Core.Consensus
                     var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
                     EnsureProtocol(hbbftId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
+                // There are separate instance of ReliableBroadcast for each validator.
+                // Check if the SenderId is one of the validator's id before creating ReliableBroadcastId
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
+                    if (!ValidateSenderId(message.ValMessage.SenderId))
+                        break;
                     var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                    if (!ValidateSenderId(message.ValMessage.SenderId))
+                        break;
                     var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                    if (!ValidateSenderId(message.ValMessage.SenderId))
+                        break;
                     var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
@@ -336,6 +344,21 @@ namespace Lachain.Core.Consensus
         {
             if (id.Era != _era)
                 throw new InvalidOperationException($"Era mismatched, expected {_era} got message with {id.Era}");
+        }
+        
+        private bool ValidateSenderId(int senderId)
+        {
+            if (_validators is null)
+            {
+                Logger.LogWarning("We don't have validators");
+                return false;
+            }
+            if (senderId < 0 || senderId >= _validators.N)
+            {
+                Logger.LogWarning($"Invalid sender id in \"ValMessage\": {senderId}. N: {_validators.N}");
+                return false;
+            }
+            return true;
         }
 
         public bool WaitFinish(TimeSpan timeout)
