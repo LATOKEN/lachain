@@ -167,6 +167,33 @@ namespace Lachain.Crypto
             });
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public byte[] SpecialRecoverSignatureHashed(byte[] messageHash, byte[] signature)
+        {
+            if (messageHash.Length != 32) throw new ArgumentException(nameof(messageHash));
+            if (signature.Length != 65) throw new ArgumentException(nameof(signature));
+            return EcRecover.Benchmark(() =>
+            {
+                var parsedSig = new byte[65];
+                var pk = new byte[64];
+                int recId;
+                if (signature[64] == 27)
+                    recId = 0;
+                else if (signature[64] == 28)
+                    recId = 1;
+                else
+                    throw new Exception($"Invalid v={signature[64]}: : v == 27 || v == 28");
+                if (!Secp256K1.RecoverableSignatureParseCompact(parsedSig, signature.Take(64).ToArray(), recId))
+                    throw new ArgumentException(nameof(signature));
+                if (!Secp256K1.Recover(pk, parsedSig, messageHash))
+                    throw new ArgumentException("Bad signature");
+                var result = new byte[33];
+                if (!Secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+                    throw new Exception("Cannot serialize recovered public key: how did it happen?");
+                return result;
+            });
+        }
+
         public byte[] ComputeAddress(byte[] publicKey)
         {
             return DecodePublicKey(publicKey, false).Skip(1).KeccakBytes().Skip(12).ToArray();
