@@ -133,18 +133,14 @@ namespace Lachain.Core.ValidatorStatus
 
                 while (!_withdrawTriggered)
                 {
-                    Logger.LogInformation("1111_11111");
                     if (_stopRequested)
                         break;
-                    Logger.LogInformation("2222_22222");
                     if (lastCheckedBlockHeight == _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() ||
                         GetCurrentCycle() == passingCycle)
                     {
-                        Logger.LogInformation("3333_33333");
                         Thread.Sleep(TimeSpan.FromMilliseconds(checkInterval));
                         continue;
                     }
-                    Logger.LogInformation("4444_44444");
 
                     lastCheckedBlockHeight = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
                     Logger.LogInformation($"Check {lastCheckedBlockHeight} height");
