@@ -273,6 +273,14 @@ namespace Lachain.Core.Consensus
             _callback.Clear();
         }
 
+        // Each ProtocolId is created only once to prevent spamming, Protocols are mapped against ProtocolId, so each
+        // Protocol will also be created only once, after achieving result, Protocol terminate and no longer process any
+        // messages. So if the required protocol (lets say 'parent protocol') that will use the result of newly created
+        // protocols (lets say 'child protocol') is not created before 'child protocol' returns result, then the
+        // 'parent protocol' will never be able to use their results and will get stuck
+        // For ReliableBroadcast, this is not a problem, because it waits for at least F + 1 inputs from validators.
+        // But for other protocols (CommonCoin, BinaryBroadcast) may have problem if spammed from malicious validators.
+        // BinaryAgreement is created only from InternalRequest, not from ExternalMessage, so it is safe as well.
         [MethodImpl(MethodImplOptions.Synchronized)]
         private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id)
         {
@@ -292,6 +300,8 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
+                    if (!ValidateCoinId(coinId))
+                        return null;
                     var coin = new CommonCoin(
                         coinId, _validators,
                         _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1) ??
@@ -300,8 +310,6 @@ namespace Lachain.Core.Consensus
                     );
                     RegisterProtocols(new[] {coin});
                     return coin;
-                // There are separate instance of ReliableBroadcast for each validator.
-                // Check if the SenderId is one of the validator's id before creating ReliableBroadcastId
                 case ReliableBroadcastId rbcId:
                     if (!ValidateSenderId(rbcId.SenderId))
                         return null;
@@ -342,6 +350,9 @@ namespace Lachain.Core.Consensus
                 throw new InvalidOperationException($"Era mismatched, expected {_era} got message with {id.Era}");
         }
         
+        // There are separate instance of ReliableBroadcast for each validator.
+        // Check if the SenderId is one of the validator's id before creating ReliableBroadcastId
+        // Sender id is basically validator's id, so it must be between 0 and N-1 inclusive
         private bool ValidateSenderId(int senderId)
         {
             if (_validators is null)
@@ -355,6 +366,47 @@ namespace Lachain.Core.Consensus
                 return false;
             }
             return true;
+        }
+
+        // CommonCoin returns result immediately after getting a valid input and then terminates
+        // This input could be via network from another validator or its own generated
+        // RootProtocol requests for special type of CoinId, for this type check if RootProtocol exists
+        // BinaryAgreement requests another type of CoinId and it generates them sequentially
+        private bool ValidateCoinId(CoinId coinId)
+        {
+            if (coinId.Agreement == -1 && coinId.Epoch == 0)
+            {
+                // This type of coinId is created from RootProtocol or via network from another validator
+                // If it is via network and RootProtocol is not created yet, then RootProtocol will not get
+                // the result from this CommonCoin, and will get stuck
+                return _callback.TryGetValue(coinId, out var _);
+            }
+            else if (!(_validators is null) && coinId.Agreement >= 0 && coinId.Agreement < _validators.N)
+            {
+                // BinaryAgreement requests such CommonCoin
+                if (!_callback.TryGetValue(coinId, out var binaryAgreementId) ||
+                    !_registry.TryGetValue(binaryAgreementId, out var binaryAgreement) || 
+                        binaryAgreement.Terminated)
+                    return false;
+                // BinaryAgreement uses CommonCoin in this pattern: false, true, result of CommonCoin
+                // For each odd epoch. So, epoch 1 => false, epoch 3 => true, epoch 5 => result of CommonCoin
+                // and the cycle continues. So starting from epoch 5, at an interval of epoch 6 (5 , 11 , 17, ..),
+                // CommonCoin is requested
+                var createCoinId = coinId.Epoch > 0 && CoinToss.CreateCoinId(coinId.Epoch);
+                if (!createCoinId)
+                    return false;
+                // If this CommonCoin is not the first one, check if the previous one is terminated
+                if (coinId.Epoch > CoinToss.StartingEpochForCommonCoin)
+                {
+                    var previousCoinId = new CoinId(coinId.Era, coinId.Agreement, CoinToss.PreviousEpoch(coinId.Epoch));
+                    if (!_registry.TryGetValue(previousCoinId, out var previousCommonCoin) ||
+                        !previousCommonCoin.Terminated)
+                        return false;
+                }
+                return true;
+            }
+            else 
+                return false;
         }
 
         public bool WaitFinish(TimeSpan timeout)
