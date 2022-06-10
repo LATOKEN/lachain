@@ -91,6 +91,14 @@ namespace Lachain.Crypto
         byte[] RecoverSignatureHashed(byte[] messageHash, byte[] signature, bool useNewChainId);
 
         /// <summary>
+        /// Recovers public key from signature
+        /// </summary>
+        /// <param name="messageHash"></param>
+        /// <param name="signature"></param>
+        /// <returns></returns>
+        byte[] SpecialRecoverSignatureHashed(byte[] messageHash, byte[] signature);
+
+        /// <summary>
         /// Check ECDSA Signature (secp256k1)
         /// </summary>
         /// <param name="messageHash">Message</param>
