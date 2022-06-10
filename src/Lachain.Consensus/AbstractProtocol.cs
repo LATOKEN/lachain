@@ -144,7 +144,14 @@ namespace Lachain.Consensus
         {
             lock (_queueLock)
             {
-                if (Terminated){}
+                if (Terminated)
+                {
+                    // we should return here instead of enqueueing messages
+                    // because once terminated, the messages are not being processed anymore
+                    // so the queue will just get large unnecessarily
+                    // investigating if the above is true, if true will return from here
+                    return;
+                }
             //        Logger.LogTrace($"{Id}: got message after termination"); 
                 _queue.Enqueue(message);
                 Monitor.Pulse(_queueLock);

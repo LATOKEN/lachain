@@ -174,13 +174,13 @@ namespace Lachain.Core.Consensus
                     EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    if (!ValidateSenderId(message.ValMessage.SenderId))
+                    if (!ValidateSenderId(message.EchoMessage.SenderId))
                         break;
                     var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    if (!ValidateSenderId(message.ValMessage.SenderId))
+                    if (!ValidateSenderId(message.ReadyMessage.SenderId))
                         break;
                     var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.SenderId, (int) message.Validator.Era);
                     EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
@@ -355,7 +355,7 @@ namespace Lachain.Core.Consensus
             }
             if (senderId < 0 || senderId >= _validators.N)
             {
-                Logger.LogWarning($"Invalid sender id in \"ValMessage\": {senderId}. N: {_validators.N}");
+                Logger.LogWarning($"Invalid sender id in consensus message: {senderId}. N: {_validators.N}");
                 return false;
             }
             return true;

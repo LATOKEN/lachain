@@ -192,7 +192,7 @@ namespace Lachain.Consensus.RootProtocol
             Logger.LogTrace("TrySignHeader");
             if (_receipts is null || _nonce is null || _blockProducer is null)
             {
-                Logger.LogTrace($"Not ready yet: _hasges {_receipts is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
+                Logger.LogTrace($"Not ready yet: _hashes {_receipts is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
                 return;
             }
 
