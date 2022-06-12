@@ -281,6 +281,7 @@ namespace Lachain.Core.Consensus
         // For ReliableBroadcast, this is not a problem, because it waits for at least F + 1 inputs from validators.
         // But for other protocols (CommonCoin, BinaryBroadcast) may have problem if spammed from malicious validators.
         // BinaryAgreement is created only from InternalRequest, not from ExternalMessage, so it is safe as well.
+        // For each protocol, the corresponding 'parent protocol' is stored in _callback dictionary
         [MethodImpl(MethodImplOptions.Synchronized)]
         private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id)
         {
@@ -370,15 +371,14 @@ namespace Lachain.Core.Consensus
 
         // CommonCoin returns result immediately after getting a valid input and then terminates
         // This input could be via network from another validator or its own generated
-        // RootProtocol requests for special type of CoinId, for this type check if RootProtocol exists
-        // BinaryAgreement requests another type of CoinId and it generates them sequentially
+        // If the 'parent protocol' (mentioned above) is not created when this protocol is requested
+        // then the 'parent protocol' will not get the result and will get stuck'
+        // So check if the 'parent protocol' exists
         private bool ValidateCoinId(CoinId coinId)
         {
             if (coinId.Agreement == -1 && coinId.Epoch == 0)
             {
                 // This type of coinId is created from RootProtocol or via network from another validator
-                // If it is via network and RootProtocol is not created yet, then RootProtocol will not get
-                // the result from this CommonCoin, and will get stuck
                 return _callback.TryGetValue(coinId, out var _);
             }
             else if (!(_validators is null) && coinId.Agreement >= 0 && coinId.Agreement < _validators.N)
@@ -388,21 +388,6 @@ namespace Lachain.Core.Consensus
                     !_registry.TryGetValue(binaryAgreementId, out var binaryAgreement) || 
                         binaryAgreement.Terminated)
                     return false;
-                // BinaryAgreement uses CommonCoin in this pattern: false, true, result of CommonCoin
-                // For each odd epoch. So, epoch 1 => false, epoch 3 => true, epoch 5 => result of CommonCoin
-                // and the cycle continues. So starting from epoch 5, at an interval of epoch 6 (5 , 11 , 17, ..),
-                // CommonCoin is requested
-                var createCoinId = coinId.Epoch > 0 && CoinToss.CreateCoinId(coinId.Epoch);
-                if (!createCoinId)
-                    return false;
-                // If this CommonCoin is not the first one, check if the previous one is terminated
-                if (coinId.Epoch > CoinToss.StartingEpochForCommonCoin)
-                {
-                    var previousCoinId = new CoinId(coinId.Era, coinId.Agreement, CoinToss.PreviousEpoch(coinId.Epoch));
-                    if (!_registry.TryGetValue(previousCoinId, out var previousCommonCoin) ||
-                        !previousCommonCoin.Terminated)
-                        return false;
-                }
                 return true;
             }
             else 
