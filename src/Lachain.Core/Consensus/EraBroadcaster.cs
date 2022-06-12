@@ -381,7 +381,7 @@ namespace Lachain.Core.Consensus
                 // This type of coinId is created from RootProtocol or via network from another validator
                 return _callback.TryGetValue(coinId, out var _);
             }
-            else if (!(_validators is null) && coinId.Agreement >= 0 && coinId.Agreement < _validators.N)
+            else if (ValidateSenderId((int)coinId.Agreement))
             {
                 // BinaryAgreement requests such CommonCoin
                 if (!_callback.TryGetValue(coinId, out var binaryAgreementId) ||
