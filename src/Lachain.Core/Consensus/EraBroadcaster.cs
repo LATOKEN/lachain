@@ -297,6 +297,8 @@ namespace Lachain.Core.Consensus
             switch (id)
             {
                 case BinaryBroadcastId bbId:
+                    if (!ValidateBinaryBroadcastId(bbId))
+                        return null;
                     var bb = new BinaryBroadcast(bbId, _validators, this);
                     RegisterProtocols(new[] {bb});
                     return bb;
@@ -312,7 +314,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    if (!ValidateSenderId(rbcId.SenderId))
+                    if (!ValidateSenderId((long) rbcId.SenderId))
                         return null;
                     var rbc = new ReliableBroadcast(rbcId, _validators, this);
                     RegisterProtocols(new[] {rbc});
@@ -354,7 +356,7 @@ namespace Lachain.Core.Consensus
         // There are separate instance of ReliableBroadcast for each validator.
         // Check if the SenderId is one of the validator's id before creating ReliableBroadcastId
         // Sender id is basically validator's id, so it must be between 0 and N-1 inclusive
-        private bool ValidateSenderId(int senderId)
+        private bool ValidateSenderId(long senderId)
         {
             if (_validators is null)
             {
@@ -381,7 +383,7 @@ namespace Lachain.Core.Consensus
                 // This type of coinId is created from RootProtocol or via network from another validator
                 return _callback.TryGetValue(coinId, out var _);
             }
-            else if (ValidateSenderId((int)coinId.Agreement))
+            else if (ValidateSenderId(coinId.Agreement))
             {
                 // BinaryAgreement requests such CommonCoin
                 if (!_callback.TryGetValue(coinId, out var binaryAgreementId) ||
@@ -392,6 +394,38 @@ namespace Lachain.Core.Consensus
             }
             else 
                 return false;
+        }
+
+        // BinaryBroadcast needs at least F + 1 responses from validators to reach result
+        // So malicious validators are not a threat in terms of reaching wrong result or
+        // Creating BinaryBroadcast too early so that its 'parent protocol', BinaryAgreement
+        // does not get the result. But we need to stop spam creation of this protocol as it
+        // can be created too many times with too many epochs
+        // BinaryAgreement creates BinaryBroadcast sequentially, for each even epoch using the 
+        // result of previous CommonCoin as estimation. Different honest validators can start
+        // the protocol in different time and broadcast due to network latency, but none of them
+        // will reach a verdict without at least F + 1 response, so we can assume that if a 
+        // BinaryBroadcast protocol is created and broadcasted by an honest validator, then that
+        // honest validator reached a valid verdict with at least F + 1 response in a previously
+        // created BinaryBroadcast protocol, and so the current validator (this node) has also
+        // reached the same verdict in the previous BinaryBroadcast protocol.
+        // So we can check if the previous BinaryBroadcast protocol has terminated, if so, then 
+        // we can create another BinaryBroadcast protocol
+        private bool ValidateBinaryBroadcastId(BinaryBroadcastId binaryBroadcastId)
+        {
+            if (!ValidateSenderId(binaryBroadcastId.Agreement) || binaryBroadcastId.Epoch < 0)
+                return false;
+            else if (binaryBroadcastId.Epoch > 0 && (binaryBroadcastId.Epoch & 1) == 0) // positive and even
+            {
+                var previousBinaryBroadcastId = 
+                    new BinaryBroadcastId(binaryBroadcastId.Era, binaryBroadcastId.Agreement, binaryBroadcastId.Epoch - 2);
+                if (!_registry.TryGetValue(previousBinaryBroadcastId, out var previousBinaryBroadcast) ||
+                    !previousBinaryBroadcast.Terminated)
+                    return false;
+                return true;
+            }
+            else 
+                return true;
         }
 
         public bool WaitFinish(TimeSpan timeout)
