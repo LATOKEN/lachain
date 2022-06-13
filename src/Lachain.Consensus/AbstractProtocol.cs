@@ -137,7 +137,7 @@ namespace Lachain.Consensus
                 catch (Exception e)
                 {
                     Logger.LogError($"{Id}: exception occured while processing message: {e}");
-                    Terminated = true;
+                    Terminate();
                     break;
                 }
             }
