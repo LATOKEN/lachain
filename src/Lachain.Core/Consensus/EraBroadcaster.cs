@@ -279,7 +279,7 @@ namespace Lachain.Core.Consensus
         // protocols (lets say 'child protocol') is not created before 'child protocol' returns result, then the
         // 'parent protocol' will never be able to use their results and will get stuck
         // For ReliableBroadcast, this is not a problem, because it waits for at least F + 1 inputs from validators.
-        // But for other protocols (CommonCoin, BinaryBroadcast) may have problem if spammed from malicious validators.
+        // But some protocol (CommonCoin) may have problem if spammed from malicious validators.
         // BinaryAgreement is created only from InternalRequest, not from ExternalMessage, so it is safe as well.
         // For each protocol, the corresponding 'parent protocol' is stored in _callback dictionary
         [MethodImpl(MethodImplOptions.Synchronized)]
