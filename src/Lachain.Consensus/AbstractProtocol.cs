@@ -96,7 +96,8 @@ namespace Lachain.Consensus
                 Terminated = true;
                 // We can empty the _queue because the messages will no longer be processed
                 // This will free some memory in case of spam messages
-                _queue.Clear();
+                // _queue.Clear();
+                Broadcaster.HandleTermination(Id);
                 Monitor.Pulse(_queueLock);
             }
         }
@@ -138,6 +139,7 @@ namespace Lachain.Consensus
                 {
                     Logger.LogError($"{Id}: exception occured while processing message: {e}");
                     Terminate();
+                    // Terminated = true;
                     break;
                 }
             }
@@ -152,9 +154,9 @@ namespace Lachain.Consensus
                     // we should return here instead of enqueueing messages
                     // because once terminated, the messages are not being processed anymore
                     // so the queue will just get large unnecessarily
-                    return;
+                    // return;
                 }
-            //        Logger.LogTrace($"{Id}: got message after termination"); 
+                Logger.LogTrace($"{Id}: got message after termination"); 
                 _queue.Enqueue(message);
                 Monitor.Pulse(_queueLock);
             }

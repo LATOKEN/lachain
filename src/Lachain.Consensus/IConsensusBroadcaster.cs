@@ -6,6 +6,7 @@ namespace Lachain.Consensus
 {
     public interface IConsensusBroadcaster
     {
+        void HandleTermination(IProtocolIdentifier id);
         void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols);
 
         /*

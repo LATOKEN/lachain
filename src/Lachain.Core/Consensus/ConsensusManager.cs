@@ -290,13 +290,13 @@ namespace Lachain.Core.Consensus
                                     foreach (var (message, from) in savedMessages)
                                     {
                                         var fromIndex = validators.GetValidatorIndex(from);
-                                        if (fromIndex == -1)
-                                        {
-                                            Logger.LogWarning(
-                                                $"Skipped message for era {CurrentEra} since it came from "
-                                                + $"{from.ToHex()} who is not validator for this era");
-                                            continue;
-                                        }
+                                        // if (fromIndex == -1)
+                                        // {
+                                        //     Logger.LogWarning(
+                                        //         $"Skipped message for era {CurrentEra} since it came from "
+                                        //         + $"{from.ToHex()} who is not validator for this era");
+                                        //     continue;
+                                        // }
                                         Logger.LogTrace(
                                             $"Handling postponed message: {message.PrettyTypeString()}");
                                         broadcaster.Dispatch(message, fromIndex);

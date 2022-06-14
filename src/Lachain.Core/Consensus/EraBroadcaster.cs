@@ -37,6 +37,12 @@ namespace Lachain.Core.Consensus
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
+        private int _createdBbId = 0;
+        private int _createdCoinId = 0;
+        private int _terminatedBbId = 0;
+        private int _terminatedCoinId = 0;
+        private const int _maxAllowedBbId = 10;
+        private const int _maxAllowedCoinId = 10;
 
         public bool Ready => _validators != null;
 
@@ -273,6 +279,21 @@ namespace Lachain.Core.Consensus
             _callback.Clear();
         }
 
+        public void HandleTermination(IProtocolIdentifier id)
+        {
+            switch (id)
+            {
+                case BinaryAgreementId bbId:
+                    _terminatedBbId++;
+                    break;
+                case CoinId coinId:
+                    _terminatedCoinId++;
+                    break;
+                default:
+                    break;
+            }
+        }
+
         // Each ProtocolId is created only once to prevent spamming, Protocols are mapped against ProtocolId, so each
         // Protocol will also be created only once, after achieving result, Protocol terminate and no longer process any
         // messages. So if the required protocol (lets say 'parent protocol') that will use the result of newly created
@@ -308,6 +329,7 @@ namespace Lachain.Core.Consensus
                         return null;
                     var bb = new BinaryBroadcast(bbId, _validators, this);
                     RegisterProtocols(new[] {bb});
+                    _createdBbId++;
                     return bb;
                 case CoinId coinId:
                     if (!ValidateCoinId(coinId))
@@ -319,6 +341,7 @@ namespace Lachain.Core.Consensus
                         this
                     );
                     RegisterProtocols(new[] {coin});
+                    _createdCoinId++;
                     return coin;
                 case ReliableBroadcastId rbcId:
                     if (!ValidateSenderId((long) rbcId.SenderId))
@@ -378,61 +401,80 @@ namespace Lachain.Core.Consensus
             return true;
         }
 
-        // CommonCoin returns result immediately after getting a valid input and then terminates
-        // This input could be via network from another validator or its own generated
-        // If the 'parent protocol' (mentioned above) is not created when this protocol is requested
-        // then the 'parent protocol' will not get the result and will get stuck'
-        // So check if the 'parent protocol' exists
+        // Check if parent protocol is terminated
+        // Check validity
+        // Check if not terminated protocols are not too many
         private bool ValidateCoinId(CoinId coinId)
         {
             if (coinId.Agreement == -1 && coinId.Epoch == 0)
             {
                 // This type of coinId is created from RootProtocol or via network from another validator
-                return _callback.TryGetValue(coinId, out var _);
+                return true;
             }
             else if (ValidateSenderId(coinId.Agreement))
             {
                 // BinaryAgreement requests such CommonCoin
-                if (!_callback.TryGetValue(coinId, out var binaryAgreementId) ||
-                    !_registry.TryGetValue(binaryAgreementId, out var binaryAgreement) || 
-                        binaryAgreement.Terminated)
+                // Checking if the epoch argument is valid
+                var createCoinId = CoinToss.CreateCoinId(coinId.Epoch);
+                if (!createCoinId)
+                {
+                    Logger.LogInformation($"Invalid CoinId: {coinId}");
                     return false;
+                }
+                // Checking if BA is terminated
+                if (_callback.TryGetValue(coinId, out var binaryAgreementId) &&
+                    _registry.TryGetValue(binaryAgreementId, out var binaryAgreement) &&
+                    binaryAgreement.Terminated)
+                {
+                    Logger.LogInformation($"BinaryAgreement {binaryAgreementId} for CoinId {coinId} is already terminated");
+                    return false;
+                }
+                // Allow creation of new CC if not too many are present
+                if (_createdCoinId - _terminatedCoinId > _maxAllowedCoinId)
+                {
+                    Logger.LogInformation($"Too many CoinId created, created: {_createdCoinId} and terminated "
+                        + $"{_terminatedCoinId}, max allowed {_maxAllowedCoinId}");
+                    return false;
+                }
                 return true;
             }
             else 
                 return false;
         }
 
-        // BinaryBroadcast needs at least F + 1 responses from validators to reach result
-        // So malicious validators are not a threat in terms of reaching wrong result or
-        // Creating BinaryBroadcast too early so that its 'parent protocol', BinaryAgreement
-        // does not get the result. But we need to stop spam creation of this protocol as it
-        // can be created too many times with too many epochs
-        // BinaryAgreement creates BinaryBroadcast sequentially, for each even epoch using the 
-        // result of previous CommonCoin as estimation. Different honest validators can start
-        // the protocol in different time and broadcast due to network latency, but none of them
-        // will reach a verdict without at least F + 1 response, so we can assume that if a 
-        // BinaryBroadcast protocol is created and broadcasted by an honest validator, then that
-        // honest validator reached a valid verdict with at least F + 1 response in a previously
-        // created BinaryBroadcast protocol, and so the current validator (this node) has also
-        // reached the same verdict in the previous BinaryBroadcast protocol.
-        // So we can check if the previous BinaryBroadcast protocol has terminated, if so, then 
-        // we can create another BinaryBroadcast protocol
+        // Check if parent protocol is terminated
+        // Check validity
+        // Check if not terminated protocols are not too many
         private bool ValidateBinaryBroadcastId(BinaryBroadcastId binaryBroadcastId)
         {
-            if (!ValidateSenderId(binaryBroadcastId.Agreement) || binaryBroadcastId.Epoch < 0)
-                return false;
-            else if (binaryBroadcastId.Epoch > 0 && (binaryBroadcastId.Epoch & 1) == 0) // positive and even
+            if (!ValidateSenderId(binaryBroadcastId.Agreement) 
+                || binaryBroadcastId.Epoch < 0 || (binaryBroadcastId.Epoch & 1) != 0)
             {
-                var previousBinaryBroadcastId = 
-                    new BinaryBroadcastId(binaryBroadcastId.Era, binaryBroadcastId.Agreement, binaryBroadcastId.Epoch - 2);
-                if (!_registry.TryGetValue(previousBinaryBroadcastId, out var previousBinaryBroadcast) ||
-                    !previousBinaryBroadcast.Terminated)
+                Logger.LogInformation($"Invalid BbId: {binaryBroadcastId}");
+                return false;
+            }
+            else if (binaryBroadcastId.Epoch > 0) // positive and even
+            {
+                // Checking if BA is terminated
+                if (_callback.TryGetValue(binaryBroadcastId, out var binaryAgreementId) &&
+                    _registry.TryGetValue(binaryAgreementId, out var binaryAgreement) &&
+                    binaryAgreement.Terminated)
+                {
+                    Logger.LogInformation($"BinaryAgreement {binaryAgreementId} for BinaryBroadcastId " +
+                                          $"{binaryBroadcastId} is already terminated");
                     return false;
+                }
+                // Allow creation of new BB if not too many are present
+                if (_createdBbId - _terminatedBbId > _maxAllowedBbId)
+                {
+                    Logger.LogInformation($"Too many BinaryBroadcastId created, created: {_createdBbId} and terminated "
+                                          + $"{_terminatedBbId}, max allowed {_maxAllowedBbId}");
+                    return false;
+                }
                 return true;
             }
-            else
-                return binaryBroadcastId.Epoch == 0;
+            else // 0 epoch
+                return true;
         }
 
         public bool WaitFinish(TimeSpan timeout)

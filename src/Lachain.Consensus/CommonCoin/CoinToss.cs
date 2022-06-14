@@ -17,7 +17,7 @@ namespace Lachain.Consensus.CommonCoin
         // epoch will be odd and TossCoin value will be 2
         public static bool CreateCoinId(long epoch)
         {
-            return ((epoch & 1) != 0) && TossCoin(epoch) == 2;
+            return (epoch > 0) && ((epoch & 1) != 0) && TossCoin(epoch) == 2;
         }
     }
 }
