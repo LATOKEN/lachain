@@ -151,12 +151,12 @@ namespace Lachain.Consensus
             {
                 if (Terminated)
                 {
+                    Logger.LogTrace($"{Id}: got message after termination"); 
                     // we should return here instead of enqueueing messages
                     // because once terminated, the messages are not being processed anymore
                     // so the queue will just get large unnecessarily
                     // return;
                 }
-                Logger.LogTrace($"{Id}: got message after termination"); 
                 _queue.Enqueue(message);
                 Monitor.Pulse(_queueLock);
             }
