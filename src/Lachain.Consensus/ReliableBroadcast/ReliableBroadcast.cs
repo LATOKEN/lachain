@@ -136,6 +136,15 @@ namespace Lachain.Consensus.ReliableBroadcast
             );
 
             _sentValMessage[validator] = true;
+            // Before sending echo, we can check if validator == val.SenderId, means if the val message is from the correct validator
+            // Because one validator cannot produce val message of another validator, it can only send echo.
+            // If we don't check this condition, there could be potential issue, for example, a malicious validator (id = x) sends a
+            // val message that has random shards but correct MerkleProof and uses val.SenderId = y (another validator), and sends to
+            // validator with id = z. It will be constructed as echo message and sent to everyone by validator, id = z, this echo will
+            // pass the CheckEchoMessage(). Now every honest validator will think that val message of validator of id = y is confirmed
+            // by echo message from validator of id = z. When the correct val message of id = y will come to id = z, he will send again
+            // but others will not accept it, because id = z already sent echo for id = y, (but it was from malicious id = x), because
+            // the correct for each pair is received only once.
             Broadcaster.Broadcast(CreateEchoMessage(val));
         }
 
