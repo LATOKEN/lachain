@@ -261,14 +261,15 @@ namespace Lachain.Consensus.ReliableBroadcast
         private bool CheckEchoMessage(ECHOMessage msg, int from)
         {
             var value = msg.Data.Keccak();
-            for (int i = from + _merkleTreeSize, j = 0; i > 1; i /= 2, ++j)
+            int i, j;
+            for (i = from + _merkleTreeSize, j = 0; i > 1 && j < msg.MerkleProof.Count; i /= 2, ++j)
             {
                 value = (i & 1) == 0
                     ? value.ToBytes().Concat(msg.MerkleProof[j].ToBytes()).Keccak() // we are left sibling
                     : msg.MerkleProof[j].ToBytes().Concat(value.ToBytes()).Keccak(); // we are right sibling
             }
 
-            return msg.MerkleTreeRoot.Equals(value);
+            return msg.MerkleTreeRoot.Equals(value) && i == 1;
         }
 
         private void AugmentInput(List<byte> input)

@@ -287,13 +287,20 @@ namespace Lachain.Core.Consensus
         {
             ValidateId(id);
             if (_registry.TryGetValue(id, out var existingProtocol)) return existingProtocol;
-            Logger.LogTrace($"Creating protocol {id} on demand");
             if (_terminated)
             {
                 Logger.LogTrace($"Protocol {id} not created since broadcaster is terminated");
                 return null;
             }
 
+            var protocol = CreateProtocol(id);
+            if (!(protocol is null))
+                Logger.LogTrace($"Created protocol {id} on demand");
+            return protocol;
+        }
+
+        private IConsensusProtocol? CreateProtocol(IProtocolIdentifier id)
+        {
             switch (id)
             {
                 case BinaryBroadcastId bbId:
@@ -424,8 +431,8 @@ namespace Lachain.Core.Consensus
                     return false;
                 return true;
             }
-            else 
-                return true;
+            else
+                return binaryBroadcastId.Epoch == 0;
         }
 
         public bool WaitFinish(TimeSpan timeout)
