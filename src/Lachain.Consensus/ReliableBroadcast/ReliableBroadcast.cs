@@ -132,7 +132,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             }
 
             Logger.LogTrace(
-                $"Protocol {Id} got VAL message {val} from {validator} ({validatorPubKey}), sending ECHO"
+                $"Protocol {Id} got VAL message from {validator} ({validatorPubKey}), sending ECHO"
             );
 
             _sentValMessage[validator] = true;
