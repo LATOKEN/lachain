@@ -128,15 +128,13 @@ namespace Lachain.Consensus.BinaryAgreement
 
                     _currentValues = _binaryBroadcastsResults[_currentEpoch - 1];
                     var coinId = new CoinId(_agreementId.Era, _agreementId.AssociatedValidatorId, _currentEpoch);
-                    // if (CoinToss.CreateCoinId(_currentEpoch))
-                    if ((_currentEpoch / 2) % 3 == 2)
+                    if (CoinToss.CreateCoinId(_currentEpoch))
                     {
                         Broadcaster.InternalRequest(new ProtocolRequest<CoinId, object?>(Id, coinId, null));
                     }
                     else
                     {
-                        _coins[_currentEpoch] = ((_currentEpoch / 2) % 3) != 0;
-                        // _coins[_currentEpoch] = CoinToss.TossCoin(_currentEpoch) != 0;
+                        _coins[_currentEpoch] = CoinToss.TossCoin(_currentEpoch) != 0;
                     }
 
                     _currentEpoch += 1;

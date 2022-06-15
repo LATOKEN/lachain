@@ -132,6 +132,7 @@ namespace Lachain.Core.Consensus
                 {
                     lock (_postponedMessages)
                     {
+                        // This queue can get very long and may cause node shut down due to insufficient memory
                         _postponedMessages
                             .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
                             .Add((message, from));
@@ -290,13 +291,17 @@ namespace Lachain.Core.Consensus
                                     foreach (var (message, from) in savedMessages)
                                     {
                                         var fromIndex = validators.GetValidatorIndex(from);
-                                        // if (fromIndex == -1)
-                                        // {
-                                        //     Logger.LogWarning(
-                                        //         $"Skipped message for era {CurrentEra} since it came from "
-                                        //         + $"{from.ToHex()} who is not validator for this era");
-                                        //     continue;
-                                        // }
+                                        // If a validator from some previous era sends message for some future era, the 
+                                        // message will come here, but it could be that the validator is not a validator
+                                        // anymore, in that case the fromIndex will be -1 and may halt some process.
+                                        // So we need to check this and discard such messages
+                                        if (fromIndex == -1)
+                                        {
+                                            Logger.LogWarning(
+                                                $"Skipped message for era {CurrentEra} since it came from "
+                                                + $"{from.ToHex()} who is not validator for this era");
+                                            continue;
+                                        }
                                         Logger.LogTrace(
                                             $"Handling postponed message: {message.PrettyTypeString()}");
                                         broadcaster.Dispatch(message, fromIndex);
