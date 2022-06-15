@@ -49,11 +49,6 @@ namespace Lachain.ConsensusTest
             return Registry[id];
         }
 
-        public void HandleTermination(IProtocolIdentifier id)
-        {
-            return;
-        }
-        
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Terminate()
         {

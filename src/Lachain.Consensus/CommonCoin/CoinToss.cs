@@ -19,5 +19,16 @@ namespace Lachain.Consensus.CommonCoin
         {
             return (epoch > 0) && ((epoch & 1) != 0) && TossCoin(epoch) == 2;
         }
+
+        public static long NextCoinCreationEpoch(long epoch)
+        {
+            return epoch + 6;
+        }
+
+        public static long TotalValidCommonCoin(long lowEpoch, long highEpoch)
+        {
+            if (!CreateCoinId(lowEpoch) || !CreateCoinId(highEpoch)) return -1;
+            return (highEpoch - lowEpoch) / 6 + 1;
+        }
     }
 }

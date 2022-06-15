@@ -97,7 +97,6 @@ namespace Lachain.Consensus
                 // We can empty the _queue because the messages will no longer be processed
                 // This will free some memory in case of spam messages
                 // _queue.Clear();
-                Broadcaster.HandleTermination(Id);
                 Monitor.Pulse(_queueLock);
             }
         }
