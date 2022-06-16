@@ -24,16 +24,10 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>> _noncePerAddress
             = new ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>>();
         
-        // tracks the transaction hashes by their sender's address and nonce
-        private readonly ITransactionHashTrackerByNonce _transactionHashTracker;
-        
         // the count of transactions in the stucture
         private uint _count = 0;
 
-        public NonceCalculator(ITransactionHashTrackerByNonce transactionHashTracker)
-        {
-            _transactionHashTracker = transactionHashTracker;
-        }
+        public NonceCalculator() {}
 
         // try to add a transaction in the data structure
         // returns false if it already exists, otherwise adds it to the structure and returns true
@@ -50,11 +44,7 @@ namespace Lachain.Core.Blockchain.Pool
             if(_noncePerAddress.TryGetValue(from, out var nonces))
             {
                 bool isAdded = nonces.Add(kv);
-                if (isAdded)
-                {
-                    _count++;
-                    _transactionHashTracker.TryAdd(receipt);
-                }
+                if(isAdded) _count++;
                 return isAdded;
             }
             else
@@ -63,7 +53,6 @@ namespace Lachain.Core.Blockchain.Pool
                 emptyNonces.Add(kv);
                 _noncePerAddress.TryAdd(from, emptyNonces);
                 _count++;
-                _transactionHashTracker.TryAdd(receipt);
                 return true; 
             }
         }
@@ -88,12 +77,7 @@ namespace Lachain.Core.Blockchain.Pool
                 {
                     _noncePerAddress.TryRemove(from, out var _);
                 }
-
-                if (canRemove)
-                {
-                    _count--;
-                    _transactionHashTracker.TryRemove(receipt);
-                }
+                if(canRemove) _count--;
                 return canRemove;
             }
             else

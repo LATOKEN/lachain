@@ -179,7 +179,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _blockManager.TryBuildGenesisBlock();
             var topUpReceipts = new List<TransactionReceipt>();
             var randomReceipts = new List<TransactionReceipt>();
-            var txCount = 50;
+            var txCount = new Random().Next(1, 50);
 
             var coverTxFeeAmount = Money.Parse("10.0");
             for (var i = 0; i < txCount; i++)
@@ -191,8 +191,16 @@ namespace Lachain.CoreTest.IntegrationTests
                     HardforkHeights.IsHardfork_9Active(1)));
             }
 
-            ExecuteTxesInSeveralBlocks(topUpReceipts);
-            ExecuteTxesInSeveralBlocks(randomReceipts);
+            var topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
+            var topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
+            Assert.AreEqual(topUpResult, OperatingError.Ok);
+
+            var randomBlock = BuildNextBlock(randomReceipts.ToArray());
+            var result = ExecuteBlock(randomBlock, randomReceipts.ToArray());
+            Assert.AreEqual(result, OperatingError.Ok);
+
+            var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
+            Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
 
             // building random txes for new chain id. will send TopUpTx right now.
             Assert.IsFalse(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()));
@@ -209,15 +217,37 @@ namespace Lachain.CoreTest.IntegrationTests
                     (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i, 
                     HardforkHeights.IsHardfork_9Active(3)));
             }
-            ExecuteTxesInSeveralBlocks(topUpReceipts);
+            topUpBlock = BuildNextBlock(topUpReceipts.ToArray());
+            topUpResult = ExecuteBlock(topUpBlock, topUpReceipts.ToArray());
+            Assert.AreEqual(topUpResult, OperatingError.Ok);
+            executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(topUpBlock.Header.Index);
+            Assert.AreEqual(executedBlock!.TransactionHashes.Count, txCount);
 
-            while (!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            while(!HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
             {
                 var block = BuildNextBlock();
-                var result = ExecuteBlock(block);
+                result = ExecuteBlock(block);
                 Assert.AreEqual(OperatingError.Ok, result);
             }
-            ExecuteTxesInSeveralBlocks(randomReceipts);
+
+            int total = 10;
+            for (int it = 0 ; it < total ; it++)
+            {
+                var remBlocks = total - it;
+                var txesToTake = randomReceipts.Count / remBlocks;
+                var txes = new List<TransactionReceipt>();
+                while(txesToTake > 0)
+                {
+                    txes.Add(randomReceipts.Last());
+                    randomReceipts.RemoveAt(randomReceipts.Count-1);
+                    txesToTake--;
+                }
+                randomBlock = BuildNextBlock(txes.ToArray());
+                result = ExecuteBlock(randomBlock, txes.ToArray());
+                Assert.AreEqual(result, OperatingError.Ok);
+                executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(randomBlock.Header.Index);
+                Assert.AreEqual(executedBlock!.TransactionHashes.Count, txes.Count);
+            }
         }
 
         [Test]
@@ -258,36 +288,6 @@ namespace Lachain.CoreTest.IntegrationTests
 
             result = EmulateBlock(block);
             Assert.AreEqual(OperatingError.InvalidMultisig, result);
-        }
-
-        public void ExecuteTxesInSeveralBlocks(List<TransactionReceipt> txes)
-        {
-            txes = txes.OrderBy(x => x, new ReceiptComparer()).ToList();
-            foreach (var tx in txes)
-            {
-                _transactionPool.Add(tx);
-            }
-            int total = 10;
-            for (int it = 0; it < total; it++)
-            {
-                var remBlocks = total - it;
-                var txesToTake = txes.Count / remBlocks;
-                var takenTxes = _transactionPool.Peek(txesToTake, txesToTake, _blockManager.GetHeight() + 1);
-                var block = BuildNextBlock(takenTxes.ToArray());
-                var result = ExecuteBlock(block, takenTxes.ToArray());
-                Assert.AreEqual(result, OperatingError.Ok);
-                var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
-                Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
-
-                // check if the txes are executed properly
-                foreach (var tx in takenTxes)
-                {
-                    var executedTx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx.Hash);
-                    Assert.AreNotEqual(null, executedTx, $"Transaction {tx.Hash.ToHex()} not found");
-                    Assert.AreEqual(TransactionStatus.Executed, executedTx!.Status,
-                        "Transaction {tx.Hash.ToHex()} was not executed properly");
-                }
-            }
         }
 
         private void Check_Random_Address_Storage_Changing()
