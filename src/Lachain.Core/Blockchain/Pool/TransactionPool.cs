@@ -219,7 +219,24 @@ namespace Lachain.Core.Blockchain.Pool
                     if (oldTx.Transaction.GasPrice >= receipt.Transaction.GasPrice)
                     {
                         // discard new transaction, it has less gas price than the old one
+                        Logger.LogTrace(
+                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
+                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
+                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to lower gasPrice");
                         return OperatingError.Underpriced;
+                    }
+
+                    var identicalTx = new Transaction(receipt.Transaction);
+                    identicalTx.GasPrice = oldTx.Transaction.GasPrice;
+                    if (identicalTx.GasPrice != oldTx.Transaction.GasPrice)
+                        throw new Exception("bad implementation");
+                    if (!identicalTx.Equals(oldTx.Transaction))
+                    {
+                        Logger.LogTrace(
+                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
+                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
+                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to different value is some fields");
+                        return OperatingError.BadTransaction;
                     }
                     
                     // remove the old transaction from pool
@@ -227,7 +244,9 @@ namespace Lachain.Core.Blockchain.Pool
                     _nonceCalculator.TryRemove(oldTx);
                     _transactions.TryRemove(oldTxHash!, out var _);
                     Logger.LogTrace(
-                        $"Transaction {oldTxHash!.ToHex()} in pool is replace by transaction {receipt.Hash.ToHex()}");
+                        $"Transaction {oldTxHash!.ToHex()} with nonce: {oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice}" +
+                        $" in pool is replaced by transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
+                        $"{receipt.Transaction.GasPrice}");
                 }
                 /* put transaction to pool queue */
                 _transactions[receipt.Hash] = receipt;
