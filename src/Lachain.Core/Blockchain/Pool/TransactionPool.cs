@@ -278,7 +278,7 @@ namespace Lachain.Core.Blockchain.Pool
         private bool IdenticalTransaction(Transaction oldTx, Transaction newTx)
         {
             return oldTx.From.Equals(newTx.From) && oldTx.To.Equals(newTx.To) &&
-                   oldTx.Invocation.Equals(newTx.Invocation);
+                   oldTx.Invocation.Equals(newTx.Invocation) && oldTx.Value.Equals(newTx.Value);
         }
 
         // this sanitizeMemPool is required to be done after persisting a block and before proposing
