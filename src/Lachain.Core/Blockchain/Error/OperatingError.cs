@@ -27,6 +27,6 @@
         BlockGasOverflow,
         Underpriced,
         ValueOverflow,
-        BadTransaction,
+        DuplicatedTransaction,
     }
 }

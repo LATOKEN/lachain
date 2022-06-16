@@ -225,16 +225,14 @@ namespace Lachain.Core.Blockchain.Pool
                             $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to lower gasPrice");
                         return OperatingError.Underpriced;
                     }
-
-                    var identicalTx = new Transaction(receipt.Transaction);
-                    identicalTx.GasPrice = oldTx.Transaction.GasPrice;
-                    if (!identicalTx.Equals(oldTx.Transaction))
+                    
+                    if (!IdenticalTransaction(oldTx.Transaction, receipt.Transaction))
                     {
                         Logger.LogTrace(
                             $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
                             $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
                             $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to different value is some fields");
-                        return OperatingError.BadTransaction;
+                        return OperatingError.DuplicatedTransaction;
                     }
                     
                     // remove the old transaction from pool
@@ -275,6 +273,12 @@ namespace Lachain.Core.Blockchain.Pool
             var balance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receipt.Transaction.From);
             var fee = new Money(receipt.Transaction.GasLimit * receipt.Transaction.GasPrice);
             return balance.CompareTo(fee) >= 0;
+        }
+
+        private bool IdenticalTransaction(Transaction oldTx, Transaction newTx)
+        {
+            return oldTx.From.Equals(newTx.From) && oldTx.To.Equals(newTx.To) &&
+                   oldTx.Invocation.Equals(newTx.Invocation);
         }
 
         // this sanitizeMemPool is required to be done after persisting a block and before proposing

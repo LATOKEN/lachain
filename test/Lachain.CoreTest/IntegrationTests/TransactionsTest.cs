@@ -189,7 +189,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 newTxReceipt = signer.Sign(newTx, keyPair, useNewChainId);
                 result = _transactionPool.Add(newTxReceipt);
                 Console.WriteLine($"old gas price: {tx.Transaction.GasPrice}, new gas price: {newTxReceipt.Transaction.GasPrice}");
-                Assert.AreEqual(OperatingError.BadTransaction, result);
+                Assert.AreEqual(OperatingError.DuplicatedTransaction, result);
                 // higher price and all fields same
                 newTx = new Transaction(tx.Transaction);
                 newTx.GasPrice = tx.Transaction.GasPrice + 1;
