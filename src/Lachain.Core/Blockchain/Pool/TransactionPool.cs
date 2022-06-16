@@ -228,8 +228,6 @@ namespace Lachain.Core.Blockchain.Pool
 
                     var identicalTx = new Transaction(receipt.Transaction);
                     identicalTx.GasPrice = oldTx.Transaction.GasPrice;
-                    if (identicalTx.GasPrice != oldTx.Transaction.GasPrice)
-                        throw new Exception("bad implementation");
                     if (!identicalTx.Equals(oldTx.Transaction))
                     {
                         Logger.LogTrace(
