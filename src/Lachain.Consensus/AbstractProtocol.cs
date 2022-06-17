@@ -137,7 +137,7 @@ namespace Lachain.Consensus
                 catch (Exception e)
                 {
                     Logger.LogError($"{Id}: exception occured while processing message: {e}");
-                    Terminate();
+                    Terminated = true;
                     break;
                 }
             }
@@ -152,6 +152,7 @@ namespace Lachain.Consensus
                     // we should return here instead of enqueueing messages
                     // because once terminated, the messages are not being processed anymore
                     // so the queue will just get large unnecessarily
+                    Monitor.Pulse(_queueLock);
                     return;
                 }
                 _queue.Enqueue(message);
