@@ -255,6 +255,12 @@ namespace Lachain.Core.Consensus
             return _validators.GetValidatorIndex(publicKey);
         }
 
+        public ECDSAPublicKey? GetPublicKeyById(int id)
+        {
+            if (_validators is null || id < 0 || id >= _validators.N) return null;
+            return _validators.EcdsaPublicKeySet[id];
+        }
+
         public IConsensusProtocol? GetProtocolById(IProtocolIdentifier id)
         {
             return _registry.TryGetValue(id, out var value) ? value : null;

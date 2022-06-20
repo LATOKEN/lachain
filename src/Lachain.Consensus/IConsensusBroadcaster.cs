@@ -31,6 +31,8 @@ namespace Lachain.Consensus
          */
         int GetMyId();
 
+        ECDSAPublicKey? GetPublicKeyById(int id);
+
         IConsensusProtocol? GetProtocolById(IProtocolIdentifier id);
 
         void Terminate();
