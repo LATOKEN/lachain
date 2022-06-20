@@ -18,6 +18,7 @@ using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
+using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
 namespace Lachain.Core.Consensus
@@ -139,6 +140,14 @@ namespace Lachain.Core.Consensus
             {
                 throw new InvalidOperationException(
                     $"Message for era {message.Validator.Era} dispatched to era {_era}");
+            }
+
+            if (!ValidateMessage(message))
+            {
+                Logger.LogWarning(
+                    $"Faulty behaviour: null value in required field of the consensus message from validator: {from}"
+                    + $" ({GetPublicKeyById(from)!.ToHex()}). Discarding message as it could crash targeted protocol.");
+                return;
             }
 
             switch (message.PayloadCase)
@@ -352,6 +361,55 @@ namespace Lachain.Core.Consensus
         public IDictionary<IProtocolIdentifier, IConsensusProtocol> GetRegistry()
         {
             return _registry;
+        }
+
+        // Some protocols may stop due to null value in some of fields in the message. We discard such cases
+        private bool ValidateMessage(ConsensusMessage message)
+        {
+            switch (message.PayloadCase)
+            {
+                case ConsensusMessage.PayloadOneofCase.Bval:
+                    // all fields have default values
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.Aux:
+                    // all fields have default values
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.Conf:
+                    // all fields have default values
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.Coin:
+                    // all fields have default values
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.Decrypted:
+                    // all fields have default values
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.ValMessage:
+                    // merkleTreeRoot cannot be null
+                    if (message.ValMessage.MerkleTreeRoot is null) 
+                        return false;
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.EchoMessage:
+                    // merkleTreeRoot cannot be null
+                    if (message.EchoMessage.MerkleTreeRoot is null) 
+                        return false;
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.ReadyMessage:
+                    // merkleTreeRoot cannot be null
+                    if (message.ReadyMessage.MerkleTreeRoot is null) 
+                        return false;
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
+                    // BlockHeader or Signature cannot be null
+                    var header = message.SignedHeaderMessage.Header;
+                    if (header is null || message.SignedHeaderMessage.Signature is null)
+                        return false;
+                    // Check fields of BlockHeader: UInt256 cannot be null
+                    if (header.MerkleRoot is null || header.PrevBlockHash is null || header.StateHash is null)
+                        return false;
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

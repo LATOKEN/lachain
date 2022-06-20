@@ -152,7 +152,9 @@ namespace Lachain.Consensus.ReliableBroadcast
             else
             {
                 Logger.LogWarning(
-                    $"Val message with sender id: {val.SenderId} came from validator: {validator}, which shoudl not happen");
+                    $"Faulty behaviour: val message with sender id: {val.SenderId} came from validator: " +
+                    $"{validator}, which should not happen. Val message for {val.SenderId} should come from {val.SenderId}." +
+                    "Not sending echo message for this val message");
             }
         }
 
