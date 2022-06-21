@@ -70,6 +70,8 @@ namespace Lachain.Consensus.CommonCoin
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
                 }
 
+                // To create signature from the message, some requirements need to be fulfilled, otherwise it can 
+                // throw exception (for example maybe a fixed length of the input bytes or maybe valid array of bytes)
                 try
                 {
                     Logger.LogTrace($"Received share from {envelope.ValidatorIndex}");

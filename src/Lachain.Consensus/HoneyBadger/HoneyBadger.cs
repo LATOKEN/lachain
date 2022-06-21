@@ -159,6 +159,9 @@ namespace Lachain.Consensus.HoneyBadger
             return message;
         }
 
+        // We need to handle this message carefully like how about decoding a random message with random length
+        // and the value of 'share.ShareId' needs to be checked. If it is out of range, it can throw exception
+        // TODO: test decoding a random message with random length and range of share.ShareId
         private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg)
         {
             var share = Wallet.TpkePublicKey.Decode(msg);
@@ -166,6 +169,13 @@ namespace Lachain.Consensus.HoneyBadger
             CheckDecryptedShares(share.ShareId);
         }
 
+        // There are several potential issues in Wallet.TpkePublicKey.FullDecrypt() that needs to be resolved.
+        // It throws exception if more than one message is received from same decryptorId which can be easily exploited
+        // Handling this exception is not enough, because we will not get the decrypted share. Another issue is anyone
+        // can send a message with any value of decryptorId.
+        // TODO: test if above assumptions are correct
+        // Possible solution: try to validate decryptor id. check if there is any relation between decryptor id and 
+        // validator id
         private void CheckDecryptedShares(int id)
         {
             if (!_takenSet) return;
