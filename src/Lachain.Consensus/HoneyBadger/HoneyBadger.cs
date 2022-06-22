@@ -7,6 +7,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.HoneyBadger
 {
@@ -172,7 +173,8 @@ namespace Lachain.Consensus.HoneyBadger
             }
             catch (Exception exception)
             {
-                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId}");
+                var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
+                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey})");
             }
 
             if (!(share is null))
