@@ -340,7 +340,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         new InvocationContext(source, snapshot, new TransactionReceipt
                         {
                             Block = snapshot.Blocks.GetTotalBlockHeight(),
-                            Transaction = new Transaction{Value = 0.ToUInt256()}
+                            Transaction = MakeTransaction(opts)
                         }),
                         invocation,
                         100_000_000
@@ -400,12 +400,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var to = opts["to"];
             var data = opts["data"];
         
-            if (to is null && data is null) return null;
+            if (to is null && data is null) 
+                throw new ArgumentException("To and data fields are both empty");;
         
             var invocation = ((string) data!).HexToBytes();
             var destination = to is null ? UInt160Utils.Zero : ((string) to!).HexToUInt160();
             var source = from is null ? UInt160Utils.Zero : ((string) from!).HexToUInt160();
             gasUsed += (ulong) invocation.Length * GasMetering.InputDataGasPerByte;
+
+            Transaction tx = MakeTransaction(opts);
         
             if (to is null) // deploy contract
             {
@@ -418,7 +421,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var context = new InvocationContext(source, snapshot, new TransactionReceipt
                     {
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
-                        Transaction = new Transaction{Value = 0.ToUInt256()}
+                        Transaction = tx
                     });
                     var abi = ContractEncoder.Encode(DeployInterface.MethodDeploy, invocation);
                     var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.DeployContract, abi);
@@ -449,7 +452,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
                     {
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
-                        Transaction = new Transaction{Value = 0.ToUInt256()}
+                        Transaction = tx
                     });
                 
                     var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", source, 0.ToUInt256());
@@ -475,7 +478,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         new InvocationContext(source, snapshot, new TransactionReceipt
                         {
                             Block = snapshot.Blocks.GetTotalBlockHeight(),
-                            Transaction = new Transaction{Value = 0.ToUInt256()}
+                            Transaction = tx
                         }),
                         invocation,
                         100_000_000
@@ -494,7 +497,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
                 {
                     Block = snapshot.Blocks.GetTotalBlockHeight(),
-                    Transaction = new Transaction{Value = 0.ToUInt256()}
+                    Transaction = tx
                 });
                 
                 var invocationResult =
@@ -592,6 +595,57 @@ namespace Lachain.Core.RPC.HTTP.Web3
             return _transactionSigner.Sign(tx, keyPair, 
                 HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1));
         }
+
+        private Transaction MakeTransaction(JObject opts)
+        {
+            var from = opts["from"];
+            var gas = opts["gas"];
+            var gasPrice = opts["gasPrice"];
+            var data = opts["data"];
+            var to = opts["to"];
+            var value = opts["value"];
+            var nonce = opts["nonce"];
+
+            if(from is null){
+                throw new ArgumentException("from should not be null");
+            }
+            var fromAddress = ((string) from!).HexToUInt160();
+
+            ulong? nonceToUse = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress);
+            if(!(nonce is null)) nonceToUse = ((string)nonce!).HexToUlong();
+
+            ulong? gasToUse = null;
+            if(!(gas is null)) gasToUse = ((string)gas!).HexToUlong();
+            
+            ulong? gasPriceToUse = null;
+            if(!(gasPrice is null)) gasPriceToUse  = ((string)gasPrice!).HexToUlong();
+            
+            byte[]? byteCode = null;
+            if(!(data is null)) byteCode = ((string) data!).HexToBytes();
+
+            if (to is null) // deploy transaction
+            {
+                if (data is null)
+                {
+                    throw new ArgumentException("To and data fields are both empty");
+                }
+
+                if (!VirtualMachine.VerifyContract(byteCode!, 
+                        HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
+                    throw new ArgumentException("Unable to validate smart-contract code");
+                
+                
+                var contractHash = fromAddress.ToBytes().Concat(((ulong)nonceToUse).ToBytes()).Ripemd();
+                Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
+                return _transactionBuilder.DeployTransaction(fromAddress, byteCode!, gasToUse, gasPriceToUse , nonceToUse);
+            }
+            if((value is null) && (data is null)) throw new ArgumentException("value and data both null");
+            var toAddress = ((string)to!).HexToUInt160();
+            var valueToUse = UInt256Utils.Zero.ToMoney();
+            if(!(value is null)) valueToUse = ((string)value!).HexToBytes().ToUInt256(true).ToMoney();
+            return _transactionBuilder.TransferTransaction(fromAddress , toAddress , valueToUse , gasToUse, gasPriceToUse, nonceToUse, byteCode);
+        }
+
         private (OperatingError, object?) _InvokeSystemContract(
             UInt160 address, byte[] invocation, UInt160 from, IBlockchainSnapshot snapshot
         )
