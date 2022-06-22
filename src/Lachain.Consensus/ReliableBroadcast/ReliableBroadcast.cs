@@ -151,10 +151,11 @@ namespace Lachain.Consensus.ReliableBroadcast
             }
             else
             {
+                var pubKey = Broadcaster.GetPublicKeyById(validator)!.ToHex();
                 Logger.LogWarning(
                     $"Faulty behaviour: val message with sender id: {val.SenderId} came from validator: " +
-                    $"{validator}, which should not happen. Val message for {val.SenderId} should come from {val.SenderId}." +
-                    "Not sending echo message for this val message");
+                    $"{validator} ({pubKey}), which should not happen. Val message for {val.SenderId} should come " +
+                    $"from {val.SenderId}. Not sending echo message for this val message");
             }
         }
 
@@ -281,7 +282,6 @@ namespace Lachain.Consensus.ReliableBroadcast
 
         private bool CheckEchoMessage(ECHOMessage msg, int from)
         {
-            // test if it can throw exception when any of msg.Data or msg.MerkleProof is null
             var value = msg.Data.Keccak();
             // We can get exception here if the size of msg.MerkleProof is less then the depth of MerkleTree
             int i, j;
