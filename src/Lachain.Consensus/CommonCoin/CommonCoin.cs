@@ -70,22 +70,38 @@ namespace Lachain.Consensus.CommonCoin
                     throw new ArgumentException("era, agreement or epoch of message mismatched");
                 }
 
-                Logger.LogTrace($"Received share from {envelope.ValidatorIndex}");
-                _lastMessage = $"Received share from {envelope.ValidatorIndex}";
-                var signatureShare = Signature.FromBytes(message.Coin.SignatureShare.ToByteArray());
-                if (!_thresholdSigner.AddShare(envelope.ValidatorIndex, signatureShare, out var signature))
+                // To create signature from the message, some requirements need to be fulfilled, otherwise it can 
+                // throw exception (for example maybe a fixed length of the input bytes or maybe valid array of bytes)
+                try
                 {
-                    _lastMessage = $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share";
-                    Logger.LogWarning($"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share");
-                    return; // potential fault evidence
+                    Logger.LogTrace($"Received share from {envelope.ValidatorIndex}");
+                    _lastMessage = $"Received share from {envelope.ValidatorIndex}";
+                    var signatureShare = Signature.FromBytes(message.Coin.SignatureShare.ToByteArray());
+                    if (!_thresholdSigner.AddShare(envelope.ValidatorIndex, signatureShare, out var signature))
+                    {
+                        _lastMessage =
+                            $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share";
+                        Logger.LogWarning(
+                            $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share");
+                        return; // potential fault evidence
+                    }
+
+                    if (signature == null)
+                    {
+                        _lastMessage = "signature == null";
+                        return;
+                    }
+
+                    _result = new CoinResult(signature.RawSignature.ToBytes());
+                }
+                catch (Exception exception)
+                {
+                    var pubKey = Broadcaster.GetPublicKeyById(envelope.ValidatorIndex)!.ToHex();
+                    Logger.LogWarning(
+                        $"Exception occured while handling message from validator {envelope.ValidatorIndex} " +
+                        $"({pubKey}). Exception: {exception}");
                 }
 
-                if (signature == null)
-                {
-                    _lastMessage = "signature == null";
-                    return;
-                }
-                _result = new CoinResult(signature.RawSignature.ToBytes());
                 CheckResult();
             }
             else

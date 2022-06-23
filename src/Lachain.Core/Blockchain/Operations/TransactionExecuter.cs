@@ -4,6 +4,7 @@ using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -29,6 +30,9 @@ namespace Lachain.Core.Blockchain.Operations
     */
     public class TransactionExecuter
     {
+        private static readonly ILogger<TransactionExecuter> Logger =
+            LoggerFactory.GetLoggerForClass<TransactionExecuter>();
+        
         private readonly IContractRegisterer _contractRegisterer;
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
@@ -117,6 +121,7 @@ namespace Lachain.Core.Blockchain.Operations
             }
             catch (Exception e)
             {
+                Logger.LogWarning($"Failed contract execution: {e}");
                 return OperatingError.InvalidContract;
             }
 

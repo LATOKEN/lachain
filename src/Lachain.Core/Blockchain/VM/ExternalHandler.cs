@@ -1134,17 +1134,26 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_CryptoRecover({hashOffset}, {v}, {rOffset}, {sOffset}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call ECRECOVER outside wasm frame");
+            if(HardforkHeights.IsHardfork_10Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1))
+                Handler_Env_CryptoRecoverV2(hashOffset, v, rOffset, sOffset, resultOffset, frame);
+            else
+                Handler_Env_CryptoRecoverV1(hashOffset, v, rOffset, sOffset, resultOffset, frame);
+        }
+
+        public static void Handler_Env_CryptoRecoverV1(int hashOffset, int v, int rOffset, int sOffset,
+            int resultOffset, WasmExecutionFrame frame)
+        {
             bool useNewChainId =
                 HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
             frame.UseGas(GasMetering.RecoverGasCost);
             var hash = SafeCopyFromMemory(frame.Memory, hashOffset, 32) ??
-                          throw new InvalidOperationException();
+                       throw new InvalidOperationException();
             var sig = new byte[SignatureUtils.Length(useNewChainId)];
             var r = SafeCopyFromMemory(frame.Memory, rOffset, 32) ??
-                      throw new InvalidOperationException();
+                    throw new InvalidOperationException();
             Array.Copy(r, 0, sig, 0, r.Length);
             var s = SafeCopyFromMemory(frame.Memory, sOffset, 32) ??
-                      throw new InvalidOperationException();
+                    throw new InvalidOperationException();
             Array.Copy(s, 0, sig, r.Length, s.Length);
             var fullBin = v.ToBytes().ToArray();
             if (useNewChainId)
@@ -1160,6 +1169,52 @@ namespace Lachain.Core.Blockchain.VM
             var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig, useNewChainId);
             var address = VirtualMachine.Crypto.ComputeAddress(publicKey);
             SafeCopyToMemory(frame.Memory, address, resultOffset);
+        }
+
+        public static void Handler_Env_CryptoRecoverV2(int hashOffset, int v, int rOffset, int sOffset,
+            int resultOffset, WasmExecutionFrame frame)
+        {
+            bool useNewChainId =
+                HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
+            frame.UseGas(GasMetering.RecoverGasCost);
+            var hash = SafeCopyFromMemory(frame.Memory, hashOffset, 32) ??
+                       throw new InvalidOperationException();
+            var sigLength = SignatureUtils.Length(useNewChainId);
+            if (v == 27 || v == 28)
+                sigLength = 65;
+            var sig = new byte[sigLength];
+            var r = SafeCopyFromMemory(frame.Memory, rOffset, 32) ??
+                    throw new InvalidOperationException();
+            Array.Copy(r, 0, sig, 0, r.Length);
+            var s = SafeCopyFromMemory(frame.Memory, sOffset, 32) ??
+                    throw new InvalidOperationException();
+            Array.Copy(s, 0, sig, r.Length, s.Length);
+            if (v == 27 || v == 28)
+            {
+                var fullBin = v.ToBytes().ToArray();
+                sig[64] = fullBin[0];
+
+                var publicKey = VirtualMachine.Crypto.SpecialRecoverSignatureHashed(hash, sig);
+                var address = VirtualMachine.Crypto.ComputeAddress(publicKey);
+                SafeCopyToMemory(frame.Memory, address, resultOffset);
+            }
+            else
+            {
+                var fullBin = v.ToBytes().ToArray();
+                if (useNewChainId)
+                {
+                    sig[64] = fullBin[1];
+                    sig[65] = fullBin[0];
+                }
+                else
+                {
+                    sig[64] = fullBin[0];
+                }
+
+                var publicKey = VirtualMachine.Crypto.RecoverSignatureHashed(hash, sig, useNewChainId);
+                var address = VirtualMachine.Crypto.ComputeAddress(publicKey);
+                SafeCopyToMemory(frame.Memory, address, resultOffset);
+            }
         }
 
         public static void Handler_Env_CryptoVerify(int messageOffset, int messageLength, int signatureOffset,

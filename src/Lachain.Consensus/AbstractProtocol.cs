@@ -136,6 +136,10 @@ namespace Lachain.Consensus
                 }
                 catch (Exception e)
                 {
+                    // We should investigate exceptions for each protocol and handle them carefully. Consensus depend 
+                    // on the messages from honest validators to deliver properly, no matter the delay. If a protocol
+                    // stops due to exception while handling message from malicious node, this may interrupt the communication
+                    // among honest nodes which may cause the consensus stop working, or worse, giving wrong result.
                     Logger.LogError($"{Id}: exception occured while processing message: {e}");
                     Terminated = true;
                     break;
