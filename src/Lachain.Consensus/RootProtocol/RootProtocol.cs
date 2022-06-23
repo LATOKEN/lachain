@@ -79,12 +79,26 @@ namespace Lachain.Consensus.RootProtocol
                     Logger.LogWarning($"Header we received {signedHeaderMessage.Header}");
                 }
 
-                if (!_crypto.VerifySignatureHashed(
-                    signedHeaderMessage.Header.Keccak().ToBytes(),
-                    signedHeaderMessage.Signature.Encode(),
-                    Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(),
-                    _useNewChainId
-                    ))
+                // Random message can raise exception like recover id in signature verification can be out of range or 
+                // public key cannot be serialized
+                var verified = false;
+                try
+                {
+                    verified = _crypto.VerifySignatureHashed(
+                        signedHeaderMessage.Header.Keccak().ToBytes(),
+                        signedHeaderMessage.Signature.Encode(),
+                        Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(),
+                        _useNewChainId
+                    );
+                }
+                catch (Exception exception)
+                {
+                    var pubKey = Broadcaster.GetPublicKeyById(idx)!.ToHex();
+                    Logger.LogWarning($"Faulty behaviour: exception occured trying to verify SignedHeaderMessage " +
+                                      $"from {idx} ({pubKey}): {exception}");
+                }
+                
+                if (!verified)
                 {
                     _lastMessage =
                         $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}";
