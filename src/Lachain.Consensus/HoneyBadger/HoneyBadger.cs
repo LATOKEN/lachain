@@ -7,6 +7,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.HoneyBadger
 {
@@ -58,7 +59,7 @@ namespace Lachain.Consensus.HoneyBadger
                 {
                     case ConsensusMessage.PayloadOneofCase.Decrypted:
                         _lastMessage = "Decrypted";
-                        HandleDecryptedMessage(message.Decrypted);
+                        HandleDecryptedMessage(message.Decrypted, envelope.ValidatorIndex);
                         break;
                     default:
                         _lastMessage = $"consensus message of type {message.PayloadCase} routed to {GetType().Name} protocol";
@@ -159,13 +160,34 @@ namespace Lachain.Consensus.HoneyBadger
             return message;
         }
 
-        private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg)
+        // We need to handle this message carefully like how about decoding a random message with random length
+        // and the value of 'share.ShareId' needs to be checked. If it is out of range, it can throw exception
+        private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg, int senderId)
         {
-            var share = Wallet.TpkePublicKey.Decode(msg);
-            _decryptedShares[share.ShareId].Add(share);
-            CheckDecryptedShares(share.ShareId);
+            PartiallyDecryptedShare? share = null;
+            try
+            {
+                // Converting any random bytes to G1 is not possible
+                share = Wallet.TpkePublicKey.Decode(msg);
+                _decryptedShares[share.ShareId].Add(share);
+            }
+            catch (Exception exception)
+            {
+                var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
+                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey})");
+            }
+
+            if (!(share is null))
+                CheckDecryptedShares(share.ShareId);
         }
 
+        // There are several potential issues in Wallet.TpkePublicKey.FullDecrypt() that needs to be resolved.
+        // It throws exception if more than one message is received from same decryptorId which can be easily exploited
+        // Handling this exception is not enough, because we will not get the decrypted share. Another issue is anyone
+        // can send a message with any value of decryptorId. It can stop or corrupt consensus.
+        // Possible solution: try to validate decryptor id. Check if there is any relation between decryptor id and 
+        // validator id. Discard any message in HandleDecryptedMessage() if the decryptor id does not match to
+        // corresponding validator id (depends on the relation of decryptor id and validator id)
         private void CheckDecryptedShares(int id)
         {
             if (!_takenSet) return;

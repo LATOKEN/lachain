@@ -173,6 +173,12 @@ namespace Lachain.ConsensusTest
         {
             return _sender;
         }
+        
+        public ECDSAPublicKey? GetPublicKeyById(int id)
+        {
+            if (id < 0 || id >= _wallet.N) return null;
+            return _wallet.EcdsaPublicKeySet[id];
+        }
 
         public void Silent(int id)
         {

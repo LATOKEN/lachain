@@ -136,11 +136,33 @@ namespace Lachain.Consensus.ReliableBroadcast
             );
 
             _sentValMessage[validator] = true;
-            Broadcaster.Broadcast(CreateEchoMessage(val));
+            // Before sending echo, we can check if validator == val.SenderId, means if the val message is from the correct validator
+            // Because one validator cannot produce val message of another validator, it can only send echo.
+            // If we don't check this condition, there could be potential issue, for example, a malicious validator (id = x) sends a
+            // val message that has random shards but correct MerkleProof and uses val.SenderId = y (another validator), and sends to
+            // validator with id = z. It will be constructed as echo message and sent to everyone by validator, id = z, this echo will
+            // pass the CheckEchoMessage(). Now every honest validator will think that val message of validator of id = y is confirmed
+            // by echo message from validator of id = z. When the correct val message of id = y will come to id = z, he will send echo
+            // again but others will not accept it, because id = z already sent echo for id = y, (but it was from malicious id = x),
+            // because the correct echo for each pair is received only once.
+            if (validator == val.SenderId)
+            {
+                Broadcaster.Broadcast(CreateEchoMessage(val));
+            }
+            else
+            {
+                var pubKey = Broadcaster.GetPublicKeyById(validator)!.ToHex();
+                Logger.LogWarning(
+                    $"Faulty behaviour: val message with sender id: {val.SenderId} came from validator: " +
+                    $"{validator} ({pubKey}), which should not happen. Val message for {val.SenderId} should come " +
+                    $"from {val.SenderId}. Not sending echo message for this val message");
+            }
         }
 
         private void HandleEchoMessage(ECHOMessage echo, int validator)
         {
+            // Every validator can send echo to any instance of ReliableBroadcast of any validator. So if not handled
+            // properly, wrong message can stop all instances of ReliableBroadcast which will stop consensus
             var validatorPubKey = Wallet.EcdsaPublicKeySet[validator].ToHex();
             if (_echoMessages[validator] != null)
             {
@@ -261,14 +283,16 @@ namespace Lachain.Consensus.ReliableBroadcast
         private bool CheckEchoMessage(ECHOMessage msg, int from)
         {
             var value = msg.Data.Keccak();
-            for (int i = from + _merkleTreeSize, j = 0; i > 1; i /= 2, ++j)
+            // We can get exception here if the size of msg.MerkleProof is less then the depth of MerkleTree
+            int i, j;
+            for (i = from + _merkleTreeSize, j = 0; i > 1 && j < msg.MerkleProof.Count; i /= 2, ++j)
             {
                 value = (i & 1) == 0
                     ? value.ToBytes().Concat(msg.MerkleProof[j].ToBytes()).Keccak() // we are left sibling
                     : msg.MerkleProof[j].ToBytes().Concat(value.ToBytes()).Keccak(); // we are right sibling
             }
 
-            return msg.MerkleTreeRoot.Equals(value);
+            return msg.MerkleTreeRoot.Equals(value) && i == 1; // it reached the root and matches the root
         }
 
         private void AugmentInput(List<byte> input)
