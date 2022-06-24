@@ -103,7 +103,7 @@ namespace Lachain.Consensus.RootProtocol
                     Logger.LogWarning($"Faulty behaviour: exception occured trying to verify SignedHeaderMessage " +
                                       $"from {idx} ({pubKey}): {exception}");
                 }
-
+                
                 if (!verified)
                 {
                     _lastMessage =
