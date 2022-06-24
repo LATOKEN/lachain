@@ -642,7 +642,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if((value is null) && (data is null)) throw new ArgumentException("value and data both null");
             var toAddress = ((string)to!).HexToUInt160();
             var valueToUse = UInt256Utils.Zero.ToMoney();
-            if(!(value is null)) valueToUse = ((string)value!).HexToBytes().ToUInt256(true).ToMoney();
+            if(!(value is null)) valueToUse = HexUtils.ToEvenBytesCount((string)value!).HexToBytes().ToUInt256(true).ToMoney();
             return _transactionBuilder.TransferTransaction(fromAddress , toAddress , valueToUse , gasToUse, gasPriceToUse, nonceToUse, byteCode);
         }
 
