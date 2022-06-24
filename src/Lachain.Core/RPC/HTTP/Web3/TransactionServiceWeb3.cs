@@ -343,7 +343,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                             Transaction = MakeTransaction(opts)
                         }),
                         invocation,
-                        100_000_000
+                        GasMetering.DefaultBlockGasLimit
                     );
                     _stateManager.Rollback();
                     return res;
@@ -431,7 +431,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         call,
                         context,
                         invocation,
-                        100_000_000
+                        GasMetering.DefaultBlockGasLimit
                     );
                     _stateManager.Rollback();
                     return res;
@@ -457,7 +457,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 
                     var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", source, 0.ToUInt256());
                     var invocationResult =
-                        ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, 100_000_000);
+                        ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, GasMetering.DefaultBlockGasLimit);
                     _stateManager.Rollback();
         
                     return invocationResult;
@@ -481,7 +481,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                             Transaction = tx
                         }),
                         invocation,
-                        100_000_000
+                        GasMetering.DefaultBlockGasLimit
                     );
                     _stateManager.Rollback();
                     return res;
@@ -501,7 +501,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 });
                 
                 var invocationResult =
-                    ContractInvoker.Invoke(destination, systemContractContext, invocation, 100_000_000);
+                    ContractInvoker.Invoke(destination, systemContractContext, invocation, GasMetering.DefaultBlockGasLimit);
                 _stateManager.Rollback();
         
                 return invocationResult;
@@ -661,7 +661,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 var call = _contractRegisterer.DecodeContract(context, address, invocation);
                 if (call is null) return (OperatingError.ContractFailed, null);
 
-                var result = VirtualMachine.InvokeSystemContract(call, context, invocation, 100_000_000);
+                var result = VirtualMachine.InvokeSystemContract(call, context, invocation, GasMetering.DefaultBlockGasLimit);
 
                 invResult = result.ReturnValue!;
             }
