@@ -431,7 +431,8 @@ namespace Lachain.Core.Consensus
                     return false;
                 }
                 // Checking if BA is terminated
-                if (_callback.TryGetValue(coinId, out var binaryAgreementId) &&
+                var binaryAgreementId = CreateBaId(coinId.Agreement);
+                if (!(binaryAgreementId is null) &&
                     _registry.TryGetValue(binaryAgreementId, out var binaryAgreement) &&
                     binaryAgreement.Terminated)
                 {
@@ -471,8 +472,9 @@ namespace Lachain.Core.Consensus
             }
             if (binaryBroadcastId.Epoch > 0) // positive and even
             {
+                var binaryAgreementId = CreateBaId(binaryBroadcastId.Agreement);
                 // Checking if BA is terminated
-                if (_callback.TryGetValue(binaryBroadcastId, out var binaryAgreementId) &&
+                if (!(binaryAgreementId is null) &&
                     _registry.TryGetValue(binaryAgreementId, out var binaryAgreement) &&
                     binaryAgreement.Terminated)
                 {
@@ -501,6 +503,11 @@ namespace Lachain.Core.Consensus
             }
             // 0 epoch
             return true;
+        }
+
+        private BinaryAgreementId? CreateBaId(long senderId)
+        {
+            return ValidateSenderId(senderId) ? new BinaryAgreementId(_era, senderId) : null;
         }
 
         public bool WaitFinish(TimeSpan timeout)
