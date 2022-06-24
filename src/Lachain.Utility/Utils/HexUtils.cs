@@ -112,7 +112,7 @@ namespace Lachain.Utility.Utils
             return prefix.Concat(len.ToUInt256().ToBytes()).Concat(hexValue.AddTrailingZeros()).ToArray();
         }
 
-        private static string ToEvenBytesCount(this string hex)
+        public static string ToEvenBytesCount(this string hex)
         {
             return hex.Length % 2 == 1 ? "0x0" + hex.Substring(2) : hex;
         }
