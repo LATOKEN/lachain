@@ -534,6 +534,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
 
         private TransactionReceipt MakeAndSignTransaction(JObject opts){
+            
+            // console.log("opts:: ", opts.ToString());
+            Logger.LogInformation("opts:: ", opts.ToString());
 
             var from = opts["from"];
             var gas = opts["gas"];

@@ -9,6 +9,8 @@ using Newtonsoft.Json.Linq;
 using Lachain.Logger;
 using Lachain.Utility.Utils;
 using Secp256k1Net;
+using Nethereum.Signer;
+using Nethereum.Signer.Crypto;
 
 namespace Lachain.Core.RPC.HTTP
 {
@@ -19,6 +21,8 @@ namespace Lachain.Core.RPC.HTTP
 
         public void Start(RpcConfig rpcConfig)
         {
+            Logger.LogInformation("Starting HttpService");
+
             Task.Factory.StartNew(() =>
             {
                 try
@@ -54,11 +58,18 @@ namespace Lachain.Core.RPC.HTTP
 
         private void _Worker(RpcConfig rpcConfig)
         {
+            Logger.LogInformation("Worker started");
+
             if(!HttpListener.IsSupported)
                 throw new Exception("Your platform doesn't support [HttpListener]");
             _httpListener = new HttpListener();
             foreach(var host in rpcConfig.Hosts ?? throw new InvalidOperationException())
-                _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
+                {
+                    Logger.LogInformation($"****** Host:: ********************:: {host} ");
+                    Logger.LogInformation($"Url: http://{host}:{rpcConfig.Port}/");
+
+                    _httpListener.Prefixes.Add($"http://{host}:{rpcConfig.Port}/");
+                }
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
             _apiKey = rpcConfig.ApiKey ?? throw new InvalidOperationException();
             _httpListener.Start();
@@ -79,6 +90,8 @@ namespace Lachain.Core.RPC.HTTP
 
         private bool _Handle(HttpListenerContext context)
         {
+            Logger.LogInformation("_Handle started");
+
             var request = context.Request;
 
             // Get signature from request header
@@ -89,13 +102,18 @@ namespace Lachain.Core.RPC.HTTP
                 signature = signatures[0];
             }
 
+            Logger.LogInformation($"signature: {signature}");
+
             // Get timestamp from request header
             var timestamps = request.Headers.GetValues("Timestamp");
+            
+
             var timestamp = string.Empty;
             if(timestamps != null && timestamps.Length > 0)
             {
                 timestamp = timestamps[0];
             }
+            Logger.LogInformation($"timestamp: {timestamp}");
 
             Logger.LogInformation($"{request.HttpMethod}");
 
@@ -103,6 +121,8 @@ namespace Lachain.Core.RPC.HTTP
             /* check is request options pre-flight */
             if(request.HttpMethod == "OPTIONS")
             {
+                Logger.LogInformation($"request.httpmethod == option");
+
                 if(request.Headers["Origin"] != null)
                 {
                     response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]!);
@@ -120,17 +140,23 @@ namespace Lachain.Core.RPC.HTTP
             Logger.LogInformation($"Body: [{body}]");
             var isArray = body.StartsWith("[");
 
-            if(request.Headers["Origin"] != null)
+            if(request.Headers["Origin"] != null){
                 response.AddHeader("Access-Control-Allow-Origin", request.Headers["Origin"]!);
+                Logger.LogInformation($"NULL origin");
+            }
             response.Headers.Add("Access-Control-Allow-Methods", "POST, GET");
             response.Headers.Add("Access-Control-Allow-Credentials", "true");
 
             var rpcResultHandler = new AsyncCallback(result =>
             {
+                Logger.LogInformation($"result :: {result}");
+
                 if(!(result is JsonRpcStateAsync jsonRpcStateAsync))
                     return;
 
                 var resultString = jsonRpcStateAsync.Result;
+
+                Logger.LogInformation($"resultString :: {resultString}");
 
                 if(isArray && !jsonRpcStateAsync.Result.StartsWith("["))
                     resultString = "[" + resultString + "]";
@@ -142,19 +168,36 @@ namespace Lachain.Core.RPC.HTTP
                 response.Close();
             });
 
+            Logger.LogInformation($"After RPC handler completed");
+
             var async = new JsonRpcStateAsync(rpcResultHandler, null)
             {
                 JsonRpc = body
             };
 
+            Logger.LogInformation($"json body check");
+            Logger.LogInformation($"body:: {body}");
+            Logger.LogInformation($"isArray:: {isArray}");
+
+            var jobj = new JArray { JObject.Parse(body) };
+            Logger.LogInformation($"jobj:: {jobj}");
+
             var requests = isArray ? JArray.Parse(body) : new JArray { JObject.Parse(body) };
+
+            Logger.LogInformation($"requests :: {requests}");
+
             foreach(var item in requests)
             {
                 var requestObj = (JObject)item;
+                
+                Logger.LogInformation($"request {requestObj.ToString()}");
+
                 if(requestObj == null) return false;
 
                 if(!_CheckAuth(requestObj, context, signature, timestamp))
                 {
+                    Logger.LogInformation("_CheckAuth function called:");
+
                     var error = new JObject
                     {
                         ["code"] = -32600,
@@ -181,10 +224,16 @@ namespace Lachain.Core.RPC.HTTP
 
         private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
         {
-            if(context.Request.IsLocal) return true;
+            Logger.LogInformation("_checauth return true");
+            Logger.LogInformation($"body:: {body.ToString()} ");
+            Logger.LogInformation($"body method:: {body["method"]!.ToString()} ");
+
+            // if(context.Request.IsLocal) return true;
 
             if(_privateMethods.Contains(body["method"]!.ToString()))
             {
+                Logger.LogInformation($"private method list contains: {body["method"]!.ToString()}");
+
                 if(string.IsNullOrEmpty(signature)) return false;
                 if(string.IsNullOrEmpty(timestamp)) return false;
                 // If unix timestamp diff is longer than 30 minutes, we dont handle it
@@ -204,17 +253,30 @@ namespace Lachain.Core.RPC.HTTP
                         {
                             serializedParams += param.Key + param.Value?.ToString();
                         }
+
+                        Logger.LogInformation($"serializedParams: {serializedParams}");
                     }
                 }
 
                 var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
+                
+                Logger.LogInformation($"messageToSign:: {messageToSign}");
+
                 var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
                 var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
+                
+                string hashStr = BitConverter.ToString(messageHash);
+                Logger.LogInformation($"bitConverter string:: {hashStr}");
+
 
                 var signatureBytes = signature.HexToBytes();
+                
                 var publicKey = _apiKey!.HexToBytes();
-
+                Logger.LogInformation($"public key: {_apiKey}");
+                
                 var secp256K1 = new Secp256k1();
+
+                Logger.LogInformation($"secp256K1.Verify(signatureBytes, messageHash, publicKey):: {secp256K1.Verify(signatureBytes, messageHash, publicKey)}");
                 return secp256K1.Verify(signatureBytes, messageHash, publicKey);
             }
 
