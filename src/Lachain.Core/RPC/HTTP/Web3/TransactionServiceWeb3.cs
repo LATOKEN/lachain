@@ -606,11 +606,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var value = opts["value"];
             var nonce = opts["nonce"];
 
-            if(from is null){
-                throw new ArgumentException("from should not be null");
+            UInt160 fromAddress = new UInt160();
+            if(!(from is null)){
+                fromAddress = ((string) from!).HexToUInt160();
             }
-            var fromAddress = ((string) from!).HexToUInt160();
-
+   
             ulong? nonceToUse = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress);
             if(!(nonce is null)) nonceToUse = ((string)nonce!).HexToUlong();
 
