@@ -13,6 +13,7 @@ using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -21,6 +22,7 @@ using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using Nethereum.Signer;
+using Secp256k1Net;
 using Transaction = Lachain.Proto.Transaction;
 
 namespace Lachain.Core.RPC.HTTP.FrontEnd
@@ -60,6 +62,25 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             _transactionManager = transactionManager;
         }
 
+        [JsonRpcMethod("convertToPublicKey")]
+        private JObject ShowPubKey(string privateKey)
+        {
+            var newPrivateKey = new ECDSAPrivateKey
+            {
+                Buffer = ByteString.CopyFrom(privateKey.HexToBytes())
+            };
+            var newKeyPair = new EcdsaKeyPair(newPrivateKey);
+            var newPubKey = newKeyPair.PublicKey;
+            var secp256K1 = new Secp256k1();
+            var publicKeyDecompressed = new byte[64];
+            secp256K1.PublicKeyParse(publicKeyDecompressed, newPubKey.EncodeCompressed());
+            return new JObject
+            {
+                ["compressedPubKey"] = newPubKey.ToHex(),
+                ["decompressedPubKey"] = publicKeyDecompressed.ToHex(),
+            };
+        }
+        
         [JsonRpcMethod("fe_getBalance")]
         private JObject GetBalance(string address)
         {

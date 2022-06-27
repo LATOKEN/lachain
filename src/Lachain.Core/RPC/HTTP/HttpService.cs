@@ -224,6 +224,7 @@ namespace Lachain.Core.RPC.HTTP
 
         private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
         {
+            
             Logger.LogInformation("_checauth return true");
             Logger.LogInformation($"body:: {body.ToString()} ");
             Logger.LogInformation($"body method:: {body["method"]!.ToString()} ");
@@ -267,12 +268,13 @@ namespace Lachain.Core.RPC.HTTP
                 
                 string hashStr = BitConverter.ToString(messageHash);
                 Logger.LogInformation($"bitConverter string:: {hashStr}");
-
+                hashStr = messageHash.ToHex();
+                Logger.LogInformation($"hash string:: {hashStr}");
 
                 var signatureBytes = signature.HexToBytes();
-                
+                Logger.LogInformation($"signature: {signatureBytes.ToHex()}, length: {signatureBytes.Length}");
                 var publicKey = _apiKey!.HexToBytes();
-                Logger.LogInformation($"public key: {_apiKey}");
+                Logger.LogInformation($"public key: {_apiKey}, length: {publicKey.Length}");
                 
                 var secp256K1 = new Secp256k1();
 
