@@ -312,6 +312,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string Call(JObject opts, string? blockId)
         {
             var from = opts["from"];
+            if (from is null)
+                opts["from"] = UInt160Utils.Zero.ToHex();
             var to = opts["to"];
             var data = opts["data"];
 
