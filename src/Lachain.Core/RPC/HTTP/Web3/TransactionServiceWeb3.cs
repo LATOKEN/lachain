@@ -312,6 +312,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string Call(JObject opts, string? blockId)
         {
             var from = opts["from"];
+            if (from is null)
+                opts["from"] = "0x00";
             var to = opts["to"];
             var data = opts["data"];
 
@@ -606,11 +608,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var value = opts["value"];
             var nonce = opts["nonce"];
 
-            UInt160 fromAddress = new UInt160();
-            if(!(from is null)){
-                fromAddress = ((string) from!).HexToUInt160();
+            if(from is null){
+                throw new ArgumentException("from should not be null");
             }
-   
+            var fromAddress = ((string) from!).HexToUInt160();
+
             ulong? nonceToUse = _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(fromAddress);
             if(!(nonce is null)) nonceToUse = ((string)nonce!).HexToUlong();
 
