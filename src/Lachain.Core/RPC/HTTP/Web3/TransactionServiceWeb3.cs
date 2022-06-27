@@ -313,7 +313,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         {
             var from = opts["from"];
             if (from is null)
-                opts["from"] = "0x00";
+                opts["from"] = UInt160Utils.Zero.ToHex();
             var to = opts["to"];
             var data = opts["data"];
 
