@@ -118,7 +118,7 @@ namespace Lachain.Core.RPC
             else
                 rpcConfig = _configManager.GetConfig<RpcConfig>("rpc") ?? RpcConfig.Default;
 
-            _httpService = new HttpService();
+            _httpService = new HttpService(_blockManager);
             _httpService.Start(rpcConfig);
         }
 

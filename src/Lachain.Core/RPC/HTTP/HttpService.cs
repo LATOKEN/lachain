@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
+using Google.Protobuf;
+using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Core.Blockchain.Interface;
+using Lachain.Crypto;
 using Newtonsoft.Json.Linq;
 using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Secp256k1Net;
 using Nethereum.Signer;
@@ -18,6 +24,13 @@ namespace Lachain.Core.RPC.HTTP
     {
         private static readonly ILogger<HttpService> Logger =
             LoggerFactory.GetLoggerForClass<HttpService>();
+
+        private readonly IBlockManager _blockManager;
+
+        public HttpService(IBlockManager blockManager)
+        {
+            _blockManager = blockManager;
+        }
 
         public void Start(RpcConfig rpcConfig)
         {
@@ -224,10 +237,6 @@ namespace Lachain.Core.RPC.HTTP
 
         private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
         {
-            
-            Logger.LogInformation("_checauth return true");
-            Logger.LogInformation($"body:: {body.ToString()} ");
-            Logger.LogInformation($"body method:: {body["method"]!.ToString()} ");
 
             // if(context.Request.IsLocal) return true;
 
@@ -254,32 +263,33 @@ namespace Lachain.Core.RPC.HTTP
                         {
                             serializedParams += param.Key + param.Value?.ToString();
                         }
-
-                        Logger.LogInformation($"serializedParams: {serializedParams}");
+                        
                     }
                 }
 
                 var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
-                
-                Logger.LogInformation($"messageToSign:: {messageToSign}");
 
                 var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
-                var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
+                var tx = new Proto.Transaction
+                {
+                    GasLimit = 0,
+                    GasPrice = 0,
+                    Nonce = 0,
+                    Invocation = ByteString.CopyFrom(messageBytes),
+                    To = new UInt160(),
+                    Value = new UInt256()
+                };
                 
-                string hashStr = BitConverter.ToString(messageHash);
-                Logger.LogInformation($"bitConverter string:: {hashStr}");
-                hashStr = messageHash.ToHex();
-                Logger.LogInformation($"hash string:: {hashStr}");
-
                 var signatureBytes = signature.HexToBytes();
-                Logger.LogInformation($"signature: {signatureBytes.ToHex()}, length: {signatureBytes.Length}");
                 var publicKey = _apiKey!.HexToBytes();
-                Logger.LogInformation($"public key: {_apiKey}, length: {publicKey.Length}");
-                
-                var secp256K1 = new Secp256k1();
-
-                Logger.LogInformation($"secp256K1.Verify(signatureBytes, messageHash, publicKey):: {secp256K1.Verify(signatureBytes, messageHash, publicKey)}");
-                return secp256K1.Verify(signatureBytes, messageHash, publicKey);
+                var crypto = CryptoProvider.GetCrypto();
+                var useNewChainId = HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight());
+                var messageHash = tx.RawHash(useNewChainId).ToBytes();
+                var pubKey = crypto.RecoverSignatureHashed(messageHash, signatureBytes, useNewChainId);
+                var decompressed = crypto.DecodePublicKey(pubKey, false).TakeLast(64).ToArray();
+                if (!decompressed.SequenceEqual(publicKey))
+                    return false;
+                return crypto.VerifySignatureHashed(messageHash, signatureBytes, pubKey, useNewChainId);
             }
 
             return true;

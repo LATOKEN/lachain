@@ -72,8 +72,9 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var newKeyPair = new EcdsaKeyPair(newPrivateKey);
             var newPubKey = newKeyPair.PublicKey;
             var secp256K1 = new Secp256k1();
-            var publicKeyDecompressed = new byte[64];
-            secp256K1.PublicKeyParse(publicKeyDecompressed, newPubKey.EncodeCompressed());
+            var publicKeyDecompressed = Crypto.DecodePublicKey(
+                newPubKey.EncodeCompressed(), false).TakeLast(64).ToArray();
+            
             return new JObject
             {
                 ["compressedPubKey"] = newPubKey.ToHex(),
