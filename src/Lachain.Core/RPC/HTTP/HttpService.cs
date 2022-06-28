@@ -273,7 +273,6 @@ namespace Lachain.Core.RPC.HTTP
                 Logger.LogInformation($"messageToSign:: {messageToSign}");
 
                 var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
-                // var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
                 
                 var messageHash = new Sha3Keccack().CalculateHash(messageBytes);
 
@@ -286,10 +285,6 @@ namespace Lachain.Core.RPC.HTTP
                 byte[] vB = BitConverter.GetBytes(Int32.Parse(v) + 27);
                 var signature = new EthECDSASignature(rB, sB, vB);
 
-                // Logger.LogInformation($"hash string:: {hashStr}");
-
-                // var signatureBytes = signature.HexToBytes();
-
                 var sig_v = signature.V[0] - 27;
                 var sig_r = signature.R.ToHex();
                 var sig_s = signature.S.ToHex();
@@ -297,28 +292,11 @@ namespace Lachain.Core.RPC.HTTP
                 Logger.LogInformation($"sig_v: {sig_v}");
                 Logger.LogInformation($"sig_r: {sig_r}");
                 Logger.LogInformation($"sig_s: {sig_s}");
-                
-
                 var pubKeyRecovered = EthECKey.RecoverFromSignature(signature, messageHash);
                 var validSig = pubKeyRecovered.Verify(messageHash, signature);
-
                 Logger.LogInformation($"validSig: {validSig}");
                 
-                var publicKey = _apiKey!.HexToBytes();
                 return validSig;
-
-                // // Logger.LogInformation($"signature: {signatureBytes.ToHex()}, length: {signatureBytes.Length}");
-                // Logger.LogInformation($"public key: {_apiKey}, length: {publicKey.Length}");
-                
-                // var secp256K1 = new Secp256k1();
-                // Logger.LogInformation($"secp256K1.Verify(signatureBytes, messageHash, publicKey):: {secp256K1.Verify(signatureBytes, messageHash, publicKey)}");
-
-                // var defaultCrypto = new DefaultCrypto();
-                // var publickey = defaultCrypto.SpecialRecoverSignatureHashed(messageHash, signatureBytes);
-                
-                // Logger.LogInformation($"public key: {publickey.ToHex()}, length: {publickey.Length}");
-
-                // return secp256K1.Verify(signatureBytes, messageHash, publicKey);
             }
 
             return true;
