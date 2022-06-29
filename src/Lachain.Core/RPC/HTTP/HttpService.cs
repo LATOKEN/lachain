@@ -179,43 +179,58 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
+        private string SerializeParams(JObject? args)
+        {
+            if (args is null)
+                return "";
+            
+            string serializedParams = string.Empty;
+            
+            foreach(var param in args)
+            {
+                serializedParams += param.Key;
+                if (param.Value is null)
+                    continue;
+                serializedParams += (param.Value.HasValues ? SerializeParams((JObject)param.Value) : param.Value.ToString());
+            }
+
+            return serializedParams;
+        }
+
         private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
         {
-            if(context.Request.IsLocal) return true;
-
-            if(_privateMethods.Contains(body["method"]!.ToString()))
+            try
             {
-                if(string.IsNullOrEmpty(signature)) return false;
-                if(string.IsNullOrEmpty(timestamp)) return false;
-                // If unix timestamp diff is longer than 30 minutes, we dont handle it
-                if(!long.TryParse(timestamp.Trim(), out long unixTimestamp)) return false;
-                TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
-                if(timeSpan.TotalMinutes >= 30)
-                    return false;
-
-                // Serialize params (format: key1value1key2value2...)
-                string serializedParams = string.Empty;
-                if(body["params"] != null && !string.IsNullOrEmpty(body["params"]!.ToString()))
+                if(context.Request.IsLocal) return true;
+                
+                if(_privateMethods.Contains(body["method"]!.ToString()))
                 {
-                    var paramsObject = (JObject)body["params"]!;
-                    if(paramsObject != null)
-                    {
-                        foreach(var param in paramsObject)
-                        {
-                            serializedParams += param.Key + param.Value?.ToString();
-                        }
-                    }
+                    if(string.IsNullOrEmpty(signature)) return false;
+                    if(string.IsNullOrEmpty(timestamp)) return false;
+                    // If unix timestamp diff is longer than 30 minutes, we dont handle it
+                    if(!long.TryParse(timestamp.Trim(), out long unixTimestamp)) return false;
+                    TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
+                    if(timeSpan.TotalMinutes >= 30)
+                        return false;
+
+                    // Serialize params (format: key1value1key2value2...)
+                    string serializedParams = SerializeParams(body["params"] as JObject);
+
+                    var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
+                    var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
+                    var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
+
+                    var signatureBytes = signature.HexToBytes();
+                    var publicKey = _apiKey!.HexToBytes();
+
+                    var secp256K1 = new Secp256k1();
+                    return secp256K1.Verify(signatureBytes, messageHash, publicKey);
                 }
-
-                var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
-                var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
-                var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
-
-                var signatureBytes = signature.HexToBytes();
-                var publicKey = _apiKey!.HexToBytes();
-
-                var secp256K1 = new Secp256k1();
-                return secp256K1.Verify(signatureBytes, messageHash, publicKey);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"RPC auth error: {e}");
+                return false;
             }
 
             return true;
