@@ -224,15 +224,20 @@ namespace Lachain.Core.RPC.HTTP
                     Logger.LogTrace($"API public key: {_apiKey}");
 
                     var secp256K1 = new Secp256k1();
+                    var sigBytes = signature.HexToBytes();
+                    if (sigBytes.Length != 65)
+                        throw new Exception("Invalid signature length");
+                    var parsedSig = new byte[65];
                     var pk = new byte[64];
-                    if (!secp256K1.Recover(pk, signature.HexToBytes(), messageHash))
+                    var recId = sigBytes[64];
+                    if (recId < 0 || recId > 3)
+                        throw new Exception($"Bad signature,  invalid recId={recId}: : recId >= 0 && recId <= 3 ");
+                    if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, sigBytes.Take(64).ToArray(), recId))
+                        throw new ArgumentException(nameof(signature));
+                    if (!secp256K1.Recover(pk, parsedSig, messageHash))
                         throw new ArgumentException("Bad signature");
                     Logger.LogTrace($"Recovered public key: {pk.ToHex()}");
-                    var result = new byte[33];
-                    if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
-                        throw new Exception("Cannot serialize recovered public key: how did it happen?");
-                    Logger.LogTrace($"Serialized public key: {result.ToHex()}");
-                    return result.Equals(_apiKey!.HexToBytes());
+                    return pk.ToHex() == _apiKey!;
                 }
             }
             catch (Exception e)
