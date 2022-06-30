@@ -221,18 +221,9 @@ namespace Lachain.Core.RPC.HTTP
                     var messageHash = Crypto.HashUtils.KeccakBytes(messageBytes);
                     Logger.LogTrace($"Meesage hash: {messageHash.ToHex()}");
 
-                    var signatureBytes = signature.HexToBytes();
-                    var publicKey = _apiKey!.HexToBytes();
-
                     var secp256K1 = new Secp256k1();
-                    var parsedSig = new byte[65];
                     var pk = new byte[64];
-                    var recId = signatureBytes[64];
-                    if (recId < 0 || recId > 3)
-                        throw new Exception($"Invalid recId={recId}: : recId >= 0 && recId <= 3 ");
-                    if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, signatureBytes.Take(64).ToArray(), recId))
-                        throw new ArgumentException(nameof(signature));
-                    if (!secp256K1.Recover(pk, parsedSig, messageHash))
+                    if (!secp256K1.Recover(pk, signature.HexToBytes(), messageHash))
                         throw new ArgumentException("Bad signature");
                     var result = new byte[33];
                     if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
