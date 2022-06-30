@@ -118,6 +118,7 @@ namespace Lachain.Console
                     HubMetricsPort = basePort + 2,
                     NetworkName = networkName,
                     ChainId = (int)chainId,
+                    NewChainId = (int)chainId + 200,
                     CycleDuration = cycleDuration,
                     ValidatorsCount = validatorsCount,
                 };
