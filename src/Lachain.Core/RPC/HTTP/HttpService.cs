@@ -220,14 +220,18 @@ namespace Lachain.Core.RPC.HTTP
                     Logger.LogTrace($"Meesage to sign: {messageBytes.ToHex()}");
                     var messageHash = Crypto.HashUtils.KeccakBytes(messageBytes);
                     Logger.LogTrace($"Meesage hash: {messageHash.ToHex()}");
+                    
+                    Logger.LogTrace($"API public key: {_apiKey}");
 
                     var secp256K1 = new Secp256k1();
                     var pk = new byte[64];
                     if (!secp256K1.Recover(pk, signature.HexToBytes(), messageHash))
                         throw new ArgumentException("Bad signature");
+                    Logger.LogTrace($"Recovered public key: {pk.ToHex()}");
                     var result = new byte[33];
                     if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
                         throw new Exception("Cannot serialize recovered public key: how did it happen?");
+                    Logger.LogTrace($"Serialized public key: {result.ToHex()}");
                     return result.Equals(_apiKey!.HexToBytes());
                 }
             }
