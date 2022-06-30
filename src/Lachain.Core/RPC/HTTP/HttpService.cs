@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -216,13 +217,27 @@ namespace Lachain.Core.RPC.HTTP
 
                     var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
                     var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
-                    var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
+                    Logger.LogTrace($"Meesage to sign: {messageBytes.ToHex()}");
+                    var messageHash = Crypto.HashUtils.KeccakBytes(messageBytes);
+                    Logger.LogTrace($"Meesage hash: {messageHash.ToHex()}");
 
                     var signatureBytes = signature.HexToBytes();
                     var publicKey = _apiKey!.HexToBytes();
 
                     var secp256K1 = new Secp256k1();
-                    return secp256K1.Verify(signatureBytes, messageHash, publicKey);
+                    var parsedSig = new byte[65];
+                    var pk = new byte[64];
+                    var recId = signatureBytes[64];
+                    if (recId < 0 || recId > 3)
+                        throw new Exception($"Invalid recId={recId}: : recId >= 0 && recId <= 3 ");
+                    if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, signatureBytes.Take(64).ToArray(), recId))
+                        throw new ArgumentException(nameof(signature));
+                    if (!secp256K1.Recover(pk, parsedSig, messageHash))
+                        throw new ArgumentException("Bad signature");
+                    var result = new byte[33];
+                    if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+                        throw new Exception("Cannot serialize recovered public key: how did it happen?");
+                    return result.Equals(_apiKey!.HexToBytes());
                 }
             }
             catch (Exception e)
