@@ -201,8 +201,6 @@ namespace Lachain.Core.RPC.HTTP
         {
             try
             {
-                if(context.Request.IsLocal) return true;
-                
                 if(_privateMethods.Contains(body["method"]!.ToString()))
                 {
                     if(string.IsNullOrEmpty(signature)) return false;
