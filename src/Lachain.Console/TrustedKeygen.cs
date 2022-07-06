@@ -141,7 +141,7 @@ namespace Lachain.Console
 
                 var privateKey = crypto.GeneratePrivateKey();
                 var privateKeyHex = privateKey.ToHex();
-                var publicKey = crypto.ComputePublicKey(privateKey, true);
+                var publicKey = crypto.ComputePublicKey(privateKey, false);
                 var publicKeyHex = publicKey.ToHex();
 
                 System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
@@ -304,15 +304,9 @@ namespace Lachain.Console
                     genesis.Balances[addresses[j]] = "10";
                 }
 
-                var secp256K1 = new Secp256k1();
-                var privateKey = new byte[32];
-                var rnd = System.Security.Cryptography.RandomNumberGenerator.Create();
-                do { rnd.GetBytes(privateKey); }
-                while (!secp256K1.SecretKeyVerify(privateKey));
-
+                var privateKey = crypto.GeneratePrivateKey();
                 var privateKeyHex = privateKey.ToHex();
-                var publicKey = new byte[64];
-                Debug.Assert(secp256K1.PublicKeyCreate(publicKey, privateKey));
+                var publicKey = crypto.ComputePublicKey(privateKey, false);
                 var publicKeyHex = publicKey.ToHex();
 
                 System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
