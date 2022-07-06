@@ -250,8 +250,11 @@ namespace Lachain.Core.RPC.HTTP
                         throw new ArgumentException(nameof(signature));
                     if (!secp256K1.Recover(pk, parsedSig, messageHash))
                         throw new ArgumentException("Bad signature");
-                    Logger.LogTrace($"Recovered public key: {pk.ToHex()}");
-                    return pk.ToHex() == _apiKey!;
+                    var result = new byte[33];
+                    if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+                        throw new Exception("Cannot serialize recovered public key: how did it happen?");
+                    Logger.LogTrace($"Recovered public key: {result.ToHex()}");
+                    return result.ToHex() == _apiKey!;
                 }
             }
             catch (Exception e)

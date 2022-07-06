@@ -141,7 +141,7 @@ namespace Lachain.Console
 
                 var privateKey = crypto.GeneratePrivateKey();
                 var privateKeyHex = privateKey.ToHex();
-                var publicKey = crypto.ComputePublicKey(privateKey, false);
+                var publicKey = crypto.ComputePublicKey(privateKey, true);
                 var publicKeyHex = publicKey.ToHex();
 
                 System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
@@ -306,7 +306,7 @@ namespace Lachain.Console
 
                 var privateKey = crypto.GeneratePrivateKey();
                 var privateKeyHex = privateKey.ToHex();
-                var publicKey = crypto.ComputePublicKey(privateKey, false);
+                var publicKey = crypto.ComputePublicKey(privateKey, true);
                 var publicKeyHex = publicKey.ToHex();
 
                 System.Console.WriteLine($"Loop {i + 1:D2}: private key [{privateKeyHex}] associated with public key [{publicKeyHex}]");
