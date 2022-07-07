@@ -14,6 +14,7 @@ using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq.Expressions;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Storage.Trie;
@@ -587,8 +588,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var addresses = new List<UInt160>();
             if (!(address is null))
             {
-                addresses = BlockchainFilterUtils.GetAddresses((JArray)address);
-                
+                switch (address)
+                {
+                    case JArray arrayAddr:
+                        addresses = BlockchainFilterUtils.GetAddresses(arrayAddr);
+                        break;
+                    case JValue valueAddr:
+                        addresses.Add(((string?)valueAddr ?? throw new Exception("Invalid address value")).HexToUInt160());
+                        break;
+                    default:
+                        throw new Exception("Invalid address value");
+                }
             }
 
             if((start is null) || (finish is null)) return new JArray();
