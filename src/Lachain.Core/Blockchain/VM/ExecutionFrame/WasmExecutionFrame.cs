@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.IO;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Logger;
 using Lachain.Proto;
 using WebAssembly;
 using WebAssembly.Runtime;
@@ -11,6 +12,8 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
 {
     public class WasmExecutionFrame : IExecutionFrame
     {
+        private static readonly ILogger<WasmExecutionFrame> Logger = LoggerFactory.GetLoggerForClass<WasmExecutionFrame>();
+
         internal WasmExecutionFrame(
             Instance<JitEntryPoint> compiledInstance,
             InvocationContext invocationContext,
@@ -67,6 +70,7 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
         {
             var gasLimitField = Exports.GetField("💩 GasLimit");
             var currentGas = (ulong) gasLimitField.GetValue(null);
+            Logger.LogDebug($"UseGas: current {currentGas},  use {gas}");
             checked
             {
                 currentGas -= gas;
