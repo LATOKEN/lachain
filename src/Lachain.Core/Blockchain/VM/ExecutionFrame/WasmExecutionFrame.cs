@@ -90,13 +90,14 @@ namespace Lachain.Core.Blockchain.VM.ExecutionFrame
             {
                 CompiledInstance.Exports.start();
             }
-            catch (OverflowException)
+            catch (OverflowException e)
             {
+                Logger.LogWarning($"Overflow exception {e}");
                 throw new OutOfGasException(GasUsed);
             }
             catch (InvalidProgramException e)
             {
-                Console.Error.WriteLine(e);
+                Logger.LogWarning($"Invalid program exception {e}");
                 return ExecutionStatus.JitCorruption;
             }
 
