@@ -475,6 +475,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 InvocationResult invRes = _stateManager.SafeContext(() =>
                 {
                     var snapshot = _stateManager.NewSnapshot();
+					if (!tx.Value.IsZero())
+					{
+                        var transferContext = new InvocationContext(source, snapshot, new TransactionReceipt
+                        {
+                            Block = snapshot.Blocks.GetTotalBlockHeight(),
+                            Transaction = tx
+                        });
+                    
+                        var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", destination, tx.Value);
+                        var transferResult =
+                            ContractInvoker.Invoke(ContractRegisterer.LatokenContract, transferContext, localInvocation, GasMetering.DefaultBlockGasLimit);
+                        gasUsed += transferResult.GasUsed;
+                    }
                     var res = VirtualMachine.InvokeWasmContract(
                         contract,
                         new InvocationContext(source, snapshot, new TransactionReceipt
@@ -496,6 +509,19 @@ namespace Lachain.Core.RPC.HTTP.Web3
             InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
             {
                 var snapshot = _stateManager.NewSnapshot();
+                if (!tx.Value.IsZero())
+                {
+                    var transferContext = new InvocationContext(source, snapshot, new TransactionReceipt
+                    {
+                        Block = snapshot.Blocks.GetTotalBlockHeight(),
+                        Transaction = tx
+                    });
+                
+                    var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", destination, tx.Value);
+                    var transferResult =
+                        ContractInvoker.Invoke(ContractRegisterer.LatokenContract, transferContext, localInvocation, GasMetering.DefaultBlockGasLimit);
+                    gasUsed += transferResult.GasUsed;
+                }
                 var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
                 {
                     Block = snapshot.Blocks.GetTotalBlockHeight(),
