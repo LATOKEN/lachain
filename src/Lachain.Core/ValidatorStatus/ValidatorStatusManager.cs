@@ -170,13 +170,16 @@ namespace Lachain.Core.ValidatorStatus
                         var balance =
                             _stateManager.CurrentSnapshot.Balances.GetBalance(_systemContractReader.NodeAddress());
                         Logger.LogInformation($"Balance is {balance.ToWei()}");
-                        Logger.LogInformation($"Stake size is {_stakeSize ?? new BigInteger(0)}");
-                        var isEnoughBalance = balance.ToWei() >
-                                              (_stakeSize ?? StakingContract.TokenUnitsInRoll) + coverFeesAmount;
+                        if (_stakeSize is null)
+                        {
+                            Logger.LogInformation("Stake size is null, cannot become staker");
+                            continue;
+                        }
+                        Logger.LogInformation($"Stake size is {_stakeSize}");
+                        var isEnoughBalance = balance.ToWei() > _stakeSize + coverFeesAmount;
                         if (isEnoughBalance)
                         {
-                            var rolls = (_stakeSize ?? (balance.ToWei() - coverFeesAmount)) /
-                                        StakingContract.TokenUnitsInRoll;
+                            var rolls = _stakeSize.Value / StakingContract.TokenUnitsInRoll;
                             Logger.LogInformation($"Sending transaction to become staker for {rolls} rolls");
                             BecomeStaker(rolls * StakingContract.TokenUnitsInRoll);
                             _stakeSize = null;
