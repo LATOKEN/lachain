@@ -176,7 +176,7 @@ namespace Lachain.Core.ValidatorStatus
                             continue;
                         }
                         Logger.LogInformation($"Stake size is {_stakeSize}");
-                        var isEnoughBalance = balance.ToWei() > _stakeSize + coverFeesAmount;
+                        var isEnoughBalance = balance.ToWei() > _stakeSize.Value + coverFeesAmount;
                         if (isEnoughBalance)
                         {
                             var rolls = _stakeSize.Value / StakingContract.TokenUnitsInRoll;
