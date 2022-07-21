@@ -452,7 +452,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             var balance = _stateManager.CurrentSnapshot.Balances.GetBalance(addressUint160);
 
-            var stake = _systemContractReader.GetStake(addressUint160).ToMoney().ToWei();
+            var stake = _systemContractReader.GetStake(addressUint160).ToMoney();
             var penalty = _systemContractReader.GetPenalty(addressUint160).ToMoney();
 
             var isNextValidator = _systemContractReader.IsNextValidator(publicKey);
@@ -482,8 +482,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
             return new JObject
             {
-                ["address"] = addressUint160.ToString(),
-                ["publicKey"] = publicKey,
+                ["address"] = addressUint160.ToHex(),
+                ["publicKey"] = publicKey.ToHex(),
                 ["balance"] = balance.ToString(),
                 ["stake"] = stake.ToString(),
                 ["penalty"] = penalty.ToString(),
