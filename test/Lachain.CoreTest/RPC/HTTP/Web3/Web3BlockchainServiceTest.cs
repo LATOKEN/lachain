@@ -695,13 +695,20 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         public void CheckValidatorInfo(bool random)
         {
-            string publicKey;
+            ECDSAPublicKey publicKey;
             if (random) publicKey = GetRandomPublicKey();
-            else publicKey = _privateWallet.EcdsaKeyPair.PublicKey.ToHex();
-            var validatorInfo = _apiService.GetValidatorInfo(publicKey);
+            else publicKey = _privateWallet.EcdsaKeyPair.PublicKey;
+            var address = publicKey.GetAddress();
+            var validatorInfo = _apiService.GetValidatorInfo(publicKey.ToHex());
             //Console.WriteLine(validatorInfo);
             if (random) Assert.AreNotEqual("Validator", validatorInfo["state"]!.ToString());
             else Assert.AreEqual("Validator", validatorInfo["state"]!.ToString());
+
+            Assert.AreEqual(publicKey.ToHex(), validatorInfo["publicKey"]!.ToString());
+            Assert.AreEqual(address.ToHex(), validatorInfo["address"]!.ToString());
+
+            var balance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(address);
+            Assert.AreEqual(balance.ToString(), validatorInfo["balance"]!.ToString());
         }
 
         public void Init()
@@ -727,13 +734,11 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
 
         // returns random public key in hex
-        public string GetRandomPublicKey()
+        public ECDSAPublicKey GetRandomPublicKey()
         {
-            byte[] random = new byte[32];
-            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
-            rng.GetBytes(random);
+            var random = Crypto.GeneratePrivateKey();
             var keyPair = new EcdsaKeyPair(random.ToPrivateKey());
-            return keyPair.PublicKey.ToHex();
+            return keyPair.PublicKey;
         }
 
         public void AddBatchTransactionToPool(List<TransactionReceipt> txes , bool notify = true)
