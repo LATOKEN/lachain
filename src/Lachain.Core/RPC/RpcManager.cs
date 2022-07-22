@@ -1,6 +1,7 @@
 ﻿using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -37,9 +38,11 @@ namespace Lachain.Core.RPC
         private readonly ILocalTransactionRepository _localTransactionRepository;
         private readonly INodeRetrieval _nodeRetrieval; 
         private readonly IConsensusManager _consensusManager; 
+        private readonly IValidatorManager _validatorManager;
 
 
         public RpcManager(
+            IValidatorManager validatorManager,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             IConfigManager configManager,
@@ -61,6 +64,7 @@ namespace Lachain.Core.RPC
             IConsensusManager consensusManager
         )
         {
+            _validatorManager = validatorManager;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _configManager = configManager;
@@ -92,7 +96,7 @@ namespace Lachain.Core.RPC
                     _blockSynchronizer, _systemContractReader),
                 new AccountService(_stateManager, _transactionManager, _transactionPool, _privateWallet, 
                     _transactionBuilder, _transactionSigner),
-                new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager, _snapshotIndexer, _networkManager, _nodeRetrieval, _systemContractReader, _consensusManager),
+                new BlockchainServiceWeb3(_validatorManager, _transactionManager, _blockManager, _transactionPool, _stateManager, _snapshotIndexer, _networkManager, _nodeRetrieval, _systemContractReader, _consensusManager),
                 new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool),
                 new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet, _transactionBuilder),
                 new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner, 
