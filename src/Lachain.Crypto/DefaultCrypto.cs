@@ -28,7 +28,7 @@ namespace Lachain.Crypto
             return useNewChainId ? 66 : 65;
         }
 
-        private static int RestoreEncodedRecIdFromSignatureBuffer(byte[] signature)
+        public static int RestoreEncodedRecIdFromSignatureBuffer(byte[] signature)
         {
             var recIdBytes = new byte[4];
             if (signature.Length == 66)
