@@ -543,6 +543,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_gasPrice")]
         public string GetNetworkGasPrice()
         {
+            Logger.LogInformation("eth_gasPrice API called:: ");
+
             return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
         }
 
