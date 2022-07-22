@@ -9,7 +9,6 @@ using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -63,8 +62,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         private BlockchainServiceWeb3 _apiService = null!;
 
-        private IConfigManager _configManager = null!;
-        private IValidatorManager _validatorManager = null!;     
+        private IConfigManager _configManager = null!;     
 
         [SetUp]
         public void Setup()
@@ -101,7 +99,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             _configManager = _container.Resolve<IConfigManager>();
             _consensusManager = _container.Resolve<IConsensusManager>();
-            _validatorManager = _container.Resolve<IValidatorManager>();
 
             if (TransactionUtils.ChainId(false) == 0)
             {
@@ -112,7 +109,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
 
             ServiceBinder.BindService<GenericParameterAttributes>();
-            _apiService = new BlockchainServiceWeb3(_validatorManager, _transactionManager, _blockManager, _transactionPool,
+            _apiService = new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool,
                 _stateManager, _snapshotIndexer, _networkManager, _nodeRetrieval, _systemContractReader, _consensusManager);
             
 

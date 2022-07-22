@@ -5,7 +5,6 @@ using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
-using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.BlockchainFilter;
 using Lachain.Core.Consensus;
 using Lachain.Crypto;
@@ -42,10 +41,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly INodeRetrieval _nodeRetrieval;
         private readonly ISystemContractReader _systemContractReader;
         private readonly IConsensusManager _consensusManager;
-        private readonly IValidatorManager _validatorManager;
 
         public BlockchainServiceWeb3(
-            IValidatorManager validatorManager,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             ITransactionPool transactionPool,
@@ -56,7 +53,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
             ISystemContractReader systemContractReader,
             IConsensusManager consensusManager)
         {
-            _validatorManager = validatorManager;
             _transactionPool = transactionPool;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -722,13 +718,22 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (blockTag == "pending")
                 blockTag = "latest"; // current validators are the validators after latest block
             var blockNum = GetBlockNumberByTag(blockTag);
-            var validators = _validatorManager.GetValidatorsPublicKeys((long) blockNum!.Value);
-            var result = new JArray();
-            foreach (var publicKey in validators)
+            try
             {
-                result.Add(Web3DataFormatUtils.Web3Data(publicKey.EncodeCompressed()));
+                var validators = _snapshotIndexer.GetSnapshotForBlock(blockNum!.Value).Validators.GetValidatorsPublicKeys().ToArray();
+                var result = new JArray();
+                foreach (var publicKey in validators)
+                {
+                    result.Add(Web3DataFormatUtils.Web3Data(publicKey.EncodeCompressed()));
+                }
+                return result;
             }
-            return result;
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Exception occured trying to get validators after block {blockNum!.Value}: {exception}");
+                return new JArray();
+            }
+            
         }
 
         private ulong? GetBlockNumberByTag(string blockTag)
