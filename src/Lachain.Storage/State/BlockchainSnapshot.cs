@@ -48,11 +48,7 @@ namespace Lachain.Storage.State
                 if (networkSize == 0) networkSize = 1;
                 
                 var basicGasPrice = Storage.GetRawValue(new BigInteger(2).ToUInt160(), new BigInteger(8).ToUInt256().Buffer).ToUInt256().ToBigInteger();
-                var modifiedGasPrice = 1;
-
-                // return basicGasPrice / networkSize;
-                return modifiedGasPrice.ToUInt256().ToBigInteger();
-
+                return basicGasPrice / networkSize;
             }
         }
 
