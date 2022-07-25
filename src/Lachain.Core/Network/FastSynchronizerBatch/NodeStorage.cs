@@ -272,8 +272,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             Initialize();
             _blockchainSnapshot!.Blocks.AddBlock(block);
             if(block.Header.Index%200 == 0) Logger.LogInformation("Added BlockHeader: " + block.Header.Index);
+            var batch = new RocksDbAtomicWrite(_dbContext);
             if(block.Header.Index%_blockAddPeriod == 0)
-                _blockchainSnapshot.Blocks.Commit();
+                _blockchainSnapshot.Blocks.Commit(batch);
         }
 
         private void CommitNodes()
