@@ -101,7 +101,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             ServiceBinder.BindService<GenericParameterAttributes>();
 
             _apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
-                _transactionPool, _contractRegisterer, _privateWallet);
+                _transactionPool, _contractRegisterer, _privateWallet, _blockManager);
             
 
         }
