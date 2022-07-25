@@ -10,8 +10,10 @@
 */
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage;
@@ -25,7 +27,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     
     public class FastSynchronizerBatch : IFastSynchronizerBatch
     {
-        private string[] trieNames = new string[]
+        // the order of trieNames is important to create StateHash
+        private readonly string[] trieNames = new string[]
         {
                 "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
         };
@@ -218,11 +221,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _downloader.DownloadCheckpoint(blockHeight.Value, trieNames);
             }, TaskCreationOptions.LongRunning);
 
-            while (_downloader.CheckpointBlockHash is null)
+            while (_downloader.CheckpointBlock is null)
             {
                 Thread.Sleep(1000);
             }
-            if (!_downloader.CheckpointBlockHash.Equals(blockHash))
+            if (!_downloader.CheckpointBlock.Hash.Equals(blockHash))
             {
                 Logger.LogTrace("Checkpoint block hash mismatch");
                 return false;
@@ -242,6 +245,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogDebug("Something went wrong while downloading checkpoint state hashes.");
                 return false;
             }
+
+            var calculatedStateHash = CalculateStateHash(stateHashes);
+            if (!calculatedStateHash.Equals(_downloader.CheckpointBlock.Header.StateHash))
+            {
+                Logger.LogWarning($"StateHash mis match. StateHash from CheckpointBlock: "
+                    + $"{_downloader.CheckpointBlock.Header.StateHash.ToHex()}, StateHash from CheckpointStateHashes:"
+                    + $" {calculatedStateHash.ToHex()}");
+                return false;
+            }
+
             bool match = true;
             foreach (var (expectedStateHash, checkpointType) in stateHashes)
             {
@@ -250,6 +263,31 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             if (!match) Logger.LogTrace("Checkpoint state hash mismatch");
             Logger.LogTrace($"Finished verifying checkpoint information, result: {match}");
             return match;
+        }
+
+        private UInt256 CalculateStateHash(List<(UInt256, CheckpointType)>? stateHashes)
+        {
+            if (stateHashes is null || stateHashes.Count != 6)
+            {
+                Logger.LogDebug($"Invalid list of state hashes. List is {(stateHashes is null ? "null" : "not null")}");
+                if (!(stateHashes is null))
+                {
+                    Logger.LogDebug($"List size: {stateHashes.Count}");
+                }
+                throw new Exception("Invalid list of state hashes");
+            }
+            var stateHashesList = new List<UInt256>();
+            foreach (var trieName in trieNames)
+            {
+                var hash = GetRootHashForTrieName(trieName, stateHashes);
+                if (hash is null)
+                {
+                    Logger.LogDebug("Invalid list of state hashes: null hash for " + trieName);
+                    throw new Exception("Invalid list of state hashes");
+                }
+                stateHashesList.Add(hash);
+            }
+            return stateHashesList.Select(hash => hash.ToBytes()).Flatten().Keccak();
         }
     }
 }

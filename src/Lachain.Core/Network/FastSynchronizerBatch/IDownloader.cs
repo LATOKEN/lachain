@@ -14,7 +14,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         void HandleCheckpointBlockFromPeer(Block? block, ulong requestId, ECDSAPublicKey publicKey);
         void HandleCheckpointStateHashFromPeer(UInt256? rootHash, ulong requestId, ECDSAPublicKey publicKey);
         void DownloadBlocks();
-        UInt256? CheckpointBlockHash { get; }
+        Block? CheckpointBlock { get; }
         List<(UInt256, CheckpointType)>? CheckpointStateHashes { get; }
         void DownloadCheckpoint(ulong blockNumber, string[] trieNames);
     }
