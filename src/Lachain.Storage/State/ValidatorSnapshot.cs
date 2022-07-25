@@ -38,8 +38,6 @@ namespace Lachain.Storage.State
         public ulong Version => _state.CurrentVersion;
         public uint RepositoryId => _state.RepositoryId;
 
-        public uint RepositoryId => _state.RepositoryId;
-
         public void Commit(RocksDbAtomicWrite batch)
         {
             _state.Commit(batch);

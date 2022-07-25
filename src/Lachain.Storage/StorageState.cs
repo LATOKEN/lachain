@@ -38,8 +38,6 @@ namespace Lachain.Storage
         public ulong CurrentVersion { get; private set; }
         public uint RepositoryId => _repositoryManager.RepositoryId;
 
-        public uint RepositoryId => _repositoryManager.RepositoryId;
-
         public void SetCurrentVersion(ulong root)
         {
             CurrentVersion = root;
