@@ -31,9 +31,9 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         // Any request that has been made resides in _requests dictionary. Mapping is requestId -> request.
         private IDictionary<ulong, RequestState> _requests = new Dictionary<ulong, RequestState>();
         private static readonly ILogger<Downloader> Logger = LoggerFactory.GetLoggerForClass<Downloader>();
-        private UInt256? _checkpointBlockHash;
+        private Block? _checkpointBlock;
         private List<(UInt256, CheckpointType)>? _checkpointStateHashes;
-        public UInt256? CheckpointBlockHash => _checkpointBlockHash;
+        public Block? CheckpointBlock => _checkpointBlock;
         public List<(UInt256, CheckpointType)>? CheckpointStateHashes => _checkpointStateHashes;
 
         public Downloader(
@@ -372,7 +372,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         }
                         _peerManager.TryFreePeer(peer, true);
                         Logger.LogInformation("Fetched checkpoint block successfully");
-                        _checkpointBlockHash = block.Hash;
+                        _checkpointBlock = block;
                     }
                     catch (Exception exception)
                     {
