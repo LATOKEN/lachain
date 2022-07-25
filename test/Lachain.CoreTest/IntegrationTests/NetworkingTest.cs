@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
@@ -75,10 +76,12 @@ namespace Lachain.CoreTest.IntegrationTests
             _dbContext = _container.Resolve<IRocksDbContext>();
             _checkpointManager = _container.Resolve<ICheckpointManager>();
             // set chainId from config
-            if (TransactionUtils.ChainId == 0)
+            if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
-                TransactionUtils.SetChainId((int)chainId!);
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
             }
             _blockManager.TryBuildGenesisBlock();
         }
@@ -554,8 +557,9 @@ namespace Lachain.CoreTest.IntegrationTests
 
             var headerSignature = Crypto.SignHashed(
                 header.Keccak().ToBytes(),
-                keyPair.PrivateKey.Encode()
-            ).ToSignature();
+                keyPair.PrivateKey.Encode(),
+                HardforkHeights.IsHardfork_9Active(header.Index)
+            ).ToSignature(HardforkHeights.IsHardfork_9Active(header.Index));
 
             var multisig = new MultiSig
             {
