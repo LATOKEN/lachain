@@ -7,7 +7,6 @@ using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
-using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
@@ -15,10 +14,10 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
-using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;
+using Lachain.Storage.DbCompact;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
@@ -33,9 +32,6 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using Lachain.Storage;
-using Lachain.Core.Blockchain;
-using Lachain.Storage.DbCompact;
 using System.Threading;
 
 namespace Lachain.Console
@@ -118,7 +114,6 @@ namespace Lachain.Console
             var checkpointConfig = configManager.GetConfig<CheckpointConfig>("checkpoint") ??
                    throw new Exception("No checkpoint section in config file");
             checkpointManager.AddCheckpoints(checkpointConfig.AllCheckpoints);
-            configManager.UpdateCheckpointConfig(checkpointManager.GetAllSavedCheckpoint());
 
             rpcManager.Start();
             
