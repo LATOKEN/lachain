@@ -42,7 +42,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private readonly ITransactionPool _transactionPool;
         private readonly IContractRegisterer _contractRegisterer;
         private readonly IPrivateWallet _privateWallet;
-        
+        private readonly IBlockManager _blockManager;
+
 
         public TransactionServiceWeb3(
             IStateManager stateManager,
@@ -51,7 +52,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
             ITransactionSigner transactionSigner,
             ITransactionPool transactionPool,
             IContractRegisterer contractRegisterer,
-            IPrivateWallet privateWallet)
+            IPrivateWallet privateWallet,
+            IBlockManager blockManager)
         {
             _stateManager = stateManager;
             _transactionManager = transactionManager;
@@ -60,6 +62,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _transactionPool = transactionPool;
             _contractRegisterer = contractRegisterer;
             _privateWallet = privateWallet;
+            _blockManager = blockManager;
         }
 
         public Transaction MakeTransaction(SignedTransactionBase ethTx)
@@ -543,7 +546,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_gasPrice")]
         public string GetNetworkGasPrice()
         {
-            Logger.LogInformation("eth_gasPrice API called:: ");
+            Console.WriteLine("eth_gasPrice API called");
+
+            var gasLimit = GasMetering.DefaultBlockGasLimit;
+            var previousBlockHash = "0x728c9dc4083192e5cc4f0c2107093bd728985bc4b5e7760b3670747bb23b848f";
+            var lastBlockGasUsed = GetGasUsed(previousBlockHash);
+
+            var gasLimitSubLastGas = gasLimit - lastBlockGasUsed;
 
             return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
         }
@@ -717,6 +726,57 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 "pending" => null,
                 _ => blockTag.HexToUlong()
             };
+        }
+
+        private ulong? GetGasUsed(string blockHash)
+        {
+            // Reference from eth_getBlockByHash
+            var block = _blockManager.GetByHash(blockHash.HexToBytes().ToUInt256());
+            if (block == null)
+                return null;
+
+            List<TransactionReceipt> txs = new List<TransactionReceipt>();
+            try
+            {
+                foreach (var txHash in block.TransactionHashes)
+                {
+                    Logger.LogInformation($"Transaction hash {txHash.ToHex()} in block {block.Header.Index}");
+                    TransactionReceipt? tx = _transactionManager.GetByHash(txHash);
+                    if (tx is null)
+                    {
+                        Logger.LogWarning($"Transaction not found in DB {txHash.ToHex()}");
+                    }
+                    else txs.Add(tx);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"block {block!.Hash},  {block.Header.Index}, {block.TransactionHashes.Count}");
+                foreach (var txhash in block.TransactionHashes)
+                    Logger.LogWarning($"txhash {txhash.ToHex()}");
+            }
+
+            ulong gasUsed = 0;
+            try
+            {
+                gasUsed = txs.Aggregate(gasUsed, (current, tx) => current + tx.GasUsed);
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"Exception {e}");
+                Logger.LogWarning($"txs {txs}");
+                foreach (var tx in txs)
+                {
+                    if (tx is null)
+                        continue;
+                    Logger.LogWarning($"tx {tx.Hash.ToHex()} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
+                }
+            }
+
+
+            return gasUsed;
+
         }
     }
 }
