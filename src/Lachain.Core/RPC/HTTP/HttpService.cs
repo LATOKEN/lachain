@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
@@ -194,19 +195,30 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        private string SerializeParams(JObject? args)
+        private string SerializeParams(JToken? args)
         {
             if (args is null)
                 return "";
             
             string serializedParams = string.Empty;
-            
-            foreach(var param in args)
+            if (args.Children().Any())
             {
-                serializedParams += param.Key;
-                if (param.Value is null)
-                    continue;
-                serializedParams += (param.Value.HasValues ? SerializeParams((JObject)param.Value) : param.Value.ToString());
+                foreach (var child in args.Children())
+                {
+                    if (child.Type == JTokenType.Property)
+                    {
+                        var prop = child as JProperty;
+                        serializedParams += prop!.Name + SerializeParams(prop.Value);
+                    }
+                    else
+                    {
+                        serializedParams += SerializeParams(child);
+                    }
+                }
+            }
+            else
+            {
+                serializedParams += args.ToString();
             }
 
             return serializedParams;
