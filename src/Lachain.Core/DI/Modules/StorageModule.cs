@@ -1,5 +1,6 @@
 using Lachain.Core.Config;
 using System.IO;
+using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -30,6 +31,11 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IKeyGenRepository, KeyGenRepository>();
             containerBuilder.RegisterSingleton<IValidatorAttendanceRepository, ValidatorAttendanceRepository>();
             containerBuilder.RegisterSingleton<ILocalTransactionRepository, LocalTransactionRepository>();
+            containerBuilder.RegisterSingleton<ICheckpointRepository, CheckpointRepository>();
+
+            /* fastsync repo */
+            containerBuilder.RegisterSingleton<IFastSyncRepository, FastSyncRepository>();
+            containerBuilder.RegisterSingleton<IHybridQueue, HybridQueue>();
 
             /* database query */ 
             containerBuilder.RegisterSingleton<INodeRetrieval, NodeRetrieval>();

@@ -4,29 +4,35 @@
     this peer for next timeout seconds. Now, timeout = 30 seconds.
 */
 using System;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
+using Lachain.Proto;
+
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class PeerManager
+    public class PeerManager
     {
         private Queue<Peer> _availableGoodPeers = new Queue<Peer>();
         private Queue<Peer> _availableBadPeers = new Queue<Peer>();
         private Queue<DateTime> _lastResult = new Queue<DateTime>();
         private IDictionary<Peer, bool> _isPeerBusy = new Dictionary<Peer, bool>();
         private int Timeout = 30;
-        public PeerManager(List<string> urls)
+        public PeerManager()
         {
-            foreach(var url in urls) _isPeerBusy[new Peer(url)] = false;
-            foreach (var item in _isPeerBusy) _availableGoodPeers.Enqueue(item.Key);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryGetPeer(out Peer peer)
+        public void AddPeer(ECDSAPublicKey publicKey)
+        {
+            var peer = new Peer(publicKey);
+            if (_isPeerBusy.ContainsKey(peer)) return;
+            _isPeerBusy[peer] = false;
+            _availableGoodPeers.Enqueue(peer);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TryGetPeer(out Peer? peer)
         {
             peer = null;
             if (_availableGoodPeers.Count + _availableBadPeers.Count == 0) return false;
@@ -42,12 +48,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public bool TryFreePeer(Peer peer, int success = 1)
+        public bool TryFreePeer(Peer peer, bool success = true)
         {
             if(_isPeerBusy.TryGetValue(peer, out var isBusy))
             {
                 if (isBusy == false) return false;
-                if(success == 0)
+                if (success == false)
                 {
                     _availableBadPeers.Enqueue(peer);
                     _lastResult.Enqueue(DateTime.Now);
@@ -64,5 +70,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             return _isPeerBusy.Count;
         }
+
     }
 }

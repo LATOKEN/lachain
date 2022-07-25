@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
 using Lachain.Networking;
@@ -11,7 +12,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 3;
+        private const ulong _CurrentVersion = 4;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -45,6 +46,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV2();
             if (version < 3)
                 _UpdateConfigToV3();
+            if (version < 4)
+                _UpdateConfigToV4();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -121,10 +124,51 @@ namespace Lachain.Core.Config
             
             _SaveCurrentConfig();
         }
+        
+        // version 4 of config should contain checkpoint initialization
+        private void _UpdateConfigToV4()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var checkpoints = GetConfig<CheckpointConfig>("checkpoint");
+            if (checkpoints is null)
+            {
+                checkpoints = new CheckpointConfig
+                {
+                    LastCheckpoint = null,
+                    AllCheckpoints = new List<CheckpointConfigInfo>()
+                };
+            }
+            _config["checkpoint"] = JObject.FromObject(checkpoints);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 4;
+            _config["version"] = JObject.FromObject(version);
+            
+            _SaveCurrentConfig();
+        }
 
         private void _SaveCurrentConfig()
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
+        }
+
+        public void UpdateCheckpointConfig(List<CheckpointConfigInfo> checkpoints)
+        {
+            var checkpointConfig = GetConfig<CheckpointConfig>("checkpoint") ??
+                throw new Exception("No checkpoint section in config");
+            checkpointConfig.AllCheckpoints = checkpoints;
+            foreach (var checkpoint in checkpoints)
+            {
+                if (checkpointConfig.LastCheckpoint is null ||
+                    checkpointConfig.LastCheckpoint.BlockHeight < checkpoint.BlockHeight)
+                {
+                    checkpointConfig.LastCheckpoint = checkpoint;
+                }
+            }
+            _config["checkpoint"] = JObject.FromObject(checkpointConfig);
+            _SaveCurrentConfig();
         }
     }
 }

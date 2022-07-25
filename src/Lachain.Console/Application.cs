@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
+﻿using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.Pool;
@@ -29,12 +27,13 @@ using NLog;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using Lachain.Storage;
-using Lachain.Core.Blockchain;
+using System.Threading;
 
 namespace Lachain.Console
 {
@@ -80,10 +79,8 @@ namespace Lachain.Console
             var metricsService = _container.Resolve<IMetricsService>();
             var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
-            var NodeRetrieval = _container.Resolve<INodeRetrieval>();
-            var dbContext = _container.Resolve<IRocksDbContext>();
-            var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
+            var checkpointManager = _container.Resolve<ICheckpointManager>();
 
             // set chainId from config
             var chainId = configManager.GetConfig<NetworkConfig>("network")?.ChainId;
@@ -105,6 +102,13 @@ namespace Lachain.Console
             var hardforkConfig = configManager.GetConfig<HardforkConfig>("hardfork") ??
                     throw new Exception("No 'hardfork' section in config file");
             HardforkHeights.SetHardforkHeights(hardforkConfig);
+            
+            // set checkcpoints
+            Logger.LogInformation($"Saving checkpoints.");
+            var checkpointConfig = configManager.GetConfig<CheckpointConfig>("checkpoint") ??
+                   throw new Exception("No checkpoint section in config file");
+            checkpointManager.AddCheckpoints(checkpointConfig.AllCheckpoints);
+            configManager.UpdateCheckpointConfig(checkpointManager.GetAllSavedCheckpoint());
 
             rpcManager.Start();
             
@@ -139,33 +143,6 @@ namespace Lachain.Console
             Logger.LogInformation($"Node public key: {wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex()}");
             Logger.LogInformation($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
 
-            if (options.SetStateTo.Any())
-            {
-                List<string> args = options.SetStateTo.ToList();
-            //    System.Console.WriteLine(args);
-                ulong blockNumber = 0;
-                if( !(args is null) && args.Count>0)
-                {
-                    blockNumber = Convert.ToUInt64(args[0]);
-                }
-
-                var addresses = configManager.GetConfig<NetworkConfig>("network")?.BootstrapAddresses;
-                for(int i=0; i<addresses?.Length; i++)
-                {
-                    string tempAddress = addresses[i];
-                    StringBuilder address = new StringBuilder("http://");
-                    int j=0;
-                    while(tempAddress[j]!='@') j++;
-                    for( j++; tempAddress[j]!=':'; j++) address.Append(tempAddress[j]);
-                    address.Append(":7070");
-                    addresses[i] = address.ToString();
-                }
-
-                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), blockNumber, addresses.ToList());
-
-            }
-
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
 
@@ -178,7 +155,7 @@ namespace Lachain.Console
             // it's important to restore pool after transactionVerifier and before blockSynchronizer starts
             transactionPool.Restore();
 
-            blockSynchronizer.Start();
+            blockSynchronizer.Start(options.StartFastSync);
             Logger.LogInformation("Synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
                 validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())

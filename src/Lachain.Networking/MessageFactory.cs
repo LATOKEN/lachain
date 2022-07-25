@@ -77,6 +77,68 @@ namespace Lachain.Networking
                 {SyncBlocksRequest = new SyncBlocksRequest {FromHeight = fromHeight, ToHeight = toHeight}};
         }
 
+        public NetworkMessage RootHashByTrieNameRequest(ulong block, string trieName, ulong requestId)
+        {
+            return new NetworkMessage
+            {
+                RootHashByTrieNameRequest = new RootHashByTrieNameRequest
+                {
+                    Block = block,
+                    TrieName = trieName,
+                    RequestId = requestId
+                }
+            };
+        }
+
+        public NetworkMessage BlockBatchRequest(ulong fromBlock, ulong toBlock, ulong requestId)
+        {
+            return new NetworkMessage
+            {
+                BlockBatchRequest = new BlockBatchRequest
+                {
+                    FromHeight = fromBlock,
+                    ToHeight = toBlock,
+                    RequestId = requestId
+                }
+            };
+        }
+
+        public NetworkMessage TrieNodeByHashRequest(List<UInt256> nodeHashes, ulong requestId)
+        {
+            return new NetworkMessage
+            {
+                TrieNodeByHashRequest = new TrieNodeByHashRequest
+                {
+                    NodeHashes = {nodeHashes},
+                    RequestId = requestId
+                }
+            };
+        }
+
+        public NetworkMessage CheckpointRequest(byte[] request, ulong requestId)
+        {
+            return new NetworkMessage
+            {
+                CheckpointRequest = new CheckpointRequest
+                {
+                    CheckpointType = ByteString.CopyFrom(request),
+                    RequestId = requestId
+                }
+            };
+        }
+
+        public NetworkMessage CheckpointBlockRequest(ulong blockNumber, ulong requestId)
+        {
+            return new NetworkMessage
+            {
+                CheckpointBlockRequest = new CheckpointBlockRequest
+                {
+                    BlockHeight = blockNumber,
+                    RequestId = requestId
+                }
+            };
+        }
+
         public MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages)
         {
             var batch = new MessageBatch

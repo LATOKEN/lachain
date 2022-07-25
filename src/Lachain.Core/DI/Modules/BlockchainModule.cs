@@ -1,3 +1,4 @@
+using Lachain.Core.Blockchain.Checkpoint;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
@@ -29,6 +30,8 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IContractRegisterer, ContractRegisterer>();
             containerBuilder.RegisterSingleton<ITransactionPool, TransactionPool>();
             containerBuilder.RegisterSingleton<INonceCalculator, NonceCalculator>();
+            /* checkpoint manager */
+            containerBuilder.RegisterSingleton<ICheckpointManager, CheckpointManager>();
             /* VM */
             containerBuilder.RegisterSingleton<IVirtualMachine, VirtualMachine>();
             containerBuilder.RegisterSingleton<IContractInvoker, ContractInvoker>();

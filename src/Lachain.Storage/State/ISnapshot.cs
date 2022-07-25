@@ -7,6 +7,7 @@ namespace Lachain.Storage.State
     public interface ISnapshot
     {
         ulong Version { get; }
+        uint RepositoryId { get; }
         void Commit();
         UInt256 Hash { get; }
         IDictionary<ulong,IHashTrieNode> GetState();

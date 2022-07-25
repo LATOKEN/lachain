@@ -52,10 +52,19 @@
         PeerByPublicKey = 0x0e01,
 
         /*fast_sync status*/
-        BlockNumber = 0x0701,
-        LastDownloaded = 0x0702,
+        BlockNumberFromCheckpoint = 0x0701,
+        LastDownloadedTries = 0x0702,
         SavedBatch = 0x0703,
-        TotalBatch = 0x0704,
+        TotalIncomingBatch = 0x0704,
         QueueBatch = 0x0705,
+        BlockHashFromCheckpoint = 0x0706,
+        StateHashByCheckpointType = 0x0707,
+
+        /* checkpoint info */
+        CheckpointBlockHeights = 0x0f01,
+        CheckpointBlockHash = 0x0f02,
+        CheckpointSnapshotState = 0x0f03,
+        LatestCheckpointBlockHeight = 0x0f04,
+
     }
 }

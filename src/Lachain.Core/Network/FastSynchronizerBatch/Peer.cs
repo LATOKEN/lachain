@@ -1,17 +1,30 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Lachain.Proto;
+
 
 namespace Lachain.Core.Network.FastSynchronizerBatch
 {
-    class Peer
+    public class Peer : IEquatable<Peer>
     {
-        public string _url; 
-        public Peer(string url)
+        public ECDSAPublicKey _publicKey;
+        public Peer(ECDSAPublicKey publicKey)
         {
-            _url = url;
+            _publicKey = publicKey;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return _publicKey.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return _publicKey.GetHashCode();
+        }
+
+        public bool Equals(Peer? peer)
+        {
+            return !(peer is null) && _publicKey.Equals(peer._publicKey);
         }
     }
 }
