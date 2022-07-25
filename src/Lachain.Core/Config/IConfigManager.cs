@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using Lachain.Core.Blockchain.Checkpoint;
-using Lachain.Core.CLI;
+﻿using Lachain.Core.CLI;
 
 namespace Lachain.Core.Config
 {
