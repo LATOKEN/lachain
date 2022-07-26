@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using Google.Protobuf;
-using Lachain.Core.Blockchain.Checkpoint;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;

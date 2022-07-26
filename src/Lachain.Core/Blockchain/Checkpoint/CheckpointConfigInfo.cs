@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace Lachain.Core.Blockchain.Checkpoint
+namespace Lachain.Core.Blockchain.Checkpoints
 {
     public class CheckpointConfigInfo
     {
