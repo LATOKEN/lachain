@@ -31,3 +31,9 @@ message CheckpointInfo {
         CheckpointExist checkpoint_exist = 4;
     }
 }
+
+message Checkpoint {
+    uint64 block_height = 1;
+    UInt256 block_hash = 2;
+    repeated CheckpointStateHash state_hashes = 3;
+}
