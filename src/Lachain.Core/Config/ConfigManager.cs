@@ -5,6 +5,8 @@ using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
 using Lachain.Networking;
+using Lachain.Proto;
+using Lachain.Utility.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -384,6 +386,64 @@ namespace Lachain.Core.Config
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
+        }
+
+        public void UpdateCheckpoint(List<Checkpoint> checkpoints)
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var checkpointConfigs = GetConfig<CheckpointConfig>("checkpoint") ??
+                            throw new ApplicationException("No checkpoint section in config");
+
+            var allCheckpoints = checkpointConfigs.AllCheckpoints;
+            var updatedCheckpoints = new List<CheckpointConfigInfo>();
+            foreach (var checkcpoint in allCheckpoints)
+            {
+                var height = checkcpoint.BlockHeight;
+                var checkpointInfo = ParseConfigInfoFromCheckpoint(checkpoints, height);
+                if (checkpointInfo is null)
+                    checkpointInfo = new CheckpointConfigInfo(height);
+                updatedCheckpoints.Add(checkpointInfo);
+            }
+
+            checkpointConfigs.AllCheckpoints = updatedCheckpoints;
+            _config["checkpoint"] = JObject.FromObject(checkpointConfigs);
+            _SaveCurrentConfig();
+        }
+
+        private CheckpointConfigInfo? ParseConfigInfoFromCheckpoint(
+            List<Checkpoint> checkpoints,
+            ulong height
+        )
+        {
+            foreach (var checkcpoint in checkpoints)
+            {
+                if (checkcpoint.BlockHeight == height)
+                {
+                    return ParseConfigInfoFromCheckpoint(checkcpoint, height);
+                }
+            }
+            return null;
+        }
+
+        private CheckpointConfigInfo ParseConfigInfoFromCheckpoint(
+            Checkpoint checkpoint, ulong height
+        )
+        {
+            IDictionary<string, string> stateHashes = new Dictionary<string, string>();
+            foreach (var stateHash in checkpoint.StateHashes)
+            {
+                var checkcpointType = (CheckpointType) stateHash.CheckpointType.ToByteArray()[0];
+                var trieName = CheckpointUtils.GetSnapshotNameForCheckpointType(checkcpointType);
+                if (trieName == "")
+                    throw new Exception($"Invalid checkpoint type {checkcpointType}");
+                stateHashes[trieName] = stateHash.StateHash.ToHex();
+            }
+
+            if (stateHashes.Count != 6)
+                throw new Exception($"Invalid checkpoint {checkpoint.ToString()}");
+
+            return new CheckpointConfigInfo(height, checkpoint.BlockHash.ToHex(), stateHashes);
         }
 
         private void _SaveCurrentConfig()

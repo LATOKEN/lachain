@@ -16,71 +16,51 @@ namespace Lachain.Core.Blockchain.Checkpoints
             Logger = LoggerFactory.GetLoggerForClass<CheckpointManager>();
 
         private readonly IBlockManager _blockManager;
-        private readonly ICheckpointRepository _repository;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
-        private ulong? _checkpointBlockHeight;
-        private UInt256? _checkpointBlockHash;
-        private IDictionary<RepositoryType, UInt256?> _stateHashes = new Dictionary<RepositoryType, UInt256?>();
-        public ulong? CheckpointBlockHeight => _checkpointBlockHeight;
-        public UInt256? CheckpointBlockHash => _checkpointBlockHash;
+        private List<Checkpoint> _checkpoints = new List<Checkpoint>();
+        private readonly byte StateHashCount = 6;
 
         public CheckpointManager(
             IBlockManager blockManager,
-            ICheckpointRepository repository,
             ISnapshotIndexRepository snapshotIndexer
         )
         {
             _blockManager = blockManager;
-            _repository = repository;
             _snapshotIndexer = snapshotIndexer;
         }
 
-        private bool SaveCheckpoint(ulong blockHeight)
+        private bool VerifyCheckpoint(CheckpointConfigInfo checkpointInfo, out Checkpoint? checkpoint)
         {
-            if (_blockManager.GetHeight() < blockHeight)
+            checkpoint = null;
+            var blockHeight = checkpointInfo.BlockHeight;
+            Logger.LogTrace($"Verifying checkpoint info for block height: {blockHeight}");
+            var block = _blockManager.GetByHeight(blockHeight);
+            if (block is null)
             {
-                Logger.LogWarning($"We have height: {_blockManager.GetHeight()}, asked to save "
-                                  + $"checkpoint for block {blockHeight}. Aborting...");
+                Logger.LogWarning($"No block found for {blockHeight}");
                 return false;
             }
 
-            var block = _blockManager.GetByHeight(blockHeight);
-            Logger.LogTrace($"Trying to save checkpoint for block {block!.Header.Index}");
-            var saved = _repository.SaveCheckpoint(block);
-            if (saved)
-            {
-                Logger.LogTrace("Saved checkpoint successfully");
-            }
-            else Logger.LogTrace("Could not save checkpoint");
-
-            return saved;
-        }
-
-        private bool CheckOrSaveCheckpoint(CheckpointConfigInfo checkpoint)
-        {
-            var blockHeight = checkpoint.BlockHeight;
-            var blockHash = _repository.FetchCheckpointBlockHash(blockHeight);
-            if (blockHash is null)
-                return SaveCheckpoint(blockHeight);
-
-            Logger.LogTrace($"Checking checkpoint info for block height: {blockHeight}");
-            if (!(checkpoint.BlockHash is null) && !blockHash.Equals(checkpoint.BlockHash.HexToUInt256()))
+            if (!(checkpointInfo.BlockHash is null) && !block.Hash.Equals(checkpointInfo.BlockHash.HexToUInt256()))
             {
                 Logger.LogDebug($"Block hash mismatch for checkpoint block height: {blockHeight}");
-                Logger.LogDebug($"Saved block hash: {blockHash.ToHex()}");
-                Logger.LogDebug($"Got block hash from config: {checkpoint.BlockHash}");
+                Logger.LogDebug($"We have block hash: {block.Hash.ToHex()}");
+                Logger.LogDebug($"Got block hash from config: {checkpointInfo.BlockHash}");
                 return false;
             }
 
             var trieNames = CheckpointUtils.GetAllStateNames();
-            foreach (var trieName in trieNames)
+            var stateHashes = GetStateHashesForBlock(blockHeight);
+            if (stateHashes.Count != StateHashCount)
+                return false;
+
+            var checkcpointStateHashes = new List<CheckpointStateHash>();
+            for (int iter = 0 ; iter < trieNames.Length; iter++)
             {
-                if (checkpoint.StateHashes.TryGetValue(trieName, out var stateHash))
+                var trieName = trieNames[iter];
+                var savedStateHash = stateHashes[iter];
+                if (checkpointInfo.StateHashes.TryGetValue(trieName, out var stateHash))
                 {
-                    var repositoryId = CheckpointUtils.GetSnapshotTypeForSnapshotName(trieName);
-                    if (repositoryId is null)
-                        throw new Exception($"Invalid trie name: {trieName}");
-                    var savedStateHash = _repository.FetchSnapshotStateHash(repositoryId.Value, blockHeight);
                     if (savedStateHash is null || !savedStateHash.Equals(stateHash.HexToUInt256()))
                     {
                         Logger.LogDebug(
@@ -91,182 +71,138 @@ namespace Lachain.Core.Blockchain.Checkpoints
                         return false;
                     }
                 }
-            }
 
+                var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(trieName);
+                if (checkpointType is null)
+                {
+                    Logger.LogWarning($"Invalid trieName {trieName}");
+                    return false;
+                }
+                checkcpointStateHashes.Add(
+                    new CheckpointStateHash
+                    {
+                        CheckpointType = ByteString.CopyFrom((byte) checkpointType),
+                        StateHash = savedStateHash
+                    }
+                );
+            }
+            checkpoint = new Checkpoint
+            {
+                BlockHeight = blockHeight,
+                BlockHash = block.Hash,
+                StateHashes = {checkcpointStateHashes}
+            };
             return true;
         }
 
-        public void AddCheckpoints(List<CheckpointConfigInfo> checkpoints)
+        public void VerifyAndAddCheckpoints(List<CheckpointConfigInfo> checkpoints)
         {
-            foreach (var checkpoint in checkpoints)
+            foreach (var checkpointInfo in checkpoints)
             {
-                if (!CheckOrSaveCheckpoint(checkpoint))
-                    throw new Exception($"Invalid checkpoint for block {checkpoint.BlockHeight}");
+                if (checkpointInfo.BlockHeight > _blockManager.GetHeight())
+                    continue;
+                if (!VerifyCheckpoint(checkpointInfo, out var checkpoint))
+                    throw new Exception($"Invalid checkpoint for block {checkpointInfo.BlockHeight}");
+                _checkpoints.Add(checkpoint!);
             }
-
-            UpdateCache();
         }
 
-        private void UpdateCache()
+        public List<Checkpoint> GetAllCheckpoints()
         {
-            var blockHeights = _repository.FetchCheckpointBlockHeights();
-            if (blockHeights.Count == 0) return;
-            ulong maxHeight = 0;
-            foreach (var height in blockHeights)
-            {
-                if (height > maxHeight)
-                    maxHeight = height;
-            }
+            return new List<Checkpoint>(_checkpoints);
+        }
 
-            _checkpointBlockHeight = maxHeight;
-            _checkpointBlockHash = _repository.FetchCheckpointBlockHash(maxHeight);
+        public Checkpoint? GetCheckpoint(ulong height)
+        {
+            foreach (var checkpoint in _checkpoints)
+            {
+                if (checkpoint.BlockHeight == height) return checkpoint;
+            }
+            return null;
+        }
+
+        private List<UInt256> GetStateHashesForBlock(ulong height)
+        {
             var trieNames = CheckpointUtils.GetAllStateNames();
-            _stateHashes = new Dictionary<RepositoryType, UInt256?>();
-            foreach (var trieName in trieNames)
+            var stateHashes = new List<UInt256>();
+            try
             {
-                var snapshotType = CheckpointUtils.GetSnapshotTypeForSnapshotName(trieName);
-                if (snapshotType is null)
-                    throw new Exception($"Invalid trie name: {trieName}");
-                var stateHash = _repository.FetchSnapshotStateHash(snapshotType.Value, maxHeight);
-                _stateHashes[snapshotType.Value] = stateHash;
-            }
-        }
-
-        public List<CheckpointConfigInfo> GetAllSavedCheckpoint()
-        {
-            var blockHeights = _repository.FetchCheckpointBlockHeights();
-            var checkpoints = new List<CheckpointConfigInfo>();
-            foreach (var height in blockHeights)
-            {
-                var blockHash = _repository.FetchCheckpointBlockHash(height);
-                if (blockHash is null)
-                    throw new Exception($"Block hash for block {height} not found");
-                IDictionary<string, string> stateHashes = new Dictionary<string, string>();
-                var trieNames = CheckpointUtils.GetAllStateNames();
+                var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(height);
                 foreach (var trieName in trieNames)
                 {
-                    var snapshotType = CheckpointUtils.GetSnapshotTypeForSnapshotName(trieName);
-                    if (snapshotType is null)
-                        throw new Exception($"Invalid trie name: {trieName}");
-                    var stateHash = _repository.FetchSnapshotStateHash(snapshotType.Value, height);
-                    if (stateHash is null)
-                        throw new Exception($"State hash for snapshot {trieName} for block {height} not found");
-                    stateHashes[trieName] = stateHash.ToHex();
+                    var snapshot = blockchainSnapshot.GetSnapshot(trieName);
+                    if (snapshot is null)
+                    {
+                        throw new Exception($"Invalid trieName {trieName}");
+                    }
+                    stateHashes.Add(snapshot.Hash);
                 }
-
-                checkpoints.Add(
-                    new CheckpointConfigInfo(height, blockHash.ToHex(), stateHashes)
-                );
+                return stateHashes;
             }
-
-            return checkpoints;
-        }
-
-        public UInt256? GetCheckPointBlockHash(ulong blockHeight)
-        {
-            return _repository.FetchCheckpointBlockHash(blockHeight);
-        }
-
-        public UInt256? GetStateHashForSnapshotType(RepositoryType snapshotType, ulong blockHeight)
-        {
-            if (blockHeight != _checkpointBlockHeight)
-                return _repository.FetchSnapshotStateHash(snapshotType, blockHeight);
-            if (_stateHashes.TryGetValue(snapshotType, out var stateHash))
+            catch (Exception exception)
             {
-                return stateHash;
+                Logger.LogWarning($"Got exception trying to fetch snapshot for block {height}. Exception: {exception}");
+                return new List<UInt256>();
             }
+        } 
 
-            return null;
+        public UInt256? GetCheckpointBlockHash(ulong blockHeight)
+        {
+            var checkcpoint = GetCheckpoint(blockHeight);
+            return checkcpoint is null ? null : checkcpoint.BlockHash;
         }
 
         public UInt256? GetStateHashForCheckpointType(CheckpointType checkpointType, ulong blockHeight)
         {
-            var snapshotType = CheckpointUtils.GetSnapshotTypeForCheckpointType(checkpointType);
-            if (snapshotType == null) return null;
-            return GetStateHashForSnapshotType(snapshotType.Value, blockHeight);
+            var checkcpoint = GetCheckpoint(blockHeight);
+            if (checkcpoint is null) return null;
+            var stateHashes = checkcpoint.StateHashes;
+            foreach (var stateHash in stateHashes)
+            {
+                var type = stateHash.CheckpointType.ToByteArray()[0];
+                if ((CheckpointType) type == checkpointType)
+                {
+                    return stateHash.StateHash;
+                }
+            }
+            return null;
+        }
+
+        public UInt256? GetStateHashForSnapshotType(RepositoryType snapshotType, ulong blockHeight)
+        {
+            var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotType(snapshotType);
+            if (checkpointType is null) return null;
+            return GetStateHashForCheckpointType(checkpointType.Value, blockHeight);
         }
 
         public UInt256? GetStateHashForSnapshotName(string snapshotName, ulong blockHeight)
         {
-            var snapshotType = CheckpointUtils.GetSnapshotTypeForSnapshotName(snapshotName);
-            if (snapshotType == null) return null;
-            return GetStateHashForSnapshotType(snapshotType.Value, blockHeight);
+            var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(snapshotName);
+            if (checkpointType == null) return null;
+            return GetStateHashForCheckpointType(checkpointType.Value, blockHeight);
         }
 
-        public bool IsCheckpointConsistent()
+        public ulong GetMaxHeight()
         {
-            var blockHeights = _repository.FetchCheckpointBlockHeights();
-            foreach (var height in blockHeights)
+            ulong maxHeight = 0;
+            foreach (var checkcpoint in _checkpoints)
             {
-                var blockHash = _repository.FetchCheckpointBlockHash(height);
-                if (blockHash is null)
-                {
-                    Logger.LogInformation("Checkpoint block hash is not saved");
-                    return false;
-                }
-
-                var block = _blockManager.GetByHeight(height);
-                if (block is null)
-                {
-                    Logger.LogInformation($"Found null block for checkpoint height: {height}");
-                    return false;
-                }
-
-                if (!blockHash.Equals(block.Hash))
-                {
-                    Logger.LogInformation($"Block hash mismatch, block hash saved in checkpoint: {blockHash.ToHex()}"
-                                          + $" actual block hash: {block.Hash.ToHex()}");
-                    return false;
-                }
-
-                try
-                {
-                    var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(height);
-                    var snapshots = blockchainSnapshot.GetAllSnapshot();
-                    foreach (var snapshot in snapshots)
-                    {
-                        if (snapshot.RepositoryId == (uint)RepositoryType.BlockRepository) continue;
-                        var stateHash = GetStateHashForSnapshotType((RepositoryType)snapshot.RepositoryId, height);
-                        if (stateHash is null)
-                        {
-                            Logger.LogInformation(
-                                $"State hash is not saved for {(RepositoryType)snapshot.RepositoryId}, "
-                                + $"state hash: {snapshot.Hash.ToHex()}");
-                            return false;
-                        }
-
-                        if (!stateHash.Equals(snapshot.Hash))
-                        {
-                            Logger.LogInformation($"State hash mismatch for {(RepositoryType)snapshot.RepositoryId}"
-                                                  + $"saved state hash: {stateHash.ToHex()}, actual state hash: {snapshot.Hash.ToHex()}");
-                            return false;
-                        }
-                    }
-                }
-                catch (Exception exception)
-                {
-                    Logger.LogWarning(
-                        $"Got exception trying to get snapshot for block: {height}, exception: {exception}");
-                    // TODO
-                    // It can happen due to error or due to deletion of old snapshots
-                    // It can be checked if it is due to deletion of old snapshots
-                    // The method for this is available in 'dev' branch, but not in this branch
-                    // So it should be added here before merging to 'dev' branch and return false if it is due to error
-                }
+                if (checkcpoint.BlockHeight > maxHeight)
+                    maxHeight = checkcpoint.BlockHeight;
             }
-
-            return true;
+            return maxHeight;
         }
 
-        public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
+        public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType, ulong? height = null)
         {
+            if (height is null) height = GetMaxHeight();
             var checkpoint = new CheckpointInfo();
             switch (checkpointType)
             {
                 case CheckpointType.BlockHeight:
                     checkpoint.CheckpointBlockHeight = new CheckpointBlockHeight
                     {
-                        BlockHeight = _checkpointBlockHeight!.Value,
+                        BlockHeight = height.Value,
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;
@@ -274,7 +210,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 case CheckpointType.BlockHash:
                     checkpoint.CheckpointBlockHash = new CheckpointBlockHash
                     {
-                        BlockHash = _checkpointBlockHash,
+                        BlockHash = GetCheckpointBlockHash(height.Value),
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;
@@ -282,7 +218,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 case CheckpointType.CheckpointExist:
                     checkpoint.CheckpointExist = new CheckpointExist
                     {
-                        Exist = (IsCheckpointConsistent() && _checkpointBlockHeight != null),
+                        Exist = (_checkpoints.Count > 0),
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;
@@ -290,7 +226,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 default:
                     checkpoint.CheckpointStateHash = new CheckpointStateHash
                     {
-                        StateHash = GetStateHashForCheckpointType(checkpointType, _checkpointBlockHeight!.Value),
+                        StateHash = GetStateHashForCheckpointType(checkpointType, height.Value),
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;

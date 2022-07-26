@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Proto;
 using Lachain.Storage;
-using Lachain.Storage.Repositories;
 using Lachain.Storage.Trie;
 
 

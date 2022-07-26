@@ -7,18 +7,14 @@ namespace Lachain.Core.Blockchain.Checkpoints
 {
     public interface ICheckpointManager
     {
-        /// <returns>
-        /// Block index of the last checkpoint, null if no checkpoint was saved
-        /// </returns>
-        ulong? CheckpointBlockHeight { get; }
-        /// <returns>
-        /// Block hash of the last checkpoint, null if no checkpoint was saved
-        /// </returns>
-        UInt256? CheckpointBlockHash { get; }
+        ulong GetMaxHeight();
         /// <summary>
-        /// Fetches the last checkpoint-block, null if no checkpoint was saved
+        /// if </c>blockHeight</c> is a checkpoint then fetches its block hash
         /// </summary>
-        UInt256? GetCheckPointBlockHash(ulong blockHeight);
+        /// <returns>
+        /// Block hash of checkpoint </c>blockHeight</c>
+        /// </returns>
+        UInt256? GetCheckpointBlockHash(ulong blockHeight);
         /// <summary>
         /// Takes the snapshot repository type as input and returns the state hash of that snapshot of the last checkpoint
         /// </summary>
@@ -47,31 +43,33 @@ namespace Lachain.Core.Blockchain.Checkpoints
         /// </returns>
         UInt256? GetStateHashForSnapshotName(string snapshotName, ulong blockHeight);
         /// <summary>
-        /// Saves the given checkpoints in DB. If already saved, checks if the given info is correct
+        /// Checks if the given info is correct and adds them
         /// </summary>
         /// <param name = "checkpoints"> List of Checkpoint related info: block height, block hash, state hash </param>
-        void AddCheckpoints(List<CheckpointConfigInfo> checkpoints);
+        void VerifyAndAddCheckpoints(List<CheckpointConfigInfo> checkpoints);
         /// <summary>
-        /// Fetches all saved checkpoints from DB
+        /// Fetches all checkpoints
         /// </summary>
         /// <returns>
-        /// List of CheckpointConfigInfo
+        /// List of Checkpoint
         /// </returns>
-        List<CheckpointConfigInfo> GetAllSavedCheckpoint();
+        List<Checkpoint> GetAllCheckpoints();
         /// <summary>
-        /// Checks all checkpoint information: block index, hash and state hash for all six snapshots
+        /// if </c>height</c> is a checkpoint block then fetches its info: BlockHash, StateHashes 
+        /// otherwise returns null
         /// </summary>
         /// <returns>
-        /// True if consistent, False otherwise
+        /// Checkpoint
         /// </returns>
-        bool IsCheckpointConsistent();
+        Checkpoint? GetCheckpoint(ulong height);
         /// <summary>
         /// Given some CheckpointType, gets the corresponding CheckpointInfo for latest checkpoint
         /// </summary>
         /// <param name = "checkpointType"> CheckpointType </param>
+        /// <param name = "height"> Block Height </param>
         /// <returns>
         /// All required checkpoint info
         /// </returns>
-        CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType);
+        CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType, ulong? height = null);
     }
 }

@@ -100,22 +100,19 @@ namespace Lachain.CoreTest.IntegrationTests
         [Repeat(2)]
         public void Test_Checkpoint()
         {
-            Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
             ulong totalBlocks = 10;
             GenerateBlocks(totalBlocks);
-            Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
             var blockHeights = new List<ulong>();
             for (ulong height = 1; height <= totalBlocks; height++)
             {
                 blockHeights.Add(height);
-                var checkpointList = CreateCheckpointConfig(blockHeights);
-                _checkpointManager.AddCheckpoints(checkpointList);
-                Assert.AreNotEqual(null , _checkpointManager.CheckpointBlockHeight, "checkpoint not saved");
-                Assert.AreEqual(height, _checkpointManager.CheckpointBlockHeight, "checkpoint block height mismatch");
-                Assert.AreEqual(true, _checkpointManager.IsCheckpointConsistent(), "checkpoint not consistent");
             }
+            var checkpointList = CreateCheckpointConfig(blockHeights);
+            _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
+            Assert.AreNotEqual(null , _checkpointManager.GetMaxHeight(), "checkpoint not saved");
+            Assert.AreEqual(blockHeights.Last(), _checkpointManager.GetMaxHeight(), "checkpoint block height mismatch");
 
-            var checkpoints = _checkpointManager.GetAllSavedCheckpoint();
+            var checkpoints = _checkpointManager.GetAllCheckpoints();
             Assert.AreEqual(blockHeights.Count, checkpoints.Count,
                 $"Tried to save {blockHeights.Count} checkpoints but saved only {checkpoints.Count} checkpoints");
         }
@@ -132,9 +129,9 @@ namespace Lachain.CoreTest.IntegrationTests
                 var block = _blockManager.GetByHeight(height);
                 blockHeights.Add(height);
                 var checkpointList = CreateCheckpointConfig(blockHeights);
-                _checkpointManager.AddCheckpoints(checkpointList);
-                Assert.AreEqual(height, _checkpointManager.CheckpointBlockHeight);
-                Assert.AreEqual(block!.Hash, _checkpointManager.CheckpointBlockHash);
+                _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
+                Assert.AreEqual(height, _checkpointManager.GetMaxHeight());
+                Assert.AreEqual(block!.Hash, _checkpointManager.GetCheckpointBlockHash(height));
                 
                 var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(height);
                 var snapshots = blockchainSnapshot.GetAllSnapshot();

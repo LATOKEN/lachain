@@ -1,4 +1,4 @@
-namespace Lachain.Storage.Repositories
+namespace Lachain.Core.Blockchain.Checkpoints
 {
     public enum CheckpointType : byte
     {
