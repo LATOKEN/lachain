@@ -47,19 +47,20 @@ namespace Lachain.Core.Blockchain.Checkpoints
         /// <param name = "checkpoints"> List of Checkpoint related info: block height, block hash, state hash </param>
         void VerifyAndAddCheckpoints(List<CheckpointConfigInfo> checkpoints);
         /// <summary>
-        /// Fetches Last checkpoints
+        /// Fetches all checkpoints
         /// </summary>
         /// <returns>
-        /// Checkpoint
+        /// List of Checkpoint
         /// </returns>
-        Checkpoint? GetCheckpoint();
-        /// <summary>
-        /// Given some CheckpointType, gets the corresponding CheckpointInfo for latest checkpoint
+        List<Checkpoint> GetAllCheckpoints();
+        /// if </c>height</c> is a checkpoint block then fetches its info: BlockHash, StateHashes 
+        /// otherwise returns null
         /// </summary>
         /// <param name = "checkpointType"> CheckpointType </param>
+        /// <param name = "height"> Block Height </param>
         /// <returns>
         /// All required checkpoint info
         /// </returns>
-        CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType);
+        CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType, ulong? height = null);
     }
 }

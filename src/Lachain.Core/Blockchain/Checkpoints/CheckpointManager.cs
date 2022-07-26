@@ -237,6 +237,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
         [MethodImpl(MethodImplOptions.Synchronized)]
         public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
         {
+            if (height is null) height = GetMaxHeight();
             var checkpoint = new CheckpointInfo();
             switch (checkpointType)
             {
