@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Config;
 using Lachain.Utility;
+using System.Numerics;
 
 namespace Lachain.Core.RPC.HTTP.Web3
 {
@@ -558,8 +559,20 @@ namespace Lachain.Core.RPC.HTTP.Web3
             Logger.LogInformation($"previousBlockHash:: {previousBlockHash}");
 
             var gasLimitSubLastGas = gasLimit - lastBlockGasUsed;
+            var diffPercent = (lastBlockGasUsed / gasLimit) * 100;
 
-            return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
+            Logger.LogInformation($"diffPercent:: {diffPercent}");
+
+            if (diffPercent > 10.0)
+            {
+                return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
+
+            }
+            else
+            {
+                return Web3DataFormatUtils.Web3Number(1);
+            }
+
         }
 
         [JsonRpcMethod("eth_signTransaction")]
