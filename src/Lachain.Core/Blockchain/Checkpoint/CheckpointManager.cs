@@ -8,7 +8,7 @@ using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using Google.Protobuf;
 
-namespace Lachain.Core.Blockchain.Checkpoint
+namespace Lachain.Core.Blockchain.Checkpoints
 {
     public class CheckpointManager : ICheckpointManager
     {

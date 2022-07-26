@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Lachain.Logger;
-using Lachain.Core.Blockchain.Checkpoint;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;

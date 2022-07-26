@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Lachain.Core.Blockchain.Checkpoint;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
 using Lachain.Networking;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Lachain.Core.Blockchain.Checkpoint;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
