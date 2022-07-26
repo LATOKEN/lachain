@@ -549,8 +549,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
             Console.WriteLine("eth_gasPrice API called");
 
             var gasLimit = GasMetering.DefaultBlockGasLimit;
-            var previousBlockHash = "0x728c9dc4083192e5cc4f0c2107093bd728985bc4b5e7760b3670747bb23b848f";
+
+            var latestBlock = _blockManager.LatestBlock();
+            var previousBlockHash = latestBlock.Hash.ToHex();
             var lastBlockGasUsed = GetGasUsed(previousBlockHash);
+
+            Logger.LogInformation($"lastBlockGasUsed:: {lastBlockGasUsed}");
+            Logger.LogInformation($"previousBlockHash:: {previousBlockHash}");
 
             var gasLimitSubLastGas = gasLimit - lastBlockGasUsed;
 
