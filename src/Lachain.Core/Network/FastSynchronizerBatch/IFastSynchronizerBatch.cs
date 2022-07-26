@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Proto;
-using Lachain.Storage.Repositories;
 
 
 namespace Lachain.Core.Network.FastSynchronizerBatch

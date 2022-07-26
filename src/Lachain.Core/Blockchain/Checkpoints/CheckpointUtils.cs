@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Lachain.Storage.State;
 
-namespace Lachain.Storage.Repositories
+namespace Lachain.Core.Blockchain.Checkpoints
 {
     public static class CheckpointUtils
     {

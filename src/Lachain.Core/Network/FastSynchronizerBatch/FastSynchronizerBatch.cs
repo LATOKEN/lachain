@@ -13,11 +13,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage;
-using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 
