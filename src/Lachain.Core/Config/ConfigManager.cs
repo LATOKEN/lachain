@@ -407,6 +407,13 @@ namespace Lachain.Core.Config
             }
 
             checkpointConfigs.AllCheckpoints = updatedCheckpoints;
+            var lastCheckpoint = new CheckpointConfigInfo(0);
+            foreach (var checkpoint in updatedCheckpoints)
+            {
+                if (checkpoint.BlockHeight > lastCheckpoint.BlockHeight)
+                    lastCheckpoint = checkpoint;
+            }
+            checkpointConfigs.LastCheckpoint = lastCheckpoint;
             _config["checkpoint"] = JObject.FromObject(checkpointConfigs);
             _SaveCurrentConfig();
         }
