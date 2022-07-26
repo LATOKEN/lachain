@@ -116,7 +116,8 @@ namespace Lachain.Core.Blockchain.Checkpoints
         {
             foreach (var checkpoint in _checkpoints)
             {
-                if (checkpoint.BlockHeight == height) return checkpoint;
+                if (checkpoint.BlockHeight == height)
+                    return new Checkpoint(checkpoint);
             }
             return null;
         }
