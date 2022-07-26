@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage;
-using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
 using Lachain.Utility.Serialization;
 
