@@ -412,6 +412,31 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
 
+        // Use this method to add a new Checkpoint
+        private void AddNewCheckpoint(ulong blockHeight)
+        {
+            var checkpoints = GetConfig<CheckpointConfig>("checkpoint") ??
+                            throw new ApplicationException("No checkpoint section in config");
+            checkpoints.LastCheckpoint = new CheckpointConfigInfo(blockHeight);
+            if (!AlreadyPresent(checkpoints.AllCheckpoints, blockHeight))
+            {
+                var allCheckpoints = checkpoints.AllCheckpoints;
+                allCheckpoints.Add(new CheckpointConfigInfo(blockHeight));
+                checkpoints.AllCheckpoints = allCheckpoints;
+            }
+            _config["checkpoint"] = JObject.FromObject(checkpoints);
+        }
+
+        private bool AlreadyPresent(List<CheckpointConfigInfo> allCheckpoints, ulong blockHeight)
+        {
+            foreach (var checkcpoint in allCheckpoints)
+            {
+                if (checkcpoint.BlockHeight == blockHeight)
+                    return true;
+            }
+            return false;
+        }
+
         public void UpdateCheckpoint(List<Checkpoint> checkpoints)
         {
             var network = GetConfig<NetworkConfig>("network") ??
