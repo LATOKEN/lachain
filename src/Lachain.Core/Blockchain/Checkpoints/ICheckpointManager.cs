@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Storage.State;
-using Lachain.Storage.Repositories;
 
 namespace Lachain.Core.Blockchain.Checkpoints
 {
