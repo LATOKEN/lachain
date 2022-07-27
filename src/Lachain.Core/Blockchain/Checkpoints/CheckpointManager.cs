@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Config;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -17,16 +18,43 @@ namespace Lachain.Core.Blockchain.Checkpoints
 
         private readonly IBlockManager _blockManager;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
-        private List<Checkpoint> _checkpoints = new List<Checkpoint>();
+        private readonly IConfigManager _configManager;
+        private SortedSet<Checkpoint> _checkpoints;
+        private SortedSet<ulong> _pending = new SortedSet<ulong>();
         private readonly byte StateHashCount = 6;
 
         public CheckpointManager(
+            IConfigManager configManager,
             IBlockManager blockManager,
             ISnapshotIndexRepository snapshotIndexer
         )
         {
+            _configManager = configManager;
             _blockManager = blockManager;
             _snapshotIndexer = snapshotIndexer;
+            _blockManager.OnBlockPersisted += OnBlockPersisted;
+            _checkpoints = new SortedSet<Checkpoint>(new CheckpointComparer());
+        }
+
+        private void OnBlockPersisted(object? sender, Block block)
+        {
+            var height = block.Header.Index;
+            var pendingCheckpoints = _pending.Count;
+            while (_pending.Count > 0)
+            {
+                var blockHeight = _pending.Min;
+                if (blockHeight > height)
+                    break;
+                var checkpointInfo = new CheckpointConfigInfo(blockHeight);
+                if (!VerifyCheckpoint(checkpointInfo, out var checkpoint))
+                    throw new Exception($"Invalid checkpoint for block {checkpointInfo.BlockHeight}");
+                _checkpoints.Add(checkpoint!);
+                _pending.Remove(blockHeight);
+            }
+            if (pendingCheckpoints > _pending.Count)
+            {
+                _configManager.UpdateCheckpoint(GetAllCheckpoints());
+            }
         }
 
         private bool VerifyCheckpoint(CheckpointConfigInfo checkpointInfo, out Checkpoint? checkpoint)
@@ -100,7 +128,10 @@ namespace Lachain.Core.Blockchain.Checkpoints
             foreach (var checkpointInfo in checkpoints)
             {
                 if (checkpointInfo.BlockHeight > _blockManager.GetHeight())
+                {
+                    _pending.Add(checkpointInfo.BlockHeight);
                     continue;
+                }
                 if (!VerifyCheckpoint(checkpointInfo, out var checkpoint))
                     throw new Exception($"Invalid checkpoint for block {checkpointInfo.BlockHeight}");
                 _checkpoints.Add(checkpoint!);
@@ -109,16 +140,22 @@ namespace Lachain.Core.Blockchain.Checkpoints
 
         public List<Checkpoint> GetAllCheckpoints()
         {
-            return new List<Checkpoint>(_checkpoints);
+            var allCheckpoints = new List<Checkpoint>();
+            foreach (var checkcpoint in _checkpoints)
+            {
+                allCheckpoints.Add(new Checkpoint(checkcpoint));
+            }
+            return allCheckpoints;
         }
 
         public Checkpoint? GetCheckpoint(ulong height)
         {
-            foreach (var checkpoint in _checkpoints)
+            var checkpointToFind = new Checkpoint
             {
-                if (checkpoint.BlockHeight == height)
-                    return new Checkpoint(checkpoint);
-            }
+                BlockHeight = height
+            };
+            if (_checkpoints.TryGetValue(checkpointToFind, out var checkpoint))
+                return new Checkpoint(checkpoint);
             return null;
         }
 
