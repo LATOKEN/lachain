@@ -2,8 +2,11 @@
     This file controls the fast_sync, other necessary classes are instantiated here.
     We will be downloading 6 tree data structures, one at a time. Block headers will be downloaded differently, not as a tree.    
 
-    **SCOPE TO IMPROVE**:   Blocks are downloaded one by one. This creates lots of unnecessary nodes which can be deleted after
+    **SCOPE TO IMPROVE**:   1) Blocks are downloaded one by one. This creates lots of unnecessary nodes which can be deleted after
                             set state is complete.
+                            2) Tries are downloaded one by one and some trie (Event, Transaction) has many nodes where other tries
+                            have few nodes. So the asynchronous process may not fully utilize all available threads. We can try to
+                            download tries parallelly (maybe with weight, like Event will go first) to speed up
 
     **FEATURE TO ADD**:     Fastsync is possible only for the first time. If fastsync is done before, fastsync is not allowed.
                             It can be studied if it is necessary and add features to allow fastsync anytime.
