@@ -516,18 +516,19 @@ namespace Lachain.CoreTest.IntegrationTests
         
         private void GenerateBlocks(ulong blockNum)
         {
+            var height = _blockManager.GetHeight() + 1;
             for (ulong i = 0; i < blockNum; i++)
             {
-                var txs = GetCurrentPoolTxs();
+                var txs = GetCurrentPoolTxs(height + i);
                 var block = BuildNextBlock(txs);
                 var result = ExecuteBlock(block, txs);
                 Assert.AreEqual(OperatingError.Ok, result);
             }
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxs()
+        private TransactionReceipt[] GetCurrentPoolTxs(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)

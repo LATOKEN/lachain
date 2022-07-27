@@ -155,6 +155,31 @@ namespace Lachain.CoreTest.IntegrationTests
             }
         }
 
+        [Test]
+        [Repeat(2)]
+        public void Test_PendingCheckpoint()
+        {
+            ulong totalBlocks = 10;
+            var blockHeights = new List<ulong>();
+            for (ulong height = 1; height <= totalBlocks; height++)
+            {
+                blockHeights.Add(height);
+            }
+            var checkpointList = CreateCheckpointConfig(blockHeights);
+            _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
+            for (ulong i = 1; i <= totalBlocks; i++)
+            {
+                var checkcpoint = _checkpointManager.GetCheckpoint(i);
+                Assert.That(checkcpoint is null);
+                GenerateBlocks(1);
+                checkcpoint = _checkpointManager.GetCheckpoint(i);
+                Assert.That(!(checkcpoint is null));
+                Assert.AreEqual(i, checkcpoint!.BlockHeight);
+                var block = _blockManager.GetByHeight(i);
+                Assert.AreEqual(block!.Hash, checkcpoint.BlockHash);
+            }
+        }
+
         private List<CheckpointConfigInfo> CreateCheckpointConfig(List<ulong> blockHeights)
         {
             var checkpoints = new List<CheckpointConfigInfo>();
@@ -175,18 +200,19 @@ namespace Lachain.CoreTest.IntegrationTests
 
         private void GenerateBlocks(ulong blockNum)
         {
+            var height = _blockManager.GetHeight() + 1;
             for (ulong i = 0; i < blockNum; i++)
             {
-                var txs = GetCurrentPoolTxs();
+                var txs = GetCurrentPoolTxs(height + i);
                 var block = BuildNextBlock(txs);
                 var result = ExecuteBlock(block, txs);
                 Assert.AreEqual(OperatingError.Ok, result);
             }
         }
 
-        private TransactionReceipt[] GetCurrentPoolTxs()
+        private TransactionReceipt[] GetCurrentPoolTxs(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000).ToArray();
+            return _transactionPool.Peek(1000, 1000, era).ToArray();
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
