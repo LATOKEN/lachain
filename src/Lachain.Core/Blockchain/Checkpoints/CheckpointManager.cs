@@ -223,11 +223,8 @@ namespace Lachain.Core.Blockchain.Checkpoints
         public ulong GetMaxHeight()
         {
             ulong maxHeight = 0;
-            foreach (var checkcpoint in _checkpoints)
-            {
-                if (checkcpoint.BlockHeight > maxHeight)
-                    maxHeight = checkcpoint.BlockHeight;
-            }
+            if (_checkpoints.Count > 0)
+                maxHeight = _checkpoints.Max!.BlockHeight;
             return maxHeight;
         }
 
