@@ -276,7 +276,7 @@ namespace Lachain.Core.Network
                 var snapshot = blockchainSnapshot.GetSnapshot(request.TrieName);
                 var reply = new RootHashByTrieNameReply
                 {
-                    RootHash = (snapshot is null) ? UInt256Utils.Zero : snapshot.Hash,
+                    RootHash = (snapshot is null) ? null : snapshot.Hash,
                     RequestId = request.RequestId
                 };
                 callback(reply);
@@ -287,7 +287,7 @@ namespace Lachain.Core.Network
                     + $" for block {request.Block} : {exception}");
                 var reply = new RootHashByTrieNameReply
                 {
-                    RootHash = UInt256Utils.Zero,
+                    RootHash = null,
                     RequestId = request.RequestId
                 };
                 callback(reply);

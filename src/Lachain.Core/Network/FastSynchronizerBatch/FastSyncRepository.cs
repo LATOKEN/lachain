@@ -138,9 +138,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             else trieNode = BuildHashTrieNode(nodeInfo);
             _nodeCache[id] = trieNode!;
             if(_nodeCache.Count >= _nodeCacheCapacity) Commit();
-            return false;
+            return true;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool ExistNode(UInt256 nodeHash)
         {
             if(GetIdByHash(nodeHash, out ulong id))
@@ -150,6 +151,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool GetIdByHash(UInt256 nodeHash, out ulong id)
         {
             id = 0;
@@ -162,7 +164,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
             id = _versionFactory.NewVersion();
             _idCache[nodeHash] = id;
-            if(_idCache.Count>=_idCacheCapacity) CommitIds();
+            if(_idCache.Count >= _idCacheCapacity) CommitIds();
             return false;
         }
 
@@ -177,6 +179,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             trieNode = NodeSerializer.FromBytes(rawNode);
             return true; 
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool IsConsistent(TrieNodeInfo? node, out UInt256? nodeHash)
         {
             nodeHash = null;
@@ -241,6 +245,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return trieNode;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetCheckpointBlockNumber()
         {
             var rawBlockNumber = _dbContext.Get(EntryPrefix.BlockNumberFromCheckpoint.BuildPrefix());
@@ -248,6 +253,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return SerializationUtils.ToUInt64(rawBlockNumber);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public UInt256? GetCheckpointBlockHash()
         {
             var rawBlockHash = _dbContext.Get(EntryPrefix.BlockHashFromCheckpoint.BuildPrefix());
@@ -255,6 +261,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return UInt256Utils.ToUInt256(rawBlockHash);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public UInt256? GetCheckpointStateHash(CheckpointType checkpointType)
         {
             var rawStateHash = _dbContext.Get(EntryPrefix.StateHashByCheckpointType.BuildPrefix((byte) checkpointType));
@@ -262,20 +269,26 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return UInt256Utils.ToUInt256(rawStateHash);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetCurrentBlockHeight()
         {
             Initialize();
             return _blockchainSnapshot!.Blocks.GetTotalBlockHeight();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddBlock(Block block)
         {
             Initialize();
             _blockchainSnapshot!.Blocks.AddBlock(block);
             if(block.Header.Index%200 == 0) Logger.LogInformation("Added BlockHeader: " + block.Header.Index);
-            var batch = new RocksDbAtomicWrite(_dbContext);
-            if(block.Header.Index%_blockAddPeriod == 0)
+            if(block.Header.Index % _blockAddPeriod == 0)
+            {
+                var batch = new RocksDbAtomicWrite(_dbContext);
                 _blockchainSnapshot.Blocks.Commit(batch);
+                batch.Commit();
+                _blockchainSnapshot.Blocks.ClearCache();
+            }
         }
 
         private void CommitNodes()
@@ -288,6 +301,8 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             tx.Commit();
             _nodeCache.Clear();
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void CommitIds()
         {
             RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);
@@ -301,12 +316,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _idCache.Clear();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Commit()
         {
             CommitIds();
             CommitNodes();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public int GetLastDownloadedTries()
         {
             var rawInfo = _dbContext.Get(EntryPrefix.LastDownloadedTries.BuildPrefix());
@@ -314,16 +331,19 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return SerializationUtils.ToInt32(rawInfo);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetLastDownloadedTries(int downloaded)
         {
             _dbContext.Save(EntryPrefix.LastDownloadedTries.BuildPrefix(), downloaded.ToBytes().ToArray());
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public VersionFactory GetVersionFactory()
         {
             return _versionFactory;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetSnapshotVersion(string trieName, UInt256 rootHash)
         {
             Initialize();
@@ -332,6 +352,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             snapshot!.SetCurrentVersion(trieRoot);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetState()
         {
             Initialize();

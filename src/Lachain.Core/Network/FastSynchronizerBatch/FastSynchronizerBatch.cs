@@ -194,6 +194,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     return stateHash.Equals(expectedStateHash);
                 }
             }
+            Logger.LogWarning($"Could not find {checkpointType} in stateHashes");
             return false;
         }
 
