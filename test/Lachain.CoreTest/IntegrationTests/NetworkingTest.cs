@@ -179,8 +179,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 blockHeights.Add(blockNo);
                 var checkpointList = CreateCheckpointConfig(blockHeights);
                 _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
-                Assert.AreNotEqual(null, _checkpointManager.GetMaxHeight());
-                Assert.AreEqual(blockNo, _checkpointManager.GetMaxHeight());
+                Assert.AreNotEqual(0, _checkpointManager.GetCheckpointBlockHeight());
+                Assert.AreEqual(blockNo, _checkpointManager.GetCheckpointBlockHeight());
                 var request = new byte[1];
                 request[0] = (byte) CheckpointType.CheckpointExist;
                 var message = _networkManager.MessageFactory.CheckpointRequest(request, 0);
@@ -203,8 +203,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 blockHeights.Add(blockNo);
                 var checkpointList = CreateCheckpointConfig(blockHeights);
                 _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
-                Assert.AreNotEqual(null, _checkpointManager.GetMaxHeight());
-                Assert.AreEqual(blockNo, _checkpointManager.GetMaxHeight());
+                Assert.AreNotEqual(0, _checkpointManager.GetCheckpointBlockHeight());
+                Assert.AreEqual(blockNo, _checkpointManager.GetCheckpointBlockHeight());
                 var message = _networkManager.MessageFactory.CheckpointBlockRequest(blockNo, 0);
                 CheckCheckpointBlockRequest(message, blockNo);
             }
@@ -320,18 +320,17 @@ namespace Lachain.CoreTest.IntegrationTests
                 switch (checkpointInfo.MessageCase)
                 {
                     case CheckpointInfo.MessageOneofCase.CheckpointBlockHeight:
-                        Assert.AreEqual(checkpointInfo.CheckpointBlockHeight.BlockHeight, _checkpointManager.GetMaxHeight());
+                        Assert.AreEqual(checkpointInfo.CheckpointBlockHeight.BlockHeight, _checkpointManager.GetCheckpointBlockHeight());
                         break;
 
                     case CheckpointInfo.MessageOneofCase.CheckpointBlockHash:
                         Assert.AreEqual(checkpointInfo.CheckpointBlockHash.BlockHash,
-                            _checkpointManager.GetCheckpointBlockHash(_checkpointManager.GetMaxHeight()));
+                            _checkpointManager.GetCheckpointBlockHash());
                         break;
                     
                     case CheckpointInfo.MessageOneofCase.CheckpointStateHash:
                         var checkpointType = checkpointInfo.CheckpointStateHash.CheckpointType.ToArray()[0];
-                        var stateHash = _checkpointManager.GetStateHashForCheckpointType((CheckpointType) checkpointType,
-                            _checkpointManager.GetMaxHeight());
+                        var stateHash = _checkpointManager.GetStateHashForCheckpointType((CheckpointType) checkpointType);
                         Assert.AreEqual(checkpointInfo.CheckpointStateHash.StateHash, stateHash);
                         break;
 

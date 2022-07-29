@@ -1,6 +1,5 @@
 ﻿using Lachain.Core.CLI;
 using Lachain.Proto;
-using System.Collections.Generic;
 
 namespace Lachain.Core.Config
 {

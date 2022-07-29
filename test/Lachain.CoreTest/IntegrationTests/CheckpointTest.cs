@@ -109,12 +109,8 @@ namespace Lachain.CoreTest.IntegrationTests
             }
             var checkpointList = CreateCheckpointConfig(blockHeights);
             _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
-            Assert.AreNotEqual(null , _checkpointManager.GetMaxHeight(), "checkpoint not saved");
-            Assert.AreEqual(blockHeights.Last(), _checkpointManager.GetMaxHeight(), "checkpoint block height mismatch");
-
-            var checkpoints = _checkpointManager.GetAllCheckpoints();
-            Assert.AreEqual(blockHeights.Count, checkpoints.Count,
-                $"Tried to save {blockHeights.Count} checkpoints but saved only {checkpoints.Count} checkpoints");
+            Assert.AreNotEqual(0 , _checkpointManager.GetCheckpointBlockHeight(), "checkpoint not saved");
+            Assert.AreEqual(blockHeights.Last(), _checkpointManager.GetCheckpointBlockHeight(), "checkpoint block height mismatch");
         }
 
         [Test]
@@ -130,8 +126,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 blockHeights.Add(height);
                 var checkpointList = CreateCheckpointConfig(blockHeights);
                 _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
-                Assert.AreEqual(height, _checkpointManager.GetMaxHeight());
-                Assert.AreEqual(block!.Hash, _checkpointManager.GetCheckpointBlockHash(height));
+                Assert.AreEqual(height, _checkpointManager.GetCheckpointBlockHeight());
+                Assert.AreEqual(block!.Hash, _checkpointManager.GetCheckpointBlockHash());
                 
                 var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock(height);
                 var snapshots = blockchainSnapshot.GetAllSnapshot();
@@ -139,7 +135,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 {
                     var repositoryType = (RepositoryType) snapshot.RepositoryId;
                     if (repositoryType ==  RepositoryType.BlockRepository) continue;
-                    var hash = _checkpointManager.GetStateHashForSnapshotType(repositoryType, height);
+                    var hash = _checkpointManager.GetStateHashForSnapshotType(repositoryType);
                     if (hash is null)
                     {
                         Logger.LogInformation($"found null hash for {repositoryType} for block {height}");
@@ -156,7 +152,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
-        [Repeat(2)]
+        [Repeat(1)]
         public void Test_PendingCheckpoint()
         {
             ulong totalBlocks = 10;
@@ -167,12 +163,12 @@ namespace Lachain.CoreTest.IntegrationTests
             }
             var checkpointList = CreateCheckpointConfig(blockHeights);
             _checkpointManager.VerifyAndAddCheckpoints(checkpointList);
+            var checkcpoint = _checkpointManager.GetCheckpoint();
+            Assert.AreEqual(null, checkcpoint);
             for (ulong i = 1; i <= totalBlocks; i++)
             {
-                var checkcpoint = _checkpointManager.GetCheckpoint(i);
-                Assert.That(checkcpoint is null);
                 GenerateBlocks(1);
-                checkcpoint = _checkpointManager.GetCheckpoint(i);
+                checkcpoint = _checkpointManager.GetCheckpoint();
                 Assert.That(!(checkcpoint is null));
                 Assert.AreEqual(i, checkcpoint!.BlockHeight);
                 var block = _blockManager.GetByHeight(i);

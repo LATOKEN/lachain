@@ -454,7 +454,7 @@ namespace Lachain.Core.Config
             return false;
         }
 
-        public void UpdateCheckpoint(List<Checkpoint> checkpoints)
+        public void UpdateCheckpoint(Checkpoint checkpoint)
         {
             var network = GetConfig<NetworkConfig>("network") ??
                           throw new ApplicationException("No network section in config");
@@ -463,45 +463,28 @@ namespace Lachain.Core.Config
 
             var allCheckpoints = checkpointConfigs.AllCheckpoints;
             var updatedCheckpoints = new List<CheckpointConfigInfo>();
-            foreach (var checkpoint in allCheckpoints)
+            var lastCheckpoint = new CheckpointConfigInfo(0);
+            foreach (var checkpointConfig in allCheckpoints)
             {
-                var height = checkpoint.BlockHeight;
-                var checkpointInfo = ParseConfigInfoFromCheckpoint(checkpoints, height);
-                if (checkpointInfo is null)
-                    checkpointInfo = new CheckpointConfigInfo(height);
+                var height = checkpointConfig.BlockHeight;
+                if (height < checkpoint.BlockHeight)
+                    continue;
+                var checkpointInfo = new CheckpointConfigInfo(height);
+                if (height == checkpoint.BlockHeight)
+                {
+                    checkpointInfo = ParseConfigInfoFromCheckpoint(checkpoint);
+                    lastCheckpoint = checkpointInfo;
+                }
                 updatedCheckpoints.Add(checkpointInfo);
             }
 
             checkpointConfigs.AllCheckpoints = updatedCheckpoints;
-            var lastCheckpoint = new CheckpointConfigInfo(0);
-            foreach (var checkpoint in updatedCheckpoints)
-            {
-                if (checkpoint.BlockHeight > lastCheckpoint.BlockHeight)
-                    lastCheckpoint = checkpoint;
-            }
             checkpointConfigs.LastCheckpoint = lastCheckpoint;
             _config["checkpoint"] = JObject.FromObject(checkpointConfigs);
             _SaveCurrentConfig();
         }
 
-        private CheckpointConfigInfo? ParseConfigInfoFromCheckpoint(
-            List<Checkpoint> checkpoints,
-            ulong height
-        )
-        {
-            foreach (var checkpoint in checkpoints)
-            {
-                if (checkpoint.BlockHeight == height)
-                {
-                    return ParseConfigInfoFromCheckpoint(checkpoint, height);
-                }
-            }
-            return null;
-        }
-
-        private CheckpointConfigInfo ParseConfigInfoFromCheckpoint(
-            Checkpoint checkpoint, ulong height
-        )
+        private CheckpointConfigInfo ParseConfigInfoFromCheckpoint(Checkpoint checkpoint)
         {
             IDictionary<string, string> stateHashes = new Dictionary<string, string>();
             foreach (var stateHash in checkpoint.StateHashes)
@@ -516,7 +499,7 @@ namespace Lachain.Core.Config
             if (stateHashes.Count != 6)
                 throw new Exception($"Invalid checkpoint {checkpoint.ToString()}");
 
-            return new CheckpointConfigInfo(height, checkpoint.BlockHash.ToHex(), stateHashes);
+            return new CheckpointConfigInfo(checkpoint.BlockHeight, checkpoint.BlockHash.ToHex(), stateHashes);
         }
 
         private void _SaveCurrentConfig()
