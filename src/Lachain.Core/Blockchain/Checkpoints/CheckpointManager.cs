@@ -20,7 +20,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
         private readonly IBlockManager _blockManager;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IConfigManager _configManager;
-        private SortedSet<Checkpoint> _checkpoints;
+        private Checkpoint? _checkpoint = null;
         private SortedSet<ulong> _pending = new SortedSet<ulong>();
         private readonly byte StateHashCount = 6;
 
@@ -34,28 +34,32 @@ namespace Lachain.Core.Blockchain.Checkpoints
             _blockManager = blockManager;
             _snapshotIndexer = snapshotIndexer;
             _blockManager.OnBlockPersisted += OnBlockPersisted;
-            _checkpoints = new SortedSet<Checkpoint>(new CheckpointComparer());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnBlockPersisted(object? sender, Block block)
         {
             var height = block.Header.Index;
-            var pendingCheckpoints = _pending.Count;
+            ulong heightToUpdate = 0;
             while (_pending.Count > 0)
             {
                 var blockHeight = _pending.Min;
                 if (blockHeight > height)
                     break;
-                var checkpointInfo = new CheckpointConfigInfo(blockHeight);
-                if (!VerifyCheckpoint(checkpointInfo, out var checkpoint))
-                    throw new Exception($"Invalid checkpoint for block {checkpointInfo.BlockHeight}");
-                _checkpoints.Add(checkpoint!);
+
+                if (heightToUpdate < blockHeight)
+                    heightToUpdate = blockHeight;
+
                 _pending.Remove(blockHeight);
             }
-            if (pendingCheckpoints > _pending.Count)
+
+            if (heightToUpdate != 0)
             {
-                _configManager.UpdateCheckpoint(GetAllCheckpoints());
+                var checkpointInfo = new CheckpointConfigInfo(heightToUpdate);
+                if (!VerifyCheckpoint(checkpointInfo, out var checkpoint))
+                    throw new Exception($"Invalid checkpoint for block {checkpointInfo.BlockHeight}");
+                _checkpoint = checkpoint!;
+                _configManager.UpdateCheckpoint(GetCheckpoint());
             }
         }
 
@@ -128,6 +132,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void VerifyAndAddCheckpoints(List<CheckpointConfigInfo> checkpoints)
         {
+            var maxCheckpoint = new CheckpointConfigInfo(0);
             foreach (var checkpointInfo in checkpoints)
             {
                 if (checkpointInfo.BlockHeight > _blockManager.GetHeight())
@@ -135,33 +140,26 @@ namespace Lachain.Core.Blockchain.Checkpoints
                     _pending.Add(checkpointInfo.BlockHeight);
                     continue;
                 }
-                if (!VerifyCheckpoint(checkpointInfo, out var checkpoint))
-                    throw new Exception($"Invalid checkpoint for block {checkpointInfo.BlockHeight}");
-                _checkpoints.Add(checkpoint!);
+                else if (checkpointInfo.BlockHeight > maxCheckpoint.BlockHeight)
+                {
+                    maxCheckpoint = checkpointInfo;
+                }
+            }
+
+            if (maxCheckpoint.BlockHeight != 0)
+            {
+                if (!VerifyCheckpoint(maxCheckpoint, out var checkpoint))
+                    throw new Exception($"Invalid checkpoint for block {maxCheckpoint.BlockHeight}");
+                _checkpoint = checkpoint!;
             }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public List<Checkpoint> GetAllCheckpoints()
+        public Checkpoint? GetCheckpoint()
         {
-            var allCheckpoints = new List<Checkpoint>();
-            foreach (var checkcpoint in _checkpoints)
-            {
-                allCheckpoints.Add(new Checkpoint(checkcpoint));
-            }
-            return allCheckpoints;
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public Checkpoint? GetCheckpoint(ulong height)
-        {
-            var checkpointToFind = new Checkpoint
-            {
-                BlockHeight = height
-            };
-            if (_checkpoints.TryGetValue(checkpointToFind, out var checkpoint))
-                return new Checkpoint(checkpoint);
-            return null;
+            if (_checkpoint is null)
+                return null;
+            return new Checkpoint(_checkpoint);
         }
 
         private List<UInt256> GetStateHashesForBlock(ulong height)
@@ -187,19 +185,26 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 Logger.LogWarning($"Got exception trying to fetch snapshot for block {height}. Exception: {exception}");
                 return new List<UInt256>();
             }
-        } 
+        }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public UInt256? GetCheckpointBlockHash(ulong blockHeight)
+        public ulong GetCheckpointBlockHeight()
         {
-            var checkcpoint = GetCheckpoint(blockHeight);
+            var checkcpoint = GetCheckpoint();
+            return checkcpoint is null ? 0 : checkcpoint.BlockHeight;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public UInt256? GetCheckpointBlockHash()
+        {
+            var checkcpoint = GetCheckpoint();
             return checkcpoint is null ? null : checkcpoint.BlockHash;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public UInt256? GetStateHashForCheckpointType(CheckpointType checkpointType, ulong blockHeight)
+        public UInt256? GetStateHashForCheckpointType(CheckpointType checkpointType)
         {
-            var checkcpoint = GetCheckpoint(blockHeight);
+            var checkcpoint = GetCheckpoint();
             if (checkcpoint is null) return null;
             var stateHashes = checkcpoint.StateHashes;
             foreach (var stateHash in stateHashes)
@@ -214,41 +219,31 @@ namespace Lachain.Core.Blockchain.Checkpoints
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public UInt256? GetStateHashForSnapshotType(RepositoryType snapshotType, ulong blockHeight)
+        public UInt256? GetStateHashForSnapshotType(RepositoryType snapshotType)
         {
             var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotType(snapshotType);
             if (checkpointType is null) return null;
-            return GetStateHashForCheckpointType(checkpointType.Value, blockHeight);
+            return GetStateHashForCheckpointType(checkpointType.Value);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public UInt256? GetStateHashForSnapshotName(string snapshotName, ulong blockHeight)
+        public UInt256? GetStateHashForSnapshotName(string snapshotName)
         {
             var checkpointType = CheckpointUtils.GetCheckpointTypeForSnapshotName(snapshotName);
             if (checkpointType == null) return null;
-            return GetStateHashForCheckpointType(checkpointType.Value, blockHeight);
+            return GetStateHashForCheckpointType(checkpointType.Value);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public ulong GetMaxHeight()
+        public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType)
         {
-            ulong maxHeight = 0;
-            if (_checkpoints.Count > 0)
-                maxHeight = _checkpoints.Max!.BlockHeight;
-            return maxHeight;
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public CheckpointInfo GetCheckpointInfo(CheckpointType checkpointType, ulong? height = null)
-        {
-            if (height is null) height = GetMaxHeight();
             var checkpoint = new CheckpointInfo();
             switch (checkpointType)
             {
                 case CheckpointType.BlockHeight:
                     checkpoint.CheckpointBlockHeight = new CheckpointBlockHeight
                     {
-                        BlockHeight = height.Value,
+                        BlockHeight = GetCheckpointBlockHeight(),
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;
@@ -256,7 +251,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 case CheckpointType.BlockHash:
                     checkpoint.CheckpointBlockHash = new CheckpointBlockHash
                     {
-                        BlockHash = GetCheckpointBlockHash(height.Value),
+                        BlockHash = GetCheckpointBlockHash(),
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;
@@ -264,7 +259,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 case CheckpointType.CheckpointExist:
                     checkpoint.CheckpointExist = new CheckpointExist
                     {
-                        Exist = (_checkpoints.Count > 0),
+                        Exist = !(_checkpoint is null),
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;
@@ -272,7 +267,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 default:
                     checkpoint.CheckpointStateHash = new CheckpointStateHash
                     {
-                        StateHash = GetStateHashForCheckpointType(checkpointType, height.Value),
+                        StateHash = GetStateHashForCheckpointType(checkpointType),
                         CheckpointType = ByteString.CopyFrom((byte)checkpointType)
                     };
                     break;

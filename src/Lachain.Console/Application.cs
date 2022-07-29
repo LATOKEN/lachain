@@ -114,8 +114,9 @@ namespace Lachain.Console
             var checkpointConfig = configManager.GetConfig<CheckpointConfig>("checkpoint") ??
                    throw new Exception("No checkpoint section in config file");
             checkpointManager.VerifyAndAddCheckpoints(checkpointConfig.AllCheckpoints);
-            var checkpoints = checkpointManager.GetAllCheckpoints();
-            configManager.UpdateCheckpoint(checkpoints);
+            var checkpoint = checkpointManager.GetCheckpoint();
+            if (!(checkpoint is null))
+                configManager.UpdateCheckpoint(checkpoint);
 
             rpcManager.Start();
             
