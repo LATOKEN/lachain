@@ -12,6 +12,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         bool TryGetBatch(out ulong fromBlock, out ulong toBlock);
         bool Done();
         void HandleResponse(ulong fromBlock, ulong toBlock, List<Block> response, ECDSAPublicKey? peer);
-        OperatingError VerifySignatures(Block? block);
+        OperatingError VerifyBlock(Block? block);
     }
 }

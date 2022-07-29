@@ -59,7 +59,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
                 if (!VerifyCheckpoint(checkpointInfo, out var checkpoint))
                     throw new Exception($"Invalid checkpoint for block {checkpointInfo.BlockHeight}");
                 _checkpoint = checkpoint!;
-                _configManager.UpdateCheckpoint(GetCheckpoint());
+                _configManager.UpdateCheckpoint(GetCheckpoint()!);
             }
         }
 
