@@ -195,6 +195,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         )
         {
             var signature = receipt.Signature.Encode();
+            var encodedRecId = DefaultCrypto.RestoreEncodedRecIdFromSignatureBuffer(signature);
             return new JObject
             {
                 ["blockHash"] = blockHash != null ? Web3Data(blockHash) : null,
@@ -210,7 +211,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 ["value"] = Web3Number(receipt.Transaction.Value),
                 ["r"] = Web3Data(signature.Take(32)),
                 ["s"] = Web3Data(signature.Skip(32).Take(32)),
-                ["v"] = Web3Number(signature[64]),
+                ["v"] = Web3Number((ulong) encodedRecId),
             };
         }
 
