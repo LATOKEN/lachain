@@ -363,7 +363,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                             + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
                         
                         // Setting checkValidatorSet = false because we don't have validator set.
-                        var result = _blockRequestManager.VerifySignatures(block);
+                        var result = _blockRequestManager.VerifyBlock(block);
                         if (result != OperatingError.Ok)
                         {
                             Logger.LogDebug($"Block Verification failed with: {result}");

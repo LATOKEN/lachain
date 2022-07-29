@@ -25,6 +25,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         UInt256? GetCheckpointStateHash(CheckpointType checkpointType);
         ulong GetCurrentBlockHeight();
         void AddBlock(Block block);
+        Block? BlockByHeight(ulong height);
         void CommitIds();
         void Commit();
         int GetLastDownloadedTries();

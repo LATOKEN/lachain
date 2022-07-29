@@ -286,6 +286,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _blockchainSnapshot.Blocks.Commit();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public Block? BlockByHeight(ulong height)
+        {
+            Initialize();
+            return _blockchainSnapshot!.Blocks.GetBlockByHeight(height);
+        }
+
         private void CommitNodes()
         {
             RocksDbAtomicWrite tx = new RocksDbAtomicWrite(_dbContext);

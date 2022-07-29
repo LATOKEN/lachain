@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Crypto;
+using Lachain.Crypto.Misc;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
@@ -87,12 +89,18 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         Logger.LogWarning($"Got invalid block index from peer {peerPubkey}");
                         throw new Exception($"Invalid response from peer {peerPubkey}");
                     }
-                    var result = VerifySignatures(block);
+                    var result = VerifyBlock(block);
                     if (result != OperatingError.Ok)
                     {
                         Logger.LogDebug($"Block Verification failed with: {result} from peer {peerPubkey}");
                         throw new Exception($"Block verification failed from peer {peerPubkey}");
                     }
+                    // var prevBlock = _repository.BlockByHeight(blockId - 1);
+                    // if ((prevBlock is null) || !block.Header.PrevBlockHash.Equals(prevBlock.Hash))
+                    // {
+                    //     Logger.LogDebug($"Previous block hash mismatch: {result} from peer {peerPubkey}");
+                    //     throw new Exception($"Block verification failed from peer {peerPubkey}");
+                    // }
                 }
                 foreach (var block in response)
                 {
@@ -110,7 +118,23 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public OperatingError VerifySignatures(Block? block)
+        public OperatingError VerifyBlock(Block? block)
+        {
+            if (block is null) return OperatingError.InvalidBlock;
+            var header = block.Header;
+            if (!Equals(block.Hash, header.Keccak()))
+                return OperatingError.HashMismatched;
+            if (block.Header.Index != 0 && header.PrevBlockHash.IsZero())
+                return OperatingError.InvalidBlock;
+            if (header.MerkleRoot is null)
+                return OperatingError.InvalidMerkeRoot;
+            var merkleRoot = MerkleTree.ComputeRoot(block.TransactionHashes) ?? UInt256Utils.Zero;
+            if (!merkleRoot.Equals(header.MerkleRoot))
+                return OperatingError.InvalidMerkeRoot;
+            return VerifySignatures(block);
+        }
+
+        private OperatingError VerifySignatures(Block? block)
         {
             if (block is null) return OperatingError.InvalidBlock;
             // Setting checkValidatorSet = false because we don't have validator set.
