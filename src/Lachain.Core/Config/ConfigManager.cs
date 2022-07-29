@@ -427,11 +427,28 @@ namespace Lachain.Core.Config
             _config["checkpoint"] = JObject.FromObject(checkpoints);
         }
 
-        private bool AlreadyPresent(List<CheckpointConfigInfo> allCheckpoints, ulong blockHeight)
+        private void RemoveCheckpoint(ulong blockHeight)
         {
+            var checkpoints = GetConfig<CheckpointConfig>("checkpoint") ??
+                            throw new ApplicationException("No checkpoint section in config");
+            var allCheckpoints = checkpoints.AllCheckpoints;
             foreach (var checkcpoint in allCheckpoints)
             {
                 if (checkcpoint.BlockHeight == blockHeight)
+                {
+                    allCheckpoints.Remove(checkcpoint);
+                    break;
+                }
+            }
+            checkpoints.AllCheckpoints = allCheckpoints;
+            _config["checkpoint"] = JObject.FromObject(checkpoints);
+        }
+
+        private bool AlreadyPresent(List<CheckpointConfigInfo> allCheckpoints, ulong blockHeight)
+        {
+            foreach (var checkpoint in allCheckpoints)
+            {
+                if (checkpoint.BlockHeight == blockHeight)
                     return true;
             }
             return false;
@@ -446,9 +463,9 @@ namespace Lachain.Core.Config
 
             var allCheckpoints = checkpointConfigs.AllCheckpoints;
             var updatedCheckpoints = new List<CheckpointConfigInfo>();
-            foreach (var checkcpoint in allCheckpoints)
+            foreach (var checkpoint in allCheckpoints)
             {
-                var height = checkcpoint.BlockHeight;
+                var height = checkpoint.BlockHeight;
                 var checkpointInfo = ParseConfigInfoFromCheckpoint(checkpoints, height);
                 if (checkpointInfo is null)
                     checkpointInfo = new CheckpointConfigInfo(height);
@@ -472,11 +489,11 @@ namespace Lachain.Core.Config
             ulong height
         )
         {
-            foreach (var checkcpoint in checkpoints)
+            foreach (var checkpoint in checkpoints)
             {
-                if (checkcpoint.BlockHeight == height)
+                if (checkpoint.BlockHeight == height)
                 {
-                    return ParseConfigInfoFromCheckpoint(checkcpoint, height);
+                    return ParseConfigInfoFromCheckpoint(checkpoint, height);
                 }
             }
             return null;
@@ -489,10 +506,10 @@ namespace Lachain.Core.Config
             IDictionary<string, string> stateHashes = new Dictionary<string, string>();
             foreach (var stateHash in checkpoint.StateHashes)
             {
-                var checkcpointType = (CheckpointType) stateHash.CheckpointType.ToByteArray()[0];
-                var trieName = CheckpointUtils.GetSnapshotNameForCheckpointType(checkcpointType);
+                var checkpointType = (CheckpointType) stateHash.CheckpointType.ToByteArray()[0];
+                var trieName = CheckpointUtils.GetSnapshotNameForCheckpointType(checkpointType);
                 if (trieName == "")
-                    throw new Exception($"Invalid checkpoint type {checkcpointType}");
+                    throw new Exception($"Invalid checkpoint type {checkpointType}");
                 stateHashes[trieName] = stateHash.StateHash.ToHex();
             }
 

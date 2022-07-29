@@ -70,7 +70,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             // If it has completed previously, we don't let the user run it again.
             if(Alldone())
             {
-                Logger.LogTrace("Fast Sync was done previously\nReturning");
+                Logger.LogTrace("Fast Sync was done previously...Returning");
                 return;
             }
 
