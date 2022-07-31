@@ -82,25 +82,27 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     if (block is null)
                     {
                         Logger.LogWarning($"Got null block from peer {peerPubkey}");
-                        throw new Exception($"Invalid response from peer {peerPubkey}");
+                        throw new Exception($"Invalid response from peer {peerPubkey}: null block");
                     }
                     if (blockId != block.Header.Index)
                     {
                         Logger.LogWarning($"Got invalid block index from peer {peerPubkey}");
-                        throw new Exception($"Invalid response from peer {peerPubkey}");
+                        throw new Exception($"Invalid response from peer {peerPubkey}: index mismatch");
                     }
                     var result = VerifyBlock(block);
                     if (result != OperatingError.Ok)
                     {
                         Logger.LogDebug($"Block Verification failed with: {result} from peer {peerPubkey}");
-                        throw new Exception($"Block verification failed from peer {peerPubkey}");
+                        throw new Exception($"Block verification failed from peer {peerPubkey}: {result}");
                     }
-                    // var prevBlock = _repository.BlockByHeight(blockId - 1);
-                    // if ((prevBlock is null) || !block.Header.PrevBlockHash.Equals(prevBlock.Hash))
-                    // {
-                    //     Logger.LogDebug($"Previous block hash mismatch: {result} from peer {peerPubkey}");
-                    //     throw new Exception($"Block verification failed from peer {peerPubkey}");
-                    // }
+                    var prevBlock = _repository.BlockByHeight(blockId - 1);
+                    if ((prevBlock is null) || !block.Header.PrevBlockHash.Equals(prevBlock.Hash))
+                    {
+                        Logger.LogDebug($"Previous block hash mismatch for block {blockId} from peer {peerPubkey}. Previous block"
+                            + $" hash {(prevBlock is null ? "null" : prevBlock.Hash.ToHex())}, current block hash {block.Hash.ToHex()},"
+                            + $" previous block hash in current block: {block.Header.PrevBlockHash.ToHex()}");
+                        throw new Exception($"Block verification failed from peer {peerPubkey}: {OperatingError.PrevBlockHashMismatched}");
+                    }
                 }
                 foreach (var block in response)
                 {
