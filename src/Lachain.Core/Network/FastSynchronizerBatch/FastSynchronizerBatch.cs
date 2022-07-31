@@ -35,7 +35,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
                 "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
         };
-        private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
+        private static readonly ILogger<FastSynchronizerBatch> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizerBatch>();
         private readonly VersionFactory _versionFactory;
         private readonly IFastSyncRepository _repository;
         private readonly IHybridQueue _hybridQueue;
