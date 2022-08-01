@@ -70,7 +70,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             key = null;
             batch = null;
-            if(_outgoingQueue.Count>0)
+            if (_outgoingQueue.Count > 0)
             {
                 key = _outgoingQueue.Dequeue();
                 batch = _batchQueue.Dequeue();
