@@ -74,11 +74,5 @@
         BlockHashFromCheckpoint = 0x0706,
         StateHashByCheckpointType = 0x0707,
 
-        /* checkpoint info */
-        CheckpointBlockHeights = 0x0f01,
-        CheckpointBlockHash = 0x0f02,
-        CheckpointSnapshotState = 0x0f03,
-        LatestCheckpointBlockHeight = 0x0f04,
-
     }
 }
