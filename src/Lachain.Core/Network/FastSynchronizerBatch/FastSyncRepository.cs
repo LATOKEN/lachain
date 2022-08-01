@@ -47,7 +47,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             _dbContext = dbContext;
             _stateManager = stateManager;
             _snapshotIndexRepository = snapshotIndexRepository;
-            _versionFactory = storageManager.GetVersionFactory();;
+            _versionFactory = storageManager.GetVersionFactory();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

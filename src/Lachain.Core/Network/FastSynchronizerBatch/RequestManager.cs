@@ -34,7 +34,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             hashBatch = new List<UInt256>();
             batchId = new List<ulong>();
-            lock(this)
+            lock (this)
             {
                 while (hashBatch.Count < _batchSize && _hybridQueue.TryGetValue(out var hash, out var batch))
                 {
@@ -51,7 +51,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
         
         // it is used to check if downloading the current tree is complete
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool Done()
         {
             return _hybridQueue.Complete();
@@ -90,6 +89,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         }
 
         // "response" is received from a peer for the "hashBatch" of nodes
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void HandleResponse(List<UInt256> hashBatch, List<ulong> batchId, List<TrieNodeInfo> response, ECDSAPublicKey? peer)
         {
             string peerPubkey = (peer is null) ? "null" : peer.ToHex();
