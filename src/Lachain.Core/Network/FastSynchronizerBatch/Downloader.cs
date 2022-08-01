@@ -62,8 +62,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 bool foundHash = _repository.GetIdByHash(rootHash, out var id);
                 if(!foundHash) _requestManager.AddHash(rootHash);
             }
+
+            var requestTime = TimeUtils.CurrentTimeMillis();
+            ulong alertTime = 60 * 1000; // 1 min
             while(_requests.Count != 0 || !_requestManager.Done())
             {
+                var timePassed = TimeUtils.CurrentTimeMillis() - requestTime;
+                if (timePassed >= alertTime)
+                {
+                    Logger.LogWarning($"Waiting to get hash batch for too long, time passed: {timePassed / 1000.0} seconds");
+                }
                 var peer = GetPeer();
                 if(!_requestManager.TryGetHashBatch(out var hashBatch, out var batchId))
                 {
@@ -74,6 +82,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogInformation($"Preparing nodes request to send to peer {peer!._publicKey.ToHex()}");
                 var myRequestState = new RequestState(RequestType.NodesRequest, hashBatch, batchId, peer!);
                 HandleRequest(myRequestState);
+                requestTime = TimeUtils.CurrentTimeMillis();
             }
             _repository.Commit();
             if(!rootHash.Equals(EmptyHash))
@@ -226,6 +235,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             if (_requests.TryGetValue(requestId, out var request))
             {
+                Logger.LogTrace("HandleBlocksFromPeer");
                 lock (request._peerHasReply)
                 {
                     _requests.Remove(requestId);
@@ -280,6 +290,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             if (_requests.TryGetValue(requestId, out var request))
             {
+                Logger.LogTrace("HandleNodesFromPeer");
                 lock (request._peerHasReply)
                 {
                     _requests.Remove(requestId);
@@ -332,6 +343,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             if (_requests.TryGetValue(requestId, out var request))
             {
+                Logger.LogTrace("HandleCheckpointBlockFromPeer");
                 lock (request._peerHasReply)
                 {
                     _requests.Remove(requestId);
@@ -392,6 +404,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             if (_requests.TryGetValue(requestId, out var request))
             {
+                Logger.LogTrace("HandleCheckpointStateHashFromPeer");
                 lock (request._peerHasReply)
                 {
                     _requests.Remove(requestId);
@@ -449,8 +462,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         public void DownloadBlocks()
         {
 
+            var requestTime = TimeUtils.CurrentTimeMillis();
+            ulong alertTime = 60 * 1000; // 1 min
             while (_requests.Count != 0 || !_blockRequestManager.Done())
             {
+                var timePassed = TimeUtils.CurrentTimeMillis() - requestTime;
+                if (timePassed >= alertTime)
+                {
+                    Logger.LogWarning($"Waiting to get block batch for too long, time passed: {timePassed / 1000.0} seconds");
+                }
                 var peer = GetPeer();
                 if(!_blockRequestManager.TryGetBatch(out var fromBlock, out var toBlock))
                 {
@@ -461,6 +481,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogInformation($"Preparing blocks request to send to peer {peer!._publicKey.ToHex()}");
                 var myRequestState = new RequestState(RequestType.BlocksRequest, fromBlock, toBlock, peer!);
                 HandleRequest(myRequestState);
+                requestTime = TimeUtils.CurrentTimeMillis();
             }
         }
 
@@ -491,8 +512,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         private Peer GetPeer()
         {
+            var start = TimeUtils.CurrentTimeMillis();
+            ulong alertTime = 60 * 1000; // 1 min
             while (true)
             {
+                var timePassed = TimeUtils.CurrentTimeMillis() - start;
+                if (timePassed >= alertTime)
+                {
+                    Logger.LogWarning($"Waiting to get peer for too long, time passed: {timePassed / 1000.0} seconds");
+                }
                 if (!_peerManager.TryGetPeer(out var peer))
                 {
                     Thread.Sleep(200);
