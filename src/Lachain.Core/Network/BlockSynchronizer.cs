@@ -64,6 +64,7 @@ namespace Lachain.Core.Network
         private UInt256? _checkpointBlockHash;
         private List<(UInt256, CheckpointType)>? _stateHashes;
         private ulong? _checkpointRequesId;
+        private readonly int MaxRetriesForCheckpoint = 30;
 
         public BlockSynchronizer(
             ITransactionManager transactionManager,
@@ -404,15 +405,17 @@ namespace Lachain.Core.Network
             GetCheckpoint();
             lock (_peerHasCheckpoint)
             {
-                if (_checkpointBlockHeight is null) return false;
+                if (_checkpointBlockHash is null) return false;
                 return myHeight + FastSynchronizerBatch.FastSynchronizerBatch.FastSyncBlockDiff <= _checkpointBlockHeight;
             }
         }
 
         private void GetCheckpoint()
         {
+            int tried = MaxRetriesForCheckpoint;
             const int maxPeersToAsk = 1;
             var rnd = new Random();
+            var waitingTime = 10000;
             while(true)
             {
                 var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
@@ -438,15 +441,22 @@ namespace Lachain.Core.Network
                 foreach (var peer in peers) _networkManager.SendTo(peer, message);
                 lock (_peerHasCheckpoint)
                 {
-                    var gotReply = Monitor.Wait(_peerHasCheckpoint, TimeSpan.FromMilliseconds(5000));
+                    var gotReply = Monitor.Wait(_peerHasCheckpoint, TimeSpan.FromMilliseconds(waitingTime));
                     if (gotReply)
                     {
-                        return;
+                        if (tried <= 0 || !(_checkpointBlockHash is null))
+                            return;
                     }
                     _checkpointBlockHeight = null;
                     _checkpointBlockHash = null;
                     _stateHashes = null;
                     ResetRequestId();
+                    tried--;
+                    if (tried <= 0)
+                    {
+                        Logger.LogInformation($"Could not fetch checkpoint, tried {MaxRetriesForCheckpoint} times, returning...");
+                        return;
+                    }
                     Logger.LogInformation("Could not fetch checkpoint, timeout occured. Trying again...");
                 }
             }
@@ -454,8 +464,10 @@ namespace Lachain.Core.Network
 
         private void CheckIfCheckpointExist()
         {
+            int tried = MaxRetriesForCheckpoint;
             const int maxPeersToAsk = 1;
             var rnd = new Random();
+            var waitingTime = 5000;
             while(true)
             {
                 var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
@@ -474,13 +486,20 @@ namespace Lachain.Core.Network
                 foreach (var peer in peers) _networkManager.SendTo(peer, message);
                 lock (_peerHasCheckpoint)
                 {
-                    var gotReply = Monitor.Wait(_peerHasCheckpoint, TimeSpan.FromMilliseconds(5000));
+                    var gotReply = Monitor.Wait(_peerHasCheckpoint, TimeSpan.FromMilliseconds(waitingTime));
                     if (gotReply)
                     {
-                        return;
+                        if (tried <= 0 || (_checkpointExist.HasValue && _checkpointExist.Value))
+                            return;
                     }
                     _checkpointExist = null;
                     ResetRequestId();
+                    tried--;
+                    if (tried <= 0)
+                    {
+                        Logger.LogInformation($"Could not fetch checkpoint, tried {MaxRetriesForCheckpoint} times, returning...");
+                        return;
+                    }
                     Logger.LogInformation("Could not fetch checkpoint, timeout occured. Trying again...");
                 }
             }
@@ -521,7 +540,7 @@ namespace Lachain.Core.Network
                             break;
                     }
                 }
-                if (_checkpointBlockHeight != null && !_fastSync.IsCheckpointOk(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes))
+                if (!(_checkpointBlockHash is null) && !_fastSync.IsCheckpointOk(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes))
                 {
                     Logger.LogInformation(
                         $"Got invalid checkpoint information from peer: {publicKey.ToHex()}. Is peer malicious? Aborting fast sync");
