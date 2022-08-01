@@ -368,6 +368,7 @@ namespace Lachain.Core.Network
                 return;
             }
             if (!startFastSync) return;
+            Logger.LogTrace("Requested to start FastSync");
             while (true)
             {
                 if (_peerHeights.Count == 0)
