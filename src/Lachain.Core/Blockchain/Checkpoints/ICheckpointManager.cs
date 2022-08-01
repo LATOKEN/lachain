@@ -11,7 +11,7 @@ namespace Lachain.Core.Blockchain.Checkpoints
         /// Fetches block hash of last checkpoint
         /// </summary>
         /// <returns>
-        /// Block hash of checkpoint </c>blockHeight</c>
+        /// Block hash of checkpoint <c>blockHeight</c>
         /// </returns>
         UInt256? GetCheckpointBlockHash();
         /// <summary>
@@ -54,7 +54,6 @@ namespace Lachain.Core.Blockchain.Checkpoints
         /// Given some CheckpointType, gets the corresponding CheckpointInfo for latest checkpoint
         /// </summary>
         /// <param name = "checkpointType"> CheckpointType </param>
-        /// <param name = "height"> Block Height </param>
         /// <returns>
         /// All required checkpoint info
         /// </returns>
