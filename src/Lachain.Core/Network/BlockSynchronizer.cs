@@ -64,7 +64,7 @@ namespace Lachain.Core.Network
         private UInt256? _checkpointBlockHash;
         private List<(UInt256, CheckpointType)>? _stateHashes;
         private ulong? _checkpointRequesId;
-        private readonly int MaxRetriesForCheckpoint = 30;
+        private readonly int MaxRetriesForCheckpoint = 60;
 
         public BlockSynchronizer(
             ITransactionManager transactionManager,
@@ -351,11 +351,12 @@ namespace Lachain.Core.Network
             }
         }
 
-        public void Start(bool startFastSync)
+        public void Start(string startFastSync)
         {
             _running = true;
             _pingThread.Start();
-            StartFastSync(startFastSync);
+            bool fastSyncRequested = startFastSync.ToLower() == "true" ? true : false;
+            StartFastSync(fastSyncRequested);
             _blockSyncThread.Start();
         }
 
@@ -416,7 +417,7 @@ namespace Lachain.Core.Network
             int tried = MaxRetriesForCheckpoint;
             const int maxPeersToAsk = 1;
             var rnd = new Random();
-            var waitingTime = 10000;
+            var waitingTime = 5000;
             while(true)
             {
                 var maxHeight = _peerHeights.Values.Count == 0 ? 0 : _peerHeights.Values.Max();
@@ -445,7 +446,8 @@ namespace Lachain.Core.Network
                     var gotReply = Monitor.Wait(_peerHasCheckpoint, TimeSpan.FromMilliseconds(waitingTime));
                     if (gotReply)
                     {
-                        if (tried <= 0 || !(_checkpointBlockHash is null))
+                        if (tried <= 0 || (!(_checkpointBlockHash is null) 
+                            && _fastSync.IsCheckpointOk(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes)))
                             return;
                     }
                     _checkpointBlockHeight = null;
@@ -540,15 +542,6 @@ namespace Lachain.Core.Network
                                 (CheckpointType)checkpointType[0]));
                             break;
                     }
-                }
-                if (!(_checkpointBlockHash is null) && !_fastSync.IsCheckpointOk(_checkpointBlockHeight, _checkpointBlockHash, _stateHashes))
-                {
-                    Logger.LogInformation(
-                        $"Got invalid checkpoint information from peer: {publicKey.ToHex()}. Is peer malicious? Aborting fast sync");
-                    _checkpointExist = null;
-                    _checkpointBlockHash = null;
-                    _checkpointBlockHeight = null;
-                    _stateHashes = null;
                 }
                 ResetRequestId();
                 Monitor.PulseAll(_peerHasCheckpoint);

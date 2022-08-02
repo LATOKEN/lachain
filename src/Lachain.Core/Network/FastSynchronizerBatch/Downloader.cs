@@ -530,5 +530,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             }
         }
 
+        public void ResetCheckpointInfo()
+        {
+            _checkpointBlock = null;
+            _checkpointStateHashes = null;
+        }
+
     }
 }

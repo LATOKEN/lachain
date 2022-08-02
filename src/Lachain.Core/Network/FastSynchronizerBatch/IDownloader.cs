@@ -17,5 +17,6 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         Block? CheckpointBlock { get; }
         List<(UInt256, CheckpointType)>? CheckpointStateHashes { get; }
         void DownloadCheckpoint(ulong blockNumber, string[] trieNames);
+        void ResetCheckpointInfo();
     }
 }
