@@ -14,6 +14,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Core.Blockchain.Checkpoints;
@@ -64,6 +65,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         // urls is the list of peer nodes, we'll be requesting for data throughtout this process
         // blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
         // start synching with that peer
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void StartSync(ulong? blockNumber, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
             // At first we check if fast sync have started and completed before.
@@ -178,7 +180,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public bool IsRunning()
         {
-            return _repository.GetCheckpointBlockNumber() > 0;
+            return _repository.GetCheckpointBlockNumber() > 0  && !Alldone();
         }
 
         private bool MatchStateHash(
@@ -198,8 +200,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool IsCheckpointOk(ulong? blockHeight, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
+            _downloader.ResetCheckpointInfo();
             Logger.LogTrace("Verifying checkpoint information...");
             if (blockHash is null || blockHeight is null || stateHashes is null || stateHashes.Count != 6)
             {

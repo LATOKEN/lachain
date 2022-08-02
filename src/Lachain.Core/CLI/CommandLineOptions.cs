@@ -98,7 +98,7 @@ namespace Lachain.Core.CLI
         public ulong? RollBackTo { get; set; }
 
         [Option('s', "fastsync", Required = false, HelpText = "Permission to perform fast-sync")]
-        public bool StartFastSync { get; set; } = false;
+        public string StartFastSync { get; set; } = "false";
     }
     
     [Verb("db", HelpText = "cleanups in db")]
