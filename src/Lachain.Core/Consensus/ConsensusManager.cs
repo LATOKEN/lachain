@@ -128,7 +128,7 @@ namespace Lachain.Core.Consensus
 
                     broadcaster.Dispatch(message, fromIndex);
                 }
-                else
+                else if (IsEraNearFuture(era, CurrentEra))
                 {
                     lock (_postponedMessages)
                     {
@@ -141,6 +141,14 @@ namespace Lachain.Core.Consensus
             }
         }
 
+        private bool IsEraNearFuture(long era, long currentEra)
+        {
+            long allowedEra = 5;
+            if (era < currentEra) return false;
+            if (era - currentEra <= allowedEra) return true;
+            return false;
+        }
+
         public void Start(ulong startingEra)
         {
             _networkManager.AdvanceEra(startingEra);
@@ -151,6 +159,14 @@ namespace Lachain.Core.Consensus
         {
             lock (_erasLock)
             {
+                // Sometimes _postponedMessages messages are not cleared if the current node is not a validator
+                // but messages maybe inserted in case the nodes does not have validators set yet and someone sent
+                // consensus message to this node. So it needs to be cleared for every era
+                lock (_postponedMessages)
+                {
+                    _postponedMessages.Remove(CurrentEra);
+                }
+                
                 var broadcaster = _eras[CurrentEra];
                 lock (broadcaster)
                 {
