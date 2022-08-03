@@ -265,6 +265,7 @@ namespace Lachain.Core.Consensus
                     }
                 }
             }
+            else Logger.LogWarning($"protocol {request.To} not created? something went wrong");
         }
 
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
@@ -462,15 +463,6 @@ namespace Lachain.Core.Consensus
 
         // Check if parent protocol is terminated
         // Check validity
-        // Check if non-terminated protocols are not too many
-        // Yet this could be exploited in this way: an honest node process CC sequentially, CC-1, CC-3, CC-5,...,
-        // Lets say we have CC-11 and we are allowing at most 10 non-terminated CC. A malicious validator can
-        // propose for CC-671, CC-677, .. (10 CC like this) together. They will be allowed and maybe never terminated
-        // because they are too far. So a proposal from honest validator will be rejected. 
-        // We can handle the proposal sequenitally, but due to network latency, messages from other validators may not
-        // reach us sequenitally. So we propose this idea: allow max 'X' (for now X = 10) non-terminated CC and also
-        // check that: for the lowest non-terminated CC (CC-L) and the highest non-termianted CC (CC-H) are such that
-        // the total number of valid CC in between CC-L and CC-H (including) is at most 'X'.
         private bool ValidateCoinId(CoinId coinId)
         {
             if (coinId.Agreement == -1 && coinId.Epoch == 0)
