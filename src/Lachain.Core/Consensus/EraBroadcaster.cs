@@ -38,10 +38,6 @@ namespace Lachain.Core.Consensus
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
-        private long[] _minEpochCC;
-        private long[] _minEpochBb;
-        private const int _maxAllowedBbId = 10;
-        private const int _maxAllowedCoinId = 10;
 
         public bool Ready => _validators != null;
 
@@ -56,6 +52,9 @@ namespace Lachain.Core.Consensus
          */
         private readonly IDictionary<IProtocolIdentifier, IConsensusProtocol> _registry =
             new ConcurrentDictionary<IProtocolIdentifier, IConsensusProtocol>();
+
+        private readonly IDictionary<IProtocolIdentifier, List<MessageEnvelope>> _postponedMessages = 
+            new ConcurrentDictionary<IProtocolIdentifier, List<MessageEnvelope>>();
 
         public EraBroadcaster(
             long era, IConsensusMessageDeliverer consensusMessageDeliverer,
@@ -75,17 +74,6 @@ namespace Lachain.Core.Consensus
         {
             _validators = keySet;
             _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
-            InitializeCounter();
-        }
-
-        private void InitializeCounter()
-        {
-            if (_validators is null)
-                throw new Exception("We don't have validators");
-            _minEpochBb = new long[_validators.N];
-            _minEpochCC = new long[_validators.N];
-            for (int i = 0; i < _validators.N; i++)
-                _minEpochCC[i] = 5;
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
@@ -106,7 +94,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            foreach (var publicKey in _validators.EcdsaPublicKeySet)
+            foreach (var publicKey in _validators!.EcdsaPublicKeySet)
             {
                 if (publicKey.Equals(_wallet.EcdsaKeyPair.PublicKey))
                 {
@@ -140,7 +128,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            _consensusMessageDeliverer.SendTo(_validators.EcdsaPublicKeySet[index], payload);
+            _consensusMessageDeliverer.SendTo(_validators!.EcdsaPublicKeySet[index], payload);
         }
 
         public void Dispatch(ConsensusMessage message, int from)
@@ -165,48 +153,72 @@ namespace Lachain.Core.Consensus
                 return;
             }
 
+            IProtocolIdentifier protocolId;
             switch (message.PayloadCase)
             {
                 case ConsensusMessage.PayloadOneofCase.Bval:
-                    var idBval = new BinaryBroadcastId(message.Validator.Era, message.Bval.Agreement,
+                    protocolId = new BinaryBroadcastId(message.Validator.Era, message.Bval.Agreement,
                         message.Bval.Epoch);
-                    EnsureProtocol(idBval)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Aux:
-                    var idAux = new BinaryBroadcastId(message.Validator.Era, message.Aux.Agreement, message.Aux.Epoch);
-                    EnsureProtocol(idAux)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    protocolId = new BinaryBroadcastId(message.Validator.Era, message.Aux.Agreement, message.Aux.Epoch);
                     break;
                 case ConsensusMessage.PayloadOneofCase.Conf:
-                    var idConf = new BinaryBroadcastId(message.Validator.Era, message.Conf.Agreement,
+                    protocolId = new BinaryBroadcastId(message.Validator.Era, message.Conf.Agreement,
                         message.Conf.Epoch);
-                    EnsureProtocol(idConf)?.ReceiveMessage(new MessageEnvelope(message, from));
                     break;
                 case ConsensusMessage.PayloadOneofCase.Coin:
-                    var idCoin = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
-                    EnsureProtocol(idCoin)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    protocolId = new CoinId(message.Validator.Era, message.Coin.Agreement, message.Coin.Epoch);
                     break;
                 case ConsensusMessage.PayloadOneofCase.Decrypted:
-                    var hbbftId = new HoneyBadgerId((int) message.Validator.Era);
-                    EnsureProtocol(hbbftId)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    protocolId = new HoneyBadgerId((int) message.Validator.Era);
                     break;
                 case ConsensusMessage.PayloadOneofCase.ValMessage:
-                    var reliableBroadcastId = new ReliableBroadcastId(message.ValMessage.SenderId, (int) message.Validator.Era);
-                    EnsureProtocol(reliableBroadcastId)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    protocolId = new ReliableBroadcastId(message.ValMessage.SenderId, (int) message.Validator.Era);
                     break;
                 case ConsensusMessage.PayloadOneofCase.EchoMessage:
-                    var rbIdEchoMsg = new ReliableBroadcastId(message.EchoMessage.SenderId, (int) message.Validator.Era);
-                    EnsureProtocol(rbIdEchoMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    protocolId = new ReliableBroadcastId(message.EchoMessage.SenderId, (int) message.Validator.Era);
                     break;
                 case ConsensusMessage.PayloadOneofCase.ReadyMessage:
-                    var rbIdReadyMsg = new ReliableBroadcastId(message.ReadyMessage.SenderId, (int) message.Validator.Era);
-                    EnsureProtocol(rbIdReadyMsg)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    protocolId = new ReliableBroadcastId(message.ReadyMessage.SenderId, (int) message.Validator.Era);
                     break;
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
-                    var rootId = new RootProtocolId(message.Validator.Era);
-                    EnsureProtocol(rootId)?.ReceiveMessage(new MessageEnvelope(message, from));
+                    protocolId = new RootProtocolId(message.Validator.Era);
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message}");
+            }
+
+            HandleExternalMessage(protocolId, new MessageEnvelope(message, from));
+        }
+
+        private void HandleExternalMessage(IProtocolIdentifier protocolId, MessageEnvelope message)
+        {
+            // For external message we don't create new protocols. each protocol is requested for some result
+            // by another protocol (maybe itself) via internal message. When protocols are created by internal message
+            // we deliver the external messages to that protocol, otherwise store them to deliver later
+            if (ValidateProtocolId(protocolId))
+            {
+                if (message.External)
+                {
+                    var protocol = GetProtocolById(protocolId);
+                    if (protocol is null)
+                    {
+                        lock (_postponedMessages)
+                        {
+                            _postponedMessages
+                                .PutIfAbsent(protocolId, new List<MessageEnvelope>())
+                                .Add(message);
+                        }
+                    }
+                    else protocol.ReceiveMessage(message);
+                }
+                else Logger.LogWarning("Internal message should not be here");
+            }
+            else
+            {
+                var from = message.ValidatorIndex;
+                Logger.LogWarning($"Invalid protocol id {protocolId} from validator {GetPublicKeyById(from)!.ToHex()} ({from})");
             }
         }
 
@@ -238,6 +250,21 @@ namespace Lachain.Core.Consensus
             
             if (_registry.TryGetValue(request.To, out var protocol))
                 protocol?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
+            
+            if (!(protocol is null))
+            {
+                lock (_postponedMessages)
+                {
+                    if (_postponedMessages.TryGetValue(request.To, out var savedMessages))
+                    {
+                        foreach (var message in savedMessages)
+                        {
+                            protocol.ReceiveMessage(message);
+                        }
+                        _postponedMessages.Remove(request.To);
+                    }
+                }
+            }
         }
 
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
@@ -276,7 +303,7 @@ namespace Lachain.Core.Consensus
 
         public int GetIdByPublicKey(ECDSAPublicKey publicKey)
         {
-            return _validators.GetValidatorIndex(publicKey);
+            return _validators!.GetValidatorIndex(publicKey);
         }
 
         public ECDSAPublicKey? GetPublicKeyById(int id)
@@ -301,6 +328,10 @@ namespace Lachain.Core.Consensus
 
             _registry.Clear();
             _callback.Clear();
+            lock (_postponedMessages)
+            {
+                _postponedMessages.Clear();
+            }
         }
 
         // Each ProtocolId is created only once to prevent spamming, Protocols are mapped against ProtocolId, so each
@@ -325,19 +356,16 @@ namespace Lachain.Core.Consensus
 
         private IConsensusProtocol? CreateProtocol(IProtocolIdentifier id)
         {
+            if (!ValidateProtocolId(id)) return null;
             switch (id)
             {
                 case BinaryBroadcastId bbId:
-                    if (!ValidateBinaryBroadcastId(bbId))
-                        return null;
-                    var bb = new BinaryBroadcast(bbId, _validators, this);
+                    var bb = new BinaryBroadcast(bbId, _validators!, this);
                     RegisterProtocols(new[] {bb});
                     return bb;
                 case CoinId coinId:
-                    if (!ValidateCoinId(coinId))
-                        return null;
                     var coin = new CommonCoin(
-                        coinId, _validators,
+                        coinId, _validators!,
                         _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1) ??
                         throw new InvalidOperationException($"No TS keys present for era {_era}"),
                         this
@@ -345,22 +373,20 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {coin});
                     return coin;
                 case ReliableBroadcastId rbcId:
-                    if (!ValidateSenderId((long) rbcId.SenderId))
-                        return null;
-                    var rbc = new ReliableBroadcast(rbcId, _validators, this);
+                    var rbc = new ReliableBroadcast(rbcId, _validators!, this);
                     RegisterProtocols(new[] {rbc});
                     return rbc;
                 case BinaryAgreementId baId:
-                    var ba = new BinaryAgreement(baId, _validators, this);
+                    var ba = new BinaryAgreement(baId, _validators!, this);
                     RegisterProtocols(new[] {ba});
                     return ba;
                 case CommonSubsetId acsId:
-                    var acs = new CommonSubset(acsId, _validators, this);
+                    var acs = new CommonSubset(acsId, _validators!, this);
                     RegisterProtocols(new[] {acs});
                     return acs;
                 case HoneyBadgerId hbId:
                     var hb = new HoneyBadger(
-                        hbId, _validators,
+                        hbId, _validators!,
                         _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1)
                         ?? throw new InvalidOperationException($"No TPKE keys present for era {_era}"),
                         this
@@ -368,7 +394,7 @@ namespace Lachain.Core.Consensus
                     RegisterProtocols(new[] {hb});
                     return hb;
                 case RootProtocolId rootId:
-                    var root = new RootProtocol(rootId, _validators, _wallet.EcdsaKeyPair.PrivateKey, 
+                    var root = new RootProtocol(rootId, _validators!, _wallet.EcdsaKeyPair.PrivateKey, 
                         this, _validatorAttendanceRepository, StakingContract.CycleDuration,
                         HardforkHeights.IsHardfork_9Active((ulong)_era));
                     RegisterProtocols(new[] {root});
@@ -382,6 +408,38 @@ namespace Lachain.Core.Consensus
         {
             if (id.Era != _era)
                 throw new InvalidOperationException($"Era mismatched, expected {_era} got message with {id.Era}");
+        }
+
+        private bool ValidateProtocolId(IProtocolIdentifier id)
+        {
+            switch (id)
+            {
+                case BinaryBroadcastId bbId:
+                    return ValidateBinaryBroadcastId(bbId);
+                case CoinId coinId:
+                    return ValidateCoinId(coinId);
+                case ReliableBroadcastId rbcId:
+                // need to validate the sender id only
+                    return ValidateSenderId((long) rbcId.SenderId);
+                case BinaryAgreementId baId:
+                // created only by internal request, external messages never reach BinaryAgreementId
+                // so no need to validate
+                    return true;
+                case CommonSubsetId acsId:
+                // created only by internal request, external messages never reach BinaryAgreementId
+                // so no need to validate
+                    return true;
+                case HoneyBadgerId hbId:
+                // only has era in the fields
+                    ValidateId(hbId);
+                    return true;
+                case RootProtocolId rootId:
+                // only has era in the fields
+                    ValidateId(rootId);
+                    return true;
+                default:
+                    return false;
+            }
         }
         
         // There are separate instance of ReliableBroadcast for each validator.
@@ -430,6 +488,7 @@ namespace Lachain.Core.Consensus
                     Logger.LogInformation($"Invalid CoinId: {coinId}");
                     return false;
                 }
+
                 // Checking if BA is terminated
                 var binaryAgreementId = CreateBaId(coinId.Agreement);
                 if (!(binaryAgreementId is null) &&
@@ -439,23 +498,7 @@ namespace Lachain.Core.Consensus
                     Logger.LogInformation($"BinaryAgreement {binaryAgreementId} for CoinId {coinId} is already terminated");
                     return false;
                 }
-                // Allow creation of new CC if not too many are present
-                var minEpoch = _minEpochCC[coinId.Agreement];
-                var minCoinId = new CoinId(coinId.Era, coinId.Agreement, minEpoch);
-                while (_registry.TryGetValue(minCoinId, out var minCommonCoin) && minCommonCoin.Terminated)
-                {
-                    minEpoch = CoinToss.NextCoinCreationEpoch(minEpoch);
-                    minCoinId = new CoinId(coinId.Era, coinId.Agreement, minEpoch);
-                }
-
-                _minEpochCC[coinId.Agreement] = minEpoch;
-                var diff = CoinToss.TotalValidCommonCoin(minEpoch, coinId.Epoch);
-                if (diff < 0 || diff > _maxAllowedCoinId)
-                {
-                    Logger.LogInformation($"Too many CoinId created, request CoinId: {coinId}, non terminated CoinId of minimum "
-                                          + $"epoch: {minEpoch}, max CoinId allowed {_maxAllowedCoinId}");
-                    return false;
-                }
+                
                 return true;
             }
             return false;
@@ -482,23 +525,7 @@ namespace Lachain.Core.Consensus
                                           $"{binaryBroadcastId} is already terminated");
                     return false;
                 }
-                // Allow creation of new BB if not too many are present
-                var minEpoch = _minEpochBb[binaryBroadcastId.Agreement];
-                var minBbId = new BinaryBroadcastId(binaryBroadcastId.Era, binaryBroadcastId.Agreement, minEpoch);
-                while (_registry.TryGetValue(minBbId, out var minBb) && minBb.Terminated)
-                {
-                    minEpoch += 2;
-                    minBbId = new BinaryBroadcastId(binaryBroadcastId.Era, binaryBroadcastId.Agreement, minEpoch);
-                }
-
-                _minEpochBb[binaryBroadcastId.Agreement] = minEpoch;
-                var diff = (binaryBroadcastId.Epoch - minEpoch) / 2 + 1;
-                if (diff > _maxAllowedBbId)
-                {
-                    Logger.LogInformation($"Too many BbId created, request BbId: {binaryBroadcastId}, non terminated"
-                                          + $" BbId of minimum epoch: {minEpoch}, max BbId allowed {_maxAllowedBbId}");
-                    return false;
-                }
+                
                 return true;
             }
             // 0 epoch
