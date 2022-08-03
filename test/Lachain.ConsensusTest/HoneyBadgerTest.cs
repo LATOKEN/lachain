@@ -66,6 +66,22 @@ namespace Lachain.ConsensusTest
             }
         }
 
+        private void SetUpOneMalicious(int n, int f)
+        {
+            SetUp(n, f);
+            _broadcasts[0] = new HoneyBadgerMalicious(
+                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, _broadcasters[0]
+            );
+            _broadcasters[0].RegisterProtocols(new[] {_broadcasts[0], _resultInterceptors[0]});
+            for (uint i = 1; i < n; ++i)
+            {
+                _broadcasts[i] = new HoneyBadger(
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                );
+                _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
+            }
+        }
+
         private void SetUpSomeSilent(int n, int f, ISet<int> s)
         {
             SetUp(n, f);
@@ -128,6 +144,34 @@ namespace Lachain.ConsensusTest
             {
                 if (s.Contains(i)) continue;
 
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
+                    $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
+                Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
+            }
+        }
+
+        [Test]
+        public void TestSomeMalicious_7_2()
+        {
+            const int n = 7, f = 2;
+ 
+            SetUpOneMalicious(n, f);
+            for (var i = 0; i < n; ++i)
+            {
+                var share = new RawShare(new byte[32], i);
+                _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
+                ));
+            }
+
+            for (var i = 1; i < n; ++i)
+            {
+                _broadcasts[i].WaitFinish();
+            }
+
+            for (var i = 1; i < n; ++i)
+            {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");

@@ -151,7 +151,7 @@ namespace Lachain.Consensus.HoneyBadger
             CheckResult();
         }
 
-        private ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)
+        protected virtual ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)
         {
             var message = new ConsensusMessage
             {
