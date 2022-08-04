@@ -19,7 +19,6 @@ namespace Lachain.Core.Blockchain.Pool
 {
     /*
         In-memory structure to store all the transactions waiting to be added to the next blocks
-
     */
     public class TransactionPool : ITransactionPool
     {
@@ -116,6 +115,7 @@ namespace Lachain.Core.Blockchain.Pool
             // if a transaction was not added to the pool, that means it's not a valid 
             // transactions, so we should also erase it from the persistent storage
             _poolRepository.RemoveTransactions(transactionsToRemove);
+            _lastSanitized = _blockManager.GetHeight();
             CheckConsistency();
         }
 
@@ -134,7 +134,7 @@ namespace Lachain.Core.Blockchain.Pool
                 // we use next height here because block header should be signed with the same chainId
                 // and this txes will go to the next block
                 Hash = transaction.FullHash(signature, 
-                    HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1)),
+                    HardforkHeights.IsHardfork_9Active(BlockHeight() + 1)),
                 Signature = signature,
                 Status = TransactionStatus.Pool
             };
@@ -176,8 +176,8 @@ namespace Lachain.Core.Blockchain.Pool
                 return OperatingError.InsufficientBalance;
 
             // Stop accept regular txes 100 blocks before Hardfork_6
-            if (HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 100) &&
-                !HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight()))
+            if (HardforkHeights.IsHardfork_9Active(BlockHeight() + 100) &&
+                !HardforkHeights.IsHardfork_9Active(BlockHeight()))
             {
                 if (!receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) &&
                     !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
@@ -186,7 +186,7 @@ namespace Lachain.Core.Blockchain.Pool
             
             // we use next height here because block header should be signed with the same chainId
             // and this txes will go to the next block
-            bool useNewChainId = HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1);
+            bool useNewChainId = HardforkHeights.IsHardfork_9Active(BlockHeight() + 1);
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
@@ -556,6 +556,14 @@ namespace Lachain.Core.Blockchain.Pool
             // have been already added to the blocks
             var stateNonce = _transactionManager.CalcNextTxNonce(address);
             return poolNonce.HasValue ? Math.Max(poolNonce.Value + 1, stateNonce) : stateNonce;
+        }
+
+        // Pool works separately from other operations. It is better to work in such a way that its operations
+        // do not depend on other operations like BlockManager, so its own BlockHeight()
+        // Note: OnBlockPersisted() will always depend on BlockManager
+        private ulong BlockHeight()
+        {
+            return _lastSanitized;
         }
     }
 }
