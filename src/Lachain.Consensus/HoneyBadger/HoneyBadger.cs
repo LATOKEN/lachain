@@ -128,6 +128,8 @@ namespace Lachain.Consensus.HoneyBadger
                 new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
         }
 
+        // TODO: (investigate) the share is comming from ReliableBroadcast and the shareId of the share should match the senderId
+        // of that ReliableBroadcast, otherwise we might replace one share with another in _receivedShares array
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
             Logger.LogTrace($"Common subset finished {result.From}");
@@ -160,6 +162,8 @@ namespace Lachain.Consensus.HoneyBadger
             return message;
         }
 
+        // DecryptorId of the message should match the senderId, otherwise the message should be discarded
+        // because HoneyBadger does not accept two messages for same DecryptorId and shareId
         // We need to handle this message carefully like how about decoding a random message with random length
         // and the value of 'share.ShareId' needs to be checked. If it is out of range, it can throw exception
         private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg, int senderId)

@@ -265,7 +265,6 @@ namespace Lachain.Core.Consensus
                     }
                 }
             }
-            else Logger.LogWarning($"protocol {request.To} not created? something went wrong");
         }
 
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
