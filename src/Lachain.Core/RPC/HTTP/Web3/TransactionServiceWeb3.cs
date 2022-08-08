@@ -751,7 +751,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (block == null)
                 return null;
 
-            List<TransactionReceipt> txs = new List<TransactionReceipt>();
+            ulong gasUsed = 0;
             try
             {
                 foreach (var txHash in block.TransactionHashes)
@@ -762,7 +762,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     {
                         Logger.LogWarning($"Transaction not found in DB {txHash.ToHex()}");
                     }
-                    else txs.Add(tx);
+                    else
+                    {
+                        gasUsed += tx.GasUsed;
+
+                    }
                 }
             }
             catch (Exception e)
@@ -772,24 +776,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 foreach (var txhash in block.TransactionHashes)
                     Logger.LogWarning($"txhash {txhash.ToHex()}");
             }
-
-            ulong gasUsed = 0;
-            try
-            {
-                gasUsed = txs.Aggregate(gasUsed, (current, tx) => current + tx.GasUsed);
-            }
-            catch (Exception e)
-            {
-                Logger.LogWarning($"Exception {e}");
-                Logger.LogWarning($"txs {txs}");
-                foreach (var tx in txs)
-                {
-                    if (tx is null)
-                        continue;
-                    Logger.LogWarning($"tx {tx.Hash.ToHex()} {tx.GasUsed} {tx.Status} {tx.IndexInBlock}");
-                }
-            }
-
 
             return gasUsed;
 
