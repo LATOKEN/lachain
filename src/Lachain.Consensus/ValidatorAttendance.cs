@@ -110,6 +110,9 @@ namespace Lachain.Consensus
             if (previousCycle == currentCycle - 1 && currentAsNext)
                 return new ValidatorAttendance(currentCycle, nextAttendanceDict, new Dictionary<string, ulong>());
 
+            if (previousCycle == currentCycle - 2 && !currentAsNext)
+                return new ValidatorAttendance(previousCycle + 1, nextAttendanceDict, new Dictionary<string, ulong>());
+
             return new ValidatorAttendance(currentCycle, new Dictionary<string, ulong>(),
                 new Dictionary<string, ulong>());
         }
