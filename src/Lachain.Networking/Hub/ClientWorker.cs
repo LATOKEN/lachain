@@ -92,69 +92,76 @@ namespace Lachain.Networking.Hub
             while (_isConnected)
             {
 
-                lock (_messageReceived)
+                try
                 {
-                    while (_consensusMessages.Count == 0 && _messageQueue.Count == 0)
-                        Monitor.Wait(_messageReceived);
-                }
-                
-                var now = TimeUtils.CurrentTimeMillis();
-                MessageBatchContent toSend = new MessageBatchContent();
-
-                const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
-                bool isConsensusMessage = false;
-                lock (_consensusMessages)
-                {
-                    while (_consensusMessages.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                    lock (_messageReceived)
                     {
-                        var message = _consensusMessages.Dequeue();
-                        toSend.Messages.Add(message);
-                        isConsensusMessage = true;
+                        while (_consensusMessages.Count == 0 && _messageQueue.Count == 0)
+                            Monitor.Wait(_messageReceived);
                     }
-                }
+                    
+                    var now = TimeUtils.CurrentTimeMillis();
+                    MessageBatchContent toSend = new MessageBatchContent();
 
-                lock (_messageQueue)
-                {
-                    while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                    const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
+                    bool isConsensusMessage = false;
+                    lock (_consensusMessages)
                     {
-                        var message = _messageQueue.Dequeue();
-                        toSend.Messages.Add(message);
-                    }
-                }
-
-                if (toSend.Messages.Count > 0)
-                {
-                    var megaBatch = _messageFactory.MessagesBatch(toSend.Messages);
-                    var megaBatchBytes = megaBatch.ToByteArray();
-                    if (megaBatchBytes.Length == 0)
-                        throw new Exception("Cannot send empty message");
-                    Logger.LogTrace(
-                        $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}"); 
-                    var messageTypes = toSend.Messages.Select(m =>
-                        m.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage
-                            ? m.MessageCase.ToString()
-                            : m.ConsensusMessage.PrettyTypeString()
-                    );
-                    Logger.LogTrace($"Messages types: {string.Join("; ", messageTypes)}");
-                    foreach (var message in toSend.Messages)
-                    {
-                        MessageCounter
-                            .WithLabels(PeerPublicKey.ToHex(), message.MessageCase.ToString())
-                            .Inc();
-                        MessageBytesCounter
-                            .WithLabels(PeerPublicKey.ToHex(), message.MessageCase.ToString())
-                            .Inc(message.CalculateSize());
+                        while (_consensusMessages.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                        {
+                            var message = _consensusMessages.Dequeue();
+                            toSend.Messages.Add(message);
+                            isConsensusMessage = true;
+                        }
                     }
 
-                    if (isConsensusMessage)
-                        _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-                    else
-                        _hubConnector.TrySend(PeerPublicKey, megaBatchBytes);
-                    _eraMsgCounter += 1;
+                    lock (_messageQueue)
+                    {
+                        while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                        {
+                            var message = _messageQueue.Dequeue();
+                            toSend.Messages.Add(message);
+                        }
+                    }
+
+                    if (toSend.Messages.Count > 0)
+                    {
+                        var megaBatch = _messageFactory.MessagesBatch(toSend.Messages);
+                        var megaBatchBytes = megaBatch.ToByteArray();
+                        if (megaBatchBytes.Length == 0)
+                            throw new Exception("Cannot send empty message");
+                        Logger.LogTrace(
+                            $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}"); 
+                        var messageTypes = toSend.Messages.Select(m =>
+                            m.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage
+                                ? m.MessageCase.ToString()
+                                : m.ConsensusMessage.PrettyTypeString()
+                        );
+                        Logger.LogTrace($"Messages types: {string.Join("; ", messageTypes)}");
+                        foreach (var message in toSend.Messages)
+                        {
+                            MessageCounter
+                                .WithLabels(PeerPublicKey.ToHex(), message.MessageCase.ToString())
+                                .Inc();
+                            MessageBytesCounter
+                                .WithLabels(PeerPublicKey.ToHex(), message.MessageCase.ToString())
+                                .Inc(message.CalculateSize());
+                        }
+
+                        if (isConsensusMessage)
+                            _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                        else
+                            _hubConnector.TrySend(PeerPublicKey, megaBatchBytes);
+                        _eraMsgCounter += 1;
+                    }
+                    
+                    var toSleep = Math.Clamp(250 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
+                    Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
                 }
-                
-                var toSleep = Math.Clamp(250 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
-                Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
+                catch (Exception exception)
+                {
+                    Logger.LogError($"Failed to send messages: {exception}");
+                }
             }
         }
 
