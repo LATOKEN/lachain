@@ -32,7 +32,7 @@ namespace Lachain.Networking.Hub
         private readonly IMessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
         private readonly Thread _worker;
-        private bool _isConnected;
+        private bool _isConnected = false;
         private int _eraMsgCounter;
         private readonly object _messageReceived = new object();
 
@@ -63,6 +63,9 @@ namespace Lachain.Networking.Hub
 
         public void Stop()
         {
+            if (!_isConnected)
+                return;
+                
             _isConnected = false;
             _worker.Join();
         }
