@@ -201,8 +201,6 @@ namespace Lachain.Core.Network
             var (message, publicKey) = @event;
             try
             {
-                // for testing purpose only
-                Logger.LogInformation("Received consensus message in MessageHandler");
                 _consensusManager.Dispatch(message, publicKey);
             }
             catch (ConsensusStateNotPresentException)

@@ -77,14 +77,6 @@ namespace Lachain.Core.Network
                 var persisted = 0u;
                 foreach (var tx in txs)
                 {
-                    if (tx.Signature.IsZero())
-                    {
-                        Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
-                        if (_transactionPool.Add(tx, false) == OperatingError.Ok)
-                            persisted++;
-                        continue;
-                    }
-
                     // transaction will be verified in Pool
                     var error = _transactionPool.Add(tx, false);
                     if (error == OperatingError.Ok)
