@@ -139,8 +139,6 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
                 _toDeleteRepo.Clear();
             }
-            // for testing purpose only
-            Logger.LogInformation("Finished OnBlockPersisted");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -213,10 +211,6 @@ namespace Lachain.Core.Blockchain.Pool
             if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
             {
-                // for testing purpose only
-                Logger.LogInformation($"pool nonce: {GetNextNonceForAddress(receipt.Transaction.From)} state nonce: "
-                    + $"{_transactionManager.CalcNextTxNonce(receipt.Transaction.From)} for receipt: from "
-                    + $"{receipt.Transaction.From.ToHex()}, nonce {receipt.Transaction.Nonce}");
                 return OperatingError.InvalidNonce;
             }
 
@@ -251,11 +245,6 @@ namespace Lachain.Core.Blockchain.Pool
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
-<<<<<<< HEAD
-=======
-            // for testing purpose only
-            // _transactionVerifier.VerifyTransaction(receipt, useNewChainId);
->>>>>>> e7bac2b5 (prioritizing consensus messages and testing)
 
             bool oldTxExist = false;
             TransactionReceipt? oldTx = null;
@@ -395,10 +384,6 @@ namespace Lachain.Core.Blockchain.Pool
 
                 if(receipt.Transaction.Nonce != nextNonce[address] || !IsBalanceValid(receipt))
                 {
-                    // for testing purpose only
-                    Logger.LogInformation($"receipt nonce: {receipt.Transaction.Nonce}, next nonce: "
-                        + $"{nextNonce[address]} for receipt: from {receipt.Transaction.From.ToHex()}, "
-                        + $"nonce {receipt.Transaction.Nonce}");
                     toErase.Add(receipt);
                 }
                 else

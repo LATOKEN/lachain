@@ -34,14 +34,6 @@ namespace Lachain.Networking.Hub
         private readonly Thread _worker;
         private bool _isConnected;
         private int _eraMsgCounter;
-        // for testing purpose only
-        private ulong added = 0;
-        // for testing purpose only
-        private ulong normalAdded = 0;
-        // for testing purpose only
-        private ulong sent = 0;
-        // for testing purpose only
-        private ulong normalSent = 0;
 
         private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
         private readonly Queue<NetworkMessage> _consensusMessages = new Queue<NetworkMessage>();
@@ -80,12 +72,10 @@ namespace Lachain.Networking.Hub
             switch (message.MessageCase)
             {
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
-                    added++;
                     lock (_consensusMessages)
                         _consensusMessages.Enqueue(message);
                     break;
                 default:
-                    normalAdded++;
                     lock (_messageQueue)
                         _messageQueue.Enqueue(message);
                     break;
@@ -106,7 +96,6 @@ namespace Lachain.Networking.Hub
                 {
                     while (_consensusMessages.Count > 0 && toSend.CalculateSize() < maxSendSize)
                     {
-                        sent++;
                         var message = _consensusMessages.Dequeue();
                         toSend.Messages.Add(message);
                         isConsensusMessage = true;
@@ -117,7 +106,6 @@ namespace Lachain.Networking.Hub
                 {
                     while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                     {
-                        normalSent++;
                         var message = _messageQueue.Dequeue();
                         toSend.Messages.Add(message);
                     }
@@ -153,20 +141,7 @@ namespace Lachain.Networking.Hub
                         _hubConnector.TrySend(PeerPublicKey, megaBatchBytes);
                     _eraMsgCounter += 1;
                 }
-
-                // for testing purpose only
-                if (isConsensusMessage)
-                {
-                    Logger.LogInformation($"Added {added} consensus message and sent {sent}. Added {normalAdded} normal "
-                        + $"messages and sent {normalSent}");
-                }
-                added -= sent;
-                normalAdded -= normalSent;
-                sent = 0;
-                normalSent = 0;
-                // for testing purpose only
-                if (isConsensusMessage)
-                    Logger.LogInformation($"time passed messaging: {TimeUtils.CurrentTimeMillis() - now}");
+                
                 var toSleep = Math.Clamp(250 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }

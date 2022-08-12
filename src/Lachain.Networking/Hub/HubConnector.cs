@@ -103,8 +103,6 @@ namespace Lachain.Networking.Hub
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Send(byte[] publicKey, byte[] message)
         {
-            // for testing purpose only
-            Logger.LogInformation("Sending message directly");
             CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
@@ -112,8 +110,6 @@ namespace Lachain.Networking.Hub
         {
             lock (_messageQueue)
             {
-                // for testing purpose only
-                Logger.LogInformation("Trying to send message");
                 _messageQueue.Enqueue((publicKey, message));
                 Monitor.PulseAll(_messageQueue);
             }

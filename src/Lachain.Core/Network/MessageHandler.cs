@@ -88,8 +88,6 @@ namespace Lachain.Core.Network
             {
                 OnConsensusMessage(this, (message, key));
             }
-            // for testing purpose only
-            Logger.LogInformation("Finished BlockManagerOnBlockPersisted");
         }
 
         private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
