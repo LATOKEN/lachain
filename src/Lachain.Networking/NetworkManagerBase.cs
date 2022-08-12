@@ -54,7 +54,6 @@ namespace Lachain.Networking
             _hubConnector.OnMessage += _HandleMessage;
 
             _broadcaster = new ClientWorker(new byte[33], _messageFactory, _hubConnector);
-            _broadcaster.Start();
         }
 
         public void AdvanceEra(ulong era)
@@ -70,6 +69,7 @@ namespace Lachain.Networking
 
         public void Start()
         {
+            _broadcaster.Start();
             _hubConnector.Start();
         }
 
