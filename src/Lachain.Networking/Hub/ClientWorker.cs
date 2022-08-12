@@ -34,6 +34,7 @@ namespace Lachain.Networking.Hub
         private readonly Thread _worker;
         private bool _isConnected;
         private int _eraMsgCounter;
+        private readonly object _messageReceived = new object();
 
         private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
         private readonly Queue<NetworkMessage> _consensusMessages = new Queue<NetworkMessage>();
@@ -80,6 +81,9 @@ namespace Lachain.Networking.Hub
                         _messageQueue.Enqueue(message);
                     break;
             }
+
+            lock (_messageReceived)
+                Monitor.PulseAll(_messageReceived);
         }
 
         private void Worker()
@@ -87,6 +91,13 @@ namespace Lachain.Networking.Hub
             _isConnected = true;
             while (_isConnected)
             {
+
+                lock (_messageReceived)
+                {
+                    while (_consensusMessages.Count == 0 && _messageQueue.Count == 0)
+                        Monitor.Wait(_messageReceived);
+                }
+                
                 var now = TimeUtils.CurrentTimeMillis();
                 MessageBatchContent toSend = new MessageBatchContent();
 
