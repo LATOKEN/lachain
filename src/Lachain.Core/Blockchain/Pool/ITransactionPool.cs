@@ -7,7 +7,8 @@ namespace Lachain.Core.Blockchain.Pool
 {
     public interface ITransactionPool
     {
-        event EventHandler<TransactionReceipt>? TransactionAdded;
+        void StartSync();
+        event EventHandler<List<TransactionReceipt>>? TransactionAdded;
 
         IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions { get; }
 
@@ -27,6 +28,7 @@ namespace Lachain.Core.Blockchain.Pool
         void Clear();
         void ClearRepository();
         ulong GetNextNonceForAddress(UInt160 address);
+        void Stop();
 
     }
 }

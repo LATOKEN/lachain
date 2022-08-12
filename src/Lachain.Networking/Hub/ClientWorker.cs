@@ -34,8 +34,17 @@ namespace Lachain.Networking.Hub
         private readonly Thread _worker;
         private bool _isConnected;
         private int _eraMsgCounter;
+        // for testing purpose only
+        private ulong added = 0;
+        // for testing purpose only
+        private ulong normalAdded = 0;
+        // for testing purpose only
+        private ulong sent = 0;
+        // for testing purpose only
+        private ulong normalSent = 0;
 
-        private readonly LinkedList<NetworkMessage> _messageQueue = new LinkedList<NetworkMessage>();
+        private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
+        private readonly Queue<NetworkMessage> _consensusMessages = new Queue<NetworkMessage>();
 
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
@@ -68,9 +77,18 @@ namespace Lachain.Networking.Hub
 
         public void AddMsgToQueue(NetworkMessage message)
         {
-            lock (_messageQueue)
+            switch (message.MessageCase)
             {
-                _messageQueue.AddLast(message);
+                case NetworkMessage.MessageOneofCase.ConsensusMessage:
+                    added++;
+                    lock (_consensusMessages)
+                        _consensusMessages.Enqueue(message);
+                    break;
+                default:
+                    normalAdded++;
+                    lock (_messageQueue)
+                        _messageQueue.Enqueue(message);
+                    break;
             }
         }
 
@@ -82,14 +100,26 @@ namespace Lachain.Networking.Hub
                 var now = TimeUtils.CurrentTimeMillis();
                 MessageBatchContent toSend = new MessageBatchContent();
 
+                const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
+                bool isConsensusMessage = false;
+                lock (_consensusMessages)
+                {
+                    while (_consensusMessages.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                    {
+                        sent++;
+                        var message = _consensusMessages.Dequeue();
+                        toSend.Messages.Add(message);
+                        isConsensusMessage = true;
+                    }
+                }
+
                 lock (_messageQueue)
                 {
-                    const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
                     while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                     {
-                        var message = _messageQueue.First.Value;
+                        normalSent++;
+                        var message = _messageQueue.Dequeue();
                         toSend.Messages.Add(message);
-                        _messageQueue.RemoveFirst();
                     }
                 }
 
@@ -117,10 +147,26 @@ namespace Lachain.Networking.Hub
                             .Inc(message.CalculateSize());
                     }
 
-                    _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                    if (isConsensusMessage)
+                        _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                    else
+                        _hubConnector.TrySend(PeerPublicKey, megaBatchBytes);
                     _eraMsgCounter += 1;
                 }
 
+                // for testing purpose only
+                if (isConsensusMessage)
+                {
+                    Logger.LogInformation($"Added {added} consensus message and sent {sent}. Added {normalAdded} normal "
+                        + $"messages and sent {normalSent}");
+                }
+                added -= sent;
+                normalAdded -= normalSent;
+                sent = 0;
+                normalSent = 0;
+                // for testing purpose only
+                if (isConsensusMessage)
+                    Logger.LogInformation($"time passed messaging: {TimeUtils.CurrentTimeMillis() - now}");
                 var toSleep = Math.Clamp(250 - (long) (TimeUtils.CurrentTimeMillis() - now), 1, 1000);
                 Thread.Sleep(TimeSpan.FromMilliseconds(toSleep));
             }
@@ -128,7 +174,10 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
-            lock (_messageQueue) _messageQueue.Clear();
+            lock (_consensusMessages)
+                _consensusMessages.Clear();
+            lock (_messageQueue)
+                _messageQueue.Clear();
             Stop();
         }
 

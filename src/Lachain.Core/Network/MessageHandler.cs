@@ -73,9 +73,9 @@ namespace Lachain.Core.Network
             _networkManager.OnConsensusMessage += OnConsensusMessage;
         }
 
-        private void TransactionPoolOnTransactionAdded(object sender, TransactionReceipt e)
+        private void TransactionPoolOnTransactionAdded(object? sender, List<TransactionReceipt> txes)
         {
-            _networkManager.BroadcastLocalTransaction(e);
+            _networkManager.BroadcastLocalTransaction(txes);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -88,6 +88,8 @@ namespace Lachain.Core.Network
             {
                 OnConsensusMessage(this, (message, key));
             }
+            // for testing purpose only
+            Logger.LogInformation("Finished BlockManagerOnBlockPersisted");
         }
 
         private void OnPingReply(object sender, (PingReply reply, ECDSAPublicKey publicKey) @event)
@@ -201,6 +203,8 @@ namespace Lachain.Core.Network
             var (message, publicKey) = @event;
             try
             {
+                // for testing purpose only
+                Logger.LogInformation("Received consensus message in MessageHandler");
                 _consensusManager.Dispatch(message, publicKey);
             }
             catch (ConsensusStateNotPresentException)

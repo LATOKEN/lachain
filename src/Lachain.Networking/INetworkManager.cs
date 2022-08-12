@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Lachain.Proto;
 
 namespace Lachain.Networking
@@ -8,7 +9,7 @@ namespace Lachain.Networking
         IMessageFactory MessageFactory { get; }
         void SendTo(ECDSAPublicKey publicKey, NetworkMessage message);
         void Start();
-        void BroadcastLocalTransaction(TransactionReceipt receipt);
+        void BroadcastLocalTransaction(List<TransactionReceipt> txes);
         void AdvanceEra(ulong era);
         Node LocalNode { get; }
 

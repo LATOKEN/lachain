@@ -85,14 +85,8 @@ namespace Lachain.Core.Network
                         continue;
                     }
 
-                    var error = _transactionManager.Verify(tx, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
-                    if (error != OperatingError.Ok)
-                    {
-                        Logger.LogTrace($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
-                        continue;
-                    }
-
-                    error = _transactionPool.Add(tx, false);
+                    // transaction will be verified in Pool
+                    var error = _transactionPool.Add(tx, false);
                     if (error == OperatingError.Ok)
                         persisted++;
                     else

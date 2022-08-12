@@ -65,7 +65,7 @@ namespace Lachain.Networking
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message)
         {
-            CreateMsgChannel(publicKey)?.AddMsgToQueue(message);
+            GetClientWorker(publicKey)?.AddMsgToQueue(message);
         }
 
         public void Start()
@@ -73,13 +73,18 @@ namespace Lachain.Networking
             _hubConnector.Start();
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private ClientWorker? CreateMsgChannel(ECDSAPublicKey publicKey)
+        private ClientWorker? GetClientWorker(ECDSAPublicKey publicKey)
         {
             if (_messageFactory.GetPublicKey().Equals(publicKey)) return null;
             if (_clientWorkers.TryGetValue(publicKey, out var existingWorker))
                 return existingWorker;
 
+            return CreateMsgChannel(publicKey);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private ClientWorker? CreateMsgChannel(ECDSAPublicKey publicKey)
+        {
             Logger.LogTrace($"Connecting to peer {publicKey.ToHex()}");
             var worker = new ClientWorker(publicKey, _messageFactory, _hubConnector);
             _clientWorkers.Add(publicKey, worker);
@@ -115,7 +120,7 @@ namespace Lachain.Networking
                 return;
             }
 
-            var worker = CreateMsgChannel(batch.Sender);
+            var worker = GetClientWorker(batch.Sender);
             if (worker is null)
             {
                 Logger.LogWarning($"Got batch from {batch.Sender.ToHex()} but cannot connect to him, skipping");
@@ -188,9 +193,9 @@ namespace Lachain.Networking
             }
         }
 
-        public void BroadcastLocalTransaction(TransactionReceipt e)
+        public void BroadcastLocalTransaction(List<TransactionReceipt> txes)
         {
-            Broadcast(MessageFactory.SyncPoolReply(new[] {e}));
+            Broadcast(MessageFactory.SyncPoolReply(txes));
         }
 
         public void Broadcast(NetworkMessage networkMessage)
