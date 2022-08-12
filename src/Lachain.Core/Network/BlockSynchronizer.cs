@@ -72,7 +72,7 @@ namespace Lachain.Core.Network
         {
             lock (_txLock)
             {
-                var txs = transactions.ToArray();
+                var txs = transactions.OrderBy(tx => tx, new ReceiptComparer()).ToArray();
                 Logger.LogTrace($"Received {txs.Length} transactions from peer {publicKey.ToHex()}");
                 var persisted = 0u;
                 foreach (var tx in txs)
