@@ -44,9 +44,11 @@ namespace Lachain.Core.Consensus
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
         private readonly ITransactionBuilder _transactionBuilder;
+        private readonly ITransactionVerifier _transactionVerifier;
         private const int BatchSize = 1000; // TODO: calculate batch size
 
         public BlockProducer(
+            ITransactionVerifier transactionVerifier,
             ITransactionPool transactionPool,
             IValidatorManager validatorManager,
             IBlockSynchronizer blockSynchronizer,
@@ -55,6 +57,7 @@ namespace Lachain.Core.Consensus
             ITransactionBuilder transactionBuilder
         )
         {
+            _transactionVerifier = transactionVerifier;
             _transactionPool = transactionPool;
             _validatorManager = validatorManager;
             _blockSynchronizer = blockSynchronizer;
@@ -109,6 +112,9 @@ namespace Lachain.Core.Consensus
 
             receipts = receipts.OrderBy(receipt => receipt, new ReceiptComparer())
                 .ToList();
+
+            // Add receipts to _transactionVerifier to verify asynchronously
+            _transactionVerifier.VerifyTransactions(receipts, HardforkHeights.IsHardfork_9Active(index));
 
             var cycle = index / StakingContract.CycleDuration;
             var indexInCycle = index % StakingContract.CycleDuration;

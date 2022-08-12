@@ -12,6 +12,8 @@ namespace Lachain.Core.Blockchain.Interface
         event EventHandler<TransactionReceipt>? OnTransactionExecuted;
         event EventHandler<InvocationContext>? OnSystemContractInvoked;
 
+        void ClearProcessedTransactions();
+
         TransactionReceipt? GetByHash(UInt256 transactionHash);
 
         OperatingError Execute(Block block, TransactionReceipt receipt, IBlockchainSnapshot snapshot);

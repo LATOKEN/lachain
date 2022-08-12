@@ -13,10 +13,10 @@ namespace Lachain.Core.Blockchain.Operations
 {
     /* 
         Transaction Verification is done asynchronously. We maintain a queue of unverified transactions. 
-        When a transaction is added to the pool, this transaction is added to the queue. Verification is only 
+        When creating header, transactions are accepted by consensus and added to the queue. Verification is only 
         required during the block execution that contains this transaction. So, during the interval of 
-        [addition to pool, block execution], it's most likely that this transaction is dequed from the queue
-        and verified. Once verified, it invokes an event, that caches this verified transaction. 
+        [creating header, block execution], it's most likely that these transaction are dequed from the queue
+        and verified. Once verified, it invokes an event, that caches the verified transaction. 
         During block execution, to verify a transaction, first it checks the cache, if it can't find it, it
         verifies immediately. 
     */
@@ -36,7 +36,15 @@ namespace Lachain.Core.Blockchain.Operations
 
         private readonly object _queueNotEmpty = new object();
 
-        public event EventHandler<TransactionReceipt>? OnTransactionVerified;
+        public event EventHandler<(TransactionReceipt, TransactionStatus)>? OnVerificationCompleted;
+        public event EventHandler<object?>? OnVerificationStarted;
+
+        // for testing purpose only
+        private ulong txAdded = 0;
+        // for testing purpose only
+        public ulong TxAdded => txAdded;
+        // for testing purpose only
+        public int QueuedTxes => _transactionQueue.Count;
 
         public void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey, bool useNewChainId)
         {
@@ -53,6 +61,36 @@ namespace Lachain.Core.Blockchain.Operations
             lock (_queueNotEmpty)
             {
                 _transactionQueue.Enqueue(new KeyValuePair<TransactionReceipt, bool>(acceptedTransaction, useNewChainId));
+                Monitor.PulseAll(_queueNotEmpty);
+            }
+        }
+
+        public void ClearQueue()
+        {
+            lock (_queueNotEmpty)
+            {
+                _transactionQueue.Clear();
+            }
+        }
+
+        // this method adds all txes to queue to verify later
+        // this should only be used by BlockProducer to verify txes that are confirmed by consensus
+        // adding txes one by one can delay the BlockProducer and RootProtocol so all txes should be added together
+        public void VerifyTransactions(IReadOnlyCollection<TransactionReceipt> acceptedTransactions,  bool useNewChainId)
+        {
+            // We verify transactions that are processed for current era
+            // if, for some reason, transactions from previous era is not processed yet, no need to process them anymore
+            OnVerificationStarted?.Invoke(this, null);
+            lock (_queueNotEmpty)
+            {
+                txAdded += (ulong) acceptedTransactions.Count;
+                foreach (var tx in acceptedTransactions)
+                {
+                    if (tx is null)
+                        throw new ArgumentNullException(nameof(tx));
+
+                    _transactionQueue.Enqueue(new KeyValuePair<TransactionReceipt, bool>(tx, useNewChainId));
+                }
                 Monitor.PulseAll(_queueNotEmpty);
             }
         }
@@ -126,8 +164,9 @@ namespace Lachain.Core.Blockchain.Operations
                         useNewChainId = pair.Value;
                     }
 
-                    if (VerifyTransactionImmediately(tx, useNewChainId,  true))
-                        OnTransactionVerified?.Invoke(this, tx);
+                    var status = VerifyTransactionImmediately(tx, useNewChainId,  true) ?
+                                        TransactionStatus.Verified : TransactionStatus.VerificationFailed;
+                    OnVerificationCompleted?.Invoke(this, (tx,status));
                 }
                 catch (Exception e)
                 {

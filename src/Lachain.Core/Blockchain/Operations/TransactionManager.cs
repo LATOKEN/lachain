@@ -29,15 +29,17 @@ namespace Lachain.Core.Blockchain.Operations
         private readonly IStateManager _stateManager;
         private readonly TransactionExecuter _transactionExecuter;
 
-        // _verifiedTransactions keeps all the verified transactions
-        // verified transactions gets removed from _verifiedTransactions 
-        // once it's queried to keep its size bounded
-        private readonly ConcurrentDictionary<UInt256, UInt256> _verifiedTransactions
-            = new ConcurrentDictionary<UInt256, UInt256>();
+        // _processedTransactions keeps all the processed transactions (Verified or VerficationFailed) for current era
+        // transaction gets removed from _processedTransactions once the block is persisted
+        private readonly ConcurrentDictionary<UInt256, TransactionStatus> _processedTransactions
+            = new ConcurrentDictionary<UInt256, TransactionStatus>();
 
         public event EventHandler<InvocationContext>? OnSystemContractInvoked;
         public event EventHandler<TransactionReceipt>? OnTransactionFailed;
         public event EventHandler<TransactionReceipt>? OnTransactionExecuted;
+
+        // for testing purpose only
+        private ulong memoryUsed = 0;
 
         public TransactionManager(
             ITransactionVerifier transactionVerifier,
@@ -51,9 +53,43 @@ namespace Lachain.Core.Blockchain.Operations
             _transactionExecuter.OnSystemContractInvoked +=
                 (sender, context) => OnSystemContractInvoked?.Invoke(sender, context);
             // once a transaction is verified asynchronously, it invokes OnTransacionVerified
-            // and this adds the transaction to _verifiedTransactions
-            transactionVerifier.OnTransactionVerified += (sender, transaction) =>
-                _verifiedTransactions.TryAdd(transaction.Hash, transaction.Hash);
+            // and this adds the transaction to _processedTransactions
+            transactionVerifier.OnVerificationCompleted += OnVerificationCompleted;
+            transactionVerifier.OnVerificationStarted += OnVerificationStarted;
+        }
+
+        // for testing purpose only
+        private void CheckUsage()
+        {
+            Logger.LogInformation($"Memory used: {memoryUsed}");
+            Logger.LogInformation($"Transaction added: {_transactionVerifier.TxAdded}");
+            Logger.LogInformation($"Current processed txes: {_processedTransactions.Count}");
+            Logger.LogInformation($"Queued txes: {_transactionVerifier.QueuedTxes}");
+        }
+
+        public void ClearProcessedTransactions()
+        {
+            CheckUsage();
+            lock (_processedTransactions)
+            {
+                _transactionVerifier.ClearQueue();
+                _processedTransactions.Clear();
+            }
+        }
+
+        private void OnVerificationStarted(object? sender, object? arg)
+        {
+            ClearProcessedTransactions();
+        }
+
+        private void OnVerificationCompleted(object? sender, 
+            (TransactionReceipt tx, TransactionStatus status) txWithStatus)
+        {
+            var (tx, verificationStatus) = txWithStatus;
+            lock (_processedTransactions)
+            {
+                _processedTransactions.TryAdd(tx.Hash, verificationStatus);
+            }
         }
 
         public TransactionReceipt? GetByHash(UInt256 transactionHash)
@@ -151,25 +187,26 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey,  bool useNewChainId)
         {
-            if (!_verifiedTransactions.ContainsKey(transaction.Hash))
+            if (!_processedTransactions.TryGetValue(transaction.Hash, out var status))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey, useNewChainId)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
-            _verifiedTransactions.TryRemove(transaction.Hash, out _);
-            return OperatingError.Ok;
+
+            return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, bool useNewChainId,  bool cacheEnabled)
         {
             /* First search the cache to see if the transaction is verified, otherwise verify immediately */
-            if (!_verifiedTransactions.ContainsKey(transaction.Hash))
+            if (!_processedTransactions.TryGetValue(transaction.Hash, out var status))
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, useNewChainId, cacheEnabled)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
+
+            memoryUsed++;
             
-            _verifiedTransactions.TryRemove(transaction.Hash, out _);
-            return OperatingError.Ok;
+            return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

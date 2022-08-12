@@ -25,7 +25,6 @@ namespace Lachain.Core.Blockchain.Pool
     {
         private static readonly ILogger<TransactionPool> Logger = LoggerFactory.GetLoggerForClass<TransactionPool>();
 
-        private readonly ITransactionVerifier _transactionVerifier;
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
@@ -55,7 +54,6 @@ namespace Lachain.Core.Blockchain.Pool
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
         public TransactionPool(
-            ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
@@ -64,7 +62,6 @@ namespace Lachain.Core.Blockchain.Pool
             ITransactionHashTrackerByNonce transactionHashTracker
         )
         {
-            _transactionVerifier = transactionVerifier;
             _poolRepository = poolRepository;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -85,6 +82,8 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
                 _toDeleteRepo.Clear();
             }
+            // for testing purpose only
+            Logger.LogInformation("Finished OnBlockPersisted");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -157,6 +156,10 @@ namespace Lachain.Core.Blockchain.Pool
             if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
             {
+                // for testing purpose only
+                Logger.LogInformation($"pool nonce: {GetNextNonceForAddress(receipt.Transaction.From)} state nonce: "
+                    + $"{_transactionManager.CalcNextTxNonce(receipt.Transaction.From)} for receipt: from "
+                    + $"{receipt.Transaction.From.ToHex()}, nonce {receipt.Transaction.Nonce}");
                 return OperatingError.InvalidNonce;
             }
 
@@ -191,7 +194,6 @@ namespace Lachain.Core.Blockchain.Pool
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
-            _transactionVerifier.VerifyTransaction(receipt, useNewChainId);
 
             bool oldTxExist = false;
             TransactionReceipt? oldTx = null;
@@ -330,7 +332,13 @@ namespace Lachain.Core.Blockchain.Pool
                     nextNonce.Add(address, _transactionManager.CalcNextTxNonce(address));
 
                 if(receipt.Transaction.Nonce != nextNonce[address] || !IsBalanceValid(receipt))
+                {
+                    // for testing purpose only
+                    Logger.LogInformation($"receipt nonce: {receipt.Transaction.Nonce}, next nonce: "
+                        + $"{nextNonce[address]} for receipt: from {receipt.Transaction.From.ToHex()}, "
+                        + $"nonce {receipt.Transaction.Nonce}");
                     toErase.Add(receipt);
+                }
                 else
                     nextNonce[address]++;
             }
@@ -346,10 +354,10 @@ namespace Lachain.Core.Blockchain.Pool
                 }
             }
 
-            if (wasTransactionsQueue != _transactionsQueue.Count)
+            if (toErase.Count > 0)
             {
                 Logger.LogTrace(
-                    $"Sanitized mempool; dropped {wasTransactionsQueue - _transactionsQueue.Count} txs"
+                    $"Sanitized mempool; dropped {toErase.Count} txs"
                 );
             }
 
