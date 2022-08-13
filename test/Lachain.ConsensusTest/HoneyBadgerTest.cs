@@ -124,7 +124,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        //[Ignore("temporary")]
+        [Ignore("temporary")]
         public void TestAllHonest_7_2()
         {
             const int n = 7, f = 2;
@@ -306,7 +306,7 @@ namespace Lachain.ConsensusTest
                 }
             }
             // some txes are missing
-            Assert.That(count * 3 <= 0);
+            Assert.That(count <= 0);
 
             for (var i = 1; i < n; ++i)
             {
@@ -442,7 +442,7 @@ namespace Lachain.ConsensusTest
                 }
             }
             // some txes are missing
-            Assert.That(count * 3 <= 0);
+            Assert.That(count <= 0);
 
             for (var i = 1; i < n; ++i)
             {
