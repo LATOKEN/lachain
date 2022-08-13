@@ -269,7 +269,8 @@ namespace Lachain.Consensus.ReliableBroadcast
             var restored = DecodeFromEchos(matchingEchos);
             var len = restored.AsReadOnlySpan().Slice(0, 4).ToInt32();
             var result = EncryptedShare.FromBytes(restored.AsMemory().Slice(4, len));
-
+            Logger.LogInformation($"Got result from ReliableBroadcast with share id {result.Id}, my id: {Id}");
+            Logger.LogInformation($"My id {Id} and share id matches: {result.Id == _broadcastId.SenderId}");
             _requested = ResultStatus.Sent;
             Broadcaster.InternalResponse(new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, result));
         }

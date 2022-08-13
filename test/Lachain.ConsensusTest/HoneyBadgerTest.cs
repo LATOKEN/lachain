@@ -8,13 +8,17 @@ using Lachain.Consensus.Messages;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.ThresholdSignature;
+using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Utility.Utils;
+using TestUtility = Lachain.UtilityTest.TestUtils;
 
 namespace Lachain.ConsensusTest
 {
     [TestFixture]
     public class HoneyBadgerTest
     {
+        private static readonly ILogger<HoneyBadgerTest> Logger = LoggerFactory.GetLoggerForClass<HoneyBadgerTest>();
         private const int Era = 0;
 
         private readonly Random _rnd = new Random();
@@ -157,9 +161,12 @@ namespace Lachain.ConsensusTest
             const int n = 7, f = 2;
  
             SetUpOneMalicious(n, f);
+            var inputs = new List<UInt256>();
             for (var i = 0; i < n; ++i)
             {
-                var share = new RawShare(new byte[32], i);
+                var randomValue = TestUtility.GetRandomUInt256();
+                inputs.Add(randomValue);
+                var share = new RawShare(randomValue.ToBytes(), i);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                     _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
                 ));
@@ -170,12 +177,27 @@ namespace Lachain.ConsensusTest
                 _broadcasts[i].WaitFinish();
             }
 
+            for (int i = 1 ; i < n ; i++)
+            {
+                var rawShares = _resultInterceptors[i].GetResult();
+                Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}");
+                int iter = 0;
+                foreach (var share in rawShares)
+                {
+                    var result = share.ToBytes().ToUInt256();
+                    Logger.LogInformation($"result {iter}: {result.ToHex()}");
+                    Logger.LogInformation($"input: {inputs[iter].ToHex()}");
+                    Assert.AreEqual(result, inputs[iter]);
+                    iter++;
+                }
+            }
+
             for (var i = 1; i < n; ++i)
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
             }
         }
 

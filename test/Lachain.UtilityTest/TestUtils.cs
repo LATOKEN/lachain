@@ -14,6 +14,15 @@ namespace Lachain.UtilityTest
 {
     public class TestUtils
     {
+
+        public static UInt256 GetRandomUInt256()
+        {
+            byte[] random = new byte[32];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(random);
+            return random.ToUInt256();
+        }
+        
         public static TransactionReceipt GetRandomTransaction(bool useNewChainId)
         {
             var signer = new TransactionSigner();
