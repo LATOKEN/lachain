@@ -187,9 +187,12 @@ namespace Lachain.ConsensusTest
             const int n = 7, f = 2;
  
             SetUpOneMalicious(n, f);
+            var inputs = new List<UInt256>();
             for (var i = 0; i < n; ++i)
             {
-                var share = new RawShare(new byte[32], i);
+                var randomValue = TestUtility.GetRandomUInt256();
+                inputs.Add(randomValue);
+                var share = new RawShare(randomValue.ToBytes(), i);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                     _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
                 ));
@@ -198,6 +201,21 @@ namespace Lachain.ConsensusTest
             for (var i = 1; i < n; ++i)
             {
                 _broadcasts[i].WaitFinish();
+            }
+
+            for (int i = 1 ; i < n ; i++)
+            {
+                var rawShares = _resultInterceptors[i].GetResult();
+                Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}");
+                int iter = 0;
+                foreach (var share in rawShares)
+                {
+                    var result = share.ToBytes().ToUInt256();
+                    Logger.LogInformation($"result {iter}: {result.ToHex()}");
+                    Logger.LogInformation($"input: {inputs[iter].ToHex()}");
+                    Assert.AreEqual(result, inputs[iter]);
+                    iter++;
+                }
             }
 
             for (var i = 1; i < n; ++i)

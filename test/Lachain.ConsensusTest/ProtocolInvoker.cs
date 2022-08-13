@@ -63,7 +63,7 @@ namespace Lachain.ConsensusTest
             lock (_queueLock)
             {
                 if (Terminated) return;
-                _logger.LogTrace($"{Id}: Protocol is terminated");
+                _logger.LogInformation($"{Id}: Protocol is terminated");
                 Terminated = true;
                 Monitor.Pulse(_queueLock);
             }
@@ -72,9 +72,14 @@ namespace Lachain.ConsensusTest
         public void ReceiveMessage(MessageEnvelope message)
         {
             if (message.External || !(message.InternalMessage is ProtocolResult<TId, TResult> result)) return;
-            _logger.LogTrace($"{Id}: got result from {result.From}");
+            _logger.LogInformation($"{Id}: got final result from {result.From}");
             ResultSet++;
             Result = result.Result;
+        }
+
+        public TResult GetResult()
+        {
+            return Result;
         }
 
         public void Start()
