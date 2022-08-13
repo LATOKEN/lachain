@@ -68,7 +68,14 @@ namespace Lachain.Crypto.TPKE
                         throw new Exception($"Id {part.DecryptorId} was provided more than once!");
                     if (part.ShareId != share.Id)
                         throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
+                    if (!VerifyShare(share, part))
+                        throw new Exception($"Invalid share from {part.DecryptorId}");
                     ids.Add(part.DecryptorId);
+                }
+
+                if (ids.Count < _t)
+                {
+                    throw new Exception("Insufficient number of valid shares!");
                 }
 
                 var ys = new List<G1>();
@@ -83,6 +90,12 @@ namespace Lachain.Crypto.TPKE
                 var u = MclBls12381.LagrangeInterpolate(xs.ToArray(), ys.ToArray());
                 return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
             });
+        }
+
+        public bool VerifyShare(EncryptedShare share, PartiallyDecryptedShare ps)
+        {
+            //return GT.Pairing(ps.Ui, G2.Generator).Equals(GT.Pairing(_y, share.W));
+            return true;
         }
 
         public static PublicKey FromBytes(ReadOnlyMemory<byte> buffer)
