@@ -33,6 +33,8 @@ namespace Lachain.ConsensusTest
             DeliveryService deliveryService, bool mixMessages
         )
         {
+            if (Terminated)
+                throw new Exception($"Terminated {Terminated}");
             _sender = sender;
             _deliveryService = deliveryService;
             _deliveryService.AddPlayer(GetMyId(), this);
@@ -54,6 +56,7 @@ namespace Lachain.ConsensusTest
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Terminate()
         {
+            if (Terminated) return;
             Terminated = true;
             foreach (var protocol in Registry)
             {
