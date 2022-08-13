@@ -269,8 +269,20 @@ namespace Lachain.Consensus.ReliableBroadcast
             var restored = DecodeFromEchos(matchingEchos);
             var len = restored.AsReadOnlySpan().Slice(0, 4).ToInt32();
             var result = EncryptedShare.FromBytes(restored.AsMemory().Slice(4, len));
-            Logger.LogInformation($"Got result from ReliableBroadcast with share id {result.Id}, my id: {Id}");
-            Logger.LogInformation($"My id {Id} and share id matches: {result.Id == _broadcastId.SenderId}");
+
+            // Share id of the encrypted share represents the validator id, each share has the same id as the from which
+            // validator it came. This instance of ReliableBroadcast is handling shares of validator _broadcastId.SenderId
+            // So the share we get here should have the same id, if not then there was some problem with decoding
+            // it could be due to the validator for this ReliableBroadcast was malicious.
+            // However if you don't stop this then in ACS, the encrypted share can replace other valid encrypted share
+            // because of same share_id, so we stop it and ACS will take its result as null
+            if (result.Id != _broadcastId.SenderId)
+            {
+                var pubKey = Broadcaster.GetPublicKeyById(_broadcastId.SenderId)!.ToHex();
+                Logger.LogInformation($"Got encrypted share with share id {result.Id} in ReliableBroadcast {Id}");
+                Logger.LogInformation($"Validator {pubKey} ({_broadcastId.SenderId}) might be malicious");
+                throw new Exception($"Invalid encrypted share for {Id}");
+            }
             _requested = ResultStatus.Sent;
             Broadcaster.InternalResponse(new ProtocolResult<ReliableBroadcastId, EncryptedShare>(_broadcastId, result));
         }

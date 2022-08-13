@@ -167,6 +167,10 @@ namespace Lachain.Consensus.HoneyBadger
             PartiallyDecryptedShare? share = null;
             try
             {
+                // DecryptorId is basically the validator id, it tells us who decrypted the message, so it should be same
+                // otherwise later we will not be able to decrypt fully
+                if (msg.DecryptorId != senderId)
+                    throw new Exception($"Validator {senderId} sends message with decryptor id {msg.DecryptorId}");
                 // Converting any random bytes to G1 is not possible
                 share = Wallet.TpkePublicKey.Decode(msg);
                 _decryptedShares[share.ShareId].Add(share);
@@ -174,7 +178,7 @@ namespace Lachain.Consensus.HoneyBadger
             catch (Exception exception)
             {
                 var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
-                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey})");
+                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey}): {exception}");
             }
 
             if (!(share is null))
