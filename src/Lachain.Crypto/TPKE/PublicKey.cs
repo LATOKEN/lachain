@@ -94,8 +94,8 @@ namespace Lachain.Crypto.TPKE
 
         public bool VerifyShare(EncryptedShare share, PartiallyDecryptedShare ps)
         {
-            //return GT.Pairing(ps.Ui, G2.Generator).Equals(GT.Pairing(_y, share.W));
-            return true;
+            var h = Utils.HashToG2(share.U, share.V);
+            return GT.Pairing(ps.Ui, h).Equals(GT.Pairing(_y, share.W));
         }
 
         public static PublicKey FromBytes(ReadOnlyMemory<byte> buffer)
