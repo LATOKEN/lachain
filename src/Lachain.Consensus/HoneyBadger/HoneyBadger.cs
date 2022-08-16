@@ -169,10 +169,14 @@ namespace Lachain.Consensus.HoneyBadger
             {
                 // Converting any random bytes to G1 is not possible
                 share = Wallet.TpkePublicKey.Decode(msg);
+                if (!Wallet.TpkePublicKey.VerifyShare(
+                        _receivedShares[share.ShareId] ?? throw new Exception("No encrypted share yet"), share))
+                    throw new Exception("Invalid share");
                 _decryptedShares[share.ShareId].Add(share);
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Exception {ex}");
                 var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
                 Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey})");
             }

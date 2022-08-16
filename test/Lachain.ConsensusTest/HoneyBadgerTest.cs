@@ -152,6 +152,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
+        [Ignore("test")]
         public void TestSomeMalicious_7_2()
         {
             const int n = 7, f = 2;
