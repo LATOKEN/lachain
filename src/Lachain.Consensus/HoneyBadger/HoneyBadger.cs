@@ -136,6 +136,8 @@ namespace Lachain.Consensus.HoneyBadger
                 var dec = _privateKey.Decrypt(share);
                 _taken[share.Id] = true;
                 _receivedShares[share.Id] = share;
+                if(_decryptedShares[share.Id].Count > 0) // if we have any partially decrypted shares for this share - verify them
+                    _decryptedShares[share.Id] = _decryptedShares[share.Id].Where(ps => Wallet.TpkePublicKey.VerifyShare(share, ps)).ToHashSet();
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
                 Broadcaster.Broadcast(CreateDecryptedMessage(dec));
@@ -169,9 +171,12 @@ namespace Lachain.Consensus.HoneyBadger
             {
                 // Converting any random bytes to G1 is not possible
                 share = Wallet.TpkePublicKey.Decode(msg);
-                if (!Wallet.TpkePublicKey.VerifyShare(
-                        _receivedShares[share.ShareId] ?? throw new Exception("No encrypted share yet"), share))
-                    throw new Exception("Invalid share");
+                if (!(_receivedShares[share.ShareId] is null))
+                {
+                    if (!Wallet.TpkePublicKey.VerifyShare(_receivedShares[share.ShareId]!, share))
+                        throw new Exception("Invalid share");
+                }
+
                 _decryptedShares[share.ShareId].Add(share);
             }
             catch (Exception ex)
