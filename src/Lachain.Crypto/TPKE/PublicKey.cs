@@ -68,14 +68,7 @@ namespace Lachain.Crypto.TPKE
                         throw new Exception($"Id {part.DecryptorId} was provided more than once!");
                     if (part.ShareId != share.Id)
                         throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
-                    if (!VerifyShare(share, part))
-                        throw new Exception($"Invalid share from {part.DecryptorId}");
                     ids.Add(part.DecryptorId);
-                }
-
-                if (ids.Count < _t)
-                {
-                    throw new Exception("Insufficient number of valid shares!");
                 }
 
                 var ys = new List<G1>();
@@ -83,8 +76,6 @@ namespace Lachain.Crypto.TPKE
 
                 foreach (var part in us)
                 {
-                    if (!ids.Contains(part.DecryptorId))
-                        continue;
                     xs.Add(Fr.FromInt(part.DecryptorId + 1));
                     ys.Add(part.Ui);
                 }

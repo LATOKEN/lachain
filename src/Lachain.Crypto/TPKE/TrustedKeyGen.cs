@@ -27,5 +27,11 @@ namespace Lachain.Crypto.TPKE
         {
             return new PrivateKey(MclBls12381.EvaluatePolynomial(_coeffs, Fr.FromInt(i + 1)), i);
         }
+        
+        public PublicKey GetVerificationPubKey(int i)
+        {
+            return new PublicKey(G1.Generator * MclBls12381.EvaluatePolynomial(_coeffs, Fr.FromInt(i + 1)), i);
+        }
+
     }
 }
