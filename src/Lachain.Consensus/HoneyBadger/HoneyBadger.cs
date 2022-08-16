@@ -178,7 +178,7 @@ namespace Lachain.Consensus.HoneyBadger
             {
                 share = null;
                 var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
-                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey})");
+                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey}), exception: {ex}");
             }
 
             if (!(share is null))
