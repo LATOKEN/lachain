@@ -118,24 +118,23 @@ namespace Lachain.Networking.Hub
         private void SendMessages()
         {
             const int waitForSomeTime = 500;
-            uint maxMessageToSend = 10;
             while (_running)
             {
                 try
-                {
-                    uint messageSent = 0;
-                    while (messageSent < maxMessageToSend)
+                {               
+                    lock (_messageQueue)
                     {
-                        byte[] publicKey;
-                        byte[] message;
-                        lock (_messageQueue)
+                        while (_messageQueue.Count == 0)
+                            Monitor.Wait(_messageQueue);
+
+                        while (_messageQueue.Count > 0)
                         {
-                            while (_messageQueue.Count == 0)
-                                Monitor.Wait(_messageQueue);
+                            byte[] publicKey;
+                            byte[] message;
                             (publicKey, message) = _messageQueue.Dequeue();
+                            Send(publicKey, message);
                         }
-                        Send(publicKey, message);
-                    }
+                    }       
 
                     Thread.Sleep(waitForSomeTime);
                 }
