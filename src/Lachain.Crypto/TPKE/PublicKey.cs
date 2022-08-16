@@ -83,6 +83,8 @@ namespace Lachain.Crypto.TPKE
 
                 foreach (var part in us)
                 {
+                    if (!ids.Contains(part.DecryptorId))
+                        continue;
                     xs.Add(Fr.FromInt(part.DecryptorId + 1));
                     ys.Add(part.Ui);
                 }
