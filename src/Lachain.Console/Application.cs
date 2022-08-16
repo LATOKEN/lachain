@@ -66,7 +66,6 @@ namespace Lachain.Console
 
         public void Start(RunOptions options)
         {
-            System.Console.WriteLine("Testing prioritizing message: test 1");
             var configManager = _container.Resolve<IConfigManager>();
             var blockManager = _container.Resolve<IBlockManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
