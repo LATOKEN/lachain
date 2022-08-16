@@ -152,8 +152,7 @@ namespace Lachain.ConsensusTest
         }
 
         [Test]
-        [Ignore("test")]
-        public void TestSomeMalicious_7_2()
+        public void TestOneMalicious()
         {
             const int n = 7, f = 2;
  
@@ -176,7 +175,7 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
             }
         }
 
