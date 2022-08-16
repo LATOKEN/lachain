@@ -7,7 +7,7 @@ namespace Lachain.Networking
     public interface INetworkManager : IDisposable
     {
         IMessageFactory MessageFactory { get; }
-        void SendTo(ECDSAPublicKey publicKey, NetworkMessage message);
+        void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, bool priorityMessage);
         void Start();
         void BroadcastLocalTransaction(List<TransactionReceipt> txes);
         void AdvanceEra(ulong era);

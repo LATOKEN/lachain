@@ -36,8 +36,8 @@ namespace Lachain.Networking.Hub
         private int _eraMsgCounter;
         private readonly object _messageReceived = new object();
 
-        private readonly Queue<NetworkMessage> _messageQueue = new Queue<NetworkMessage>();
-        private readonly Queue<NetworkMessage> _consensusMessages = new Queue<NetworkMessage>();
+        private readonly Queue<NetworkMessage> _nonPriorityMessageQueue = new Queue<NetworkMessage>();
+        private readonly Queue<NetworkMessage> _priorityMessageQueue = new Queue<NetworkMessage>();
 
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
@@ -71,18 +71,17 @@ namespace Lachain.Networking.Hub
         }
 
 
-        public void AddMsgToQueue(NetworkMessage message)
+        public void AddMsgToQueue(NetworkMessage message, bool priorityMessage)
         {
-            switch (message.MessageCase)
+            if (priorityMessage)
             {
-                case NetworkMessage.MessageOneofCase.ConsensusMessage:
-                    lock (_consensusMessages)
-                        _consensusMessages.Enqueue(message);
-                    break;
-                default:
-                    lock (_messageQueue)
-                        _messageQueue.Enqueue(message);
-                    break;
+                lock (_priorityMessageQueue)
+                    _priorityMessageQueue.Enqueue(message);
+            }
+            else
+            {
+                lock (_nonPriorityMessageQueue)
+                    _nonPriorityMessageQueue.Enqueue(message);
             }
 
             lock (_messageReceived)
@@ -99,7 +98,7 @@ namespace Lachain.Networking.Hub
                 {
                     lock (_messageReceived)
                     {
-                        while (_consensusMessages.Count == 0 && _messageQueue.Count == 0)
+                        while (_priorityMessageQueue.Count == 0 && _nonPriorityMessageQueue.Count == 0)
                             Monitor.Wait(_messageReceived);
                     }
                     
@@ -108,21 +107,21 @@ namespace Lachain.Networking.Hub
 
                     const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
                     bool isConsensusMessage = false;
-                    lock (_consensusMessages)
+                    lock (_priorityMessageQueue)
                     {
-                        while (_consensusMessages.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                        while (_priorityMessageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                         {
-                            var message = _consensusMessages.Dequeue();
+                            var message = _priorityMessageQueue.Dequeue();
                             toSend.Messages.Add(message);
                             isConsensusMessage = true;
                         }
                     }
 
-                    lock (_messageQueue)
+                    lock (_nonPriorityMessageQueue)
                     {
-                        while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                        while (_nonPriorityMessageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                         {
-                            var message = _messageQueue.Dequeue();
+                            var message = _nonPriorityMessageQueue.Dequeue();
                             toSend.Messages.Add(message);
                         }
                     }
@@ -170,10 +169,10 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
-            lock (_consensusMessages)
-                _consensusMessages.Clear();
-            lock (_messageQueue)
-                _messageQueue.Clear();
+            lock (_priorityMessageQueue)
+                _priorityMessageQueue.Clear();
+            lock (_nonPriorityMessageQueue)
+                _nonPriorityMessageQueue.Clear();
             Stop();
         }
 

@@ -238,7 +238,7 @@ namespace Lachain.Core.Network
                     var reply = _networkManager.MessageFactory.PingReply(
                         TimeUtils.CurrentTimeMillis(), _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
                     );
-                    _networkBroadcaster.Broadcast(reply);
+                    _networkBroadcaster.Broadcast(reply, true);
                     Logger.LogTrace($"Broadcasted our height: {reply.PingReply.BlockHeight}");
                 }
                 catch (Exception e)
@@ -293,7 +293,7 @@ namespace Lachain.Core.Network
                     foreach (var peer in peers)
                     {
                         _networkManager.SendTo(
-                            peer, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound)
+                            peer, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound), true
                         );
                     }
 

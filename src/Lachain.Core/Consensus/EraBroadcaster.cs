@@ -102,7 +102,7 @@ namespace Lachain.Core.Consensus
                 }
                 else
                 {
-                    _consensusMessageDeliverer.SendTo(publicKey, payload);
+                    _consensusMessageDeliverer.SendTo(publicKey, payload, true);
                 }
             }
         }
@@ -128,7 +128,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            _consensusMessageDeliverer.SendTo(_validators!.EcdsaPublicKeySet[index], payload);
+            _consensusMessageDeliverer.SendTo(_validators!.EcdsaPublicKeySet[index], payload, true);
         }
 
         public void Dispatch(ConsensusMessage message, int from)

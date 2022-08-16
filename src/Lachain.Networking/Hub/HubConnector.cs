@@ -117,22 +117,27 @@ namespace Lachain.Networking.Hub
 
         private void SendMessages()
         {
-            const int giveConsensusSomeTime = 500;
+            const int waitForSomeTime = 500;
+            uint maxMessageToSend = 10;
             while (_running)
             {
                 try
                 {
-                    byte[] publicKey;
-                    byte[] message;
-                    lock (_messageQueue)
+                    uint messageSent = 0;
+                    while (messageSent < maxMessageToSend)
                     {
-                        while (_messageQueue.Count == 0)
-                            Monitor.Wait(_messageQueue);
-                        (publicKey, message) = _messageQueue.Dequeue();
+                        byte[] publicKey;
+                        byte[] message;
+                        lock (_messageQueue)
+                        {
+                            while (_messageQueue.Count == 0)
+                                Monitor.Wait(_messageQueue);
+                            (publicKey, message) = _messageQueue.Dequeue();
+                        }
+                        Send(publicKey, message);
                     }
 
-                    Send(publicKey, message);
-                    Thread.Sleep(giveConsensusSomeTime);
+                    Thread.Sleep(waitForSomeTime);
                 }
                 catch (Exception e)
                 {

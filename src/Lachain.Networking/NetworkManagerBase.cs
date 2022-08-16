@@ -62,9 +62,9 @@ namespace Lachain.Networking
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");
         }
 
-        public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message)
+        public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, bool priorityMessage)
         {
-            GetClientWorker(publicKey)?.AddMsgToQueue(message);
+            GetClientWorker(publicKey)?.AddMsgToQueue(message, priorityMessage);
         }
 
         public void Start()
@@ -157,7 +157,8 @@ namespace Lachain.Networking
                     GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
                     _ => throw new InvalidOperationException()
                 };
-                peer.AddMsgToQueue(msg);
+                // we should never reply with priority, requests can be spammed
+                peer.AddMsgToQueue(msg, false);
             };
         }
 
@@ -195,12 +196,12 @@ namespace Lachain.Networking
 
         public void BroadcastLocalTransaction(List<TransactionReceipt> txes)
         {
-            Broadcast(MessageFactory.SyncPoolReply(txes));
+            Broadcast(MessageFactory.SyncPoolReply(txes), false);
         }
 
-        public void Broadcast(NetworkMessage networkMessage)
+        public void Broadcast(NetworkMessage networkMessage, bool priorityMessage)
         {
-            _broadcaster.AddMsgToQueue(networkMessage);
+            _broadcaster.AddMsgToQueue(networkMessage, priorityMessage);
         }
 
         private void Stop()
