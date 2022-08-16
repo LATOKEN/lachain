@@ -106,14 +106,14 @@ namespace Lachain.Networking.Hub
                     MessageBatchContent toSend = new MessageBatchContent();
 
                     const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
-                    bool isConsensusMessage = false;
+                    bool isPriorityMessage = false;
                     lock (_priorityMessageQueue)
                     {
                         while (_priorityMessageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                         {
                             var message = _priorityMessageQueue.Dequeue();
                             toSend.Messages.Add(message);
-                            isConsensusMessage = true;
+                            isPriorityMessage = true;
                         }
                     }
 
@@ -150,7 +150,7 @@ namespace Lachain.Networking.Hub
                                 .Inc(message.CalculateSize());
                         }
 
-                        if (isConsensusMessage)
+                        if (isPriorityMessage)
                             _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                         else
                             _hubConnector.TrySend(PeerPublicKey, megaBatchBytes);
