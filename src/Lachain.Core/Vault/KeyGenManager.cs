@@ -290,6 +290,9 @@ namespace Lachain.Core.Vault
                     Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
                     Logger.LogTrace($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
                     Logger.LogTrace(
+                        $"  - TPKE verification public keys: {string.Join(", ", keys.TpkeVerificationPublicKeys.Select(key => key.ToHex()))}"
+                    );
+                    Logger.LogTrace(
                         $"  - TS public key: {keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()}");
                     Logger.LogTrace(
                         $"  - TS public key set: {string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))}"
