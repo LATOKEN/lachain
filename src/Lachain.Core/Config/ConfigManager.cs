@@ -14,7 +14,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 13;
+        private const ulong _CurrentVersion = 14;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -68,6 +68,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV12();
             if (version < 13)
                 _UpdateConfigToV13();
+            if (version < 14)
+                _UpdateConfigToV14();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -364,9 +366,34 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
 
-        // version 13 of config should contain checkpoint initialization
-        // To add a new checkpoint call AddNewCheckpoint(blockHeight)
+        // version 13 of config should contain hardfork height for hardfork_11
         private void _UpdateConfigToV13()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_11 ??= network.NetworkName switch
+            {
+                "mainnet" => null,
+                "testnet" => null,
+                "devnet" => null,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 13;
+            _config["version"] = JObject.FromObject(version);
+            
+            _SaveCurrentConfig();
+        }
+
+
+        // version 14 of config should contain checkpoint initialization
+        // To add a new checkpoint call AddNewCheckpoint(blockHeight)
+        private void _UpdateConfigToV14()
         {
             var network = GetConfig<NetworkConfig>("network") ??
                           throw new ApplicationException("No network section in config");
@@ -376,12 +403,11 @@ namespace Lachain.Core.Config
                 AllCheckpoints = new List<CheckpointConfigInfo>()
             };
             
-            // To add a new checkpoint call AddNewCheckpoint(blockHeight)
             _config["checkpoint"] = JObject.FromObject(checkpoints);
 
             var version = GetConfig<VersionConfig>("version") ??
                           throw new ApplicationException("No version section in config");
-            version.Version = 13;
+            version.Version = 14;
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
