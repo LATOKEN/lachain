@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM.ExecutionFrame;
@@ -91,7 +92,10 @@ namespace Lachain.Core.Blockchain.VM
             catch (HaltException e)
             {
                 result.Status = e.HaltCode == 0 ? ExecutionStatus.Ok : ExecutionStatus.ExecutionHalted;
-                result.ReturnValue = e.HaltCode == 0 ? frame.ReturnValue : new[] {(byte) e.HaltCode};
+                byte[] haltResult;
+                haltResult = HardforkHeights.IsHardfork_11Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()) ?
+                    frame.ReturnValue : new[] {(byte) e.HaltCode};
+                result.ReturnValue = e.HaltCode == 0 ? frame.ReturnValue : haltResult;
                 result.GasUsed = frame.GasUsed;
             }
             catch (Exception e)
