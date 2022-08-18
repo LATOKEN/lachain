@@ -11,7 +11,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 12;
+        private const ulong _CurrentVersion = 13;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -63,6 +63,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV11();
             if (version < 12)
                 _UpdateConfigToV12();
+            if (version < 13)
+                _UpdateConfigToV13();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -354,6 +356,30 @@ namespace Lachain.Core.Config
             var version = GetConfig<VersionConfig>("version") ??
                           throw new ApplicationException("No version section in config");
             version.Version = 12;
+            _config["version"] = JObject.FromObject(version);
+            
+            _SaveCurrentConfig();
+        }
+
+        // version 13 of config should contain hardfork height for hardfork_11
+        private void _UpdateConfigToV13()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_11 ??= network.NetworkName switch
+            {
+                "mainnet" => 3986000,
+                "testnet" => 3629500,
+                "devnet" => 1011000,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 13;
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
