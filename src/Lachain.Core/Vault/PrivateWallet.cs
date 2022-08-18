@@ -24,6 +24,9 @@ namespace Lachain.Core.Vault
 
         private readonly ISortedDictionary<ulong, PrivateKeyShare> _tsKeys =
             new TreeDictionary<ulong, PrivateKeyShare>();
+        
+        private readonly ISortedDictionary<ulong, List<Crypto.TPKE.PublicKey>> _tpkeVerificationKeys =
+            new TreeDictionary<ulong, List<Crypto.TPKE.PublicKey>>();
 
         private readonly ISortedDictionary<ulong, PrivateKey> _tpkeKeys = new TreeDictionary<ulong, PrivateKey>();
 
@@ -81,6 +84,33 @@ namespace Lachain.Core.Vault
             else
             {
                 _tpkeKeys.Add(block, key);
+            }
+
+            SaveWallet(_walletPath, _walletPassword);
+        }
+
+        public Crypto.TPKE.PublicKey? GetTpkeVerificationKeyForBlock(ulong block, ulong player)
+        {
+            try
+            {
+                return _tpkeVerificationKeys.Predecessor(block + 1).Value[(int)player];
+            }
+            catch (NoSuchItemException)
+            {
+                return null;
+            }
+        }
+
+        public void AddTpkeVerificationKeyAfterBlock(ulong block, List<Crypto.TPKE.PublicKey> keys)
+        {
+            if (_tpkeVerificationKeys.Contains(block))
+            {
+                _tpkeVerificationKeys.Update(block, keys);
+                Logger.LogWarning($"TpkePrivateKey for block {block} is overwritten");
+            }
+            else
+            {
+                _tpkeVerificationKeys.Add(block, keys);
             }
 
             SaveWallet(_walletPath, _walletPassword);
