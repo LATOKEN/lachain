@@ -55,7 +55,7 @@ namespace Lachain.ConsensusTest
         public IProtocolIdentifier Id { get; } = new InvokerId();
 
         private readonly object _queueLock = new object();
-        private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
+        private static readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
         public bool Terminated { get; private set; }
 
         public void Terminate()
@@ -83,6 +83,11 @@ namespace Lachain.ConsensusTest
 
         public void WaitFinish()
         {
+        }
+
+        public TResult GetResult()
+        {
+            return Result;
         }
 
         public bool WaitFinish(TimeSpan timeout)

@@ -53,6 +53,13 @@ namespace Lachain.ConsensusTest
         public void Terminate()
         {
             Terminated = true;
+            foreach (var protocol in Registry)
+            {
+                protocol.Value.Terminate();
+            }
+
+            Registry.Clear();
+            _callback.Clear();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
