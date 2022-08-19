@@ -13,6 +13,7 @@ using Lachain.Logger;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json;
+using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Vault
 {
@@ -21,6 +22,8 @@ namespace Lachain.Core.Vault
         private static readonly ILogger<PrivateWallet> Logger = LoggerFactory.GetLoggerForClass<PrivateWallet>();
 
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+
+        private readonly ulong _version = 2;
 
         private readonly ISortedDictionary<ulong, PrivateKeyShare> _tsKeys =
             new TreeDictionary<ulong, PrivateKeyShare>();
@@ -140,12 +143,20 @@ namespace Lachain.Core.Vault
         {
             var wallet = new JsonWallet
             (
+                _version, 
                 EcdsaKeyPair.PrivateKey.ToHex(),
                 HubPrivateKey.ToHex(),
                 new Dictionary<ulong, string>(
                     _tpkeKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
                             p.Key, p.Value.ToHex()
+                        )
+                    )
+                ),
+                new Dictionary<ulong, List<string>>(
+                    _tpkeVerificationKeys.Select(p =>
+                        new System.Collections.Generic.KeyValuePair<ulong, List<string>>(
+                            p.Key, p.Value.Select(x => x.ToHex()).ToList()
                         )
                     )
                 ),
@@ -188,14 +199,19 @@ namespace Lachain.Core.Vault
                 needsSave = true;
             }
 
+            wallet.Version ??= 1;
             wallet.ThresholdSignatureKeys ??= new Dictionary<ulong, string>();
             wallet.TpkePrivateKeys ??= new Dictionary<ulong, string>();
+            wallet.TpkeVerificationKeys ??= new Dictionary<ulong, List<string>>();
 
             keyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
             hubKey = wallet.HubPrivateKey.HexToBytes();
             _tpkeKeys.AddAll(wallet.TpkePrivateKeys
                 .Select(p =>
                     new C5.KeyValuePair<ulong, PrivateKey>(p.Key, PrivateKey.FromBytes(p.Value.HexToBytes()))));
+            _tpkeVerificationKeys.AddAll(wallet.TpkeVerificationKeys
+                .Select(p => 
+                    new C5.KeyValuePair<ulong, List<PublicKey>>(p.Key, p.Value.Select(x => PublicKey.FromBytes(x.HexToBytes())).ToList())));
             _tsKeys.AddAll(wallet.ThresholdSignatureKeys
                 .Select(p =>
                     new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
@@ -206,9 +222,11 @@ namespace Lachain.Core.Vault
         private static void GenerateNewWallet(string path, string password)
         {
             var config = new JsonWallet(
+                2, 
                 CryptoProvider.GetCrypto().GenerateRandomBytes(32).ToHex(false),
                 GenerateHubKey().PrivateKey,
                 new Dictionary<ulong, string> {},
+                new Dictionary<ulong, List<string>>(),
                 new Dictionary<ulong, string> {}
             );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
