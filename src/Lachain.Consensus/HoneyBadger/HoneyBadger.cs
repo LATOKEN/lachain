@@ -136,8 +136,15 @@ namespace Lachain.Consensus.HoneyBadger
                 var dec = _privateKey.Decrypt(share);
                 _taken[share.Id] = true;
                 _receivedShares[share.Id] = share;
-                if(_decryptedShares[share.Id].Count > 0) // if we have any partially decrypted shares for this share - verify them
-                    _decryptedShares[share.Id] = _decryptedShares[share.Id].Where(ps => Wallet.TpkePublicKey.VerifyShare(share, ps)).ToHashSet();
+                if (_decryptedShares[share.Id].Count > 0) // if we have any partially decrypted shares for this share - verify them
+                {
+                    if(Wallet.GetTpkeVerificationKey(share.Id) is null)
+                        _decryptedShares[share.Id].Clear();
+                    else
+                        _decryptedShares[share.Id] = _decryptedShares[share.Id]
+                            .Where(ps => Wallet.GetTpkeVerificationKey(share.Id)!.VerifyShare(share, ps)).ToHashSet();
+                }
+
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
                 Broadcaster.Broadcast(CreateDecryptedMessage(dec));
@@ -173,7 +180,9 @@ namespace Lachain.Consensus.HoneyBadger
                 share = Wallet.TpkePublicKey.Decode(msg);
                 if (!(_receivedShares[share.ShareId] is null))
                 {
-                    if (!Wallet.TpkePublicKey.VerifyShare(_receivedShares[share.ShareId]!, share))
+                    if (Wallet.GetTpkeVerificationKey(share.ShareId) is null)
+                        throw new Exception("No verification key for this sender");
+                    if (!Wallet.GetTpkeVerificationKey(share.ShareId)!.VerifyShare(_receivedShares[share.ShareId]!, share))
                         throw new Exception("Invalid share");
                 }
 
