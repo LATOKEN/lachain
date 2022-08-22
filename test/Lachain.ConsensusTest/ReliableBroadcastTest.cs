@@ -36,7 +36,7 @@ namespace Lachain.ConsensusTest
             _resultInterceptors = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[n];
             _wallets = new IPrivateConsensusKeySet[n];
             _publicKeys = new PublicConsensusKeySet(
-                n, f, null!, null!,
+                n, f, null!, null!, null!,
                 Enumerable.Range(0, n)
                     .Select(i => new ECDSAPublicKey {Buffer = ByteString.CopyFrom(i.ToBytes().ToArray())})
             );
