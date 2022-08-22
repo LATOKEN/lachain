@@ -18,6 +18,8 @@ using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using Nethereum.RLP;
+using Nethereum.Signer;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Blockchain.SystemContracts
@@ -51,6 +53,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _playersCount;
         private readonly StorageVariable _tsKeys;
         private readonly StorageVariable _tpkeKey;
+        private readonly StorageVariable _tpkeVerificationKeys;
         private readonly StorageVariable _collectedFees;
         private readonly StorageVariable _lastSuccessfulKeygenBlock;
 
@@ -97,6 +100,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 ContractRegisterer.GovernanceContract,
                 context.Snapshot.Storage,
                 new BigInteger(8).ToUInt256()
+            );
+            _tpkeVerificationKeys = new StorageVariable(
+                ContractRegisterer.GovernanceContract,
+                context.Snapshot.Storage,
+                new BigInteger(9).ToUInt256()
             );
         }
 
@@ -269,11 +277,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenConfirm)]
-        public ExecutionStatus KeyGenConfirm(UInt256 cycle, byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys,
+        public ExecutionStatus KeyGenConfirm(UInt256 cycle, byte[] tpkePublicKey, byte[][] tpkeVerificationKeys, byte[][] thresholdSignaturePublicKeys,
             SystemContractExecutionFrame frame)
         {
             Logger.LogDebug(
-                $"KeyGenConfirm({tpkePublicKey.ToHex()}, [{string.Join(", ", thresholdSignaturePublicKeys.Select(s => s.ToHex()))}])");
+                $"KeyGenConfirm({tpkePublicKey.ToHex()}, [{string.Join(", ", tpkeVerificationKeys.Select(s => s.ToHex()))}], [{string.Join(", ", thresholdSignaturePublicKeys.Select(s => s.ToHex()))}])");
             if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
             {
                 Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
@@ -312,9 +320,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _lastSuccessfulKeygenBlock.Set(new BigInteger(frame.InvocationContext.Receipt.Block).ToUInt256().ToBytes());
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
-            SetTpkeKey(tpkePublicKey);
+            SetTpkeKey(tpkePublicKey, tpkeVerificationKeys);
 
-            Emit(GovernanceInterface.EventKeygenConfirm, tpkePublicKey, thresholdSignaturePublicKeys);
+            Emit(GovernanceInterface.EventKeygenConfirm, tpkePublicKey, tpkeVerificationKeys, thresholdSignaturePublicKeys);
             return ExecutionStatus.Ok;
         }
 
@@ -344,6 +352,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 var faulty = (players - 1) / 3;
                 var tsKeys = GetTSKeys();
                 var tpkeKey = GetTpkeKey();
+                var tpkeVerificationKeys = GetTpkeVerificationKeys();
                 var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
                 var votes = GetConfirmations(keyringHash.ToBytes(), gen);
                 if (votes + 1 < players - faulty)
@@ -368,7 +377,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     Logger.LogWarning(k.ToHex());
                 }
 
-                _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey);
+                _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey, tpkeVerificationKeys);
 
                 Emit(GovernanceInterface.EventFinishCycle);
                 Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
@@ -453,15 +462,26 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return fees.ToUInt256().ToMoney();
         }
 
-        private void SetTpkeKey(byte[] tpkePublicKey)
+        private void SetTpkeKey(byte[] tpkePublicKey, byte[][] tpkeVerificationKeys)
         {
             _tpkeKey.Set(tpkePublicKey);
+            var serializedKeys = RLP.EncodeList(tpkeVerificationKeys);
+            _tpkeVerificationKeys.Set(serializedKeys);
         }
 
         private PublicKey GetTpkeKey()
         {
             var tpkePublicKey = _tpkeKey.Get();
             return PublicKey.FromBytes(tpkePublicKey);
+        }
+
+        private List<PublicKey> GetTpkeVerificationKeys()
+        {
+            var serializedKeys = _tpkeVerificationKeys.Get();
+            var tpkeVerificationKeys = (RLPCollection)RLP.Decode(serializedKeys);
+            return tpkeVerificationKeys
+                .Select(x => x.RLPData)
+                .Select(x => PublicKey.FromBytes(x)).ToList();
         }
 
         private int GetConfirmations(IEnumerable<byte> key, ulong gen)

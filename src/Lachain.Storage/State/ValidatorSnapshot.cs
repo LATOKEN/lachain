@@ -65,11 +65,12 @@ namespace Lachain.Storage.State
         }
 
         public void UpdateValidators(
-            IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey
+            IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey, IEnumerable<PublicKey> tpkeVerificationKeys
         )
         {
             var state = new ConsensusState(
                 tpkePublicKey.ToBytes(),
+                tpkeVerificationKeys.Select(x => x.ToBytes()).ToArray(),
                 ecdsaKeys
                     .Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials(ecdsaKey, tsKey.ToBytes()))
                     .ToArray()

@@ -24,6 +24,7 @@ using Prometheus;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Utility.Serialization;
 
 
 namespace Lachain.Core.Blockchain.Operations
@@ -748,8 +749,10 @@ namespace Lachain.Core.Blockchain.Operations
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
             if (genesisConfig is null) return false;
             genesisConfig.ValidateOrThrow();
+            var fakeVerificationKeys = new List<Crypto.TPKE.PublicKey>(genesisConfig.Validators.Count).Select(x => x.ToBytes()).ToArray();
             var initialConsensusState = new ConsensusState(
                 genesisConfig.ThresholdEncryptionPublicKey.HexToBytes(),
+                fakeVerificationKeys, 
                 genesisConfig.Validators.Select(v => new ValidatorCredentials
                 (
                     v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
