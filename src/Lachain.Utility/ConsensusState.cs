@@ -37,7 +37,7 @@ namespace Lachain.Utility
             var tpkeVerificationKeys = decoded.Skip(2).Take(keysNumber)
                 .Select(x => x.RLPData)
                 .ToArray();
-            var credentials = decoded.Skip(1)
+            var credentials = decoded.Skip(2 + keysNumber)
                 .Select(x => x.RLPData)
                 .Select(x => ValidatorCredentials.FromBytes(x))
                 .ToArray();
