@@ -14,8 +14,8 @@ namespace Lachain.ConsensusTest
 {
     public class HoneyBadgerSmartMalicious : HoneyBadger
     {
-        public HoneyBadgerSmartMalicious(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet, PrivateKey privateKey, IConsensusBroadcaster broadcaster) : 
-            base(honeyBadgerId, wallet, privateKey, broadcaster)
+        public HoneyBadgerSmartMalicious(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet, PrivateKey privateKey, bool skipShareVerification, IConsensusBroadcaster broadcaster) : 
+            base(honeyBadgerId, wallet, privateKey, skipShareVerification, broadcaster)
         {
         }
 

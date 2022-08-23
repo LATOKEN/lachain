@@ -76,7 +76,7 @@ namespace Lachain.ConsensusTest
         {
             SetUp(n, f);
             _broadcasts[0] = new HoneyBadgerMalicious(
-                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, _broadcasters[0]
+                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, false, _broadcasters[0]
             );
             _broadcasters[0].RegisterProtocols(new[] {_broadcasts[0], _resultInterceptors[0]});
             for (uint i = 1; i < n; ++i)
@@ -92,7 +92,7 @@ namespace Lachain.ConsensusTest
         {
             SetUp(n, f);
             _broadcasts[0] = new HoneyBadgerSmartMalicious(
-                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, _broadcasters[0]
+                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, false, _broadcasters[0]
             );
             _broadcasters[0].RegisterProtocols(new[] {_broadcasts[0], _resultInterceptors[0]});
             for (uint i = 1; i < n; ++i)
