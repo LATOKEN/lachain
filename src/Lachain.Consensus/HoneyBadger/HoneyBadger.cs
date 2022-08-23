@@ -180,9 +180,9 @@ namespace Lachain.Consensus.HoneyBadger
                 share = Wallet.TpkePublicKey.Decode(msg);
                 if (!(_receivedShares[share.ShareId] is null))
                 {
-                    if (Wallet.GetTpkeVerificationKey(share.ShareId) is null)
+                    if (Wallet.GetTpkeVerificationKey(share.DecryptorId) is null)
                         throw new Exception("No verification key for this sender");
-                    if (!Wallet.GetTpkeVerificationKey(share.ShareId)!.VerifyShare(_receivedShares[share.ShareId]!, share))
+                    if (!Wallet.GetTpkeVerificationKey(share.DecryptorId)!.VerifyShare(_receivedShares[share.ShareId]!, share))
                         throw new Exception("Invalid share");
                 }
 
