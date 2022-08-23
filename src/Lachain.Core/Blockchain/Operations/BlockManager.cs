@@ -749,7 +749,9 @@ namespace Lachain.Core.Blockchain.Operations
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
             if (genesisConfig is null) return false;
             genesisConfig.ValidateOrThrow();
-            var fakeVerificationKeys = new List<Crypto.TPKE.PublicKey>(genesisConfig.Validators.Count).Select(x => x.ToBytes()).ToArray();
+            var fakeVerificationKeys = Enumerable.Range(0, genesisConfig.Validators.Count)
+                .Select(i => genesisConfig.ThresholdEncryptionPublicKey.HexToBytes())
+                .ToArray();
             var initialConsensusState = new ConsensusState(
                 genesisConfig.ThresholdEncryptionPublicKey.HexToBytes(),
                 fakeVerificationKeys, 
