@@ -66,7 +66,7 @@ namespace Lachain.ConsensusTest
             for (uint i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
@@ -82,7 +82,7 @@ namespace Lachain.ConsensusTest
             for (uint i = 1; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
@@ -98,7 +98,7 @@ namespace Lachain.ConsensusTest
             for (uint i = 1; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
@@ -110,7 +110,7 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
                 foreach (var j in s) (_broadcasters[i] as BroadcastSimulator)?.Silent(j);

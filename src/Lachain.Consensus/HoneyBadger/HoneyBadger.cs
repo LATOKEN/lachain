@@ -26,9 +26,10 @@ namespace Lachain.Consensus.HoneyBadger
         private EncryptedShare? _encryptedShare;
         private ISet<IRawShare>? _result;
         private bool _takenSet;
+        private bool _skipDecryptedShareValidation;
 
         public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet,
-            PrivateKey privateKey, IConsensusBroadcaster broadcaster)
+            PrivateKey privateKey, bool skipDecryptedShareValidation, IConsensusBroadcaster broadcaster)
             : base(wallet, honeyBadgerId, broadcaster)
         {
             _honeyBadgerId = honeyBadgerId;
@@ -43,6 +44,7 @@ namespace Lachain.Consensus.HoneyBadger
             _taken = new bool[N];
             _shares = new IRawShare[N];
             _requested = ResultStatus.NotRequested;
+            _skipDecryptedShareValidation = skipDecryptedShareValidation;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -138,11 +140,15 @@ namespace Lachain.Consensus.HoneyBadger
                 _receivedShares[share.Id] = share;
                 if (_decryptedShares[share.Id].Count > 0) // if we have any partially decrypted shares for this share - verify them
                 {
-                    if(Wallet.GetTpkeVerificationKey(share.Id) is null)
-                        _decryptedShares[share.Id].Clear();
-                    else
-                        _decryptedShares[share.Id] = _decryptedShares[share.Id]
-                            .Where(ps => Wallet.GetTpkeVerificationKey(share.Id)!.VerifyShare(share, ps)).ToHashSet();
+                    if (!_skipDecryptedShareValidation)
+                    {
+                        if (Wallet.GetTpkeVerificationKey(share.Id) is null)
+                            _decryptedShares[share.Id].Clear();
+                        else
+                            _decryptedShares[share.Id] = _decryptedShares[share.Id]
+                                .Where(ps => Wallet.GetTpkeVerificationKey(share.Id)!.VerifyShare(share, ps))
+                                .ToHashSet();
+                    }
                 }
 
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
@@ -180,10 +186,14 @@ namespace Lachain.Consensus.HoneyBadger
                 share = Wallet.TpkePublicKey.Decode(msg);
                 if (!(_receivedShares[share.ShareId] is null))
                 {
-                    if (Wallet.GetTpkeVerificationKey(share.DecryptorId) is null)
-                        throw new Exception("No verification key for this sender");
-                    if (!Wallet.GetTpkeVerificationKey(share.DecryptorId)!.VerifyShare(_receivedShares[share.ShareId]!, share))
-                        throw new Exception("Invalid share");
+                    if (!_skipDecryptedShareValidation)
+                    {
+                        if (Wallet.GetTpkeVerificationKey(share.DecryptorId) is null)
+                            throw new Exception("No verification key for this sender");
+                        if (!Wallet.GetTpkeVerificationKey(share.DecryptorId)!.VerifyShare(
+                                _receivedShares[share.ShareId]!, share))
+                            throw new Exception("Invalid share");
+                    }
                 }
 
                 _decryptedShares[share.ShareId].Add(share);
