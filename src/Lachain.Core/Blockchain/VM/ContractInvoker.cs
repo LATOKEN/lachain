@@ -6,10 +6,10 @@ namespace Lachain.Core.Blockchain.VM
 {
     public class ContractInvoker : IContractInvoker
     {
-        private static readonly Counter SystemContractFailCounter = Metrics.CreateCounter(
-            "lachain_system_contract_call_failed",
-            "Number of times system contract call failed",
-            new CounterConfiguration
+        private static readonly Gauge SystemContractFail = Metrics.CreateGauge(
+            "lachain_latest_block_system_contract_call_fail",
+            "Index of latest block where system contract call failed",
+            new GaugeConfiguration
             {
                 LabelNames = new[] {"contract", "method"}
             }
@@ -46,7 +46,7 @@ namespace Lachain.Core.Blockchain.VM
             {
                 var contract = _contractRegisterer.GetContractByAddress(address);
                 var method = _contractRegisterer.GetMethodName(address, input);
-                SystemContractFailCounter.WithLabels(contract!.ToString(), method!).Inc();
+                SystemContractFail.WithLabels(contract!.ToString(), method!).Set(context.Receipt.Block);
             }
             return result;
         }
