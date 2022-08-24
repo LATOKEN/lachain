@@ -191,7 +191,6 @@ namespace Lachain.Core.Blockchain.Pool
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
-            _transactionVerifier.VerifyTransaction(receipt, useNewChainId);
 
             bool oldTxExist = false;
             TransactionReceipt? oldTx = null;
