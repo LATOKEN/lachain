@@ -465,7 +465,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetTpkeKey(byte[] tpkePublicKey, byte[][] tpkeVerificationKeys)
         {
             _tpkeKey.Set(tpkePublicKey);
-            var serializedKeys = RLP.EncodeList(tpkeVerificationKeys);
+            var serializedKeys = tpkeVerificationKeys.Flatten().ToArray();
             _tpkeVerificationKeys.Set(serializedKeys);
         }
 
@@ -477,10 +477,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private List<PublicKey> GetTpkeVerificationKeys()
         {
-            var serializedKeys = _tpkeVerificationKeys.Get();
-            var tpkeVerificationKeys = (RLPCollection)RLP.Decode(serializedKeys);
-            return tpkeVerificationKeys
-                .Select(x => x.RLPData)
+            return _tpkeVerificationKeys.Get().Batch(CryptoUtils.PublicKeyLength)
+                .Select(x => x.ToArray())
                 .Select(x => PublicKey.FromBytes(x)).ToList();
         }
 
