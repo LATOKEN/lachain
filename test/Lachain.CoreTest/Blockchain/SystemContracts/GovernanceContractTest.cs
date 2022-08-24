@@ -139,6 +139,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsNotNull(keyring);
                 var input = ContractEncoder.Encode(GovernanceInterface.MethodKeygenConfirm, cycle, 
                     keyring!.Value.TpkePublicKey.ToBytes(), 
+                    keyring!.Value.TpkeVerificationPublicKeys.Select(x => x.ToBytes()).ToArray(), 
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray());
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.GovernanceContract, input);
                 Assert.IsNotNull(call);
