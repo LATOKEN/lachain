@@ -146,7 +146,7 @@ namespace Lachain.Consensus.HoneyBadger
                             _decryptedShares[share.Id].Clear();
                         else
                             _decryptedShares[share.Id] = _decryptedShares[share.Id]
-                                .Where(ps => Wallet.GetTpkeVerificationKey(share.Id)!.VerifyShare(share, ps))
+                                .Where(ps => Wallet.GetTpkeVerificationKey(ps.DecryptorId)!.VerifyShare(share, ps))
                                 .ToHashSet();
                     }
                 }
