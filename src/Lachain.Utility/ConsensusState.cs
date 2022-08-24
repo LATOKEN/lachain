@@ -23,9 +23,9 @@ namespace Lachain.Utility
         public byte[] ToBytes()
         {
             var a = new List<byte[]> {TpkePublicKey};
-            a.AddRange(Validators.Select(c => c.ToBytes()));
             a.Add(new byte[] {(byte)TpkeVerificationKeys.Length});
             a.AddRange(TpkeVerificationKeys);
+            a.AddRange(Validators.Select(c => c.ToBytes()));
             return RLP.EncodeList(a.Select(RLP.EncodeElement).ToArray());
         }
 
