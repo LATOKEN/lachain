@@ -438,9 +438,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     _stateManager.Rollback();
                     return res;
                 });
-                return invRes.Status == ExecutionStatus.Ok
-                    ? Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed)
-                    : throw new Exception("Error in contract call");
+                if (invRes.Status == ExecutionStatus.Ok)
+                    return Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed);
+                
+                if (IsExecutionReverted(invRes.ReturnValue, out var revertReason))
+                {
+                    ExceptionHandler.WarningException(
+                        "execution reverted: " + revertReason, invRes.ReturnValue.ToHex(true));
+                }
+                throw new Exception("Error in contract call");
             }
             
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
@@ -501,9 +507,15 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     _stateManager.Rollback();
                     return res;
                 });
-                return invRes.Status == ExecutionStatus.Ok ? 
-                    Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) 
-                    : throw new Exception("Error in contract call");
+                if (invRes.Status == ExecutionStatus.Ok)
+                    return Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed);
+                
+                if (IsExecutionReverted(invRes.ReturnValue, out var revertReason))
+                {
+                    ExceptionHandler.WarningException(
+                        "execution reverted: " + revertReason, invRes.ReturnValue.ToHex(true));
+                }
+                throw new Exception("Error in contract call");
             }
         
             InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
@@ -535,9 +547,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 return invocationResult;
             });
         
-            return systemContractInvRes.Status == ExecutionStatus.Ok
-                ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
-                : throw new Exception("Error in contract call");
+            if (systemContractInvRes.Status == ExecutionStatus.Ok)
+                return Web3DataFormatUtils.Web3Number(gasUsed + systemContractInvRes.GasUsed);
+            if (IsExecutionReverted(systemContractInvRes.ReturnValue, out var message))
+            {
+                ExceptionHandler.WarningException(
+                    "execution reverted: " + message, systemContractInvRes.ReturnValue.ToHex(true));
+            }
+            throw new Exception("Error in system contract call");
         }
 
         [JsonRpcMethod("eth_gasPrice")]
@@ -715,6 +732,24 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 "pending" => null,
                 _ => blockTag.HexToUlong()
             };
+        }
+
+        private bool IsExecutionReverted(byte[]? returnResult, out string message)
+        {
+            message = "";
+            if (returnResult is null) return false;
+            
+            var returnResultHex = returnResult.ToHex(true);
+            var revertReasonPrefix = "08c379a0";
+            var reverReasonPrefixLength = revertReasonPrefix.Length;
+            var prefixBytes = 32 + 32;
+            if (returnResultHex.Substring(2,reverReasonPrefixLength) == revertReasonPrefix)
+            {
+                var prefix = reverReasonPrefixLength / 2 + prefixBytes;
+                message = Encoding.UTF8.GetString(returnResult.Skip(prefix).ToArray());
+                return true;
+            }
+            return false;
         }
     }
 }
