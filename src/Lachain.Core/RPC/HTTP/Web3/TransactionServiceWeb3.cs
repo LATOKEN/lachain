@@ -737,16 +737,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
         private bool IsExecutionReverted(byte[]? returnResult, out string message)
         {
             message = "";
-            if (returnResult is null) return false;
-            
-            var returnResultHex = returnResult.ToHex(true);
             var revertReasonPrefix = "08c379a0";
             var reverReasonPrefixLength = revertReasonPrefix.Length;
             var prefixBytes = 32 + 32;
+            var prefix = reverReasonPrefixLength / 2 + prefixBytes;
+            Logger.LogInformation("revert reason: " + returnResult.ToHex(true));
+            if (returnResult is null || returnResult.Length < prefix) return false;
+            
+            var returnResultHex = returnResult.ToHex(true);
             if (returnResultHex.Substring(2,reverReasonPrefixLength) == revertReasonPrefix)
             {
-                var prefix = reverReasonPrefixLength / 2 + prefixBytes;
-                message = Encoding.UTF8.GetString(returnResult.Skip(prefix).ToArray());
+                message = Encoding.UTF8.GetString(
+                    returnResult.Skip(prefix).Reverse().ToArray().TrimLeadingZeros().Reverse().ToArray());
                 return true;
             }
             return false;
