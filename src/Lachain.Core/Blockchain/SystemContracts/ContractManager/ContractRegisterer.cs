@@ -63,6 +63,19 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
             return _contracts.TryGetValue(address, out var result) ? result : null;
         }
 
+        public string? GetMethodName(UInt160 address, byte[] input)
+        {
+            if (!_signatures.TryGetValue(address, out var signatures))
+                return null;
+            
+            var signature = ContractEncoder.MethodSignatureAsInt(input);
+            if (!signatures.TryGetValue(signature, out var tuple))
+                return null;
+                
+            var (methodName, _) = tuple;
+            return methodName;
+        }
+
         public SystemContractCall? DecodeContract(InvocationContext context, UInt160 address, byte[] input)
         {
             if (input.Length < 4) return null;
