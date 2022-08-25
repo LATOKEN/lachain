@@ -551,8 +551,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
 
             if ((!(fromBlock is null) || !(toBlock is null)) && !(blockhash is null))
-                throw new Exception(
-                    "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
+                throw new RpcException(
+                    RpcErrorCode.Error,
+                    "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed."
+                );
 
             ulong? start = _blockManager.GetHeight();
             if (!(fromBlock is null))
@@ -594,10 +596,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         addresses = BlockchainFilterUtils.GetAddresses(arrayAddr);
                         break;
                     case JValue valueAddr:
-                        addresses.Add(((string?)valueAddr ?? throw new Exception("Invalid address value")).HexToUInt160());
+                        addresses.Add(((string?)valueAddr ?? 
+                            throw new RpcException(RpcErrorCode.Error, "Invalid address value")).HexToUInt160());
                         break;
                     default:
-                        throw new Exception("Invalid address value");
+                        throw new RpcException(RpcErrorCode.Error, $"Invalid address value: {address}");
                 }
             }
 
