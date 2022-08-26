@@ -2,16 +2,23 @@
     This file controls the fast_sync, other necessary classes are instantiated here.
     We will be downloading 6 tree data structures, one at a time. Block headers will be downloaded differently, not as a tree.    
 
-    **SCOPE TO IMPROVE**:   Blocks are downloaded one by one. This creates lots of unnecessary nodes which can be deleted after
+    **SCOPE TO IMPROVE**:   1) Blocks are downloaded one by one. This creates lots of unnecessary nodes which can be deleted after
                             set state is complete.
+                            2) Tries are downloaded one by one and some trie (Event, Transaction) has many nodes where other tries
+                            have few nodes. So the asynchronous process may not fully utilize all available threads. We can try to
+                            download tries parallelly (maybe with weight, like Event will go first) to speed up
 
     **FEATURE TO ADD**:     Fastsync is possible only for the first time. If fastsync is done before, fastsync is not allowed.
                             It can be studied if it is necessary and add features to allow fastsync anytime.
 */
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Lachain.Core.Blockchain.Checkpoints;
+using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Storage;
@@ -24,11 +31,12 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
     
     public class FastSynchronizerBatch : IFastSynchronizerBatch
     {
-        private string[] trieNames = new string[]
+        // the order of trieNames is important to create StateHash
+        private readonly string[] trieNames = new string[]
         {
                 "Balances", "Contracts", "Storage", "Transactions", "Events", "Validators"
         };
-        private static readonly ILogger<FastSynchronizer> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizer>();
+        private static readonly ILogger<FastSynchronizerBatch> Logger = LoggerFactory.GetLoggerForClass<FastSynchronizerBatch>();
         private readonly VersionFactory _versionFactory;
         private readonly IFastSyncRepository _repository;
         private readonly IHybridQueue _hybridQueue;
@@ -57,13 +65,14 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         // urls is the list of peer nodes, we'll be requesting for data throughtout this process
         // blockNumber denotes which block we want to sync with, if it is 0, we will ask for the latest block number to a random peer and
         // start synching with that peer
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void StartSync(ulong? blockNumber, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
             // At first we check if fast sync have started and completed before.
             // If it has completed previously, we don't let the user run it again.
             if(Alldone())
             {
-                Logger.LogTrace("Fast Sync was done previously\nReturning");
+                Logger.LogTrace("Fast Sync was done previously...Returning");
                 return;
             }
 
@@ -171,7 +180,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
 
         public bool IsRunning()
         {
-            return _repository.GetCheckpointBlockNumber() > 0;
+            return _repository.GetCheckpointBlockNumber() > 0  && !Alldone();
         }
 
         private bool MatchStateHash(
@@ -191,8 +200,10 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public bool IsCheckpointOk(ulong? blockHeight, UInt256? blockHash, List<(UInt256, CheckpointType)>? stateHashes)
         {
+            _downloader.ResetCheckpointInfo();
             Logger.LogTrace("Verifying checkpoint information...");
             if (blockHash is null || blockHeight is null || stateHashes is null || stateHashes.Count != 6)
             {
@@ -218,11 +229,11 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 _downloader.DownloadCheckpoint(blockHeight.Value, trieNames);
             }, TaskCreationOptions.LongRunning);
 
-            while (_downloader.CheckpointBlockHash is null)
+            while (_downloader.CheckpointBlock is null)
             {
                 Thread.Sleep(1000);
             }
-            if (!_downloader.CheckpointBlockHash.Equals(blockHash))
+            if (!_downloader.CheckpointBlock.Hash.Equals(blockHash))
             {
                 Logger.LogTrace("Checkpoint block hash mismatch");
                 return false;
@@ -242,6 +253,16 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                 Logger.LogDebug("Something went wrong while downloading checkpoint state hashes.");
                 return false;
             }
+
+            var calculatedStateHash = CalculateStateHash(stateHashes);
+            if (!calculatedStateHash.Equals(_downloader.CheckpointBlock.Header.StateHash))
+            {
+                Logger.LogWarning($"StateHash mis match. StateHash from CheckpointBlock: "
+                    + $"{_downloader.CheckpointBlock.Header.StateHash.ToHex()}, StateHash from CheckpointStateHashes:"
+                    + $" {calculatedStateHash.ToHex()}");
+                return false;
+            }
+
             bool match = true;
             foreach (var (expectedStateHash, checkpointType) in stateHashes)
             {
@@ -250,6 +271,31 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
             if (!match) Logger.LogTrace("Checkpoint state hash mismatch");
             Logger.LogTrace($"Finished verifying checkpoint information, result: {match}");
             return match;
+        }
+
+        private UInt256 CalculateStateHash(List<(UInt256, CheckpointType)>? stateHashes)
+        {
+            if (stateHashes is null || stateHashes.Count != 6)
+            {
+                Logger.LogDebug($"Invalid list of state hashes. List is {(stateHashes is null ? "null" : "not null")}");
+                if (!(stateHashes is null))
+                {
+                    Logger.LogDebug($"List size: {stateHashes.Count}");
+                }
+                throw new Exception("Invalid list of state hashes");
+            }
+            var stateHashesList = new List<UInt256>();
+            foreach (var trieName in trieNames)
+            {
+                var hash = GetRootHashForTrieName(trieName, stateHashes);
+                if (hash is null)
+                {
+                    Logger.LogDebug("Invalid list of state hashes: null hash for " + trieName);
+                    throw new Exception("Invalid list of state hashes");
+                }
+                stateHashesList.Add(hash);
+            }
+            return stateHashesList.Select(hash => hash.ToBytes()).Flatten().Keccak();
         }
     }
 }

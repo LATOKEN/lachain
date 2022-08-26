@@ -246,7 +246,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     var toBlock = request._toBlock;
                     // Let the TimeOut know that we got the response
                     Monitor.PulseAll(request._peerHasReply);
-
+                
                     try
                     {
                         if (!peer._publicKey.Equals(publicKey) || request._type != RequestType.BlocksRequest)
@@ -299,7 +299,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     var peer = request._peer;
                     // Let the TimeOut know that we got the response
                     Monitor.PulseAll(request._peerHasReply);
-
+                
                     try
                     {
                         if (!peer._publicKey.Equals(publicKey) || request._type != RequestType.NodesRequest) 
@@ -353,7 +353,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     var blockNumber = request._blockNumber;
                     // Let the TimeOut know that we got the response
                     Monitor.PulseAll(request._peerHasReply);
-
+                
                     try
                     {
                         if (block is null || !peer._publicKey.Equals(publicKey) || request._type != RequestType.CheckpointBlockRequest) 
@@ -373,7 +373,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         }
                         Logger.LogInformation($"Received data {request._type} time spent:{time.TotalMilliseconds}"
                             + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
-
+                        
                         // Setting checkValidatorSet = false because we don't have validator set.
                         var result = _blockRequestManager.VerifyBlock(block);
                         if (result != OperatingError.Ok)
@@ -415,7 +415,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     var trieName = request._trieName;
                     // Let the TimeOut know that we got the response
                     Monitor.PulseAll(request._peerHasReply);
-
+                
                     try
                     {
                         if (rootHash is null || !peer._publicKey.Equals(publicKey) || request._type != RequestType.CheckpointStateHashRequest) 
@@ -436,7 +436,7 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                         }
                         Logger.LogInformation($"Received data {request._type} time spent:{time.TotalMilliseconds}"
                             + $" from peer:{peer._publicKey.ToHex()}, preparation time:{(DateTime.Now-receiveTime).TotalMilliseconds}");
-
+                        
                         _peerManager.TryFreePeer(peer, true);
                         if (_checkpointStateHashes is null)
                             _checkpointStateHashes = new List<(UInt256, CheckpointType)>();

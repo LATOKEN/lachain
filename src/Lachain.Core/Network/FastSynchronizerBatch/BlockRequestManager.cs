@@ -90,25 +90,13 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
                     if (block is null)
                     {
                         Logger.LogWarning($"Got null block from peer {peerPubkey}");
-                        throw new Exception($"Invalid response from peer {peerPubkey}");
+                        throw new Exception($"Invalid response from peer {peerPubkey}: null block");
                     }
                     if (blockId != block.Header.Index)
                     {
                         Logger.LogWarning($"Got invalid block index from peer {peerPubkey}");
-                        throw new Exception($"Invalid response from peer {peerPubkey}");
+                        throw new Exception($"Invalid response from peer {peerPubkey}: index mismatch");
                     }
-                    var result = VerifyBlock(block);
-                    if (result != OperatingError.Ok)
-                    {
-                        Logger.LogDebug($"Block Verification failed with: {result} from peer {peerPubkey}");
-                        throw new Exception($"Block verification failed from peer {peerPubkey}");
-                    }
-                    // var prevBlock = _repository.BlockByHeight(blockId - 1);
-                    // if ((prevBlock is null) || !block.Header.PrevBlockHash.Equals(prevBlock.Hash))
-                    // {
-                    //     Logger.LogDebug($"Previous block hash mismatch: {result} from peer {peerPubkey}");
-                    //     throw new Exception($"Block verification failed from peer {peerPubkey}");
-                    // }
                 }
                 lock (_blocksToVerify)
                 {
@@ -160,11 +148,15 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             while (_downloaded.TryGetValue(_done+1, out var block))
             {
-
                 _repository.AddBlock(block);
                 _done++;
                 _downloaded.Remove(_done);
             }
+    /*        if(_downloaded.Count>0) Console.WriteLine("More blocks _downloaded. Done: " + 
+            _done + " _downloaded: "+_downloaded.Count+" NextBlockToDownload " +
+            _nextBlocksToDownload.Count+ " pending: "+_pending.Count+" Min pending: "+ _pending.Min()
+            +" Min to download: "+_nextBlocksToDownload.Min());
+*/
         }
 
         private void StartVerification()
