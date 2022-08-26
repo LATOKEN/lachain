@@ -243,7 +243,7 @@ namespace Lachain.Core.Network
             }
         }
 
-        private void OnRootHashByTrieNameReply(object sender, (RootHashByTrieNameReply reply, ECDSAPublicKey publicKey) @event)
+        private void OnRootHashByTrieNameReply(object? sender, (RootHashByTrieNameReply reply, ECDSAPublicKey publicKey) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("OnRootHashByTrieNameReply").NewTimer();
             Logger.LogTrace("Start processing OnRootHashByTrieNameReply");
@@ -263,7 +263,7 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing OnRootHashByTrieNameReply");
         }
 
-        private void OnRootHashByTrieNameRequest(object sender,
+        private void OnRootHashByTrieNameRequest(object? sender,
             (RootHashByTrieNameRequest request, Action<RootHashByTrieNameReply> callback) @event
         )
         {

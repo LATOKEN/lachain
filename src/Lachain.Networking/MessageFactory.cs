@@ -139,41 +139,6 @@ namespace Lachain.Networking
             };
         }
 
-        public NetworkMessage CheckpointRequest(byte[] request)
-        {
-            return new NetworkMessage
-            {
-                CheckpointRequest = new CheckpointRequest
-                {
-                    CheckpointType = ByteString.CopyFrom(request),
-                    RequestId = requestId
-                }
-            };
-        }
-
-        public NetworkMessage CheckpointBlockRequest(ulong blockNumber, ulong requestId)
-        {
-            return new NetworkMessage
-            {
-                CheckpointBlockRequest = new CheckpointBlockRequest
-                {
-                    BlockHeight = blockNumber,
-                    RequestId = requestId
-                }
-            };
-        }
-
-        public NetworkMessage CheckpointRequest(byte[] request)
-        {
-            return new NetworkMessage
-            {
-                CheckpointRequest = new CheckpointRequest
-                {
-                    CheckpointType = ByteString.CopyFrom(request)
-                }
-            };
-        }
-
         public MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages)
         {
             var batch = new MessageBatch
