@@ -324,6 +324,7 @@ namespace Lachain.Core.Vault
                 0,
                 cycle,
                 keyring.TpkePublicKey.ToBytes(),
+                keyring.TpkeVerificationPublicKeys.Select(key => key.ToBytes()).ToArray(), 
                 keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
