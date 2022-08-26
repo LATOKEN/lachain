@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
 using Lachain.Networking;
+using Lachain.Proto;
+using Lachain.Utility.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -11,7 +14,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 13;
+        private const ulong _CurrentVersion = 14;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -65,6 +68,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV12();
             if (version < 13)
                 _UpdateConfigToV13();
+            if (version < 14)
+                _UpdateConfigToV14();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -383,6 +388,118 @@ namespace Lachain.Core.Config
             _config["version"] = JObject.FromObject(version);
             
             _SaveCurrentConfig();
+        }
+
+        // version 14 of config should contain checkpoint initialization
+        // To add a new checkpoint call AddNewCheckpoint(blockHeight)
+        private void _UpdateConfigToV14()
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var checkpoints = GetConfig<CheckpointConfig>("checkpoint");
+            checkpoints = new CheckpointConfig
+            {
+                LastCheckpoint = null,
+                AllCheckpoints = new List<CheckpointConfigInfo>()
+            };
+            _config["checkpoint"] = JObject.FromObject(checkpoints);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            version.Version = 14;
+            _config["version"] = JObject.FromObject(version);
+
+            _SaveCurrentConfig();
+        }
+
+        // Use this method to add a new Checkpoint
+        private void AddNewCheckpoint(ulong blockHeight)
+        {
+            var checkpoints = GetConfig<CheckpointConfig>("checkpoint") ??
+                            throw new ApplicationException("No checkpoint section in config");
+            checkpoints.LastCheckpoint = new CheckpointConfigInfo(blockHeight);
+            if (!AlreadyPresent(checkpoints.AllCheckpoints, blockHeight))
+            {
+                var allCheckpoints = checkpoints.AllCheckpoints;
+                allCheckpoints.Add(new CheckpointConfigInfo(blockHeight));
+                checkpoints.AllCheckpoints = allCheckpoints;
+            }
+            _config["checkpoint"] = JObject.FromObject(checkpoints);
+        }
+
+        private void RemoveCheckpoint(ulong blockHeight)
+        {
+            var checkpoints = GetConfig<CheckpointConfig>("checkpoint") ??
+                            throw new ApplicationException("No checkpoint section in config");
+            var allCheckpoints = checkpoints.AllCheckpoints;
+            foreach (var checkcpoint in allCheckpoints)
+            {
+                if (checkcpoint.BlockHeight == blockHeight)
+                {
+                    allCheckpoints.Remove(checkcpoint);
+                    break;
+                }
+            }
+            checkpoints.AllCheckpoints = allCheckpoints;
+            _config["checkpoint"] = JObject.FromObject(checkpoints);
+        }
+
+        private bool AlreadyPresent(List<CheckpointConfigInfo> allCheckpoints, ulong blockHeight)
+        {
+            foreach (var checkpoint in allCheckpoints)
+            {
+                if (checkpoint.BlockHeight == blockHeight)
+                    return true;
+            }
+            return false;
+        }
+
+        public void UpdateCheckpoint(Checkpoint checkpoint)
+        {
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            var checkpointConfigs = GetConfig<CheckpointConfig>("checkpoint") ??
+                            throw new ApplicationException("No checkpoint section in config");
+
+            var allCheckpoints = checkpointConfigs.AllCheckpoints;
+            var updatedCheckpoints = new List<CheckpointConfigInfo>();
+            var lastCheckpoint = new CheckpointConfigInfo(0);
+            foreach (var checkpointConfig in allCheckpoints)
+            {
+                var height = checkpointConfig.BlockHeight;
+                if (height < checkpoint.BlockHeight)
+                    continue;
+                var checkpointInfo = new CheckpointConfigInfo(height);
+                if (height == checkpoint.BlockHeight)
+                {
+                    checkpointInfo = ParseConfigInfoFromCheckpoint(checkpoint);
+                    lastCheckpoint = checkpointInfo;
+                }
+                updatedCheckpoints.Add(checkpointInfo);
+            }
+
+            checkpointConfigs.AllCheckpoints = updatedCheckpoints;
+            checkpointConfigs.LastCheckpoint = lastCheckpoint;
+            _config["checkpoint"] = JObject.FromObject(checkpointConfigs);
+            _SaveCurrentConfig();
+        }
+
+        private CheckpointConfigInfo ParseConfigInfoFromCheckpoint(Checkpoint checkpoint)
+        {
+            IDictionary<string, string> stateHashes = new Dictionary<string, string>();
+            foreach (var stateHash in checkpoint.StateHashes)
+            {
+                var checkpointType = (CheckpointType) stateHash.CheckpointType.ToByteArray()[0];
+                var trieName = CheckpointUtils.GetSnapshotNameForCheckpointType(checkpointType);
+                if (trieName == "")
+                    throw new Exception($"Invalid checkpoint type {checkpointType}");
+                stateHashes[trieName] = stateHash.StateHash.ToHex();
+            }
+
+            if (stateHashes.Count != 6)
+                throw new Exception($"Invalid checkpoint {checkpoint.ToString()}");
+
+            return new CheckpointConfigInfo(checkpoint.BlockHeight, checkpoint.BlockHash.ToHex(), stateHashes);
         }
 
         private void _SaveCurrentConfig()

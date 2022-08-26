@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
+﻿using Lachain.Core.Blockchain.Checkpoints;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.Pool;
@@ -9,7 +7,6 @@ using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
-using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
@@ -17,10 +14,10 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
-using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;
+using Lachain.Storage.DbCompact;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
@@ -29,13 +26,13 @@ using NLog;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using Lachain.Storage;
-using Lachain.Core.Blockchain;
-using Lachain.Storage.DbCompact;
+using System.Threading;
 
 namespace Lachain.Console
 {
@@ -81,10 +78,8 @@ namespace Lachain.Console
             var metricsService = _container.Resolve<IMetricsService>();
             var snapshotIndexRepository = _container.Resolve<ISnapshotIndexRepository>();
             var localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
-            var NodeRetrieval = _container.Resolve<INodeRetrieval>();
-            var dbContext = _container.Resolve<IRocksDbContext>();
-            var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
+            var checkpointManager = _container.Resolve<ICheckpointManager>();
 
             // check if compacting db was started but not finished
             var dbShrink = _container.Resolve<IDbShrink>();
@@ -113,6 +108,15 @@ namespace Lachain.Console
             var hardforkConfig = configManager.GetConfig<HardforkConfig>("hardfork") ??
                     throw new Exception("No 'hardfork' section in config file");
             HardforkHeights.SetHardforkHeights(hardforkConfig);
+            
+            // set checkcpoints
+            Logger.LogInformation($"Saving checkpoints.");
+            var checkpointConfig = configManager.GetConfig<CheckpointConfig>("checkpoint") ??
+                   throw new Exception("No checkpoint section in config file");
+            checkpointManager.VerifyAndAddCheckpoints(checkpointConfig.AllCheckpoints);
+            var checkpoint = checkpointManager.GetCheckpoint();
+            if (!(checkpoint is null))
+                configManager.UpdateCheckpoint(checkpoint);
 
             rpcManager.Start();
             
@@ -147,23 +151,6 @@ namespace Lachain.Console
             Logger.LogInformation($"Node public key: {wallet.EcdsaKeyPair.PublicKey.EncodeCompressed().ToHex()}");
             Logger.LogInformation($"Node address: {wallet.EcdsaKeyPair.PublicKey.GetAddress().ToHex()}");
 
-            if (options.SetStateTo.Any())
-            {
-                List<string> args = options.SetStateTo.ToList();
-            //    System.Console.WriteLine(args);
-                ulong blockNumber = 0;
-                if( !(args is null) && args.Count>0)
-                {
-                    blockNumber = Convert.ToUInt64(args[0]);
-                }
-                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), blockNumber);
-
-            }
-            /*    if(blockManager.GetHeight()==0)
-                FastSynchronizerBatch.StartSync(stateManager, dbContext, snapshotIndexRepository,
-                                                storageManager.GetVersionFactory(), 0); */
-
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
 
@@ -176,7 +163,7 @@ namespace Lachain.Console
             // it's important to restore pool after transactionVerifier and before blockSynchronizer starts
             transactionPool.Restore();
 
-            blockSynchronizer.Start();
+            blockSynchronizer.Start(options.StartFastSync);
             Logger.LogInformation("Synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
                 validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())

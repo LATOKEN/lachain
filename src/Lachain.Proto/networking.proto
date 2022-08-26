@@ -5,6 +5,8 @@ import "default.proto";
 import "transaction.proto";
 import "block.proto";
 import "consensus.proto";
+import "trienode.proto";
+import "checkpoint.proto";
 
 message Peer {
     reserved 1, 2; // deleted
@@ -50,6 +52,58 @@ message SyncPoolReply {
     repeated TransactionReceipt transactions = 1;
 }
 
+message RootHashByTrieNameRequest {
+    string trie_name = 1;
+    uint64 block = 2;
+    uint64 request_id = 3;
+}
+
+message RootHashByTrieNameReply {
+    UInt256 root_hash = 1;
+    uint64 request_id = 2;
+}
+
+message BlockBatchRequest {
+    uint64 from_height = 1;
+    uint64 to_height = 2;
+    uint64 request_id = 3;
+}
+
+message BlockBatchReply {
+    repeated Block block_batch = 1;
+    uint64 request_id = 2;
+}
+
+message TrieNodeByHashRequest {
+    repeated UInt256 node_hashes = 1;
+    uint64 request_id = 2;
+}
+
+message TrieNodeByHashReply {
+    repeated TrieNodeInfo trie_nodes = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointRequest {
+    bytes checkpoint_type = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointReply {
+    repeated CheckpointInfo checkpoints = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointBlockRequest {
+    uint64 block_height = 1;
+    uint64 request_id = 2;
+}
+
+message CheckpointBlockReply {
+    Block block = 1;
+    uint64 request_id = 2;
+}
+
 message NetworkMessage {
     oneof message {
         PingReply ping_reply = 13;
@@ -61,6 +115,16 @@ message NetworkMessage {
         SyncBlocksReply sync_blocks_reply = 28;
         SyncPoolRequest sync_pool_request = 29;
         SyncPoolReply sync_pool_reply = 30;
+        RootHashByTrieNameRequest root_hash_by_trie_name_request = 31;
+        RootHashByTrieNameReply root_hash_by_trie_name_reply = 32;
+        BlockBatchRequest block_batch_request = 33;
+        BlockBatchReply block_batch_reply = 34;
+        TrieNodeByHashRequest trie_node_by_hash_request = 35;
+        TrieNodeByHashReply trie_node_by_hash_reply = 36;
+        CheckpointRequest checkpoint_request = 37;
+        CheckpointReply checkpoint_reply = 38;
+        CheckpointBlockRequest checkpoint_block_request = 39;
+        CheckpointBlockReply checkpoint_block_reply = 40;
     }
     reserved 12, 14 to 19, 25, 26; // deleted
 }

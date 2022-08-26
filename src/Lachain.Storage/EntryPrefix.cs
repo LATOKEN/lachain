@@ -35,10 +35,6 @@
         PersistentHashMap = 0x0603,
 
         VersionByHash = 0x0604,
-
-        QueueBatch = 0x0605,
-
-        NodesDownloadedTillNow = 0x0606,
         NodeIdForRecentSnapshot = 0x0607,
         DbShrinkStatus = 0x0608,
         DbShrinkDepth = 0x0609,
@@ -68,5 +64,15 @@
         /* validator attendance */
         PeerList = 0x0e01,
         PeerByPublicKey = 0x0e01,
+
+        /*fast_sync status*/
+        BlockNumberFromCheckpoint = 0x0701,
+        LastDownloadedTries = 0x0702,
+        SavedBatch = 0x0703,
+        TotalIncomingBatch = 0x0704,
+        QueueBatch = 0x0705,
+        BlockHashFromCheckpoint = 0x0706,
+        StateHashByCheckpointType = 0x0707,
+
     }
 }

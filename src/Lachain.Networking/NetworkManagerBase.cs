@@ -150,6 +150,13 @@ namespace Lachain.Networking
                     SyncBlocksReply syncBlockReply => new NetworkMessage {SyncBlocksReply = syncBlockReply},
                     SyncPoolReply syncPoolReply => new NetworkMessage {SyncPoolReply = syncPoolReply},
                     GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
+                    RootHashByTrieNameReply rootHashByTrieNameReply => 
+                        new NetworkMessage {RootHashByTrieNameReply = rootHashByTrieNameReply},
+                    BlockBatchReply blockBatchReply => new NetworkMessage {BlockBatchReply = blockBatchReply},
+                    TrieNodeByHashReply trieNodeByHashReply => new NetworkMessage {TrieNodeByHashReply = trieNodeByHashReply},
+                    CheckpointReply checkpointReply => new NetworkMessage {CheckpointReply = checkpointReply},
+                    CheckpointBlockReply checkpointBlockReply =>
+                        new NetworkMessage {CheckpointBlockReply = checkpointBlockReply},
                     _ => throw new InvalidOperationException()
                 };
                 peer.AddMsgToQueue(msg);
@@ -181,6 +188,36 @@ namespace Lachain.Networking
                     break;
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
                     OnConsensusMessage?.Invoke(this, (message.ConsensusMessage, envelope.PublicKey));
+                    break;
+                case NetworkMessage.MessageOneofCase.RootHashByTrieNameRequest:
+                    OnRootHashByTrieNameRequest?.Invoke(this, (message.RootHashByTrieNameRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.RootHashByTrieNameReply:
+                    OnRootHashByTrieNameReply?.Invoke(this, (message.RootHashByTrieNameReply, envelope.PublicKey));
+                    break;
+                case NetworkMessage.MessageOneofCase.BlockBatchRequest:
+                    OnBlockBatchRequest?.Invoke(this, (message.BlockBatchRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.BlockBatchReply:
+                    OnBlockBatchReply?.Invoke(this, (message.BlockBatchReply, envelope.PublicKey));
+                    break;
+                case NetworkMessage.MessageOneofCase.TrieNodeByHashRequest:
+                    OnTrieNodeByHashRequest?.Invoke(this, (message.TrieNodeByHashRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.TrieNodeByHashReply:
+                    OnTrieNodeByHashReply?.Invoke(this, (message.TrieNodeByHashReply, envelope.PublicKey));
+                    break;
+                case NetworkMessage.MessageOneofCase.CheckpointRequest:
+                    OnCheckpointRequest?.Invoke(this, (message.CheckpointRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.CheckpointReply:
+                    OnCheckpointReply?.Invoke(this, (message.CheckpointReply, envelope.PublicKey));
+                    break;
+                case NetworkMessage.MessageOneofCase.CheckpointBlockRequest:
+                    OnCheckpointBlockRequest?.Invoke(this, (message.CheckpointBlockRequest, SendTo(envelope.RemotePeer)));
+                    break;
+                case NetworkMessage.MessageOneofCase.CheckpointBlockReply:
+                    OnCheckpointBlockReply?.Invoke(this, (message.CheckpointBlockReply, envelope.PublicKey));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(message),
@@ -224,5 +261,19 @@ namespace Lachain.Networking
         public event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         public event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        public event EventHandler<(RootHashByTrieNameRequest message, Action<RootHashByTrieNameReply> callback)>? 
+            OnRootHashByTrieNameRequest;
+        public event EventHandler<(RootHashByTrieNameReply message, ECDSAPublicKey address)>? OnRootHashByTrieNameReply;
+        public event EventHandler<(BlockBatchRequest message, Action<BlockBatchReply> callback)>? 
+            OnBlockBatchRequest;
+        public event EventHandler<(BlockBatchReply message, ECDSAPublicKey address)>? OnBlockBatchReply;
+        public event EventHandler<(TrieNodeByHashRequest message, Action<TrieNodeByHashReply> callback)>? 
+            OnTrieNodeByHashRequest;
+        public event EventHandler<(TrieNodeByHashReply message, ECDSAPublicKey address)>? OnTrieNodeByHashReply;
+        public event EventHandler<(CheckpointRequest message, Action<CheckpointReply> callback)>? OnCheckpointRequest;
+        public event EventHandler<(CheckpointReply message, ECDSAPublicKey address)>? OnCheckpointReply;
+        public event EventHandler<(CheckpointBlockRequest message, Action<CheckpointBlockReply> callback)>?
+            OnCheckpointBlockRequest;
+        public event EventHandler<(CheckpointBlockReply message, ECDSAPublicKey address)>? OnCheckpointBlockReply;
     }
 }

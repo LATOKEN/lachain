@@ -1,4 +1,5 @@
 ﻿using Lachain.Core.CLI;
+using Lachain.Proto;
 
 namespace Lachain.Core.Config
 {
@@ -9,5 +10,6 @@ namespace Lachain.Core.Config
         string ConfigPath { get; }
 
         RunOptions CommandLineOptions { get; }
+        void UpdateCheckpoint(Checkpoint checkpoint);
     }
 }
