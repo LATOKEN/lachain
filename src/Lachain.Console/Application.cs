@@ -14,7 +14,6 @@ using Lachain.Core.Network;
 using Lachain.Core.RPC;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
-using Lachain.Core.Network.FastSync;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;

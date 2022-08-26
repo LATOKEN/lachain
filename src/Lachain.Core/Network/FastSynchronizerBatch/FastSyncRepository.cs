@@ -373,6 +373,5 @@ namespace Lachain.Core.Network.FastSynchronizerBatch
         {
             if (_blockchainSnapshot is null) _blockchainSnapshot = _stateManager.NewSnapshot();
         }
-
     }
 }
