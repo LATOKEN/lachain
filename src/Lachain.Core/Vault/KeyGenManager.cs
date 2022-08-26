@@ -273,7 +273,7 @@ namespace Lachain.Core.Vault
                 var tpkePublicKey =
                     PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception("Failed to get tpkePublicKey"));
                 var tsKeys = new PublicKeySet(
-                    (args[2] as byte[][] ?? throw new Exception()).Select(x =>
+                    (args[3] as byte[][] ?? throw new Exception()).Select(x =>
                         Crypto.ThresholdSignature.PublicKey.FromBytes(x)
                     ),
                     keygen.Faulty
