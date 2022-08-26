@@ -88,15 +88,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 var transaction = MakeTransaction(ethTx);
                 var txHash = transaction.FullHash(signature, useNewChainId);
-                var result = _transactionManager.Verify(new TransactionReceipt
+                var receipt = new TransactionReceipt
                 {
                     Hash = txHash,
                     Signature = signature,
                     Status = TransactionStatus.Pool,
                     Transaction = transaction
-                }, useNewChainId);
+                };
+                var result = _transactionManager.Verify(receipt, useNewChainId);
 
-                if (result != OperatingError.Ok) throw new Exception($"Transaction is invalid: {result}");
+                if (result != OperatingError.Ok) 
+                    throw new RpcException(RpcErrorCode.Error, $"Transaction is invalid: {result}", receipt);
                 return txHash.ToHex();
             }
             catch (Exception e)
@@ -195,9 +197,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 bool useNewChainId =
                     HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
                 if (!ethTx.ChainId.SequenceEqual(new byte[] {(byte)(TransactionUtils.ChainId(useNewChainId))}))
-                    throw new Exception($"Can not add to transaction pool: BadChainId");
+                    throw new RpcException(RpcErrorCode.Error, $"Can not add to transaction pool: BadChainId");
                 var result = _transactionPool.Add(transaction, signature.ToSignature(useNewChainId));
-                if (result != OperatingError.Ok) throw new Exception($"Can not add to transaction pool: {result}");
+                if (result != OperatingError.Ok)
+                    throw new RpcException(RpcErrorCode.Error, $"Can not add to transaction pool: {result}");
                 return Web3DataFormatUtils.Web3Data(transaction.FullHash(signature.ToSignature(useNewChainId), useNewChainId));
             }
             catch (Exception e)
@@ -302,7 +305,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var error = _transactionPool.Add(signedTx);
             if (error != OperatingError.Ok)
             {
-                throw new ApplicationException($"Can not add to transaction pool: {error}");
+                throw new RpcException(RpcErrorCode.Error, $"Can not add to transaction pool: {error}", signedTx);
             }
 
             return Web3DataFormatUtils.Web3Data(signedTx.Hash);
@@ -351,14 +354,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     return res;
                 });
 
-                return result.ReturnValue?.ToHex(true) ?? throw new Exception("Invalid return value from contract call");;
+                return result.ReturnValue?.ToHex(true) ?? throw new Exception("Invalid return value from contract call");
             }
 
             var (err, invocationResult) =
                 _InvokeSystemContract(destination, invocation, source, _stateManager.LastApprovedSnapshot);
             if (err != OperatingError.Ok)
             {
-                throw new Exception("Error in system contract call");;
+                throw new Exception($"Error in system contract call: {err}");
             }
 
             switch (invocationResult)
@@ -403,7 +406,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var data = opts["data"];
         
             if (to is null && data is null) 
-                throw new ArgumentException("To and data fields are both empty");;
+                throw new RpcException(RpcErrorCode.Error, "To and data fields are both empty");
         
             var invocation = ((string) data!).HexToBytes();
             var destination = to is null ? UInt160Utils.Zero : ((string) to!).HexToUInt160();
@@ -438,9 +441,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     _stateManager.Rollback();
                     return res;
                 });
-                return invRes.Status == ExecutionStatus.Ok
-                    ? Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed)
-                    : throw new Exception("Error in contract call");
+                if (invRes.Status == ExecutionStatus.Ok)
+                    return Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed);
+                
+                if (IsExecutionReverted(invRes.ReturnValue, out var revertReason))
+                {
+                    throw new RpcException(
+                        RpcErrorCode.Warning,
+                        "execution reverted: " + revertReason,
+                        invRes.ReturnValue.ToHex(true)
+                    );
+                }
+                throw new Exception("Error in contract call");
             }
             
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
@@ -501,9 +513,18 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     _stateManager.Rollback();
                     return res;
                 });
-                return invRes.Status == ExecutionStatus.Ok ? 
-                    Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed) 
-                    : throw new Exception("Error in contract call");
+                if (invRes.Status == ExecutionStatus.Ok)
+                    return Web3DataFormatUtils.Web3Number(gasUsed + invRes.GasUsed);
+                
+                if (IsExecutionReverted(invRes.ReturnValue, out var revertReason))
+                {
+                    throw new RpcException(
+                        RpcErrorCode.Warning,
+                        "execution reverted: " + revertReason,
+                        invRes.ReturnValue.ToHex(true)
+                    );
+                }
+                throw new Exception("Error in contract call");
             }
         
             InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
@@ -535,9 +556,17 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 return invocationResult;
             });
         
-            return systemContractInvRes.Status == ExecutionStatus.Ok
-                ? (gasUsed + systemContractInvRes.GasUsed).ToHex()
-                : throw new Exception("Error in contract call");
+            if (systemContractInvRes.Status == ExecutionStatus.Ok)
+                return Web3DataFormatUtils.Web3Number(gasUsed + systemContractInvRes.GasUsed);
+            if (IsExecutionReverted(systemContractInvRes.ReturnValue, out var message))
+            {
+                throw new RpcException(
+                    RpcErrorCode.Warning,
+                    "execution reverted: " + message,
+                    systemContractInvRes.ReturnValue.ToHex(true)
+                );
+            }
+            throw new Exception("Error in system contract call");
         }
 
         [JsonRpcMethod("eth_gasPrice")]
@@ -567,7 +596,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var nonce = opts["nonce"];
 
             if(from is null){
-                throw new ArgumentException("from should not be null");
+                throw new RpcException(RpcErrorCode.Error, "from should not be null");
             }
             var fromAddress = ((string) from!).HexToUInt160();
 
@@ -585,7 +614,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if(!(data is null)) byteCode = ((string) data!).HexToBytes();
             
             
-            if(_privateWallet.IsLocked()) throw new Exception("wallet is locked");
+            if(_privateWallet.IsLocked()) throw new RpcException(RpcErrorCode.Error, "wallet is locked");
             var keyPair = _privateWallet.EcdsaKeyPair;
             Logger.LogInformation($"Keys: {keyPair.PublicKey.GetAddress().ToHex()}");
             
@@ -596,7 +625,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 if (data is null)
                 {
-                    throw new ArgumentException("To and data fields are both empty");
+                    throw new RpcException(RpcErrorCode.Error, "To and data fields are both empty");
                 }
 
                 if (!VirtualMachine.VerifyContract(byteCode!, 
@@ -612,7 +641,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             else
             {
 
-                if((value is null) && (data is null)) throw new ArgumentException("value and data both null");
+                if((value is null) && (data is null)) throw new RpcException(RpcErrorCode.Error, "value and data both null");
                 var toAddress = ((string)to!).HexToUInt160();
                 var valueToUse = UInt256Utils.Zero.ToMoney();
                 if(!(value is null)) valueToUse = ((string)value!).HexToBytes().ToUInt256(true).ToMoney();
@@ -635,7 +664,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var nonce = opts["nonce"];
 
             if(from is null){
-                throw new ArgumentException("from should not be null");
+                throw new RpcException(RpcErrorCode.Error, "from should not be null");
             }
             var fromAddress = ((string) from!).HexToUInt160();
 
@@ -655,7 +684,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 if (data is null)
                 {
-                    throw new ArgumentException("To and data fields are both empty");
+                    throw new RpcException(RpcErrorCode.Error, "To and data fields are both empty");
                 }
 
                 if (!VirtualMachine.VerifyContract(byteCode!, 
@@ -667,7 +696,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
                 return _transactionBuilder.DeployTransaction(fromAddress, byteCode!, gasToUse, gasPriceToUse , nonceToUse);
             }
-            if((value is null) && (data is null)) throw new ArgumentException("value and data both null");
+            if((value is null) && (data is null)) throw new RpcException(RpcErrorCode.Error, "value and data both null");
             var toAddress = ((string)to!).HexToUInt160();
             var valueToUse = UInt256Utils.Zero.ToMoney();
             if(!(value is null)) valueToUse = HexUtils.ToEvenBytesCount((string)value!).HexToBytes().ToUInt256(true).ToMoney();
@@ -715,6 +744,26 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 "pending" => null,
                 _ => blockTag.HexToUlong()
             };
+        }
+
+        private bool IsExecutionReverted(byte[]? returnResult, out string message)
+        {
+            message = "";
+            var revertReasonPrefix = "08c379a0";
+            var reverReasonPrefixLength = revertReasonPrefix.Length;
+            var prefixBytes = 32 + 32;
+            var prefix = reverReasonPrefixLength / 2 + prefixBytes;
+            Logger.LogInformation("revert reason: " + returnResult.ToHex(true));
+            if (returnResult is null || returnResult.Length < prefix) return false;
+            
+            var returnResultHex = returnResult.ToHex(true);
+            if (returnResultHex.Substring(2,reverReasonPrefixLength) == revertReasonPrefix)
+            {
+                message = Encoding.UTF8.GetString(
+                    returnResult.Skip(prefix).Reverse().ToArray().TrimLeadingZeros().Reverse().ToArray());
+                return true;
+            }
+            return false;
         }
     }
 }
