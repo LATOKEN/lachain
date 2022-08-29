@@ -4,6 +4,7 @@ using System.Linq;
 using System.Numerics;
 using Google.Protobuf;
 using Lachain.Consensus.ThresholdKeygen.Data;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
@@ -53,7 +54,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private readonly StorageVariable _playersCount;
         private readonly StorageVariable _tsKeys;
         private readonly StorageVariable _tpkeKey;
-        private readonly StorageVariable _tpkeVerificationKeys;
+        private readonly StorageVariable? _tpkeVerificationKeys;
         private readonly StorageVariable _collectedFees;
         private readonly StorageVariable _lastSuccessfulKeygenBlock;
 
@@ -101,11 +102,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 context.Snapshot.Storage,
                 new BigInteger(8).ToUInt256()
             );
-            _tpkeVerificationKeys = new StorageVariable(
-                ContractRegisterer.GovernanceContract,
-                context.Snapshot.Storage,
-                new BigInteger(9).ToUInt256()
-            );
+            if (HardforkHeights.IsHardfork_12Active(context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                _tpkeVerificationKeys = new StorageVariable(
+                    ContractRegisterer.GovernanceContract,
+                    context.Snapshot.Storage,
+                    new BigInteger(9).ToUInt256()
+                );
+            }
         }
 
         public ContractStandard ContractStandard => ContractStandard.GovernanceContract;
@@ -465,7 +469,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
         private void SetTpkeKey(byte[] tpkePublicKey, byte[][] tpkeVerificationKeys)
         {
             _tpkeKey.Set(tpkePublicKey);
-            var a = new List<byte[]> {};
+            if (_tpkeVerificationKeys is null) 
+                return;
+            var a = new List<byte[]> { };
             a.AddRange(tpkeVerificationKeys);
             var serializedKeys = RLP.EncodeList(a.Select(RLP.EncodeElement).ToArray());
             _tpkeVerificationKeys.Set(serializedKeys);
@@ -479,6 +485,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private List<PublicKey> GetTpkeVerificationKeys()
         {
+            if (_tpkeVerificationKeys is null)
+                return new List<PublicKey>();
             var decoded = (RLPCollection) RLP.Decode(_tpkeVerificationKeys.Get());
             return decoded
                 .Select(x => x.RLPData)
