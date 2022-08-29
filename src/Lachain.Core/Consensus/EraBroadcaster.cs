@@ -332,7 +332,7 @@ namespace Lachain.Core.Consensus
                         hbId, _validators,
                         _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1)
                         ?? throw new InvalidOperationException($"No TPKE keys present for era {_era}"),
-                        (ulong)_era < StakingContract.CycleDuration, // skip chgecks for fist cycle,  we haven't verification keys in genesis
+                        HardforkHeights.IsHardfork_12Active((ulong)_era > 2 * StakingContract.CycleDuration ? (ulong)_era - 2 * StakingContract.CycleDuration : 0), 
                         this
                     );
                     RegisterProtocols(new[] {hb});
