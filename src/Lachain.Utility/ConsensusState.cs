@@ -33,15 +33,26 @@ namespace Lachain.Utility
         {
             var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
             var tpkePubKey = decoded[0].RLPData;
-            var keysNumber = decoded[1].RLPData[0];
-            var tpkeVerificationKeys = decoded.Skip(2).Take(keysNumber)
-                .Select(x => x.RLPData)
-                .ToArray();
-            var credentials = decoded.Skip(2 + keysNumber)
+            if (decoded[1].RLPData.Length == 1) // new data format with verification keys
+            {
+                var keysNumber = decoded[1].RLPData[0];
+                var tpkeVerificationKeys = decoded.Skip(2).Take(keysNumber)
+                    .Select(x => x.RLPData)
+                    .ToArray();
+                var credentials = decoded.Skip(2 + keysNumber)
+                    .Select(x => x.RLPData)
+                    .Select(x => ValidatorCredentials.FromBytes(x))
+                    .ToArray();
+                return new ConsensusState(tpkePubKey, tpkeVerificationKeys, credentials);
+            }
+            // old data format without verification keys
+            var old_credentials = decoded.Skip(1)
                 .Select(x => x.RLPData)
                 .Select(x => ValidatorCredentials.FromBytes(x))
                 .ToArray();
-            return new ConsensusState(tpkePubKey, tpkeVerificationKeys, credentials);
+            var fakeTpkeVerificationKeys = Enumerable.Range(0, old_credentials.Length)
+                .Select(i => tpkePubKey).ToArray();
+            return new ConsensusState(tpkePubKey, fakeTpkeVerificationKeys, old_credentials);
         }
     }
 }
