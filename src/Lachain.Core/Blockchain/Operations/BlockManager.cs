@@ -761,7 +761,7 @@ namespace Lachain.Core.Blockchain.Operations
                     v.ThresholdSignaturePublicKey.HexToBytes()
                 )).ToArray()
             );
-            snapshot.Validators.SetConsensusState(initialConsensusState);
+            snapshot.Validators.SetConsensusState(initialConsensusState, false);
 
             // stake delegation happens even before genesis block
             // stake delegation means - some other address stakes for the validators

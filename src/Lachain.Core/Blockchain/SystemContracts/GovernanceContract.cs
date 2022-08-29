@@ -381,7 +381,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     Logger.LogWarning(k.ToHex());
                 }
 
-                _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey, tpkeVerificationKeys);
+                _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey, tpkeVerificationKeys, 
+                    HardforkHeights.IsHardfork_12Active(currentBlock));
 
                 Emit(GovernanceInterface.EventFinishCycle);
                 Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");

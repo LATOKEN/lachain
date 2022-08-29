@@ -20,11 +20,14 @@ namespace Lachain.Utility
         public byte[][] TpkeVerificationKeys { get; }
         public ValidatorCredentials[] Validators { get; }
 
-        public byte[] ToBytes()
+        public byte[] ToBytes(bool useNewFormat)
         {
             var a = new List<byte[]> {TpkePublicKey};
-            a.Add(new byte[] {(byte)TpkeVerificationKeys.Length});
-            a.AddRange(TpkeVerificationKeys);
+            if (useNewFormat)
+            {
+                a.Add(new byte[] {(byte) TpkeVerificationKeys.Length});
+                a.AddRange(TpkeVerificationKeys);
+            }
             a.AddRange(Validators.Select(c => c.ToBytes()));
             return RLP.EncodeList(a.Select(RLP.EncodeElement).ToArray());
         }
