@@ -127,10 +127,10 @@ namespace Lachain.CoreTest.IntegrationTests
             Console.WriteLine(
                 genesis.Header.StateHash.ToHex()
             );
-            // Assert.AreEqual(
-            //     "0xe1cc48aee243f602ec9ab6247a8bfe082b96d2a8c963497543c9ddc4c8029789",
-            //     genesis.Header.StateHash.ToHex()
-            // );
+            Assert.AreEqual(
+                "0xe1cc48aee243f602ec9ab6247a8bfe082b96d2a8c963497543c9ddc4c8029789",
+                genesis.Header.StateHash.ToHex()
+            );
             Assert.AreEqual(0, genesis.GasPrice);
             Assert.AreEqual(null, genesis.Multisig);
             Assert.AreEqual(0, genesis.Timestamp);
