@@ -215,7 +215,7 @@ namespace Lachain.Core.Blockchain.VM
             {
                 if (callResult.Status == ExecutionStatus.ExecutionHalted)
                 {
-                    frame.LastChildReturnValue = callResult.ReturnValue ?? Array.Empty<byte>();
+                    frame.ReturnValue = callResult.ReturnValue ?? Array.Empty<byte>();
                     throw new HaltException(1);
                 }
             }
@@ -532,7 +532,7 @@ namespace Lachain.Core.Blockchain.VM
             {
                 if (status.Status == ExecutionStatus.ExecutionHalted)
                 {
-                    frame.LastChildReturnValue = status.ReturnValue ?? Array.Empty<byte>();
+                    frame.ReturnValue = status.ReturnValue ?? Array.Empty<byte>();
                     throw new HaltException(1);
                 }
             }
@@ -726,7 +726,7 @@ namespace Lachain.Core.Blockchain.VM
             {
                 if (status.Status == ExecutionStatus.ExecutionHalted)
                 {
-                    frame.LastChildReturnValue = status.ReturnValue ?? Array.Empty<byte>();
+                    frame.ReturnValue = status.ReturnValue ?? Array.Empty<byte>();
                     throw new HaltException(1);
                 }
             }
