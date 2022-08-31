@@ -210,6 +210,16 @@ namespace Lachain.Core.Blockchain.VM
             }
             Logger.LogInformation($"invocationMessage.Sender: {invocationMessage.Sender.ToHex()}");
             var callResult = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), address, inputBuffer, gasLimit, invocationMessage);
+            
+            if (HardforkHeights.IsHardfork_12Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                if (callResult.Status == ExecutionStatus.ExecutionHalted)
+                {
+                    frame.ReturnValue = callResult.ReturnValue ?? Array.Empty<byte>();
+                    throw new HaltException(1);
+                }
+            }
+            
             if (callResult.Status != ExecutionStatus.Ok)
             {
                 throw new InvalidContractException($"Cannot invoke call: {callResult.Status}, {callResult.ReturnValue}");
@@ -518,6 +528,15 @@ namespace Lachain.Core.Blockchain.VM
             };
             var status = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), hash, Array.Empty<byte>(), frame.GasLimit, invocationMessage);
 
+            if (HardforkHeights.IsHardfork_12Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                if (status.Status == ExecutionStatus.ExecutionHalted)
+                {
+                    frame.ReturnValue = status.ReturnValue ?? Array.Empty<byte>();
+                    throw new HaltException(1);
+                }
+            }
+
             if (status.Status != ExecutionStatus.Ok || status.ReturnValue is null)
             {
                 throw new InvalidContractException("Failed to initialize contract");
@@ -702,6 +721,15 @@ namespace Lachain.Core.Blockchain.VM
                 Type = InvocationType.Regular,
             };
             var status = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), hash, Array.Empty<byte>(), frame.GasLimit, invocationMessage);
+
+            if (HardforkHeights.IsHardfork_12Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                if (status.Status == ExecutionStatus.ExecutionHalted)
+                {
+                    frame.ReturnValue = status.ReturnValue ?? Array.Empty<byte>();
+                    throw new HaltException(1);
+                }
+            }
 
             if (status.Status != ExecutionStatus.Ok || status.ReturnValue is null)
             {
