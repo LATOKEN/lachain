@@ -96,5 +96,20 @@ namespace Lachain.UtilityTest
             if (Directory.Exists(chainTest2)) Directory.Delete(chainTest2, true);
             Directory.CreateDirectory(chainTest2);
         }
+
+        public static byte[] GetRandomValue(int len = 0)
+        {
+            byte[] random = new byte[1];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            while (len == 0)
+            {
+                rng.GetBytes(random);
+                len = random[0];
+            }
+
+            random = new byte[len];
+            rng.GetBytes(random);
+            return random;
+        }
     }
 }
