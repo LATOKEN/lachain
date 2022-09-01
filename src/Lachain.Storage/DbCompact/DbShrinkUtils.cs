@@ -9,7 +9,7 @@ namespace Lachain.Storage.DbCompact
 
         public static int DbUpdatePeriod()
         {
-            return 10000; // must be a positive integer;
+            return 100000; // must be a positive integer;
         }
 
         public static void ResetCounter()
