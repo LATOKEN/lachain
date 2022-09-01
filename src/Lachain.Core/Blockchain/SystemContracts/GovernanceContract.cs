@@ -282,6 +282,56 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         [ContractMethod(GovernanceInterface.MethodKeygenConfirm)]
         public ExecutionStatus KeyGenConfirm(UInt256 cycle, byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys, 
+            SystemContractExecutionFrame frame)
+        {
+            Logger.LogDebug(
+                $"KeyGenConfirm({tpkePublicKey.ToHex()}, [{string.Join(", ", thresholdSignaturePublicKeys.Select(s => s.ToHex()))}])");
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
+            {
+                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
+                return ExecutionStatus.Ok;
+            }
+
+            frame.ReturnValue = new byte[] { };
+            frame.UseGas(GasMetering.KeygenConfirmCost);
+            var players = thresholdSignaturePublicKeys.Length;
+            var faulty = (players - 1) / 3;
+
+            UInt256 keyringHash;
+            PublicKeySet tsKeys;
+            try
+            {
+                tsKeys = new PublicKeySet(
+                    thresholdSignaturePublicKeys.Select(x => Lachain.Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
+                    faulty
+                );
+                var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
+                keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
+            }
+            catch
+            {
+                Logger.LogError("GovernanceContract is halted in KeyGenConfirm");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
+            var gen = GetConsensusGeneration(frame);
+            var votes = GetConfirmations(keyringHash.ToBytes(), gen);
+            SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
+
+            Logger.LogDebug($"KeygenConfirm: {votes + 1} collected for this keyset");
+            if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
+            Logger.LogDebug($"KeygenConfirm: succeeded since collected {votes + 1} votes");
+            _lastSuccessfulKeygenBlock.Set(new BigInteger(frame.InvocationContext.Receipt.Block).ToUInt256().ToBytes());
+            SetPlayersCount(players);
+            SetTSKeys(tsKeys);
+            SetTpkeKey(tpkePublicKey, new byte[][]{});
+
+            Emit(GovernanceInterface.EventKeygenConfirm, tpkePublicKey, thresholdSignaturePublicKeys);
+            return ExecutionStatus.Ok;
+        }
+
+        [ContractMethod(GovernanceInterface.MethodKeygenConfirmWithVerification)]
+        public ExecutionStatus KeyGenConfirmWithVerification(UInt256 cycle, byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys, 
             byte[][] tpkeVerificationKeys, SystemContractExecutionFrame frame)
         {
             Logger.LogDebug(
