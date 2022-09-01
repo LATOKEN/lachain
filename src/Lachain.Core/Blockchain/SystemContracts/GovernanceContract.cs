@@ -281,8 +281,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(GovernanceInterface.MethodKeygenConfirm)]
-        public ExecutionStatus KeyGenConfirm(UInt256 cycle, byte[] tpkePublicKey, byte[][] tpkeVerificationKeys, byte[][] thresholdSignaturePublicKeys,
-            SystemContractExecutionFrame frame)
+        public ExecutionStatus KeyGenConfirm(UInt256 cycle, byte[] tpkePublicKey, byte[][] thresholdSignaturePublicKeys, 
+            byte[][] tpkeVerificationKeys, SystemContractExecutionFrame frame)
         {
             Logger.LogDebug(
                 $"KeyGenConfirm({tpkePublicKey.ToHex()}, [{string.Join(", ", tpkeVerificationKeys.Select(s => s.ToHex()))}], [{string.Join(", ", thresholdSignaturePublicKeys.Select(s => s.ToHex()))}])");

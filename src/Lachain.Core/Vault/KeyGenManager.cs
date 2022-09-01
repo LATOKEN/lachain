@@ -243,10 +243,10 @@ namespace Lachain.Core.Vault
                 ))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
-                    var confirmTx = MakeConfirmTransaction(cycle, keys);
 
                     if (willParticipate)
                     {
+                        var confirmTx = MakeConfirmTransaction(cycle, keys);
                         if (_transactionPool.Add(confirmTx) is var error && error != OperatingError.Ok)
                             Logger.LogError($"Error creating confirm transaction ({confirmTx.Hash.ToHex()}): {error}");
                         else
@@ -273,7 +273,7 @@ namespace Lachain.Core.Vault
                 var tpkePublicKey =
                     PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception("Failed to get tpkePublicKey"));
                 var tsKeys = new PublicKeySet(
-                    (args[3] as byte[][] ?? throw new Exception()).Select(x =>
+                    (args[2] as byte[][] ?? throw new Exception()).Select(x =>
                         Crypto.ThresholdSignature.PublicKey.FromBytes(x)
                     ),
                     keygen.Faulty
@@ -323,9 +323,9 @@ namespace Lachain.Core.Vault
                 GovernanceInterface.MethodKeygenConfirm,
                 0,
                 cycle,
-                keyring.TpkePublicKey.ToBytes(),
-                keyring.TpkeVerificationPublicKeys.Select(key => key.ToBytes()).ToArray(), 
-                keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
+                keyring.TpkePublicKey.ToBytes(), 
+                keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray(),
+                keyring.TpkeVerificationPublicKeys.Select(key => key.ToBytes()).ToArray()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
         }
