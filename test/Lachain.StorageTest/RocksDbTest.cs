@@ -67,9 +67,10 @@ namespace Lachain.StorageTest
             Logger.LogInformation("Started Test_SeekAndSerialized");
             var bytes = new byte[2];
             var values = new List<byte[]>();
-            for (int i = 0 ; i < 256; i++)
+            int test = 10;
+            for (int i = 0 ; i < test; i++)
             {
-                for (int j = 0 ; j < 256; j++)
+                for (int j = 0 ; j < test; j++)
                 {
                     bytes[0] = (byte) i;
                     bytes[1] = (byte) j;
@@ -81,9 +82,9 @@ namespace Lachain.StorageTest
             var startTime = TimeUtils.CurrentTimeMillis();
             var iterator = _dbContext.GetIterator(new byte[1]{0});
             int iter = 0;
-            for (int i = 0 ; i < 256; i++)
+            for (int i = 0 ; i < test; i++)
             {
-                for (int j = 0 ; j < 256; j++)
+                for (int j = 0 ; j < test; j++)
                 {
                     bytes[0] = (byte) i;
                     bytes[1] = (byte) j;
@@ -107,9 +108,10 @@ namespace Lachain.StorageTest
             Logger.LogInformation("Started Test_SeekAndSerialized1");
             var bytes = new byte[2];
             var values = new List<byte[]>();
-            for (int i = 0 ; i < 256; i++)
+            int test = 10;
+            for (int i = 0 ; i < test; i++)
             {
-                for (int j = 0 ; j < 256; j++)
+                for (int j = 0 ; j < test; j++)
                 {
                     bytes[0] = (byte) i;
                     bytes[1] = (byte) j;
@@ -121,9 +123,9 @@ namespace Lachain.StorageTest
             var startTime = TimeUtils.CurrentTimeMillis();
             var iterator = _dbContext.GetIterator(new byte[1]{0});
             int iter = 0;
-            for (int i = 0 ; i < 256; i++)
+            for (int i = 0 ; i < test; i++)
             {
-                for (int j = 0 ; j < 256; j++)
+                for (int j = 0 ; j < test; j++)
                 {
                     bytes[0] = (byte) i;
                     bytes[1] = (byte) j;
