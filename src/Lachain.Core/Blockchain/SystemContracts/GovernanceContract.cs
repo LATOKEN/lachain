@@ -324,7 +324,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             _lastSuccessfulKeygenBlock.Set(new BigInteger(frame.InvocationContext.Receipt.Block).ToUInt256().ToBytes());
             SetPlayersCount(players);
             SetTSKeys(tsKeys);
-            SetTpkeKey(tpkePublicKey, new byte[][]{});
+            SetTpkeKey(tpkePublicKey,  Enumerable.Range(0, tsKeys.Count).Select(i => tpkePublicKey).ToArray());
 
             Emit(GovernanceInterface.EventKeygenConfirm, tpkePublicKey, thresholdSignaturePublicKeys);
             return ExecutionStatus.Ok;

@@ -325,7 +325,7 @@ namespace Lachain.Core.Vault
                     return;
                 }
 
-                var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirm);
+                var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirmWithVerification);
                 var cycle = args[0] as UInt256 ?? throw new Exception("Failed to get cycle");
                 var tpkePublicKey =
                     PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception("Failed to get tpkePublicKey"));
