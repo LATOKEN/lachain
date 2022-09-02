@@ -486,8 +486,8 @@ namespace Lachain.ConsensusTest
         [Repeat(5)]
         public void RandomTest()
         {
-            var n = _rnd.Next(1, 10);
-            var f = _rnd.Next((n - 1) / 3 + 1);
+            var n = _rnd.Next(4, 10);
+            var f = _rnd.Next((n - 1) / 3);
             var mode = _rnd.SelectRandom(Enum.GetValues(typeof(DeliveryServiceMode)).Cast<DeliveryServiceMode>());
             var s = new HashSet<int>();
             while (s.Count < f) s.Add(_rnd.Next(n));

@@ -181,8 +181,8 @@ namespace Lachain.ConsensusTest
         [Timeout(5000)]
         public void TestRandom()
         {
-            var n = _rnd.Next(1, 10);
-            var f = _rnd.Next((n - 1) / 3 + 1);
+            var n = _rnd.Next(4, 10);
+            var f = _rnd.Next((n - 1) / 3);
             var mode = _rnd.SelectRandom(Enum.GetValues(typeof(DeliveryServiceMode)).Cast<DeliveryServiceMode>());
             TestAllCommonSubset(n, f, mode);
         }

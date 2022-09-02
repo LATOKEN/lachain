@@ -132,8 +132,8 @@ namespace Lachain.ConsensusTest
         [Repeat(10)]
         public void TestRandomValues()
         {
-            var n = _rnd.Next(1, 10);
-            var f = _rnd.Next((n - 1) / 3 + 1);
+            var n = _rnd.Next(4, 10);
+            var f = _rnd.Next((n - 1) / 3);
             SetupSomeSilent(n, f);
 
             var inputs = new int[n];
