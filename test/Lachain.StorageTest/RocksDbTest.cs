@@ -332,46 +332,46 @@ namespace Lachain.StorageTest
             Logger.LogInformation($"getting {noOfPrefix * noOfTest} (key,value) pairs via iteration");
             var startTime = TimeUtils.CurrentTimeMillis();
             var iterator = _dbContext.GetIteratorForValidKeys(sortedKeyValues[0].Item1);
-            var savedPair = new List<(byte[], byte[])>();
+            // var savedPair = new List<(byte[], byte[])>();
             for (int iter = 0; iter < sortedKeyValues.Count; iter++)
             {
                 Assert.That(iterator.Valid());
                 var key = iterator.Key();
                 var value = iterator.Value();
-                savedPair.Add((key, value));
+                // savedPair.Add((key, value));
                 iterator.Next();
             }
             Assert.That(!iterator.Valid());
             Logger.LogInformation($"Time taken via iteration {TimeUtils.CurrentTimeMillis() - startTime} ms");
 
-            startTime = TimeUtils.CurrentTimeMillis();
-            for (int i = 0; i < keyValues.Count; i++)
-            {
-                Assert.AreEqual(keyValues[i].Item1, savedPair[i].Item1);
-                Assert.AreEqual(keyValues[i].Item2, savedPair[i].Item2);
-            }
-            Logger.LogInformation($"time taken to verify data via iteration "
-                + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
+            // startTime = TimeUtils.CurrentTimeMillis();
+            // for (int i = 0; i < keyValues.Count; i++)
+            // {
+            //     Assert.AreEqual(keyValues[i].Item1, savedPair[i].Item1);
+            //     Assert.AreEqual(keyValues[i].Item2, savedPair[i].Item2);
+            // }
+            // Logger.LogInformation($"time taken to verify data via iteration "
+            //     + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
 
             Logger.LogInformation($"getting {noOfPrefix * noOfTest} (key,value) pairs via Get method");
             startTime = TimeUtils.CurrentTimeMillis();
-            savedPair = new List<(byte[], byte[])>();
+            // savedPair = new List<(byte[], byte[])>();
             foreach (var (prefix, (num, _)) in sortedKeyValues)
             {
                 var key = BuildPrefix(prefix, num);
                 var value = _dbContext.Get(key);
-                savedPair.Add((key, value));
+                // savedPair.Add((key, value));
             }
             Logger.LogInformation($"Time taken via Get method {TimeUtils.CurrentTimeMillis() - startTime} ms");
             
-            startTime = TimeUtils.CurrentTimeMillis();
-            for (int i = 0; i < keyValues.Count; i++)
-            {
-                Assert.AreEqual(keyValues[i].Item1, savedPair[i].Item1);
-                Assert.AreEqual(keyValues[i].Item2, savedPair[i].Item2);
-            }
-            Logger.LogInformation($"time taken to verify data via Get method "
-                + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
+            // startTime = TimeUtils.CurrentTimeMillis();
+            // for (int i = 0; i < keyValues.Count; i++)
+            // {
+            //     Assert.AreEqual(keyValues[i].Item1, savedPair[i].Item1);
+            //     Assert.AreEqual(keyValues[i].Item2, savedPair[i].Item2);
+            // }
+            // Logger.LogInformation($"time taken to verify data via Get method "
+            //     + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
             
             CheckDb(keyValues);
         }
