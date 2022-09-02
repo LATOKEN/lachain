@@ -17,7 +17,6 @@ namespace Lachain.Storage
 
         private readonly RocksDb _rocksDb;
         private readonly WriteOptions _writeOptions;
-        private readonly ReadOptions _readOptions;
         private readonly string _dbpath;
 
         public RocksDbContext(string path = "ChainLachain")
@@ -26,7 +25,6 @@ namespace Lachain.Storage
             _writeOptions = new WriteOptions();
             _writeOptions.DisableWal(0);
             _writeOptions.SetSync(true);
-            _readOptions = new ReadOptions();
 
             var options = new DbOptions().SetCreateIfMissing();
             _rocksDb = RocksDb.Open(options, _dbpath);
@@ -78,9 +76,24 @@ namespace Lachain.Storage
             _rocksDb.Remove(key, null, _writeOptions);
         }
 
-        public Iterator? GetIterator(byte[] key)
+        public Iterator? GetIteratorWithUpperBound(byte[] prefix, byte[] upperBound)
         {
-            return _rocksDb.NewIterator(null, _readOptions).Seek(key);
+            var readOptions = new ReadOptions();
+            readOptions.SetPrefixSameAsStart(true); // to get existing keys only
+            readOptions.SetIterateUpperBound(new List<byte>(upperBound).ToArray());
+            return GetIterator(prefix, readOptions);
+        }
+
+        public Iterator? GetIteratorForValidKeys(byte[] prefix)
+        {
+            var readOptions = new ReadOptions();
+            readOptions.SetPrefixSameAsStart(true); // to get existing keys only
+            return GetIterator(prefix, readOptions);
+        }
+
+        private Iterator? GetIterator(byte[] key, ReadOptions? readOptions)
+        {
+            return _rocksDb.NewIterator(null, readOptions).Seek(key);
         }
 
         public void CompactAll()
