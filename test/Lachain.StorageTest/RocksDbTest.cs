@@ -24,6 +24,9 @@ namespace Lachain.StorageTest
         private static readonly ILogger<RocksDbTest> Logger = LoggerFactory.GetLoggerForClass<RocksDbTest>();
         private IContainer _container;
         private IRocksDbContext _dbContext;
+        private readonly int _dbUpdatePeriod = 100000;
+        private int _counter;
+        private RocksDbAtomicWrite _batchWrite;
 
         public RocksDbTest()
         {
@@ -68,9 +71,10 @@ namespace Lachain.StorageTest
                     var value = new byte[1]{10};
                     values.Add(value);
                     keyValues.Add((bytes, value));
-                    _dbContext.Save(bytes, value);
+                    Save(bytes, value);
                 }
             }
+            Commit();
             
             var startTime = TimeUtils.CurrentTimeMillis();
             var iterator = _dbContext.GetIteratorForValidKeys(new byte[1]{0});
@@ -117,9 +121,10 @@ namespace Lachain.StorageTest
                     while (value.SequenceEqual(values.Last().Item2))
                         value = TestUtils.GetRandomValue(1);
                 }
-                _dbContext.Save(key, value);
+                Save(key, value);
                 values.Add((num,value));
             }
+            Commit();
             for (int i = 1 ; i < values.Count; i++)
             {
                 Assert.AreNotEqual(values[i].Item2, values[i-1].Item2);
@@ -394,6 +399,7 @@ namespace Lachain.StorageTest
             out List<(byte[], byte[])> keyValues
         )
         {
+            Initialize();
             prefixKeyValues = new List<(byte[], (ulong, byte[]))>();
             keyValues = new List<(byte[], byte[])>();
             var prevPrefix = new byte[0];
@@ -419,10 +425,25 @@ namespace Lachain.StorageTest
             var startTime = TimeUtils.CurrentTimeMillis();
             foreach (var (key, value) in keyValues)
             {
-                _dbContext.Save(key, value);
+                Save(key, value);
             }
+            Commit();
             Logger.LogInformation($"time taken to insert {noOfPrefix * noOfTest} (key, value) "
                 + $"in db {TimeUtils.CurrentTimeMillis() - startTime} ms");
+        }
+
+        private void Save(byte[] key, byte[] value)
+        {
+            _batchWrite.Put(key, value);
+            UpdateCounter();
+            if (CycleEnded()) Commit();
+        }
+
+        private void Delete(byte[] key)
+        {
+            _batchWrite.Delete(key);
+            UpdateCounter();
+            if (CycleEnded()) Commit();
         }
 
         private void CheckDb(List<(byte[], byte[])> keyValues)
@@ -460,6 +481,33 @@ namespace Lachain.StorageTest
                 Logger.LogInformation($"{ele}");
             }
             Logger.LogInformation(endMsg);
+        }
+
+        private void UpdateCounter()
+        {
+            _counter--;
+        }
+
+        private void ResetCounter()
+        {
+            _counter = _dbUpdatePeriod;
+        }
+
+        private bool CycleEnded()
+        {
+            return _counter <= 0;
+        }
+
+        private void Commit()
+        {
+            _batchWrite.Commit();
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            ResetCounter();
+            _batchWrite = new RocksDbAtomicWrite(_dbContext);
         }
     }
 
