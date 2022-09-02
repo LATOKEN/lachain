@@ -4,7 +4,6 @@
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Lachain.Consensus</RootNamespace>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lachain.Crypto\Lachain.Crypto.csproj" />
