@@ -376,7 +376,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
             SetTSKeys(tsKeys);
             SetTpkeKey(tpkePublicKey, tpkeVerificationKeys);
 
-            Emit(GovernanceInterface.EventKeygenConfirm, tpkePublicKey, thresholdSignaturePublicKeys);
+            Emit(GovernanceInterface.EventKeygenConfirmWithVerificationKeys, tpkePublicKey, thresholdSignaturePublicKeys, tpkeVerificationKeys);
             return ExecutionStatus.Ok;
         }
 

@@ -17,6 +17,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string EventKeygenCommit = "KeygenCommit(bytes,bytes[])";
         public const string EventKeygenSendValue = "KeygenSendValue(uint256,bytes[])";
         public const string EventKeygenConfirm = "KeygenConfirm(bytes,bytes[])";
+        public const string EventKeygenConfirmWithVerificationKeys = "KeygenConfirmWithVerificationKeys(bytes,bytes[])";
         public const string EventFinishCycle = "FinishCycle()";
         public const string EventDistributeCycleRewardsAndPenalties = "DistibuteCycleRewardsAndPenalties(uint256)";
 
@@ -42,6 +43,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             EventKeygenCommit,
             EventKeygenSendValue,
             EventKeygenConfirm,
+            EventKeygenConfirmWithVerificationKeys, 
             EventFinishCycle,
             EventDistributeCycleRewardsAndPenalties
         };
