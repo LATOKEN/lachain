@@ -396,10 +396,10 @@ namespace Lachain.Core.Config
                             throw new ApplicationException("No hardfork section in config");
             hardforks.Hardfork_12 ??= network.NetworkName switch
             {
-                "mainnet" => 0,
-                "testnet" => 0,
-                "devnet" => 0,
-                _ => 0
+                "mainnet" => 5390300,
+                "testnet" => 5073300,
+                "devnet" => 1270300,
+                _ => 10
             };
             _config["hardfork"] = JObject.FromObject(hardforks);
 
