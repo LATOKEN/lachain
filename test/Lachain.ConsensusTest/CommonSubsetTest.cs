@@ -38,7 +38,7 @@ namespace Lachain.ConsensusTest
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);
             _publicKeys = new PublicConsensusKeySet(
-                n, f, null!, pubKeys,
+                n, f, null!, new Crypto.TPKE.PublicKey[]{}, pubKeys,
                 Enumerable.Range(0, n)
                     .Select(i => new ECDSAPublicKey {Buffer = ByteString.CopyFrom(i.ToBytes().ToArray())})
             );
@@ -181,8 +181,8 @@ namespace Lachain.ConsensusTest
         [Timeout(5000)]
         public void TestRandom()
         {
-            var n = _rnd.Next(1, 10);
-            var f = _rnd.Next((n - 1) / 3 + 1);
+            var n = _rnd.Next(4, 10);
+            var f = _rnd.Next(1, (n - 1) / 3 + 1);
             var mode = _rnd.SelectRandom(Enum.GetValues(typeof(DeliveryServiceMode)).Cast<DeliveryServiceMode>());
             TestAllCommonSubset(n, f, mode);
         }

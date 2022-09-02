@@ -20,7 +20,6 @@ namespace Lachain.CryptoTest
         }
 
         [Test]
-        [Repeat(100)]
         public void ThresholdKeyGen()
         {
             var keygen = new TrustedKeyGen(N, F);
@@ -32,7 +31,7 @@ namespace Lachain.CryptoTest
                 privKeyTmp.Add(keygen.GetPrivKey(i));
             var privKey = privKeyTmp.ToArray();
 
-            var len = _rnd.Next() % 100 + 1;
+            var len = _rnd.Next() % 10 + 1;
             var data = new byte[len];
             _rnd.NextBytes(data);
             var share = new RawShare(data, Id);
@@ -43,9 +42,11 @@ namespace Lachain.CryptoTest
             while (chosen.Count < F) chosen.Add(_rnd.Next(0, N - 1));
 
             var parts = new List<PartiallyDecryptedShare>();
-            foreach (var dec in chosen.Select(i => privKey[i].Decrypt(enc)))
+            foreach (var i in chosen)
             {
-                // Assert.True(verificationKey.Verify(enc, dec));
+                var verificationPubKey = keygen.GetVerificationPubKey(i);
+                var dec = privKey[i].Decrypt(enc);
+                Assert.True(verificationPubKey.VerifyShare(enc, dec));
                 parts.Add(dec);
             }
 

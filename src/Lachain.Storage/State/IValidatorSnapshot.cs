@@ -10,10 +10,10 @@ namespace Lachain.Storage.State
     {
         ConsensusState GetConsensusState();
 
-        void SetConsensusState(ConsensusState consensusState);
+        void SetConsensusState(ConsensusState consensusState, bool useNewFormat);
 
         IEnumerable<ECDSAPublicKey> GetValidatorsPublicKeys();
 
-        void UpdateValidators(IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey);
+        void UpdateValidators(IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey, IEnumerable<PublicKey> tpkeVerificationKeys, bool useNewFormat);
     }
 }

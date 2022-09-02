@@ -13,6 +13,7 @@ using Lachain.Logger;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json;
+using PublicKey = Lachain.Crypto.TPKE.PublicKey;
 
 namespace Lachain.Core.Vault
 {
@@ -24,7 +25,7 @@ namespace Lachain.Core.Vault
 
         private readonly ISortedDictionary<ulong, PrivateKeyShare> _tsKeys =
             new TreeDictionary<ulong, PrivateKeyShare>();
-
+        
         private readonly ISortedDictionary<ulong, PrivateKey> _tpkeKeys = new TreeDictionary<ulong, PrivateKey>();
 
         private readonly string _walletPath;

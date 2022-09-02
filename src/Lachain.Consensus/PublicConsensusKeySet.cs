@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto.ThresholdSignature;
@@ -15,8 +16,11 @@ namespace Lachain.Consensus
         private readonly List<ECDSAPublicKey> _ecdsaPublicKeys;
         public IList<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
 
+        private List<PublicKey> _tpkeVerificationKeys;
+
         public PublicConsensusKeySet(int n, int f,
             PublicKey tpkePublicKey,
+            IEnumerable<PublicKey> tpkeVerificationKeys, 
             PublicKeySet thresholdSignaturePublicKeySet,
             IEnumerable<ECDSAPublicKey> ecdsaPublicKeys
         )
@@ -26,6 +30,7 @@ namespace Lachain.Consensus
             TpkePublicKey = tpkePublicKey;
             ThresholdSignaturePublicKeySet = thresholdSignaturePublicKeySet;
             _ecdsaPublicKeys = ecdsaPublicKeys.ToList();
+            _tpkeVerificationKeys = tpkeVerificationKeys.ToList();
         }
         
         public int GetValidatorIndex(ECDSAPublicKey publicKey)
@@ -36,6 +41,18 @@ namespace Lachain.Consensus
                 .Select(arg => arg.index)
                 .DefaultIfEmpty(-1)
                 .First();
+        }
+
+        public PublicKey? GetTpkeVerificationKey(int playerIdx)
+        {
+            try
+            {
+                return _tpkeVerificationKeys[playerIdx];
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
     }
 }

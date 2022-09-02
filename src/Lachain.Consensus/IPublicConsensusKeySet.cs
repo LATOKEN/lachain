@@ -13,5 +13,6 @@ namespace Lachain.Consensus
         PublicKeySet ThresholdSignaturePublicKeySet { get; }
         IList<ECDSAPublicKey> EcdsaPublicKeySet { get; }
         public int GetValidatorIndex(ECDSAPublicKey publicKey);
+        public PublicKey? GetTpkeVerificationKey(int playerIdx);
     }
 }

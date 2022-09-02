@@ -28,7 +28,7 @@ namespace Lachain.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[n];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[n];
             _privateKeys = new IPrivateConsensusKeySet[n];
-            _publicKeys = new PublicConsensusKeySet(n, f, null!, null!, Enumerable.Empty<ECDSAPublicKey>());
+            _publicKeys = new PublicConsensusKeySet(n, f, null!, new Crypto.TPKE.PublicKey[]{},null!, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < n; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
@@ -132,8 +132,8 @@ namespace Lachain.ConsensusTest
         [Repeat(10)]
         public void TestRandomValues()
         {
-            var n = _rnd.Next(1, 10);
-            var f = _rnd.Next((n - 1) / 3 + 1);
+            var n = _rnd.Next(4, 10);
+            var f = _rnd.Next(1, (n - 1) / 3 + 1);
             SetupSomeSilent(n, f);
 
             var inputs = new int[n];

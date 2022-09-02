@@ -105,10 +105,14 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 if (receipt.GasUsed > transaction.GasLimit)
                     return OperatingError.OutOfGas;
+                Logger.LogDebug($"ContractInvoker.Invoke({addressTo.ToHex()}, conttext, {input.ToHex()})");
                 var result = ContractInvoker.Invoke(addressTo, context, input, transaction.GasLimit - receipt.GasUsed);
                 receipt.GasUsed += result.GasUsed;
                 if (result.Status != ExecutionStatus.Ok)
+                {
+                    Logger.LogWarning($"Contract invoke failed,  status is {result.Status}");
                     return OperatingError.ContractFailed;
+                }
 
                 if (receipt.GasUsed > transaction.GasLimit) return OperatingError.OutOfGas;
                 /* this OnSystemContractInvoked is useful for internal communication (for example - during keyGeneration) */

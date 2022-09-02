@@ -24,6 +24,7 @@ using Prometheus;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
 using Lachain.Core.Blockchain.SystemContracts.Storage;
 using Lachain.Core.Blockchain.Validators;
+using Lachain.Utility.Serialization;
 
 
 namespace Lachain.Core.Blockchain.Operations
@@ -748,15 +749,19 @@ namespace Lachain.Core.Blockchain.Operations
             var genesisConfig = _configManager.GetConfig<GenesisConfig>("genesis");
             if (genesisConfig is null) return false;
             genesisConfig.ValidateOrThrow();
+            var fakeVerificationKeys = Enumerable.Range(0, genesisConfig.Validators.Count)
+                .Select(i => genesisConfig.ThresholdEncryptionPublicKey.HexToBytes())
+                .ToArray();
             var initialConsensusState = new ConsensusState(
                 genesisConfig.ThresholdEncryptionPublicKey.HexToBytes(),
+                fakeVerificationKeys, 
                 genesisConfig.Validators.Select(v => new ValidatorCredentials
                 (
                     v.EcdsaPublicKey.HexToBytes().ToPublicKey(),
                     v.ThresholdSignaturePublicKey.HexToBytes()
                 )).ToArray()
             );
-            snapshot.Validators.SetConsensusState(initialConsensusState);
+            snapshot.Validators.SetConsensusState(initialConsensusState, false);
 
             // stake delegation happens even before genesis block
             // stake delegation means - some other address stakes for the validators

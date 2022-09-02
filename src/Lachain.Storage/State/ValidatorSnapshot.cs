@@ -53,9 +53,9 @@ namespace Lachain.Storage.State
             return ConsensusState.FromBytes(raw);
         }
 
-        public void SetConsensusState(ConsensusState consensusState)
+        public void SetConsensusState(ConsensusState consensusState, bool useNewFormat)
         {
-            var raw = consensusState.ToBytes();
+            var raw = consensusState.ToBytes(useNewFormat);
             _state.AddOrUpdate(EntryPrefix.ConsensusState.BuildPrefix(), raw);
         }
 
@@ -65,16 +65,17 @@ namespace Lachain.Storage.State
         }
 
         public void UpdateValidators(
-            IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey
+            IEnumerable<ECDSAPublicKey> ecdsaKeys, PublicKeySet tsKeys, PublicKey tpkePublicKey, IEnumerable<PublicKey> tpkeVerificationKeys, bool useNewFormat
         )
         {
             var state = new ConsensusState(
                 tpkePublicKey.ToBytes(),
+                tpkeVerificationKeys.Select(x => x.ToBytes()).ToArray(),
                 ecdsaKeys
                     .Zip(tsKeys.Keys, (ecdsaKey, tsKey) => new ValidatorCredentials(ecdsaKey, tsKey.ToBytes()))
                     .ToArray()
             );
-            SetConsensusState(state);
+            SetConsensusState(state, useNewFormat);
         }
         public void SetCurrentVersion(ulong root)
         {
