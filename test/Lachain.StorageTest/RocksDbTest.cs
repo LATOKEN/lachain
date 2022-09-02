@@ -373,7 +373,7 @@ namespace Lachain.StorageTest
             // Logger.LogInformation($"time taken to verify data via Get method "
             //     + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
             
-            CheckDb(keyValues);
+            // CheckDb(keyValues);
         }
 
         private bool GetNextValue(byte[] prefix, out byte[] nextPrefix)
