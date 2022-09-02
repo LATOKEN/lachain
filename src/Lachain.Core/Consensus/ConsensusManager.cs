@@ -122,22 +122,31 @@ namespace Lachain.Core.Consensus
                     if (fromIndex == -1)
                     {
                         Logger.LogWarning(
-                            $"Skipped message for era {era} since we it came from {from.ToHex()} who is not validator for this era");
+                            $"Skipped message for era {era} since it came from {from.ToHex()} who is not validator for this era");
                         return;
                     }
 
                     broadcaster.Dispatch(message, fromIndex);
                 }
-                else
+                else if (IsEraNearFuture(era, CurrentEra))
                 {
                     lock (_postponedMessages)
                     {
+                        // This queue can get very long and may cause node shut down due to insufficient memory
                         _postponedMessages
                             .PutIfAbsent(era, new List<(ConsensusMessage message, ECDSAPublicKey from)>())
                             .Add((message, from));
                     }
                 }
             }
+        }
+
+        private bool IsEraNearFuture(long era, long currentEra)
+        {
+            long allowedEra = 5;
+            if (era < currentEra) return false;
+            if (era - currentEra <= allowedEra) return true;
+            return false;
         }
 
         public void Start(ulong startingEra)
@@ -150,6 +159,14 @@ namespace Lachain.Core.Consensus
         {
             lock (_erasLock)
             {
+                // Sometimes _postponedMessages messages are not cleared if the current node is not a validator
+                // but messages maybe inserted in case the nodes does not have validators set yet and someone sent
+                // consensus message to this node. So it needs to be cleared for every era
+                lock (_postponedMessages)
+                {
+                    _postponedMessages.Remove(CurrentEra);
+                }
+                
                 var broadcaster = _eras[CurrentEra];
                 lock (broadcaster)
                 {
@@ -290,6 +307,17 @@ namespace Lachain.Core.Consensus
                                     foreach (var (message, from) in savedMessages)
                                     {
                                         var fromIndex = validators.GetValidatorIndex(from);
+                                        // If a validator from some previous era sends message for some future era, the 
+                                        // message will come here, but it could be that the validator is not a validator
+                                        // anymore, in that case the fromIndex will be -1 and may halt some process.
+                                        // So we need to check this and discard such messages
+                                        if (fromIndex == -1)
+                                        {
+                                            Logger.LogWarning(
+                                                $"Skipped message for era {CurrentEra} since it came from "
+                                                + $"{from.ToHex()} who is not validator for this era");
+                                            continue;
+                                        }
                                         Logger.LogTrace(
                                             $"Handling postponed message: {message.PrettyTypeString()}");
                                         broadcaster.Dispatch(message, fromIndex);
