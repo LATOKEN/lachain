@@ -173,6 +173,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.AreEqual(result, OperatingError.Ok);
                 var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
                 Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
+                currentHeight++;
 
                 foreach (var tx in executedBlock.TransactionHashes)
                 {
@@ -192,7 +193,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.AreEqual(result, OperatingError.Ok);
                 executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
                 Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
-
+                currentHeight++;
+                
                 foreach (var tx in executedBlock.TransactionHashes)
                 {
                     var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx);
