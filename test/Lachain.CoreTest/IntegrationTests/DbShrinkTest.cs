@@ -107,7 +107,7 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_DeletionOldSnapshot()
         {
             _blockManager.TryBuildGenesisBlock();
-            AddSeveralBlocks(10000);
+            AddSeveralBlocks(2000);
             ulong depth = 100;
             _dbOptimizer.ShrinkDb(depth, _blockManager.GetHeight(), true);
             var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
