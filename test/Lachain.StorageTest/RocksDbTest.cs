@@ -311,69 +311,54 @@ namespace Lachain.StorageTest
         public void Test_IterationSpeed()
         {
             int noOfPrefix = 1; // don't use too much, prefixes should not be same for test to work properly
+            // run locally with high value like 10000000 but don't push
             int noOfTest = 10;
-            InsertRandomPrefixKeyValue(noOfPrefix, noOfTest, out var prefixKeyValues, out var keyValues);
-            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyCompare()).ToList();
-            Assert.AreEqual(noOfPrefix * noOfTest, prefixKeyValues.Count);
-            keyValues = keyValues.OrderBy(item => item.Item1, new ByteKeyCompare()).ToList();
+            InsertRandomPrefixKeyValue(noOfPrefix, noOfTest, out var _, out var keyValues, false);
             Assert.AreEqual(noOfPrefix * noOfTest, keyValues.Count);
 
-            var sortedKeyValues = new List<(byte[], (ulong, byte[]))>();
-            for (int i = 0 ; i < noOfPrefix; i++)
-            {
-                var items = prefixKeyValues.Take(noOfTest).OrderBy(
-                    item => item.Item2.Item1, new UlongKeyCompare()).ToList();
-                sortedKeyValues.AddRange(items);
-                prefixKeyValues = prefixKeyValues.Skip(noOfTest).ToList();
-            }
-            Assert.AreEqual(0, prefixKeyValues.Count);
-            Assert.AreEqual(noOfPrefix * noOfTest, sortedKeyValues.Count);
-
-            Logger.LogInformation($"getting {noOfPrefix * noOfTest} (key,value) pairs via iteration");
+            int totalData = noOfPrefix * noOfTest;
+            Logger.LogInformation($"getting {totalData} (key,value) pairs via iteration");
             var startTime = TimeUtils.CurrentTimeMillis();
-            var iterator = _dbContext.GetIteratorForValidKeys(sortedKeyValues[0].Item1);
-            // var savedPair = new List<(byte[], byte[])>();
-            for (int iter = 0; iter < sortedKeyValues.Count; iter++)
+            var iterator = _dbContext.GetIteratorForValidKeys(Array.Empty<byte>());
+            for (int iter = 0; iter < totalData; iter++)
             {
                 Assert.That(iterator.Valid());
                 var key = iterator.Key();
                 var value = iterator.Value();
-                // savedPair.Add((key, value));
                 iterator.Next();
             }
             Assert.That(!iterator.Valid());
             Logger.LogInformation($"Time taken via iteration {TimeUtils.CurrentTimeMillis() - startTime} ms");
 
-            // startTime = TimeUtils.CurrentTimeMillis();
-            // for (int i = 0; i < keyValues.Count; i++)
-            // {
-            //     Assert.AreEqual(keyValues[i].Item1, savedPair[i].Item1);
-            //     Assert.AreEqual(keyValues[i].Item2, savedPair[i].Item2);
-            // }
-            // Logger.LogInformation($"time taken to verify data via iteration "
-            //     + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
-
-            Logger.LogInformation($"getting {noOfPrefix * noOfTest} (key,value) pairs via Get method");
+            Logger.LogInformation($"getting {totalData} (key,value) pairs as inserted via Get method");
             startTime = TimeUtils.CurrentTimeMillis();
-            // savedPair = new List<(byte[], byte[])>();
-            foreach (var (prefix, (num, _)) in sortedKeyValues)
+            foreach (var (key, _) in keyValues)
             {
-                var key = BuildPrefix(prefix, num);
                 var value = _dbContext.Get(key);
-                // savedPair.Add((key, value));
             }
-            Logger.LogInformation($"Time taken via Get method {TimeUtils.CurrentTimeMillis() - startTime} ms");
-            
-            // startTime = TimeUtils.CurrentTimeMillis();
-            // for (int i = 0; i < keyValues.Count; i++)
-            // {
-            //     Assert.AreEqual(keyValues[i].Item1, savedPair[i].Item1);
-            //     Assert.AreEqual(keyValues[i].Item2, savedPair[i].Item2);
-            // }
-            // Logger.LogInformation($"time taken to verify data via Get method "
-            //     + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
-            
-            // CheckDb(keyValues);
+            Logger.LogInformation($"Time taken via Get method to get data as inserted "
+                + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
+
+            Logger.LogInformation($"getting {totalData} (key,value) pairs serialized via Get method");
+            keyValues = keyValues.OrderBy(item => item.Item1, new ByteKeyCompare()).ToList();
+            startTime = TimeUtils.CurrentTimeMillis();
+            foreach (var (key, _) in keyValues)
+            {
+                var value = _dbContext.Get(key);
+            }
+            Logger.LogInformation($"Time taken via Get method to get data serialized "
+                + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
+
+            Logger.LogInformation($"getting {totalData} (key,value) pairs in random order via Get method");
+            var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
+            keyValues = keyValues.OrderBy(_ => rnd.Next()).ToList();
+            startTime = TimeUtils.CurrentTimeMillis();
+            foreach (var (key, _) in keyValues)
+            {
+                var value = _dbContext.Get(key);
+            }
+            Logger.LogInformation($"Time taken via Get method to get data in random order "
+                + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
         }
 
         private bool GetNextValue(byte[] prefix, out byte[] nextPrefix)
@@ -396,7 +381,8 @@ namespace Lachain.StorageTest
             int noOfPrefix, 
             int noOfTest, 
             out List<(byte[], (ulong, byte[]))> prefixKeyValues,
-            out List<(byte[], byte[])> keyValues
+            out List<(byte[], byte[])> keyValues,
+            bool returnData = true
         )
         {
             Initialize();
@@ -414,13 +400,14 @@ namespace Lachain.StorageTest
                     var bytes = TestUtils.GetRandomValue(8);
                     var value = TestUtils.GetRandomValue();
                     var num = BitConverter.ToUInt64(bytes);
-                    prefixKeyValues.Add((prefix, (num, value)));
+                    if(returnData)
+                        prefixKeyValues.Add((prefix, (num, value)));
                     var key = BuildPrefix(prefix, num);
                     keyValues.Add((key, value));
                 }
             }
 
-            var rnd = new Random();
+            var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
             keyValues = keyValues.OrderBy(_ => rnd.Next()).ToList();
             var startTime = TimeUtils.CurrentTimeMillis();
             foreach (var (key, value) in keyValues)
