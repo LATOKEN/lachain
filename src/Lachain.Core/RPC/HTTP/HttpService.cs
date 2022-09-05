@@ -195,7 +195,7 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        private string SerializeParams(JToken? args)
+        public static string SerializeParams(JToken? args)
         {
             if (args is null)
                 return "";
