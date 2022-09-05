@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
@@ -8,6 +10,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Logger;
 using Lachain.Storage;
+using Lachain.Storage.DbCompact;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
@@ -15,6 +18,7 @@ using NUnit.Framework;
 using Lachain.Proto;
 using System.Collections.Generic;
 using System.Linq;
+using RocksDbSharp;
 
 
 namespace Lachain.StorageTest
@@ -27,6 +31,8 @@ namespace Lachain.StorageTest
         private readonly int _dbUpdatePeriod = 100000;
         private int _counter;
         private RocksDbAtomicWrite _batchWrite;
+        private object _deletionWorker = new object();
+        private DbShrinkStatus dbShrinkStatus;
 
         public RocksDbTest()
         {
@@ -44,6 +50,7 @@ namespace Lachain.StorageTest
             containerBuilder.RegisterModule<StorageModule>();
             _container = containerBuilder.Build();
             _dbContext = _container.Resolve<IRocksDbContext>();
+            Initialize();
         }
 
         [TearDown]
@@ -77,7 +84,7 @@ namespace Lachain.StorageTest
             Commit();
             
             var startTime = TimeUtils.CurrentTimeMillis();
-            var iterator = _dbContext.GetIteratorForValidKeys(new byte[1]{0});
+            var iterator = _dbContext.GetIteratorForValidKeys(new byte[1]{0})!;
             int iter = 0;
             for (int i = 0 ; i < test; i++)
             {
@@ -133,7 +140,7 @@ namespace Lachain.StorageTest
             keys = keys.OrderBy(x => x, new UlongKeyCompare()).ToList();
             values = values.OrderBy(value => value.Item1, new UlongKeyCompare()).ToList();
             
-            var iterator = _dbContext.GetIteratorForValidKeys(prefix);
+            var iterator = _dbContext.GetIteratorForValidKeys(prefix)!;
             for (int iter = 0 ; iter < test; iter++)
             {
                 Assert.That(iterator.Valid());
@@ -163,7 +170,7 @@ namespace Lachain.StorageTest
             int noOfPrefix = 10; // don't use too much, prefixes should not be same for test to work properly
             int noOfTest = 10;
             InsertRandomPrefixKeyValue(noOfPrefix, noOfTest, out var prefixKeyValues, out var keyValues);
-            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyCompare()).ToList();
+            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyComparer()).ToList();
             Assert.AreEqual(noOfPrefix * noOfTest, prefixKeyValues.Count);
             for (int i = 0 ; i < noOfPrefix; i++)
             {
@@ -176,8 +183,8 @@ namespace Lachain.StorageTest
                 var lastPrefix = !GetNextValue(prefix, out var upperBound);
 
                 RocksDbSharp.Iterator iterator;
-                if (lastPrefix) iterator = _dbContext.GetIteratorForValidKeys(prefix);
-                else iterator = _dbContext.GetIteratorWithUpperBound(prefix, upperBound);
+                if (lastPrefix) iterator = _dbContext.GetIteratorForValidKeys(prefix)!;
+                else iterator = _dbContext.GetIteratorWithUpperBound(prefix, upperBound)!;
                 for (int iter = 0; iter < noOfTest; iter++)
                 {
                     Assert.That(iterator.Valid());
@@ -202,7 +209,7 @@ namespace Lachain.StorageTest
             int noOfPrefix = 10; // don't use too much, prefixes should not be same for test to work properly
             int noOfTest = 10;
             InsertRandomPrefixKeyValue(noOfPrefix, noOfTest, out var prefixKeyValues, out var keyValues);
-            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyCompare()).ToList();
+            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyComparer()).ToList();
             Assert.AreEqual(noOfPrefix * noOfTest, prefixKeyValues.Count);
             var sortedKeyValues = new List<(byte[], (ulong, byte[]))>();
             for (int i = 0 ; i < noOfPrefix; i++)
@@ -215,7 +222,7 @@ namespace Lachain.StorageTest
             Assert.AreEqual(0, prefixKeyValues.Count);
             Assert.AreEqual(noOfPrefix * noOfTest, sortedKeyValues.Count);
 
-            var iterator = _dbContext.GetIteratorForValidKeys(Array.Empty<byte>());
+            var iterator = _dbContext.GetIteratorForValidKeys(Array.Empty<byte>())!;
             foreach (var (prefix, (num, value)) in sortedKeyValues)
             {
                 Assert.That(iterator.Valid());
@@ -227,7 +234,7 @@ namespace Lachain.StorageTest
             }
             Assert.That(!iterator.Valid());
 
-            iterator = _dbContext.GetIteratorForValidKeys(sortedKeyValues[0].Item1);
+            iterator = _dbContext.GetIteratorForValidKeys(sortedKeyValues[0].Item1)!;
             foreach (var (prefix, (num, value)) in sortedKeyValues)
             {
                 Assert.That(iterator.Valid());
@@ -274,7 +281,7 @@ namespace Lachain.StorageTest
                 _dbContext.Save(key, value);
             }
 
-            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyCompare()).ToList();
+            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyComparer()).ToList();
             Assert.AreEqual(noOfPrefix * noOfPrefix * noOfTest, prefixKeyValues.Count);
 
             for (int i = 0 ; i < noOfPrefix * noOfPrefix; i++)
@@ -284,8 +291,8 @@ namespace Lachain.StorageTest
                     item => item.Item2).OrderBy(item => item.Item1, new UlongKeyCompare()).ToArray();
                 var lastPrefix = !GetNextValue(prefix, out var upperBound);
                 RocksDbSharp.Iterator iterator;
-                if (lastPrefix) iterator = _dbContext.GetIteratorForValidKeys(prefix);
-                else iterator = _dbContext.GetIteratorWithUpperBound(prefix, upperBound);
+                if (lastPrefix) iterator = _dbContext.GetIteratorForValidKeys(prefix)!;
+                else iterator = _dbContext.GetIteratorWithUpperBound(prefix, upperBound)!;
 
                 Assert.AreEqual(noOfTest, items.Length);
 
@@ -319,7 +326,7 @@ namespace Lachain.StorageTest
             int totalData = noOfPrefix * noOfTest;
             Logger.LogInformation($"getting {totalData} (key,value) pairs via iteration");
             var startTime = TimeUtils.CurrentTimeMillis();
-            var iterator = _dbContext.GetIteratorForValidKeys(Array.Empty<byte>());
+            var iterator = _dbContext.GetIteratorForValidKeys(Array.Empty<byte>())!;
             for (int iter = 0; iter < totalData; iter++)
             {
                 Assert.That(iterator.Valid());
@@ -340,7 +347,7 @@ namespace Lachain.StorageTest
                 + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
 
             Logger.LogInformation($"getting {totalData} (key,value) pairs serialized via Get method");
-            keyValues = keyValues.OrderBy(item => item.Item1, new ByteKeyCompare()).ToList();
+            keyValues = keyValues.OrderBy(item => item.Item1, new ByteKeyComparer()).ToList();
             startTime = TimeUtils.CurrentTimeMillis();
             foreach (var (key, _) in keyValues)
             {
@@ -361,20 +368,311 @@ namespace Lachain.StorageTest
                 + $"{TimeUtils.CurrentTimeMillis() - startTime} ms");
         }
 
+        [Test]
+        public void Test_DeleteAndCheckIntegrity()
+        {
+            var idCount = 1000;
+            var pairs = new List<((ulong, UInt256), byte[])>();
+            for (int iter = 0; iter < idCount; iter++)
+            {
+                var id = BitConverter.ToUInt64(TestUtils.GetRandomValue(8));
+                var hash = TestUtils.GetRandomValue(32).ToUInt256();
+                var value = TestUtils.GetRandomValue();
+                pairs.Add(((id, hash), value));
+            }
+
+            var startTime = TimeUtils.CurrentTimeMillis();
+            foreach (var ((id, hash), value) in pairs)
+            {
+                var key = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                Save(key, value);
+                key = EntryPrefix.VersionByHash.BuildPrefix(hash);
+                Save(key, UInt64Utils.ToBytes(id));
+            }
+            Commit();
+            Logger.LogInformation($"time taken to insert {idCount * 2} (key, value) "
+                + $"in db {TimeUtils.CurrentTimeMillis() - startTime} ms");
+
+            var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
+            int saveCount = 100;
+            pairs = pairs.OrderBy(_ => rnd.Next()).ToList();
+            startTime = TimeUtils.CurrentTimeMillis();
+            for (int iter = 0; iter < saveCount; iter++)
+            {
+                var (id, hash) = pairs[iter].Item1;
+                var key = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+                Save(key, new byte[1]);
+                key = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix(hash);
+                Save(key, new byte[1]);
+            }
+            Commit();
+            Logger.LogInformation($"time taken to insert {saveCount * 2} (key, value) "
+                + $"in db {TimeUtils.CurrentTimeMillis() - startTime} ms");
+
+            dbShrinkStatus = DbShrinkStatus.DeleteOldSnapshot;
+            MimmicDbShrink(idCount, saveCount);
+            Commit();
+
+            var values = new List<(byte[], byte[])>();
+            for (int iter = 0; iter < saveCount; iter++)
+            {
+                var ((id, hash), value) = pairs[iter];
+                var key = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                values.Add((key, value));
+                key = EntryPrefix.VersionByHash.BuildPrefix(hash);
+                values.Add((key, UInt64Utils.ToBytes(id)));
+            }
+
+            CheckDb(values);
+            
+            for (int iter = saveCount; iter < idCount; iter++)
+            {
+                var (id, hash) = pairs[iter].Item1;
+                var key = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                var value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+                key = EntryPrefix.VersionByHash.BuildPrefix(hash);
+                value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+            }
+
+            foreach (var ((id, hash), _) in pairs)
+            {
+                var key = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+                var value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+                key = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix(hash);
+                value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+            }
+            
+        }
+
+        private void MimmicDbShrink(int oldKeys, int tempSaved)
+        {
+            switch (dbShrinkStatus)
+            {
+                case DbShrinkStatus.DeleteOldSnapshot:
+                    // Logger.LogTrace($"Deleting nodes from DB that are not reachable from last {depth} snapshots");
+                    DeleteOldSnapshot(oldKeys - tempSaved);
+                    dbShrinkStatus = DbShrinkStatus.DeleteTempNodeInfo;
+                    goto case DbShrinkStatus.DeleteTempNodeInfo;
+
+                case DbShrinkStatus.DeleteTempNodeInfo:
+                    DeleteRecentSnapshotNodeIdAndHash(tempSaved);
+                    dbShrinkStatus = DbShrinkStatus.CheckConsistency;
+                    break;
+                    
+                default:
+                    throw new Exception("invalid db-shrink-status");
+
+            }
+        }
+
+        private void DeleteOldSnapshot(int expectedDeleteCount)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                DeleteNodeById(expectedDeleteCount);
+            }, TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(() =>
+            {
+                DeleteNodeIdByHash(expectedDeleteCount);
+            }, TaskCreationOptions.LongRunning);
+
+            lock (_deletionWorker)
+            {
+                dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
+                Monitor.Wait(_deletionWorker);
+            }
+        }
+
+        private void DeleteNodeById(int expectedDeleteCount)
+        {
+            Logger.LogTrace($"Deleting nodes of old snapshot from DB");
+            var prefixToDelete = EntryPrefix.PersistentHashMap.BuildPrefix();
+            var prefixToKeep = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
+            var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
+            Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
+            Assert.AreEqual(expectedDeleteCount, deleted);
+            NotifyCaller();
+        }
+
+        private void DeleteNodeIdByHash(int expectedDeleteCount)
+        {
+            Logger.LogTrace($"Deleting nodes of old snapshot from DB");
+            var prefixToDelete = EntryPrefix.VersionByHash.BuildPrefix();
+            var prefixToKeep = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
+            var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
+            Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
+            Assert.AreEqual(expectedDeleteCount, deleted);
+            NotifyCaller();
+        }
+
+        private ulong DeleteOldKeys(byte[] prefixToDelete, byte[] prefixToKeep)
+        {
+            var ptrToDelete = GetIteratorForPrefixOnly(prefixToDelete);
+            var ptrToKeep = GetIteratorForPrefixOnly(prefixToKeep);
+            if (ptrToDelete is null || !ptrToDelete.Valid()) return 0;
+            if (ptrToKeep is null || !ptrToKeep.Valid())
+                throw new Exception("Something went wrong, saved nodeId or nodeHash iterator is null or invalid");
+            
+            ulong keyDeleted = 0;
+            var keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+            var keyToKeep = ptrToKeep.Key().Skip(2).ToArray();
+            var comparer = new ByteKeyComparer();
+
+            // pointers fetch keys in sorted order, so we can compare them with a loop
+            while (ptrToDelete.Valid() && ptrToKeep.Valid())
+            {
+                var comparison = comparer.Compare(keyToDelete, keyToKeep);
+                if (comparison < 0)
+                {
+                    keyDeleted++;
+                    Delete(ptrToDelete.Key());
+                    ptrToDelete.Next();
+                    if (ptrToDelete.Valid())
+                        keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+                }
+                else if (comparison == 0)
+                {
+                    ptrToDelete.Next();
+                    ptrToKeep.Next();
+                    if (ptrToDelete.Valid())
+                        keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+                    if (ptrToKeep.Valid())
+                        keyToKeep = ptrToKeep.Key().Skip(2).ToArray();
+                }
+                else
+                {
+                    ptrToKeep.Next();
+                    if (ptrToKeep.Valid())
+                        keyToKeep = ptrToKeep.Key().Skip(2).ToArray();
+                }
+            }
+
+            while (ptrToDelete.Valid())
+            {
+                keyDeleted++;
+                Delete(ptrToDelete.Key());
+                ptrToDelete.Next();
+                if (ptrToDelete.Valid())
+                    keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+            }
+
+            return keyDeleted;
+        }
+
+        private void DeleteRecentSnapshotNodeIdAndHash(int expectedDeleteCount)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                DeleteSavedNodeId(expectedDeleteCount);
+            }, TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(() =>
+            {
+                DeleteSavedNodeHash(expectedDeleteCount);
+            }, TaskCreationOptions.LongRunning);
+
+            lock (_deletionWorker)
+            {
+                dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
+                Monitor.Wait(_deletionWorker);
+            }
+        }
+
+        private void DeleteSavedNodeId(int expectedDeleteCount)
+        {
+            Logger.LogTrace($"Deleting saved nodeId");
+            ulong nodeIdDeleted = 0;
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
+            nodeIdDeleted = DeleteAllForPrefix(prefix);
+            Logger.LogTrace($"Deleted {nodeIdDeleted} nodeId in total");
+            Assert.AreEqual(expectedDeleteCount, nodeIdDeleted);
+            NotifyCaller();
+        }
+
+        private void DeleteSavedNodeHash(int expectedDeleteCount)
+        {
+            Logger.LogTrace($"Deleting saved nodeHash");
+            ulong nodeHashDeleted = 0;
+            var prefix = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
+            nodeHashDeleted = DeleteAllForPrefix(prefix);
+            Logger.LogTrace($"Deleted {nodeHashDeleted} nodeHash in total");
+            Assert.AreEqual(expectedDeleteCount, nodeHashDeleted);
+            NotifyCaller();
+        }
+
+        private ulong DeleteAllForPrefix(byte[] prefix)
+        {
+            ulong keyDeleted = 0;
+            var iterator = GetIteratorForPrefixOnly(prefix);
+            if (!(iterator is null))
+            {
+                while (iterator.Valid())
+                {
+                    keyDeleted++;
+                    Delete(iterator.Key());
+                    iterator.Next();
+                }
+            }
+            return keyDeleted;
+        }
+
+        private void NotifyCaller()
+        {
+            var checkInterval = 1000; // 1 second
+            // DbShrinkStatus.AsyncDeletionStarted means the process is requested
+            // there are 2 parallel threads running
+            // DbShrinkStatus.DeletionStep1Complete means one of the thread is complete
+            // notify caller only if all threads are complete
+            while (dbShrinkStatus != DbShrinkStatus.AsyncDeletionStarted 
+                && dbShrinkStatus != DbShrinkStatus.DeletionStep1Complete)
+            {
+                Thread.Sleep(checkInterval);
+            }
+            lock (_deletionWorker)
+            {
+                if (dbShrinkStatus == DbShrinkStatus.DeletionStep1Complete)
+                {
+                    dbShrinkStatus = DbShrinkStatus.DeletionStep2Complete;
+                }
+                else dbShrinkStatus = DbShrinkStatus.DeletionStep1Complete;
+                if (dbShrinkStatus == DbShrinkStatus.DeletionStep2Complete)
+                {
+                    Monitor.PulseAll(_deletionWorker);
+                }
+            }
+        }
+
+        public Iterator? GetIteratorForPrefixOnly(byte[] prefix)
+        {
+            bool lastPrefix = !GetNextValue(prefix, out var upperBound);
+            if (lastPrefix) return _dbContext.GetIteratorForValidKeys(prefix);
+            else return _dbContext.GetIteratorWithUpperBound(prefix, upperBound);
+        }
+
         private bool GetNextValue(byte[] prefix, out byte[] nextPrefix)
         {
-            nextPrefix = new List<byte>(prefix).ToArray();
-            if (nextPrefix[1] < 255) nextPrefix[1]++;
-            else if (nextPrefix[0] < 255)
+            var list = new List<byte>(prefix);
+            for (int iter = list.Count - 1; iter >= 0; iter--)
             {
-                nextPrefix[0]++;
-                nextPrefix[1] = 0;
+                if (list[iter] < 255)
+                {
+                    list[iter]++;
+                    for (int j = iter + 1; j < list.Count; j++)
+                    {
+                        list[j] = 0;
+                    }
+                    nextPrefix = list.ToArray();
+                    return true;
+                }
             }
-            else
-            {
-                return false;
-            }
-            return true;
+            list.Add(0);
+            nextPrefix = list.ToArray();
+            return false;
         }
 
         private void InsertRandomPrefixKeyValue(
@@ -385,7 +683,6 @@ namespace Lachain.StorageTest
             bool returnData = true
         )
         {
-            Initialize();
             prefixKeyValues = new List<(byte[], (ulong, byte[]))>();
             keyValues = new List<(byte[], byte[])>();
             var prevPrefix = new byte[0];
@@ -510,19 +807,6 @@ namespace Lachain.StorageTest
                 if (xChunk != yChunk) return xChunk.CompareTo(yChunk);
             }
             return 0;
-        }
-    }
-
-    public class ByteKeyCompare : IComparer<byte[]>
-    {
-        public int Compare(byte[] x, byte[] y)
-        {
-            for (int iter = 0 ; iter < x.Length; iter++)
-            {
-                if (iter >= y.Length) return 1;
-                if (x[iter] != y[iter]) return x[iter].CompareTo(y[iter]);
-            }
-            return x.Length == y.Length ? 0 : -1;
         }
     }
     
