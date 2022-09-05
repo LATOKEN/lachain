@@ -10,7 +10,7 @@ namespace Lachain.Storage.DbCompact
         void WriteNodeIdAndHash(ulong id, IHashTrieNode node);
         IHashTrieNode? GetNodeById(ulong id);
         void DeleteNode(ulong id, IHashTrieNode node);
-        void DeleteVersion(uint repository, ulong block, ulong version);
+        void DeleteVersion(uint repository, ulong block);
         ulong TimePassed();
         ulong GetLastSavedTime();
         void UpdateTime();

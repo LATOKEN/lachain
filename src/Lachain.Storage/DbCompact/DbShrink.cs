@@ -148,8 +148,8 @@ namespace Lachain.Storage.DbCompact
 
                 case DbShrinkStatus.DeleteOldSnapshot:
                     Logger.LogTrace($"Deleting nodes from DB that are not reachable from last {depth} snapshots");
-                    ulong fromBlock = GetOldestSnapshotInDb(), toBlock = StartingBlockToKeep(depth, totalBlocks) - 1;
-                    DeleteOldSnapshot(fromBlock, toBlock);
+                    var lastBlock = StartingBlockToKeep(depth, totalBlocks);
+                    DeleteOldSnapshot(lastBlock);
                     SetDbShrinkStatus(DbShrinkStatus.DeleteTempNodeInfo);
                     goto case DbShrinkStatus.DeleteTempNodeInfo;
 
@@ -194,7 +194,7 @@ namespace Lachain.Storage.DbCompact
             }
         }
 
-        private void DeleteOldSnapshot(ulong fromBlock, ulong toBlock)
+        private void DeleteOldSnapshot(ulong lastBlock)
         {
             Task.Factory.StartNew(() =>
             {
@@ -210,6 +210,17 @@ namespace Lachain.Storage.DbCompact
             {
                 dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
                 Monitor.Wait(_deletionWorker);
+            }
+
+            var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
+            for (var fromBlock = GetOldestSnapshotInDb(); fromBlock < lastBlock; fromBlock++)
+            {
+                foreach (var repo in repos)
+                {
+                    if (repo != RepositoryType.MetaRepository)
+                        _repository.DeleteVersion((uint) repo, fromBlock);
+                }
+                SetOldestSnapshotInDb(fromBlock + 1);
             }
         }
 
