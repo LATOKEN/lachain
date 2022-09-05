@@ -60,12 +60,12 @@ namespace Lachain.Storage.DbCompact
             return _repository.GetDbShrinkDepth();
         }
 
-        private ulong StartingBlockToKeep(ulong depth, ulong totalBlocks)
+        public ulong StartingBlockToKeep(ulong depth, ulong totalBlocks)
         {
             return totalBlocks - depth + 1;
         }
 
-        private ulong GetOldestSnapshotInDb()
+        public ulong GetOldestSnapshotInDb()
         {
             if (oldestSnapshot != null) return oldestSnapshot.Value;
             var block = _repository.GetOldestSnapshotInDb();

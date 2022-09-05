@@ -4,16 +4,12 @@ namespace Lachain.Storage.DbCompact
 {
     public static class DbShrinkUtils
     {
-        public static int counter = DbUpdatePeriod();
-
-        public static int DbUpdatePeriod()
-        {
-            return 100000; // must be a positive integer;
-        }
+        public readonly static int dbUpdatePeriod = 100000; // must be a positive integer;
+        public static int counter = dbUpdatePeriod;
 
         public static void ResetCounter()
         {
-            counter = DbUpdatePeriod();
+            counter = dbUpdatePeriod;
         }
 
         public static void UpdateCounter()

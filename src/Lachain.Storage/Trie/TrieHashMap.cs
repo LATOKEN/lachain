@@ -465,12 +465,6 @@ namespace Lachain.Storage.Trie
             return _node;
         }
 
-        private void DeleteNode(ulong id, IHashTrieNode node, IDbShrinkRepository _repo)
-        {
-            _lruCache.Remove(id);
-            _repo.DeleteNode(id , node);
-        }
-
         public ulong SaveNodeId(ulong root, IDbShrinkRepository _repo)
         {
             if (_repo.NodeIdExists(root) || root == 0) return 0;
