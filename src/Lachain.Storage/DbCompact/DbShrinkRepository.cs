@@ -1,12 +1,14 @@
 using System;
 using System.Linq;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Crypto;
 using Lachain.Storage.Trie;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
+using RocksDbSharp;
 
 namespace Lachain.Storage.DbCompact
 {
@@ -42,7 +44,7 @@ namespace Lachain.Storage.DbCompact
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void Delete(byte[] key, bool tryCommit = true)
+        public void Delete(byte[] key, bool tryCommit = true)
         {
             batch.Delete(key);
             var keyHash = key.Keccak();
@@ -99,13 +101,6 @@ namespace Lachain.Storage.DbCompact
             Save(prefix, new byte[1], false);
             prefix = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix(node.Hash);
             Save(prefix, new byte[1]);
-        }
-
-        public void DeleteNodeId(ulong id)
-        {
-            // Deleting temporary nodes
-            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
-            Delete(prefix);
         }
 
         public IHashTrieNode? GetNodeById(ulong id)
@@ -236,6 +231,27 @@ namespace Lachain.Storage.DbCompact
             prefix = EntryPrefix.LastSavedTimeMillis.BuildPrefix();
             Delete(prefix, false);
             Commit();
+        }
+
+        public Iterator? GetIteratorForPrefixOnly(byte[] prefix)
+        {
+            var upperBound = new List<byte>(prefix).ToArray();
+            bool lastPrefix = true;
+            for (int iter = upperBound.Length - 1; iter >= 0; iter--)
+            {
+                if (upperBound[iter] < 255)
+                {
+                    upperBound[iter]++;
+                    for (int j = iter + 1; j < upperBound.Length; j++)
+                    {
+                        upperBound[j] = 0;
+                    }
+                    lastPrefix = false;
+                    break;
+                }
+            }
+            if (lastPrefix) return _dbContext.GetIteratorForValidKeys(prefix);
+            else return _dbContext.GetIteratorWithUpperBound(prefix, upperBound);
         }
 
     }

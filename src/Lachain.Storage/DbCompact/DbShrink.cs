@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
@@ -16,8 +18,7 @@ namespace Lachain.Storage.DbCompact
         private ulong? dbShrinkDepth = null;
         private DbShrinkStatus? dbShrinkStatus = null;
         private ulong? oldestSnapshot = null;
-        private bool _nodeIdThreadRunning = false;
-        private bool _nodeHashThreadRunning = false;
+        private readonly object _deletionWorker = new object();
 
         public DbShrink(ISnapshotIndexRepository snapshotIndexRepository, IDbShrinkRepository repository)
         {
@@ -137,10 +138,10 @@ namespace Lachain.Storage.DbCompact
                     Logger.LogTrace("Starting hard db optimization");
                     Logger.LogTrace($"Keeping latest {depth} snapshots from last approved snapshot" 
                         + $"for blocks: {StartingBlockToKeep(depth, totalBlocks)} to {totalBlocks}");
-                    SetDbShrinkStatus(DbShrinkStatus.SaveNodeId);
-                    goto case DbShrinkStatus.SaveNodeId;
+                    SetDbShrinkStatus(DbShrinkStatus.SaveTempNodeInfo);
+                    goto case DbShrinkStatus.SaveTempNodeInfo;
 
-                case DbShrinkStatus.SaveNodeId:
+                case DbShrinkStatus.SaveTempNodeInfo:
                     SaveRecentSnapshotNodeIdAndHash(depth, totalBlocks);
                     SetDbShrinkStatus(DbShrinkStatus.DeleteOldSnapshot);
                     goto case DbShrinkStatus.DeleteOldSnapshot;
@@ -149,10 +150,10 @@ namespace Lachain.Storage.DbCompact
                     Logger.LogTrace($"Deleting nodes from DB that are not reachable from last {depth} snapshots");
                     ulong fromBlock = GetOldestSnapshotInDb(), toBlock = StartingBlockToKeep(depth, totalBlocks) - 1;
                     DeleteOldSnapshot(fromBlock, toBlock);
-                    SetDbShrinkStatus(DbShrinkStatus.DeleteNodeId);
-                    goto case DbShrinkStatus.DeleteNodeId;
+                    SetDbShrinkStatus(DbShrinkStatus.DeleteTempNodeInfo);
+                    goto case DbShrinkStatus.DeleteTempNodeInfo;
 
-                case DbShrinkStatus.DeleteNodeId:
+                case DbShrinkStatus.DeleteTempNodeInfo:
                     DeleteRecentSnapshotNodeIdAndHash(depth, totalBlocks);
                     SetDbShrinkStatus(DbShrinkStatus.CheckConsistency);
                     goto case DbShrinkStatus.CheckConsistency;
@@ -195,33 +196,95 @@ namespace Lachain.Storage.DbCompact
 
         private void DeleteOldSnapshot(ulong fromBlock, ulong toBlock)
         {
-            ulong deletedNodes = 0;
-            // for(ulong block = fromBlock ; block <= toBlock; block++)
-            // {
-            //     try
-            //     {
-            //         var blockchainSnapshot = _snapshotIndexRepository.GetSnapshotForBlock(block);
-            //         var snapshots = blockchainSnapshot.GetAllSnapshot();
-            //         foreach(var snapshot in snapshots)
-            //         {
-            //             var count = snapshot.DeleteSnapshot(_repository);
-            //             deletedNodes += count;
-            //         }
-            //         foreach(var snapshot in snapshots)
-            //         {
-            //             _repository.DeleteVersion(snapshot.RepositoryId, block, snapshot.Version);
-            //             Logger.LogTrace($"Deleted version {snapshot.Version} for "
-            //                 + $"{(RepositoryType) snapshot.RepositoryId} for block {block}");
-            //         }
-            //         SetOldestSnapshotInDb(block + 1);
-            //     }
-            //     catch (Exception exception)
-            //     {
-            //         throw new Exception($"Got exception trying to fetch snapshots for block {block}, probable"
-            //             + $" reason: last non deleted block is not written in db. Exception:\n{exception}");
-            //     }
-            // }
-            Logger.LogTrace($"Deleted {deletedNodes} nodes from DB in total");
+            Task.Factory.StartNew(() =>
+            {
+                DeleteNodeById();
+            }, TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(() =>
+            {
+                DeleteNodeIdByHash();
+            }, TaskCreationOptions.LongRunning);
+
+            lock (_deletionWorker)
+            {
+                dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
+                Monitor.Wait(_deletionWorker);
+            }
+        }
+
+        private void DeleteNodeById()
+        {
+            Logger.LogTrace($"Deleting nodes of old snapshot from DB");
+            var prefixToDelete = EntryPrefix.PersistentHashMap.BuildPrefix();
+            var prefixToKeep = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
+            var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
+            Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
+            NotifyCaller();
+        }
+
+        private void DeleteNodeIdByHash()
+        {
+            Logger.LogTrace($"Deleting nodes of old snapshot from DB");
+            var prefixToDelete = EntryPrefix.VersionByHash.BuildPrefix();
+            var prefixToKeep = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
+            var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
+            Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
+            NotifyCaller();
+        }
+
+        private ulong DeleteOldKeys(byte[] prefixToDelete, byte[] prefixToKeep)
+        {
+            var ptrToDelete = _repository.GetIteratorForPrefixOnly(prefixToDelete);
+            var ptrToKeep = _repository.GetIteratorForPrefixOnly(prefixToKeep);
+            if (ptrToDelete is null || !ptrToDelete.Valid()) return 0;
+            if (ptrToKeep is null || !ptrToKeep.Valid())
+                throw new Exception("Something went wrong, saved nodeId or nodeHash iterator is null or invalid");
+            
+            ulong keyDeleted = 0;
+            var keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+            var keyToKeep = ptrToKeep.Key().Skip(2).ToArray();
+            var comparer = new ByteKeyComparer();
+
+            // pointers fetch keys in sorted order, so we can compare them with a loop
+            while (ptrToDelete.Valid() && ptrToKeep.Valid())
+            {
+                var comparison = comparer.Compare(keyToDelete, keyToKeep);
+                if (comparison < 0)
+                {
+                    keyDeleted++;
+                    _repository.Delete(ptrToDelete.Key());
+                    ptrToDelete.Next();
+                    if (ptrToDelete.Valid())
+                        keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+                }
+                else if (comparison == 0)
+                {
+                    ptrToDelete.Next();
+                    ptrToKeep.Next();
+                    if (ptrToDelete.Valid())
+                        keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+                    if (ptrToKeep.Valid())
+                        keyToKeep = ptrToKeep.Key().Skip(2).ToArray();
+                }
+                else
+                {
+                    ptrToKeep.Next();
+                    if (ptrToKeep.Valid())
+                        keyToKeep = ptrToKeep.Key().Skip(2).ToArray();
+                }
+            }
+
+            while (ptrToDelete.Valid())
+            {
+                keyDeleted++;
+                _repository.Delete(ptrToDelete.Key());
+                ptrToDelete.Next();
+                if (ptrToDelete.Valid())
+                    keyToDelete = ptrToDelete.Key().Skip(2).ToArray();
+            }
+
+            return keyDeleted;
         }
 
         private void SaveRecentSnapshotNodeIdAndHash(ulong depth, ulong totalBlocks)
@@ -252,45 +315,83 @@ namespace Lachain.Storage.DbCompact
 
         private void DeleteRecentSnapshotNodeIdAndHash(ulong depth, ulong totalBlocks)
         {
-            
-            // for(var block = fromBlock; block <= totalBlocks; block++)
-            // {
-            //     try
-            //     {
-            //         var blockchainSnapshot = _snapshotIndexRepository.GetSnapshotForBlock(block);
-            //         var snapshots = blockchainSnapshot.GetAllSnapshot();
-            //         foreach(var snapshot in snapshots)
-            //         {
-            //             var count = snapshot.DeleteNodeId(_repository);
-            //             nodeIdDeleted += count;
-            //         }
-            //     }
-            //     catch (Exception exception)
-            //     {
-            //         throw new Exception($"Got exception trying to fetch snapshots for block {block}, probable"
-            //             + $" reason: the snapshots were deleted by a previous call. Exception:\n{exception}");
-            //     }
-            // }
+            Task.Factory.StartNew(() =>
+            {
+                DeleteSavedNodeId();
+            }, TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(() =>
+            {
+                DeleteSavedNodeHash();
+            }, TaskCreationOptions.LongRunning);
+
+            lock (_deletionWorker)
+            {
+                dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
+                Monitor.Wait(_deletionWorker);
+            }
         }
 
         private void DeleteSavedNodeId()
         {
             Logger.LogTrace($"Deleting saved nodeId");
             ulong nodeIdDeleted = 0;
-            _nodeIdThreadRunning = true;
-            // Delete nodeIds
-            _nodeHashThreadRunning = false;
+            var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
+            nodeIdDeleted = DeleteAllForPrefix(prefix);
             Logger.LogTrace($"Deleted {nodeIdDeleted} nodeId in total");
+            NotifyCaller();
         }
 
         private void DeleteSavedNodeHash()
         {
             Logger.LogTrace($"Deleting saved nodeHash");
             ulong nodeHashDeleted = 0;
-            _nodeIdThreadRunning = true;
-            // Delete nodeHashes
-            _nodeHashThreadRunning = false;
+            var prefix = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
+            nodeHashDeleted = DeleteAllForPrefix(prefix);
             Logger.LogTrace($"Deleted {nodeHashDeleted} nodeHash in total");
+            NotifyCaller();
+        }
+
+        private ulong DeleteAllForPrefix(byte[] prefix)
+        {
+            ulong keyDeleted = 0;
+            var iterator = _repository.GetIteratorForPrefixOnly(prefix);
+            if (!(iterator is null))
+            {
+                while (iterator.Valid())
+                {
+                    keyDeleted++;
+                    _repository.Delete(iterator.Key());
+                    iterator.Next();
+                }
+            }
+            return keyDeleted;
+        }
+
+        private void NotifyCaller()
+        {
+            var checkInterval = 1000; // 1 second
+            // DbShrinkStatus.AsyncDeletionStarted means the process is requested
+            // there are 2 parallel threads running
+            // DbShrinkStatus.DeletionStep1Complete means one of the thread is complete
+            // notify caller only if all threads are complete
+            while (dbShrinkStatus != DbShrinkStatus.AsyncDeletionStarted 
+                && dbShrinkStatus != DbShrinkStatus.DeletionStep1Complete)
+            {
+                Thread.Sleep(checkInterval);
+            }
+            lock (_deletionWorker)
+            {
+                if (dbShrinkStatus == DbShrinkStatus.DeletionStep1Complete)
+                {
+                    dbShrinkStatus = DbShrinkStatus.DeletionStep2Complete;
+                }
+                else dbShrinkStatus = DbShrinkStatus.DeletionStep1Complete;
+                if (dbShrinkStatus == DbShrinkStatus.DeletionStep2Complete)
+                {
+                    Monitor.PulseAll(_deletionWorker);
+                }
+            }
         }
 
     }

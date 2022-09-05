@@ -1,12 +1,13 @@
 using Lachain.Storage.Trie;
+using RocksDbSharp;
 
 namespace Lachain.Storage.DbCompact
 {
     public interface IDbShrinkRepository
     {
+        void Delete(byte[] key, bool tryCommit = true);
         bool NodeIdExists(ulong id);
         void WriteNodeIdAndHash(ulong id, IHashTrieNode node);
-        void DeleteNodeId(ulong id);
         IHashTrieNode? GetNodeById(ulong id);
         void DeleteNode(ulong id, IHashTrieNode node);
         void DeleteVersion(uint repository, ulong block, ulong version);
@@ -20,5 +21,6 @@ namespace Lachain.Storage.DbCompact
         ulong GetOldestSnapshotInDb();
         void SetOldestSnapshotInDb(ulong block);
         void DeleteAll();
+        Iterator? GetIteratorForPrefixOnly(byte[] prefix);
     }
 }
