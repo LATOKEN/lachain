@@ -204,65 +204,6 @@ namespace Lachain.CoreTest.IntegrationTests
             Console.WriteLine($"Tx persisted {persistedTx} out of {blockCount * 20}");
         }
 
-        public void ExecuteTxesInSeveralBlocks(List<TransactionReceipt> txes, int blockCount)
-        {
-            txes = txes.OrderBy(x => x, new ReceiptComparer()).ToList();
-            foreach (var tx in txes)
-            {
-                _transactionPool.Add(tx);
-            }
-            int total = blockCount;
-            for (int it = 0; it < total; it++)
-            {
-                var remBlocks = total - it;
-                var txesToTake = txes.Count / remBlocks;
-                var takenTxes = _transactionPool.Peek(txesToTake, txesToTake, _blockManager.GetHeight() + 1);
-                var block = BuildNextBlock(takenTxes.ToArray());
-                var result = ExecuteBlock(block, takenTxes.ToArray());
-                Assert.AreEqual(result, OperatingError.Ok);
-                var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
-                Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
-
-                // check if the txes are executed properly
-                foreach (var tx in takenTxes)
-                {
-                    var executedTx = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx.Hash);
-                    Assert.AreNotEqual(null, executedTx, $"Transaction {tx.Hash.ToHex()} not found");
-                    Assert.AreEqual(TransactionStatus.Executed, executedTx!.Status,
-                        "Transaction {tx.Hash.ToHex()} was not executed properly");
-                }
-            }
-        }
-
-        private void Check_Random_Address_Storage_Changing()
-        {
-            var randomTx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
-            var balance = randomTx.Transaction.Value;
-            var allowance = balance;
-            var receiver = randomTx.Transaction.From;
-
-            var tx1 = TopUpBalanceTx(receiver, balance, 0, 
-                HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
-            var tx2 = ApproveTx(receiver, allowance, 0, 
-                HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
-
-            var owner = tx2.Transaction.From;
-
-            var blockTxs = new[] {tx1, tx2};
-
-            var topUpBlock = BuildNextBlock(blockTxs);
-            ExecuteBlock(topUpBlock, blockTxs);
-
-            var storedBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receiver);
-            Assert.AreEqual(balance.ToMoney(), storedBalance);
-
-            var storedAllowance = _stateManager.LastApprovedSnapshot.Storage.GetRawValue(
-                ContractRegisterer.LatokenContract,
-                UInt256Utils.Zero.Buffer.Concat(owner.ToBytes().Concat(receiver.ToBytes()))
-            ).ToUInt256().ToMoney();
-            Assert.AreEqual(allowance.ToMoney(), storedAllowance);
-        }
-
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
         {
             receipts ??= new TransactionReceipt[] { };
@@ -344,13 +285,6 @@ namespace Lachain.CoreTest.IntegrationTests
             return status;
         }
 
-        private OperatingError EmulateBlock(Block block, TransactionReceipt[]? receipts = null)
-        {
-            receipts ??= new TransactionReceipt[] { };
-            var (status, _, _, _) = _blockManager.Emulate(block, receipts);
-            return status;
-        }
-
         private TransactionReceipt TopUpBalanceTx(UInt160 to, UInt256 value, int nonceInc, bool useNewChainId)
         {
             var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
@@ -366,23 +300,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 Value = value
             };
             return Signer.Sign(tx, keyPair, useNewChainId);
-        }
-
-        private TransactionReceipt ApproveTx(UInt160 to, UInt256 value, int nonceInc,  bool useNewChainId)
-        {
-            var input = ContractEncoder.Encode(Lrc20Interface.MethodApprove, to, value);
-            var tx = new Transaction
-            {
-                To = ContractRegisterer.LatokenContract,
-                Invocation = ByteString.CopyFrom(input),
-                From = _wallet.EcdsaKeyPair.PublicKey.GetAddress(),
-                GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
-                GasLimit = 10_000_000,
-                Nonce = _transactionPool.GetNextNonceForAddress(_wallet.EcdsaKeyPair.PublicKey.GetAddress()) +
-                        (ulong) nonceInc,
-                Value = UInt256Utils.Zero,
-            };
-            return Signer.Sign(tx, _wallet.EcdsaKeyPair, useNewChainId);
         }
     }
 }
