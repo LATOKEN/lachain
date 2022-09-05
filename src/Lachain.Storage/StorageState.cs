@@ -132,15 +132,5 @@ namespace Lachain.Storage
             return _trieMap.SaveNodeId(CurrentVersion, _repo);
         }
 
-        public ulong DeleteNodeId(IDbShrinkRepository _repo)
-        {
-            return _trieMap.DeleteNodeId(CurrentVersion, _repo);
-        }
-
-        public ulong DeleteNodes(IDbShrinkRepository _repo)
-        {
-            return _trieMap.DeleteNodes(CurrentVersion, _repo);
-        }
-
     }
 }

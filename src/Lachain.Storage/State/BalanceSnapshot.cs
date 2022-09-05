@@ -165,15 +165,5 @@ namespace Lachain.Storage.State
             return _state.SaveNodeId(_repo);
         }
 
-        public ulong DeleteNodeId(IDbShrinkRepository _repo)
-        {
-            return _state.DeleteNodeId(_repo);
-        }
-
-        public ulong DeleteSnapshot(IDbShrinkRepository _repo)
-        {
-            return _state.DeleteNodes(_repo);
-        }
-
     }
 }
