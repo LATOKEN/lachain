@@ -1,5 +1,7 @@
+using System;
 using System.Linq;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Lachain.Proto;
 using Lachain.Crypto;
 using Lachain.Storage.Trie;
@@ -26,6 +28,7 @@ namespace Lachain.Storage.DbCompact
             _memDb.Clear();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void Save(byte[] key, byte[] content, bool tryCommit = true)
         {
             batch.Put(key, content);
@@ -38,6 +41,7 @@ namespace Lachain.Storage.DbCompact
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void Delete(byte[] key, bool tryCommit = true)
         {
             batch.Delete(key);
@@ -50,6 +54,7 @@ namespace Lachain.Storage.DbCompact
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void Commit()
         {
             batch.Commit();
@@ -86,11 +91,13 @@ namespace Lachain.Storage.DbCompact
             return KeyExists(prefix);
         }
 
-        public void WriteNodeId(ulong id)
+        public void WriteNodeIdAndHash(ulong id, IHashTrieNode node)
         {
             // saving nodes that are reachable from recent snapshots temporarily
             // so that all other nodes can be deleted. 
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+            Save(prefix, new byte[1], false);
+            prefix = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix(node.Hash);
             Save(prefix, new byte[1]);
         }
 
@@ -128,6 +135,45 @@ namespace Lachain.Storage.DbCompact
                     repository.ToBytes().Concat(block.ToBytes()).ToArray()),
                 false
             );
+        }
+
+        private void SetTimePassed(ulong timePassed)
+        {
+            var prefix = EntryPrefix.TimePassedMillis.BuildPrefix();
+            Save(prefix, timePassed.ToBytes().ToArray());
+        }
+
+        private void SetSavedTime(ulong currentTime)
+        {
+            var prefix = EntryPrefix.LastSavedTimeMillis.BuildPrefix();
+            Save(prefix, currentTime.ToBytes().ToArray());
+        }
+
+        public ulong TimePassed()
+        {
+            var prefix = EntryPrefix.TimePassedMillis.BuildPrefix();
+            var raw = Get(prefix);
+            if (raw is null) return 0;
+            return BitConverter.ToUInt64(raw);
+        }
+
+        public ulong GetLastSavedTime()
+        {
+            var prefix = EntryPrefix.LastSavedTimeMillis.BuildPrefix();
+            var raw = Get(prefix);
+            if (raw is null) return 0;
+            return BitConverter.ToUInt64(raw);
+        }
+
+        public void UpdateTime()
+        {
+            var currentTime = TimeUtils.CurrentTimeMillis();
+            var timePassed = TimePassed();
+            var lastTime = GetLastSavedTime();
+            if (lastTime > 0)
+                timePassed += currentTime - lastTime;
+            SetTimePassed(timePassed);
+            SetSavedTime(currentTime);
         }
 
         public void SetDbShrinkStatus(DbShrinkStatus status)
@@ -179,11 +225,15 @@ namespace Lachain.Storage.DbCompact
             Save(prefix, UInt64Utils.ToBytes(block));
         }
 
-        public void DeleteStatusAndDepth()
+        public void DeleteAll()
         {
             var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
             Delete(prefix, false);
             prefix = EntryPrefix.DbShrinkDepth.BuildPrefix();
+            Delete(prefix, false);
+            prefix = EntryPrefix.TimePassedMillis.BuildPrefix();
+            Delete(prefix, false);
+            prefix = EntryPrefix.LastSavedTimeMillis.BuildPrefix();
             Delete(prefix, false);
             Commit();
         }
