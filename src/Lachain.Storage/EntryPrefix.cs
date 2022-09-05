@@ -39,10 +39,15 @@
         QueueBatch = 0x0605,
 
         NodesDownloadedTillNow = 0x0606,
+
+        /* db shrink */
         NodeIdForRecentSnapshot = 0x0607,
-        DbShrinkStatus = 0x0608,
-        DbShrinkDepth = 0x0609,
-        OldestSnapshotInDb = 0x060a,
+        NodeHashForRecentSnapshot = 0x0608,
+        DbShrinkStatus = 0x0609,
+        DbShrinkDepth = 0x060a,
+        OldestSnapshotInDb = 0x060b,
+        TimePassedMillis = 0x060c,
+        LastSavedTimeMillis = 0x060d,
 
         /* contract */
         ContractByHash = 0x0801,
