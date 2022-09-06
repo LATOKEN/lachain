@@ -367,7 +367,7 @@ namespace Lachain.StorageTest
         }
 
         [Test]
-        // [Ignore("async task problem")]
+        [Ignore("async task problem")]
         public void Test_DeleteAndCheckIntegrity()
         {
             Logger.LogInformation("started test Test_DeleteAndCheckIntegrity");
