@@ -146,7 +146,6 @@ namespace Lachain.ConsensusTest
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
             }
-            Stop(n);
         }
 
         [Test]
@@ -180,7 +179,6 @@ namespace Lachain.ConsensusTest
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
             }
-            Stop(n);
         }
 
         [Test]
@@ -189,124 +187,18 @@ namespace Lachain.ConsensusTest
             const int n = 7, f = 2;
  
             SetUpOneMalicious(n, f);
-
-            for (var i = 0 ; i < n ; i++)
+            for (var i = 0; i < n; ++i)
             {
-                Logger.LogInformation($"My validator id {_broadcasters[i].GetMyId()}");
-                Assert.AreEqual(i, _broadcasters[i].GetMyId());
-            }
-
-            var inputs = new List<List<TransactionReceipt>>();
-            for (var i = 0; i < n; i++)
-            {
-                var randomValue = GetRandomTxes();
-                inputs.Add(randomValue);
-            }
-            // inputs = inputs.OrderBy(tx => tx, new ReceiptComparer()).ToList();
-            for (var i = 0; i < n ; i++)
-            {
-                var share = new RawShare(inputs[i].ToByteArray(), i);
+                var share = new RawShare(new byte[32], i);
                 _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
                     _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
                 ));
             }
 
-            for (var i = 0; i < n; ++i)
+            for (var i = 1; i < n; ++i)
             {
-                while (!_broadcasts[i].Terminated);
+                _broadcasts[i].WaitFinish();
             }
-            List<TransactionReceipt>[] txes = new List<TransactionReceipt>[n];
-            for (int i = 0 ; i < n ; i++)
-            {
-                var rawShares = _resultInterceptors[i].GetResult();
-                txes[i] = new List<TransactionReceipt>();
-                // if (i == 0 && rawShares is null) continue;
-                Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}");
-                foreach (var share in rawShares)
-                {
-                    try 
-                    {
-                        var contributions = share.ToBytes().ToMessageArray<TransactionReceipt>();
-                        foreach(var receipt in contributions)
-                            txes[i].Add(receipt);
-                    }
-                    catch(Exception e)
-                    {
-                        Logger.LogError($"Skipped a rawShare due to exception: {e.Message}");
-                        Logger.LogError($"One of the validators might be malicious!!!");
-                    }
-                }
-                txes[i] = txes[i].Distinct().ToArray().ToList();
-                txes[i] = txes[i].OrderBy(tx => tx, new ReceiptComparer()).ToList();
-            }
-
-            var inputTxes = new List<TransactionReceipt>();
-            foreach (var list in inputs)
-            {
-                inputTxes.AddRange(list);
-            }
-            inputTxes = inputTxes.Distinct().OrderBy(tx => tx, new ReceiptComparer()).ToList();
-            Logger.LogInformation($"input for malicious nodes: {inputs[0].Count}");
-            foreach (var tx in inputs[0])
-            {
-                Logger.LogInformation(tx.Hash.ToHex());
-            }
-            Logger.LogInformation($"inputs: tx count: {inputTxes.Count}");
-            foreach (var tx in inputTxes)
-            {
-                Logger.LogInformation(tx.Hash.ToHex());
-            }
-
-            for (int i = 0; i < n ; i++)
-            {
-                Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}: tx count: {txes[i].Count}");
-                foreach (var tx in txes[i])
-                {
-                    Logger.LogInformation(tx.Hash.ToHex());
-                }
-            }
-
-            // all honest nodes have same tx list
-            for (int i = 2; i < n ; i++)
-            {
-                Assert.AreEqual(txes[i], txes[i-1]);
-            }
-
-            int count = 0;
-            var notFound = new List<TransactionReceipt>();
-            for (var iter = 0 ; iter < inputTxes.Count; iter++)
-            {
-                bool found = false;
-                foreach (var tx in txes[1])
-                {
-                    if (tx.Hash.Equals(inputTxes[iter].Hash))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    notFound.Add(inputTxes[iter]);
-                    count++;
-                    Logger.LogInformation($"Could not find tx {iter} with hash {inputTxes[iter].Hash.ToHex()} "
-                        + $"transaction: {inputTxes[iter].ToString()}");
-                }
-            }
-            Logger.LogInformation($"Could not found total {count} txes");
-            foreach (var tx in notFound)
-            {
-                Logger.LogInformation(tx.Hash.ToHex() + " belongs to");
-                for (int iter = 0 ; iter < n ; iter++)
-                {
-                    if (inputs[iter].Contains(tx))
-                    {
-                        Logger.LogInformation($"{iter}");
-                    }
-                }
-            }
-            // some txes are missing
-            Assert.That(count <= 0);
 
             for (var i = 1; i < n; ++i)
             {
@@ -315,144 +207,6 @@ namespace Lachain.ConsensusTest
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
             }
-            Stop(n);
-        }
-
-        [Test]
-        [Ignore("don't work with invalid shares")]
-        public void TestSomeSmartMalicious_7_2()
-        {
-            const int n = 7, f = 2;
- 
-            SetUpOneSmartMalicious(n, f);
-
-            for (var i = 0 ; i < n ; i++)
-            {
-                Logger.LogInformation($"My validator id {_broadcasters[i].GetMyId()}");
-                Assert.AreEqual(i, _broadcasters[i].GetMyId());
-            }
-
-            var inputs = new List<List<TransactionReceipt>>();
-            for (var i = 0; i < n; i++)
-            {
-                var randomValue = GetRandomTxes();
-                inputs.Add(randomValue);
-            }
-            // inputs = inputs.OrderBy(tx => tx, new ReceiptComparer()).ToList();
-            for (var i = 0; i < n ; i++)
-            {
-                var share = new RawShare(inputs[i].ToByteArray(), i);
-                _broadcasters[i].InternalRequest(new ProtocolRequest<HoneyBadgerId, IRawShare>(
-                    _resultInterceptors[i].Id, (_broadcasts[i].Id as HoneyBadgerId)!, share
-                ));
-            }
-
-            for (var i = 0; i < n; ++i)
-            {
-                while (!_broadcasts[i].Terminated);
-            }
-            List<TransactionReceipt>[] txes = new List<TransactionReceipt>[n];
-            for (int i = 0 ; i < n ; i++)
-            {
-                var rawShares = _resultInterceptors[i].GetResult();
-                txes[i] = new List<TransactionReceipt>();
-                // if (i == 0 && rawShares is null) continue;
-                Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}");
-                foreach (var share in rawShares)
-                {
-                    try 
-                    {
-                        var contributions = share.ToBytes().ToMessageArray<TransactionReceipt>();
-                        foreach(var receipt in contributions)
-                            txes[i].Add(receipt);
-                    }
-                    catch(Exception e)
-                    {
-                        Logger.LogError($"Skipped a rawShare due to exception: {e.Message}");
-                        Logger.LogError($"One of the validators might be malicious!!!");
-                    }
-                }
-                txes[i] = txes[i].Distinct().ToArray().ToList();
-                txes[i] = txes[i].OrderBy(tx => tx, new ReceiptComparer()).ToList();
-            }
-
-            var inputTxes = new List<TransactionReceipt>();
-            foreach (var list in inputs)
-            {
-                inputTxes.AddRange(list);
-            }
-            inputTxes = inputTxes.Distinct().OrderBy(tx => tx, new ReceiptComparer()).ToList();
-            Logger.LogInformation($"input for malicious nodes: {inputs[0].Count}");
-            foreach (var tx in inputs[0])
-            {
-                Logger.LogInformation(tx.Hash.ToHex());
-            }
-            Logger.LogInformation($"inputs: tx count: {inputTxes.Count}");
-            foreach (var tx in inputTxes)
-            {
-                Logger.LogInformation(tx.Hash.ToHex());
-            }
-
-            for (int i = 0; i < n ; i++)
-            {
-                Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}: tx count: {txes[i].Count}");
-                foreach (var tx in txes[i])
-                {
-                    Logger.LogInformation(tx.Hash.ToHex());
-                }
-            }
-
-            // all honest nodes have same tx list
-            for (int i = 2; i < n ; i++)
-            {
-                Assert.AreEqual(txes[i], txes[i-1]);
-            }
-
-            int count = 0;
-            var notFound = new List<TransactionReceipt>();
-            for (var iter = 0 ; iter < inputTxes.Count; iter++)
-            {
-                bool found = false;
-                foreach (var tx in txes[1])
-                {
-                    if (tx.Hash.Equals(inputTxes[iter].Hash))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    notFound.Add(inputTxes[iter]);
-                    count++;
-                    Logger.LogInformation($"Could not find tx {iter} with hash {inputTxes[iter].Hash.ToHex()} "
-                        + $"transaction: {inputTxes[iter].ToString()}");
-                    // Assert.That(iter == n-1);
-                }
-            }
-            Logger.LogInformation($"Could not found total {count} txes");
-            foreach (var tx in notFound)
-            {
-                Logger.LogInformation(tx.Hash.ToHex() + " belongs to");
-                for (int iter = 0 ; iter < n ; iter++)
-                {
-                    if (inputs[iter].Contains(tx))
-                    {
-                        Logger.LogInformation($"{iter}");
-                    }
-                }
-            }
-            // some txes are missing
-            Assert.That(count <= 0);
-
-            for (var i = 1; i < n; ++i)
-            {
-                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
-                    $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
-            }
-            Stop(n);
         }
 
         [Test]
@@ -763,7 +517,6 @@ namespace Lachain.ConsensusTest
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
                 Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
             }
-            Stop(n);
         }
 
         private List<TransactionReceipt> GetRandomTxes()
@@ -776,6 +529,5 @@ namespace Lachain.ConsensusTest
             }
             return txes.OrderBy(tx => tx, new ReceiptComparer()).ToList();
         }
-
     }
 }

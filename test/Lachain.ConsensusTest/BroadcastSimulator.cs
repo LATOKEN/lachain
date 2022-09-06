@@ -10,13 +10,11 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Proto;
-using Lachain.Logger;
 
 namespace Lachain.ConsensusTest
 {
     public class BroadcastSimulator : IConsensusBroadcaster
     {
-        private static readonly ILogger<BroadcastSimulator> Logger = LoggerFactory.GetLoggerForClass<BroadcastSimulator>();
         private readonly Dictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
             new Dictionary<IProtocolIdentifier, IProtocolIdentifier>();
 
@@ -33,8 +31,6 @@ namespace Lachain.ConsensusTest
             DeliveryService deliveryService, bool mixMessages
         )
         {
-            if (Terminated)
-                throw new Exception($"Terminated {Terminated}");
             _sender = sender;
             _deliveryService = deliveryService;
             _deliveryService.AddPlayer(GetMyId(), this);
@@ -56,7 +52,6 @@ namespace Lachain.ConsensusTest
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Terminate()
         {
-            if (Terminated) return;
             Terminated = true;
             foreach (var protocol in Registry)
             {
@@ -168,7 +163,6 @@ namespace Lachain.ConsensusTest
 
             CheckRequest(request.To);
             if (Terminated) return;
-            Logger.LogInformation($"{request.From} requested result from {request.To}");
             Registry[request.To]?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
         }
 
@@ -177,8 +171,6 @@ namespace Lachain.ConsensusTest
         {
             if (_callback.TryGetValue(result.From, out var senderId))
                 Registry[senderId]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-
-            Logger.LogInformation($"{result.From} returned result to {senderId}");
 
             // message is also delivered to self
             Registry[result.From]?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
