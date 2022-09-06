@@ -412,6 +412,7 @@ namespace Lachain.StorageTest
             dbShrinkStatus = DbShrinkStatus.DeleteOldSnapshot;
             MimmicDbShrink(idCount, saveCount);
             Commit();
+            Assert.AreEqual(DbShrinkStatus.CheckConsistency, dbShrinkStatus);
 
             var values = new List<(byte[], byte[])>();
             for (int iter = 0; iter < saveCount; iter++)
@@ -486,6 +487,8 @@ namespace Lachain.StorageTest
                 dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
                 Monitor.Wait(_deletionWorker);
             }
+
+            Logger.LogInformation($"deleted {2 * expectedDeleteCount} old keys");
         }
 
         private void DeleteNodeById(int expectedDeleteCount)
@@ -581,6 +584,8 @@ namespace Lachain.StorageTest
                 dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
                 Monitor.Wait(_deletionWorker);
             }
+
+            Logger.LogInformation($"deleted {2*expectedDeleteCount} temp keys");
         }
 
         private void DeleteSavedNodeId(int expectedDeleteCount)
