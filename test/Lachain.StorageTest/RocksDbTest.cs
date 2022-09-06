@@ -248,6 +248,31 @@ namespace Lachain.StorageTest
         }
 
         [Test]
+        public void Test_IteratorValid()
+        {
+            int noOfPrefix = 10; // don't use too much, prefixes should not be same for test to work properly
+            int noOfTest = 10;
+            InsertRandomPrefixKeyValue(noOfPrefix, noOfTest, out var prefixKeyValues, out var keyValues);
+            prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyComparer()).ToList();
+            var existNextPrefix = GetNextValue(prefixKeyValues.Last().Item1, out var prefix);
+            Assert.That(existNextPrefix);
+            var iterator = _dbContext.GetIteratorForValidKeys(prefix);
+            if (iterator is null)
+                Logger.LogInformation("Got null iterator");
+            else
+                Assert.That(!iterator.Valid());
+
+            keyValues = keyValues.OrderBy(item => item.Item1, new ByteKeyComparer()).ToList();
+            existNextPrefix = GetNextValue(prefixKeyValues.Last().Item1, out var longPrefix);
+            Assert.That(existNextPrefix);
+            iterator = _dbContext.GetIteratorForValidKeys(longPrefix);
+            if (iterator is null)
+                Logger.LogInformation("Got null iterator");
+            else
+                Assert.That(!iterator.Valid());
+        }
+
+        [Test]
         public void Test_SeekAndUpperBound()
         {
             int noOfTest = 10;
