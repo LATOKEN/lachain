@@ -40,14 +40,6 @@
 
         NodesDownloadedTillNow = 0x0606,
 
-        /* db shrink */
-        NodeIdForRecentSnapshot = 0x0607,
-        NodeHashForRecentSnapshot = 0x0608,
-        DbShrinkStatus = 0x0609,
-        DbShrinkDepth = 0x060a,
-        OldestSnapshotInDb = 0x060b,
-        TimePassedMillis = 0x060c,
-        LastSavedTimeMillis = 0x060d,
 
         /* contract */
         ContractByHash = 0x0801,
@@ -73,5 +65,16 @@
         /* validator attendance */
         PeerList = 0x0e01,
         PeerByPublicKey = 0x0e01,
+
+        /* db shrink */
+        NodeIdForRecentSnapshot = 0x0f01,
+        NodeHashForRecentSnapshot = 0x0f02,
+        DbShrinkStatus = 0x0f03,
+        DbShrinkDepth = 0x0f04,
+        OldestSnapshotInDb = 0x0f05,
+        TimePassedMillis = 0x0f06,
+        LastSavedTimeMillis = 0x0f07,
+        TotalTempKeysSaved = 0x0f08,
+        TotalNodesDeleted = 0x0f09,
     }
 }

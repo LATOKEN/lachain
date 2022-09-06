@@ -9,7 +9,6 @@ namespace Lachain.Storage.DbCompact
         bool NodeIdExists(ulong id);
         void WriteNodeIdAndHash(ulong id, IHashTrieNode node);
         IHashTrieNode? GetNodeById(ulong id);
-        void DeleteNode(ulong id, IHashTrieNode node);
         void DeleteVersion(uint repository, ulong block);
         ulong TimePassed();
         ulong GetLastSavedTime();
@@ -20,6 +19,10 @@ namespace Lachain.Storage.DbCompact
         DbShrinkStatus GetDbShrinkStatus();
         ulong GetOldestSnapshotInDb();
         void SetOldestSnapshotInDb(ulong block);
+        void SaveTempKeyCount(ulong count);
+        ulong GetTempKeyCount();
+        void SaveDeletedNodeCount(ulong count);
+        ulong GetTotalNodesDeleted();
         void DeleteAll();
         Iterator? GetIteratorForPrefixOnly(byte[] prefix);
     }

@@ -110,14 +110,6 @@ namespace Lachain.Storage.DbCompact
             if (content is null) return null;
             return NodeSerializer.FromBytes(content);
         }
-        public void DeleteNode(ulong id , IHashTrieNode node)
-        {
-            // first delete the version by hash and then delete the node.
-            var prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
-            Delete(prefix, false);
-            prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
-            Delete(prefix);
-        }
 
         public void DeleteVersion(uint repository, ulong block)
         {
@@ -219,6 +211,32 @@ namespace Lachain.Storage.DbCompact
             Save(prefix, UInt64Utils.ToBytes(block));
         }
 
+        public void SaveTempKeyCount(ulong count)
+        {
+            var prefix = EntryPrefix.TotalTempKeysSaved.BuildPrefix();
+            Save(prefix, UInt64Utils.ToBytes(count));
+        }
+
+        public ulong GetTempKeyCount()
+        {
+            var prefix = EntryPrefix.TotalTempKeysSaved.BuildPrefix();
+            var raw = Get(prefix);
+            return raw is null ? 0 : BitConverter.ToUInt64(raw);
+        }
+
+        public void SaveDeletedNodeCount(ulong count)
+        {
+            var prefix = EntryPrefix.TotalNodesDeleted.BuildPrefix();
+            Save(prefix, UInt64Utils.ToBytes(count));
+        }
+
+        public ulong GetTotalNodesDeleted()
+        {
+            var prefix = EntryPrefix.TotalNodesDeleted.BuildPrefix();
+            var raw = Get(prefix);
+            return raw is null ? 0 : BitConverter.ToUInt64(raw);
+        }
+
         public void DeleteAll()
         {
             var prefix = EntryPrefix.DbShrinkStatus.BuildPrefix();
@@ -228,6 +246,10 @@ namespace Lachain.Storage.DbCompact
             prefix = EntryPrefix.TimePassedMillis.BuildPrefix();
             Delete(prefix, false);
             prefix = EntryPrefix.LastSavedTimeMillis.BuildPrefix();
+            Delete(prefix, false);
+            prefix = EntryPrefix.TotalNodesDeleted.BuildPrefix();
+            Delete(prefix, false);
+            prefix = EntryPrefix.TotalTempKeysSaved.BuildPrefix();
             Delete(prefix, false);
             Commit();
         }

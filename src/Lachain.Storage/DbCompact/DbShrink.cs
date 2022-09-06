@@ -91,6 +91,10 @@ namespace Lachain.Storage.DbCompact
             var minutes = (timePassed % (3600 * 1000)) / (60 * 1000);
             var seconds = timePassed / 1000.0 - hours * 3600 - minutes * 60;
             Logger.LogInformation($"Time took to clean db {hours}h {minutes}m {seconds}s");
+
+            var tempKeys = _repository.GetTempKeyCount();
+            var deletedNodes = _repository.GetTotalNodesDeleted();
+            Logger.LogInformation($"Total temporary key saved {tempKeys} and total nodes deleted {deletedNodes}");
             _repository.DeleteAll();
         }
 
@@ -196,23 +200,22 @@ namespace Lachain.Storage.DbCompact
 
         private void DeleteOldSnapshot(ulong lastBlock)
         {
+            ulong deletedNodes = 0;
             var task1 = Task.Factory.StartNew(() =>
             {
-                DeleteNodeById();
+                deletedNodes += DeleteNodeById();
             }, TaskCreationOptions.LongRunning);
 
             var task2 = Task.Factory.StartNew(() =>
             {
-                DeleteNodeIdByHash();
+                deletedNodes += DeleteNodeIdByHash();
             }, TaskCreationOptions.LongRunning);
 
-            // lock (_deletionWorker)
-            // {
-            //     dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
-            //     Monitor.Wait(_deletionWorker);
-            // }
             task1.Wait();
             task2.Wait();
+
+            Logger.LogInformation($"Deleted {deletedNodes} nodes from old snapshot in total");
+            _repository.SaveDeletedNodeCount(deletedNodes);
 
             var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
             for (var fromBlock = GetOldestSnapshotInDb(); fromBlock < lastBlock; fromBlock++)
@@ -228,24 +231,24 @@ namespace Lachain.Storage.DbCompact
             Logger.LogTrace("deleted old snapshots");
         }
 
-        private void DeleteNodeById()
+        private ulong DeleteNodeById()
         {
             Logger.LogTrace($"Deleting nodes of old snapshot from DB");
             var prefixToDelete = EntryPrefix.PersistentHashMap.BuildPrefix();
             var prefixToKeep = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
             var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
             Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
-            // NotifyCaller();
+            return deleted;
         }
 
-        private void DeleteNodeIdByHash()
+        private ulong DeleteNodeIdByHash()
         {
             Logger.LogTrace($"Deleting nodes of old snapshot from DB");
             var prefixToDelete = EntryPrefix.VersionByHash.BuildPrefix();
             var prefixToKeep = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
             var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
             Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
-            // NotifyCaller();
+            return deleted;
         }
 
         private ulong DeleteOldKeys(byte[] prefixToDelete, byte[] prefixToKeep)
@@ -325,51 +328,49 @@ namespace Lachain.Storage.DbCompact
                         + $" reason: the snapshots were deleted by a previous call. Exception:\n{exception}");
                 }
             }
-            Logger.LogTrace($"Saved {nodeIdSaved} nodeId in total");
+            Logger.LogTrace($"Saved {nodeIdSaved} nodeId and {nodeIdSaved} nodeHash in total");
+            _repository.SaveTempKeyCount(nodeIdSaved * 2);
         }
 
         private void DeleteRecentSnapshotNodeIdAndHash(ulong depth, ulong totalBlocks)
         {
+            ulong deletedNodes = 0;
             var task1 = Task.Factory.StartNew(() =>
             {
-                DeleteSavedNodeId();
+                deletedNodes += DeleteSavedNodeId();
             }, TaskCreationOptions.LongRunning);
 
             var task2 = Task.Factory.StartNew(() =>
             {
-                DeleteSavedNodeHash();
+                deletedNodes += DeleteSavedNodeHash();
             }, TaskCreationOptions.LongRunning);
 
             task1.Wait();
             task2.Wait();
 
-            // lock (_deletionWorker)
-            // {
-            //     dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
-            //     Monitor.Wait(_deletionWorker);
-            // }
-
-            Logger.LogTrace("deleted temporary node info");
+            Logger.LogTrace($"deleted {deletedNodes} temporary node info");
+            deletedNodes += _repository.GetTotalNodesDeleted();
+            _repository.SaveDeletedNodeCount(deletedNodes);
         }
 
-        private void DeleteSavedNodeId()
+        private ulong DeleteSavedNodeId()
         {
             Logger.LogTrace($"Deleting saved nodeId");
             ulong nodeIdDeleted = 0;
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
             nodeIdDeleted = DeleteAllForPrefix(prefix);
             Logger.LogTrace($"Deleted {nodeIdDeleted} nodeId in total");
-            // NotifyCaller();
+            return nodeIdDeleted;
         }
 
-        private void DeleteSavedNodeHash()
+        private ulong DeleteSavedNodeHash()
         {
             Logger.LogTrace($"Deleting saved nodeHash");
             ulong nodeHashDeleted = 0;
             var prefix = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
             nodeHashDeleted = DeleteAllForPrefix(prefix);
             Logger.LogTrace($"Deleted {nodeHashDeleted} nodeHash in total");
-            // NotifyCaller();
+            return nodeHashDeleted;
         }
 
         private ulong DeleteAllForPrefix(byte[] prefix)
