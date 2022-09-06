@@ -15,15 +15,22 @@ namespace Lachain.Storage.DbCompact
     public class DbShrinkRepository : IDbShrinkRepository
     {
         private IRocksDbContext _dbContext;
-        private RocksDbAtomicWrite batch;
+        private RocksDbAtomicWrite? batch;
         private readonly ConcurrentDictionary<UInt256, byte[]?> _memDb = new ConcurrentDictionary<UInt256, byte[]?>();
 
         public DbShrinkRepository(IRocksDbContext dbContext)
         {
             _dbContext = dbContext;
-            UpdateBatch();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Initialize()
+        {
+            if (batch is null)
+                batch = new RocksDbAtomicWrite(_dbContext);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void UpdateBatch()
         {
             batch = new RocksDbAtomicWrite(_dbContext);
@@ -33,7 +40,8 @@ namespace Lachain.Storage.DbCompact
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void Save(byte[] key, byte[] content, bool tryCommit = true)
         {
-            batch.Put(key, content);
+            Initialize();
+            batch!.Put(key, content);
             var keyHash = key.Keccak();
             _memDb[keyHash] = content;
             DbShrinkUtils.UpdateCounter();
@@ -46,7 +54,8 @@ namespace Lachain.Storage.DbCompact
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Delete(byte[] key, bool tryCommit = true)
         {
-            batch.Delete(key);
+            Initialize();
+            batch!.Delete(key);
             var keyHash = key.Keccak();
             _memDb[keyHash] = null;
             DbShrinkUtils.UpdateCounter();
@@ -59,7 +68,8 @@ namespace Lachain.Storage.DbCompact
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void Commit()
         {
-            batch.Commit();
+            Initialize();
+            batch!.Commit();
             DbShrinkUtils.ResetCounter();
             UpdateBatch();
         }
