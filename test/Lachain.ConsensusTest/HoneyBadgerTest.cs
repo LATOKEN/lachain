@@ -104,22 +104,6 @@ namespace Lachain.ConsensusTest
             }
         }
 
-        private void SetUpOneSmartMalicious(int n, int f)
-        {
-            SetUp(n, f);
-            _broadcasts[0] = new HoneyBadgerSmartMalicious(
-                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, _broadcasters[0]
-            );
-            _broadcasters[0].RegisterProtocols(new[] {_broadcasts[0], _resultInterceptors[0]});
-            for (uint i = 1; i < n; ++i)
-            {
-                _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, _broadcasters[i]
-                );
-                _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
-            }
-        }
-
         private void SetUpSomeSilent(int n, int f, ISet<int> s)
         {
             SetUp(n, f);
@@ -793,15 +777,5 @@ namespace Lachain.ConsensusTest
             return txes.OrderBy(tx => tx, new ReceiptComparer()).ToList();
         }
 
-        private List<TransactionReceipt> GetRandomTxes()
-        {
-            var txes = new List<TransactionReceipt>();
-            int count = _rnd.Next(1,11);
-            for (int i = 0 ; i < count ; i++)
-            {
-                txes.Add(TestUtility.GetRandomTransaction(false));
-            }
-            return txes.OrderBy(tx => tx, new ReceiptComparer()).ToList();
-        }
     }
 }
