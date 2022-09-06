@@ -193,11 +193,8 @@ namespace Lachain.Consensus.HoneyBadger
             try
             {
                 // DecryptorId is basically the validator id, it tells us who decrypted the message, so it should be same
-                // otherwise later we will not be able to decrypt fully
                 if (msg.DecryptorId != senderId)
                     throw new Exception($"Validator {senderId} sends message with decryptor id {msg.DecryptorId}");
-                if (msg.ShareId < 0 || msg.ShareId >= N)
-                    throw new Exception($"Invalid share id {msg.ShareId}, N: {N}");
                 // same decrypted id more than once prevents full decrypt
                 if (_receivedShareFrom[msg.ShareId][msg.DecryptorId])
                     throw new Exception($"validator {senderId} sent decrypted messsage for share {msg.ShareId} twice");
