@@ -108,7 +108,7 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_DeletionOldSnapshot()
         {
             _blockManager.TryBuildGenesisBlock();
-            AddSeveralBlocks(10);
+            AddSeveralBlocks(100);
             ulong depth = 10;
             _dbOptimizer.ShrinkDb(depth, _blockManager.GetHeight(), true);
             WaitForDbShrink();
