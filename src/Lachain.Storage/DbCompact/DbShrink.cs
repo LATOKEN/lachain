@@ -18,7 +18,7 @@ namespace Lachain.Storage.DbCompact
         private ulong? dbShrinkDepth = null;
         private DbShrinkStatus? dbShrinkStatus = null;
         private ulong? oldestSnapshot = null;
-        private readonly object _deletionWorker = new object();
+        // private readonly object _deletionWorker = new object();
 
         public DbShrink(ISnapshotIndexRepository snapshotIndexRepository, IDbShrinkRepository repository)
         {
@@ -196,21 +196,23 @@ namespace Lachain.Storage.DbCompact
 
         private void DeleteOldSnapshot(ulong lastBlock)
         {
-            Task.Factory.StartNew(() =>
+            var task1 = Task.Factory.StartNew(() =>
             {
                 DeleteNodeById();
             }, TaskCreationOptions.LongRunning);
 
-            Task.Factory.StartNew(() =>
+            var task2 = Task.Factory.StartNew(() =>
             {
                 DeleteNodeIdByHash();
             }, TaskCreationOptions.LongRunning);
 
-            lock (_deletionWorker)
-            {
-                dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
-                Monitor.Wait(_deletionWorker);
-            }
+            // lock (_deletionWorker)
+            // {
+            //     dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
+            //     Monitor.Wait(_deletionWorker);
+            // }
+            task1.Wait();
+            task2.Wait();
 
             var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
             for (var fromBlock = GetOldestSnapshotInDb(); fromBlock < lastBlock; fromBlock++)
@@ -222,6 +224,8 @@ namespace Lachain.Storage.DbCompact
                 }
                 SetOldestSnapshotInDb(fromBlock + 1);
             }
+
+            Logger.LogTrace("deleted old snapshots");
         }
 
         private void DeleteNodeById()
@@ -231,7 +235,7 @@ namespace Lachain.Storage.DbCompact
             var prefixToKeep = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
             var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
             Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
-            NotifyCaller();
+            // NotifyCaller();
         }
 
         private void DeleteNodeIdByHash()
@@ -241,7 +245,7 @@ namespace Lachain.Storage.DbCompact
             var prefixToKeep = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
             var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
             Logger.LogTrace($"Deleted {deleted} nodes of old snapshot from DB in total");
-            NotifyCaller();
+            // NotifyCaller();
         }
 
         private ulong DeleteOldKeys(byte[] prefixToDelete, byte[] prefixToKeep)
@@ -326,21 +330,26 @@ namespace Lachain.Storage.DbCompact
 
         private void DeleteRecentSnapshotNodeIdAndHash(ulong depth, ulong totalBlocks)
         {
-            Task.Factory.StartNew(() =>
+            var task1 = Task.Factory.StartNew(() =>
             {
                 DeleteSavedNodeId();
             }, TaskCreationOptions.LongRunning);
 
-            Task.Factory.StartNew(() =>
+            var task2 = Task.Factory.StartNew(() =>
             {
                 DeleteSavedNodeHash();
             }, TaskCreationOptions.LongRunning);
 
-            lock (_deletionWorker)
-            {
-                dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
-                Monitor.Wait(_deletionWorker);
-            }
+            task1.Wait();
+            task2.Wait();
+
+            // lock (_deletionWorker)
+            // {
+            //     dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
+            //     Monitor.Wait(_deletionWorker);
+            // }
+
+            Logger.LogTrace("deleted temporary node info");
         }
 
         private void DeleteSavedNodeId()
@@ -350,7 +359,7 @@ namespace Lachain.Storage.DbCompact
             var prefix = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix();
             nodeIdDeleted = DeleteAllForPrefix(prefix);
             Logger.LogTrace($"Deleted {nodeIdDeleted} nodeId in total");
-            NotifyCaller();
+            // NotifyCaller();
         }
 
         private void DeleteSavedNodeHash()
@@ -360,7 +369,7 @@ namespace Lachain.Storage.DbCompact
             var prefix = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix();
             nodeHashDeleted = DeleteAllForPrefix(prefix);
             Logger.LogTrace($"Deleted {nodeHashDeleted} nodeHash in total");
-            NotifyCaller();
+            // NotifyCaller();
         }
 
         private ulong DeleteAllForPrefix(byte[] prefix)
@@ -379,31 +388,31 @@ namespace Lachain.Storage.DbCompact
             return keyDeleted;
         }
 
-        private void NotifyCaller()
-        {
-            var checkInterval = 1000; // 1 second
-            // DbShrinkStatus.AsyncDeletionStarted means the process is requested
-            // there are 2 parallel threads running
-            // DbShrinkStatus.DeletionStep1Complete means one of the thread is complete
-            // notify caller only if all threads are complete
-            while (dbShrinkStatus != DbShrinkStatus.AsyncDeletionStarted 
-                && dbShrinkStatus != DbShrinkStatus.DeletionStep1Complete)
-            {
-                Thread.Sleep(checkInterval);
-            }
-            lock (_deletionWorker)
-            {
-                if (dbShrinkStatus == DbShrinkStatus.DeletionStep1Complete)
-                {
-                    dbShrinkStatus = DbShrinkStatus.DeletionStep2Complete;
-                }
-                else dbShrinkStatus = DbShrinkStatus.DeletionStep1Complete;
-                if (dbShrinkStatus == DbShrinkStatus.DeletionStep2Complete)
-                {
-                    Monitor.PulseAll(_deletionWorker);
-                }
-            }
-        }
+        // private void NotifyCaller()
+        // {
+        //     var checkInterval = 1000; // 1 second
+        //     // DbShrinkStatus.AsyncDeletionStarted means the process is requested
+        //     // there are 2 parallel threads running
+        //     // DbShrinkStatus.DeletionStep1Complete means one of the thread is complete
+        //     // notify caller only if all threads are complete
+        //     while (dbShrinkStatus != DbShrinkStatus.AsyncDeletionStarted 
+        //         && dbShrinkStatus != DbShrinkStatus.DeletionStep1Complete)
+        //     {
+        //         Thread.Sleep(checkInterval);
+        //     }
+        //     lock (_deletionWorker)
+        //     {
+        //         if (dbShrinkStatus == DbShrinkStatus.DeletionStep1Complete)
+        //         {
+        //             dbShrinkStatus = DbShrinkStatus.DeletionStep2Complete;
+        //         }
+        //         else dbShrinkStatus = DbShrinkStatus.DeletionStep1Complete;
+        //         if (dbShrinkStatus == DbShrinkStatus.DeletionStep2Complete)
+        //         {
+        //             Monitor.PulseAll(_deletionWorker);
+        //         }
+        //     }
+        // }
 
     }
 
