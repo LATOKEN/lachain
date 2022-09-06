@@ -20,6 +20,7 @@ namespace Lachain.Consensus.HoneyBadger
         private readonly EncryptedShare?[] _receivedShares;
         private readonly IRawShare?[] _shares;
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
+        private readonly bool[][] _receivedShareFrom;
         private readonly bool[] _taken;
         private ResultStatus _requested;
         private IRawShare? _rawShare;
@@ -45,6 +46,11 @@ namespace Lachain.Consensus.HoneyBadger
             _shares = new IRawShare[N];
             _requested = ResultStatus.NotRequested;
             _skipDecryptedShareValidation = skipDecryptedShareValidation;
+            _receivedShareFrom = new bool[N][];
+            for (var iter = 0 ; iter < N ; iter++)
+            {
+                _receivedShareFrom[iter] = new bool[N];
+            }
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -186,6 +192,14 @@ namespace Lachain.Consensus.HoneyBadger
             PartiallyDecryptedShare? share = null;
             try
             {
+                // DecryptorId is basically the validator id, it tells us who decrypted the message, so it should be same
+                if (msg.DecryptorId != senderId)
+                    throw new Exception($"Validator {senderId} sends message with decryptor id {msg.DecryptorId}");
+                // same decrypted id more than once prevents full decrypt
+                if (_receivedShareFrom[msg.ShareId][msg.DecryptorId])
+                    throw new Exception($"validator {senderId} sent decrypted messsage for share {msg.ShareId} twice");
+
+                _receivedShareFrom[msg.ShareId][msg.DecryptorId] = true;
                 // Converting any random bytes to G1 is not possible
                 share = Wallet.TpkePublicKey.Decode(msg);
                 if (!(_receivedShares[share.ShareId] is null))
