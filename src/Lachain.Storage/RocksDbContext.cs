@@ -76,6 +76,8 @@ namespace Lachain.Storage
             _rocksDb.Remove(key, null, _writeOptions);
         }
 
+        // Get an iterator for a key that is greater than or equal to 'prefix' but less than 'upperBound'
+        // check with iterator.Valid() if such key exists
         public Iterator? GetIteratorWithUpperBound(byte[] prefix, byte[] upperBound)
         {
             var readOptions = new ReadOptions();
@@ -84,6 +86,8 @@ namespace Lachain.Storage
             return GetIterator(prefix, readOptions);
         }
 
+        // Get an iterator for a key that is greater than or equal to 'prefix'
+        // check with iterator.Valid() if such key exists
         public Iterator? GetIteratorForValidKeys(byte[] prefix)
         {
             var readOptions = new ReadOptions();

@@ -18,7 +18,6 @@ namespace Lachain.Storage.DbCompact
         private ulong? dbShrinkDepth = null;
         private DbShrinkStatus? dbShrinkStatus = null;
         private ulong? oldestSnapshot = null;
-        // private readonly object _deletionWorker = new object();
 
         public DbShrink(ISnapshotIndexRepository snapshotIndexRepository, IDbShrinkRepository repository)
         {
@@ -388,6 +387,8 @@ namespace Lachain.Storage.DbCompact
 
         private ulong DeleteAllForPrefix(byte[] prefix)
         {
+            // we are looping through the keys with this prefix and deleting them
+            // TODO: investigate if we can delete all keys with a particular prefix faster
             ulong keyDeleted = 0;
             var iterator = _repository.GetIteratorForPrefixOnly(prefix);
             if (!(iterator is null))
