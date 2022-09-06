@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
@@ -107,9 +108,20 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_DeletionOldSnapshot()
         {
             _blockManager.TryBuildGenesisBlock();
-            AddSeveralBlocks(1000);
-            ulong depth = 100;
+            AddSeveralBlocks(10);
+            ulong depth = 10;
             _dbOptimizer.ShrinkDb(depth, _blockManager.GetHeight(), true);
+            ulong waitTime = 60 * 1000 ; // 1 min
+            var startTime = TimeUtils.CurrentTimeMillis();
+            while (!_dbOptimizer.IsStopped())
+            {
+                Thread.Sleep(1000); // sleep 1s
+                var waiting = TimeUtils.CurrentTimeMillis() - startTime;
+                if (waiting >= waitTime)
+                {
+                    Console.WriteLine($"waiting for db shrink to finish for {waiting / 1000.0} seconds");
+                }
+            }
             var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
             var lastBlock = _dbOptimizer.StartingBlockToKeep(depth, _blockManager.GetHeight());
             for (ulong fromBlock = _dbOptimizer.GetOldestSnapshotInDb(); fromBlock < lastBlock; fromBlock++)
@@ -124,7 +136,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 }
             }
 
-            AddSeveralBlocks(100);
+            AddSeveralBlocks(10);
             var startingBlock = _dbOptimizer.GetOldestSnapshotInDb();
             depth = _dbOptimizer.StartingBlockToKeep(startingBlock, _blockManager.GetHeight());
             _dbOptimizer.ShrinkDb(depth, _blockManager.GetHeight(), true);

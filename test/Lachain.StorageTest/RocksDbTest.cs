@@ -31,7 +31,6 @@ namespace Lachain.StorageTest
         private readonly int _dbUpdatePeriod = 100000;
         private int _counter;
         private RocksDbAtomicWrite _batchWrite;
-        private object _deletionWorker = new object();
         private DbShrinkStatus dbShrinkStatus;
 
         public RocksDbTest()
@@ -368,6 +367,7 @@ namespace Lachain.StorageTest
         }
 
         [Test]
+        // [Ignore("async task problem")]
         public void Test_DeleteAndCheckIntegrity()
         {
             Logger.LogInformation("started test Test_DeleteAndCheckIntegrity");
@@ -454,15 +454,12 @@ namespace Lachain.StorageTest
             switch (dbShrinkStatus)
             {
                 case DbShrinkStatus.DeleteOldSnapshot:
-                    // Logger.LogTrace($"Deleting nodes from DB that are not reachable from last {depth} snapshots");
                     DeleteOldSnapshot(oldKeys - tempSaved);
-                    // Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
                     dbShrinkStatus = DbShrinkStatus.DeleteTempNodeInfo;
                     goto case DbShrinkStatus.DeleteTempNodeInfo;
 
                 case DbShrinkStatus.DeleteTempNodeInfo:
                     DeleteRecentSnapshotNodeIdAndHash(tempSaved);
-                    // Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
                     dbShrinkStatus = DbShrinkStatus.CheckConsistency;
                     break;
                     
@@ -474,32 +471,25 @@ namespace Lachain.StorageTest
 
         private void DeleteOldSnapshot(int expectedDeleteCount)
         {
+            ulong deleted = 0;
             var task1 = Task.Factory.StartNew(() =>
             {
-                DeleteNodeById(expectedDeleteCount);
+                deleted += DeleteNodeById(expectedDeleteCount);
             }, TaskCreationOptions.LongRunning);
-            // DeleteNodeById(expectedDeleteCount);
 
             var task2 = Task.Factory.StartNew(() =>
             {
-                DeleteNodeIdByHash(expectedDeleteCount);
+                deleted += DeleteNodeIdByHash(expectedDeleteCount);
             }, TaskCreationOptions.LongRunning);
-            // DeleteNodeIdByHash(expectedDeleteCount);
+
             task1.Wait();
             task2.Wait();
-
-            // lock (_deletionWorker)
-            // {
-            //     dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
-            //     bool res = Monitor.Wait(_deletionWorker);
-            //     Logger.LogInformation($"lock released in DeleteOldSnapshot {res}");
-            //     Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
-            // }
             
+            Assert.AreEqual(2*expectedDeleteCount, deleted);
             Logger.LogInformation($"deleted {2 * expectedDeleteCount} old keys");
         }
 
-        private void DeleteNodeById(int expectedDeleteCount)
+        private ulong DeleteNodeById(int expectedDeleteCount)
         {
             Logger.LogInformation($"Deleting nodes of old snapshot from DB");
             var prefixToDelete = EntryPrefix.PersistentHashMap.BuildPrefix();
@@ -507,10 +497,10 @@ namespace Lachain.StorageTest
             var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
             Logger.LogInformation($"Deleted {deleted} nodes of old snapshot from DB in total");
             Assert.AreEqual(expectedDeleteCount, deleted);
-            //NotifyCaller();
+            return deleted;
         }
 
-        private void DeleteNodeIdByHash(int expectedDeleteCount)
+        private ulong DeleteNodeIdByHash(int expectedDeleteCount)
         {
             Logger.LogInformation($"Deleting nodes of old snapshot from DB");
             var prefixToDelete = EntryPrefix.VersionByHash.BuildPrefix();
@@ -518,7 +508,7 @@ namespace Lachain.StorageTest
             var deleted = DeleteOldKeys(prefixToDelete, prefixToKeep);
             Logger.LogInformation($"Deleted {deleted} nodes of old snapshot from DB in total");
             Assert.AreEqual(expectedDeleteCount, deleted);
-            //NotifyCaller();
+            return deleted;
         }
 
         private ulong DeleteOldKeys(byte[] prefixToDelete, byte[] prefixToKeep)
@@ -577,32 +567,25 @@ namespace Lachain.StorageTest
 
         private void DeleteRecentSnapshotNodeIdAndHash(int expectedDeleteCount)
         {
+            ulong deleted = 0;
             var task1 = Task.Factory.StartNew(() =>
             {
-                DeleteSavedNodeId(expectedDeleteCount);
+                deleted += DeleteSavedNodeId(expectedDeleteCount);
             }, TaskCreationOptions.LongRunning);
-            // DeleteSavedNodeId(expectedDeleteCount);
 
             var task2 = Task.Factory.StartNew(() =>
             {
-                DeleteSavedNodeHash(expectedDeleteCount);
+                deleted += DeleteSavedNodeHash(expectedDeleteCount);
             }, TaskCreationOptions.LongRunning);
-            // DeleteSavedNodeHash(expectedDeleteCount);
+
             task1.Wait();
             task2.Wait();
 
-            // lock (_deletionWorker)
-            // {
-            //     dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
-            //     bool res = Monitor.Wait(_deletionWorker);
-            //     Logger.LogInformation($"lock released in DeleteOldSnapshot {res}");
-            //     Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
-            // }
-
+            Assert.AreEqual(2*expectedDeleteCount, deleted);
             Logger.LogInformation($"deleted {2*expectedDeleteCount} temp keys");
         }
 
-        private void DeleteSavedNodeId(int expectedDeleteCount)
+        private ulong DeleteSavedNodeId(int expectedDeleteCount)
         {
             Logger.LogInformation($"Deleting saved nodeId");
             ulong nodeIdDeleted = 0;
@@ -610,10 +593,10 @@ namespace Lachain.StorageTest
             nodeIdDeleted = DeleteAllForPrefix(prefix);
             Logger.LogInformation($"Deleted {nodeIdDeleted} nodeId in total");
             Assert.AreEqual(expectedDeleteCount, nodeIdDeleted);
-            // NotifyCaller();
+            return nodeIdDeleted;
         }
 
-        private void DeleteSavedNodeHash(int expectedDeleteCount)
+        private ulong DeleteSavedNodeHash(int expectedDeleteCount)
         {
             Logger.LogInformation($"Deleting saved nodeHash");
             ulong nodeHashDeleted = 0;
@@ -621,7 +604,7 @@ namespace Lachain.StorageTest
             nodeHashDeleted = DeleteAllForPrefix(prefix);
             Logger.LogInformation($"Deleted {nodeHashDeleted} nodeHash in total");
             Assert.AreEqual(expectedDeleteCount, nodeHashDeleted);
-            // NotifyCaller();
+            return nodeHashDeleted;
         }
 
         private ulong DeleteAllForPrefix(byte[] prefix)
@@ -638,32 +621,6 @@ namespace Lachain.StorageTest
                 }
             }
             return keyDeleted;
-        }
-
-        private void NotifyCaller()
-        {
-            var checkInterval = 1000; // 1 second
-            // DbShrinkStatus.AsyncDeletionStarted means the process is requested
-            // there are 2 parallel threads running
-            // DbShrinkStatus.DeletionStep1Complete means one of the thread is complete
-            // notify caller only if all threads are complete
-            while (dbShrinkStatus != DbShrinkStatus.AsyncDeletionStarted 
-                && dbShrinkStatus != DbShrinkStatus.DeletionStep1Complete)
-            {
-                Thread.Sleep(checkInterval);
-            }
-            lock (_deletionWorker)
-            {
-                if (dbShrinkStatus == DbShrinkStatus.DeletionStep1Complete)
-                {
-                    dbShrinkStatus = DbShrinkStatus.DeletionStep2Complete;
-                }
-                else dbShrinkStatus = DbShrinkStatus.DeletionStep1Complete;
-                if (dbShrinkStatus == DbShrinkStatus.DeletionStep2Complete)
-                {
-                    Monitor.PulseAll(_deletionWorker);
-                }
-            }
         }
 
         public Iterator? GetIteratorForPrefixOnly(byte[] prefix)
