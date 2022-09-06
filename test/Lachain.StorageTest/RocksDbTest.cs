@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Lachain.Core.CLI;
@@ -173,7 +174,6 @@ namespace Lachain.StorageTest
             for (int i = 0 ; i < noOfPrefix; i++)
             {
                 var prefix = prefixKeyValues[0].Item1;
-                Logger.LogInformation($"prefix: {prefix[0]}, {prefix[1]}");
                 var items = prefixKeyValues.Take(noOfTest).Select(item => item.Item2).OrderBy(
                     item => item.Item1, new UlongKeyCompare()).ToArray();
                 Assert.AreEqual(items.Length, noOfTest);
@@ -367,10 +367,9 @@ namespace Lachain.StorageTest
         }
 
         [Test]
-        [Ignore("async task problem")]
-        public void Test_DeleteAndCheckIntegrity()
+        public void Test_DeleteAndCheckIntegritySync()
         {
-            Logger.LogInformation("started test Test_DeleteAndCheckIntegrity");
+            Logger.LogInformation("started test Test_DeleteAndCheckIntegritySync");
             var idCount = 1000;
             var pairs = new List<((ulong, UInt256), byte[])>();
             for (int iter = 0; iter < idCount; iter++)
@@ -410,7 +409,7 @@ namespace Lachain.StorageTest
                 + $"in db {TimeUtils.CurrentTimeMillis() - startTime} ms");
 
             dbShrinkStatus = DbShrinkStatus.DeleteOldSnapshot;
-            MimmicDbShrink(idCount, saveCount);
+            MimmicDbShrinkSync(idCount, saveCount);
             Assert.AreEqual(DbShrinkStatus.CheckConsistency, dbShrinkStatus);
             Commit();
 
@@ -449,17 +448,99 @@ namespace Lachain.StorageTest
             
         }
 
-        private void MimmicDbShrink(int oldKeys, int tempSaved)
+        [Test]
+        public void Test_DeleteAndCheckIntegrityAsync()
+        {
+            Logger.LogInformation("started test Test_DeleteAndCheckIntegrityAsync");
+            var idCount = 1000;
+            var pairs = new List<((ulong, UInt256), byte[])>();
+            for (int iter = 0; iter < idCount; iter++)
+            {
+                var id = BitConverter.ToUInt64(TestUtils.GetRandomValue(8));
+                var hash = TestUtils.GetRandomValue(32).ToUInt256();
+                var value = TestUtils.GetRandomValue();
+                pairs.Add(((id, hash), value));
+            }
+
+            var startTime = TimeUtils.CurrentTimeMillis();
+            foreach (var ((id, hash), value) in pairs)
+            {
+                var key = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                Save(key, value);
+                key = EntryPrefix.VersionByHash.BuildPrefix(hash);
+                Save(key, UInt64Utils.ToBytes(id));
+            }
+            Commit();
+            Logger.LogInformation($"time taken to insert {idCount * 2} (key, value) "
+                + $"in db {TimeUtils.CurrentTimeMillis() - startTime} ms");
+
+            var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
+            int saveCount = 100;
+            pairs = pairs.OrderBy(_ => rnd.Next()).ToList();
+            startTime = TimeUtils.CurrentTimeMillis();
+            for (int iter = 0; iter < saveCount; iter++)
+            {
+                var (id, hash) = pairs[iter].Item1;
+                var key = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+                Save(key, new byte[1]);
+                key = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix(hash);
+                Save(key, new byte[1]);
+            }
+            Commit();
+            Logger.LogInformation($"time taken to insert {saveCount * 2} (key, value) "
+                + $"in db {TimeUtils.CurrentTimeMillis() - startTime} ms");
+
+            dbShrinkStatus = DbShrinkStatus.DeleteOldSnapshot;
+            MimmicDbShrinkAsync(idCount, saveCount);
+            Assert.AreEqual(DbShrinkStatus.CheckConsistency, dbShrinkStatus);
+            Commit();
+
+            var values = new List<(byte[], byte[])>();
+            for (int iter = 0; iter < saveCount; iter++)
+            {
+                var ((id, hash), value) = pairs[iter];
+                var key = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                values.Add((key, value));
+                key = EntryPrefix.VersionByHash.BuildPrefix(hash);
+                values.Add((key, UInt64Utils.ToBytes(id)));
+            }
+
+            CheckDb(values);
+            
+            for (int iter = saveCount; iter < idCount; iter++)
+            {
+                var (id, hash) = pairs[iter].Item1;
+                var key = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                var value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+                key = EntryPrefix.VersionByHash.BuildPrefix(hash);
+                value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+            }
+
+            foreach (var ((id, hash), _) in pairs)
+            {
+                var key = EntryPrefix.NodeIdForRecentSnapshot.BuildPrefix(id);
+                var value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+                key = EntryPrefix.NodeHashForRecentSnapshot.BuildPrefix(hash);
+                value = _dbContext.Get(key);
+                Assert.AreEqual(null, value);
+            }
+            
+        }
+
+        private void MimmicDbShrinkSync(int oldKeys, int tempSaved)
         {
             switch (dbShrinkStatus)
             {
                 case DbShrinkStatus.DeleteOldSnapshot:
-                    DeleteOldSnapshot(oldKeys - tempSaved);
+                    DeleteOldSnapshotSync(oldKeys - tempSaved);
                     dbShrinkStatus = DbShrinkStatus.DeleteTempNodeInfo;
                     goto case DbShrinkStatus.DeleteTempNodeInfo;
 
                 case DbShrinkStatus.DeleteTempNodeInfo:
-                    DeleteRecentSnapshotNodeIdAndHash(tempSaved);
+                    DeleteRecentSnapshotNodeIdAndHashSync(tempSaved);
                     dbShrinkStatus = DbShrinkStatus.CheckConsistency;
                     break;
                     
@@ -469,24 +550,94 @@ namespace Lachain.StorageTest
             }
         }
 
-        private void DeleteOldSnapshot(int expectedDeleteCount)
+        private void DeleteOldSnapshotSync(int expectedDeleteCount)
         {
             ulong deleted = 0;
+
+            deleted += DeleteNodeById(expectedDeleteCount);
+            deleted += DeleteNodeIdByHash(expectedDeleteCount);
+            
+            Assert.AreEqual(2*expectedDeleteCount, deleted);
+            Logger.LogInformation($"deleted {2 * expectedDeleteCount} old keys");
+        }
+
+        private void DeleteRecentSnapshotNodeIdAndHashSync(int expectedDeleteCount)
+        {
+            ulong deleted = 0;
+
+            deleted += DeleteSavedNodeId(expectedDeleteCount);
+            deleted += DeleteSavedNodeHash(expectedDeleteCount);
+
+            Assert.AreEqual(2*expectedDeleteCount, deleted);
+            Logger.LogInformation($"deleted {2*expectedDeleteCount} temp keys");
+        }
+
+        private void MimmicDbShrinkAsync(int oldKeys, int tempSaved)
+        {
+            switch (dbShrinkStatus)
+            {
+                case DbShrinkStatus.DeleteOldSnapshot:
+                    DeleteOldSnapshotAsync(oldKeys - tempSaved);
+                    dbShrinkStatus = DbShrinkStatus.DeleteTempNodeInfo;
+                    goto case DbShrinkStatus.DeleteTempNodeInfo;
+
+                case DbShrinkStatus.DeleteTempNodeInfo:
+                    DeleteRecentSnapshotNodeIdAndHashAsync(tempSaved);
+                    dbShrinkStatus = DbShrinkStatus.CheckConsistency;
+                    break;
+                    
+                default:
+                    throw new Exception("invalid db-shrink-status");
+
+            }
+        }
+
+        private void DeleteOldSnapshotAsync(int expectedDeleteCount)
+        {
+            ulong deletedTotal = 0;
             var task1 = Task.Factory.StartNew(() =>
             {
-                deleted += DeleteNodeById(expectedDeleteCount);
+                var deleted = DeleteNodeById(expectedDeleteCount);
+                return deleted;
             }, TaskCreationOptions.LongRunning);
 
             var task2 = Task.Factory.StartNew(() =>
             {
-                deleted += DeleteNodeIdByHash(expectedDeleteCount);
+                var deleted = DeleteNodeIdByHash(expectedDeleteCount);
+                return deleted;
             }, TaskCreationOptions.LongRunning);
 
             task1.Wait();
             task2.Wait();
+            deletedTotal += task1.Result;
+            deletedTotal += task2.Result;
             
-            Assert.AreEqual(2*expectedDeleteCount, deleted);
+            Assert.AreEqual(2*expectedDeleteCount, deletedTotal);
             Logger.LogInformation($"deleted {2 * expectedDeleteCount} old keys");
+        }
+
+        private void DeleteRecentSnapshotNodeIdAndHashAsync(int expectedDeleteCount)
+        {
+            ulong deletedTotal = 0;
+            var task1 = Task.Factory.StartNew(() =>
+            {
+                var deleted = DeleteSavedNodeId(expectedDeleteCount);
+                return deleted;
+            }, TaskCreationOptions.LongRunning);
+
+            var task2 = Task.Factory.StartNew(() =>
+            {
+                var deleted = DeleteSavedNodeHash(expectedDeleteCount);
+                return deleted;
+            }, TaskCreationOptions.LongRunning);
+
+            task1.Wait();
+            task2.Wait();
+            deletedTotal += task1.Result;
+            deletedTotal += task2.Result;
+
+            Assert.AreEqual(2*expectedDeleteCount, deletedTotal);
+            Logger.LogInformation($"deleted {2*expectedDeleteCount} temp keys");
         }
 
         private ulong DeleteNodeById(int expectedDeleteCount)
@@ -563,26 +714,6 @@ namespace Lachain.StorageTest
             }
 
             return keyDeleted;
-        }
-
-        private void DeleteRecentSnapshotNodeIdAndHash(int expectedDeleteCount)
-        {
-            ulong deleted = 0;
-            var task1 = Task.Factory.StartNew(() =>
-            {
-                deleted += DeleteSavedNodeId(expectedDeleteCount);
-            }, TaskCreationOptions.LongRunning);
-
-            var task2 = Task.Factory.StartNew(() =>
-            {
-                deleted += DeleteSavedNodeHash(expectedDeleteCount);
-            }, TaskCreationOptions.LongRunning);
-
-            task1.Wait();
-            task2.Wait();
-
-            Assert.AreEqual(2*expectedDeleteCount, deleted);
-            Logger.LogInformation($"deleted {2*expectedDeleteCount} temp keys");
         }
 
         private ulong DeleteSavedNodeId(int expectedDeleteCount)
@@ -692,6 +823,7 @@ namespace Lachain.StorageTest
                 + $"in db {TimeUtils.CurrentTimeMillis() - startTime} ms");
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void Save(byte[] key, byte[] value)
         {
             _batchWrite.Put(key, value);
@@ -699,6 +831,7 @@ namespace Lachain.StorageTest
             if (CycleEnded()) Commit();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void Delete(byte[] key)
         {
             _batchWrite.Delete(key);
@@ -758,6 +891,7 @@ namespace Lachain.StorageTest
             return _counter <= 0;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void Commit()
         {
             Logger.LogInformation("Committing batch");
@@ -765,6 +899,7 @@ namespace Lachain.StorageTest
             Initialize();
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void Initialize()
         {
             ResetCounter();
