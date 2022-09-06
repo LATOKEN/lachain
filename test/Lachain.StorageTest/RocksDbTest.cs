@@ -56,7 +56,7 @@ namespace Lachain.StorageTest
         [TearDown]
         public void TearDown()
         {
-            _container.Dispose();;
+            _container.Dispose();
             TestUtils.DeleteTestChainData();
         }
 
@@ -411,8 +411,8 @@ namespace Lachain.StorageTest
 
             dbShrinkStatus = DbShrinkStatus.DeleteOldSnapshot;
             MimmicDbShrink(idCount, saveCount);
-            Commit();
             Assert.AreEqual(DbShrinkStatus.CheckConsistency, dbShrinkStatus);
+            Commit();
 
             var values = new List<(byte[], byte[])>();
             for (int iter = 0; iter < saveCount; iter++)
@@ -456,11 +456,13 @@ namespace Lachain.StorageTest
                 case DbShrinkStatus.DeleteOldSnapshot:
                     // Logger.LogTrace($"Deleting nodes from DB that are not reachable from last {depth} snapshots");
                     DeleteOldSnapshot(oldKeys - tempSaved);
+                    Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
                     dbShrinkStatus = DbShrinkStatus.DeleteTempNodeInfo;
                     goto case DbShrinkStatus.DeleteTempNodeInfo;
 
                 case DbShrinkStatus.DeleteTempNodeInfo:
                     DeleteRecentSnapshotNodeIdAndHash(tempSaved);
+                    Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
                     dbShrinkStatus = DbShrinkStatus.CheckConsistency;
                     break;
                     
@@ -485,7 +487,8 @@ namespace Lachain.StorageTest
             lock (_deletionWorker)
             {
                 dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
-                Monitor.Wait(_deletionWorker);
+                bool res = Monitor.Wait(_deletionWorker);
+                Logger.LogInformation($"lock released in DeleteOldSnapshot {res}");
             }
 
             Logger.LogInformation($"deleted {2 * expectedDeleteCount} old keys");
@@ -582,7 +585,8 @@ namespace Lachain.StorageTest
             lock (_deletionWorker)
             {
                 dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
-                Monitor.Wait(_deletionWorker);
+                bool res = Monitor.Wait(_deletionWorker);
+                Logger.LogInformation($"lock released in DeleteOldSnapshot {res}");
             }
 
             Logger.LogInformation($"deleted {2*expectedDeleteCount} temp keys");

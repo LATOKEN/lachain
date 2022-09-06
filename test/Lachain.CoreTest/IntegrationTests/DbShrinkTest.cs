@@ -107,7 +107,7 @@ namespace Lachain.CoreTest.IntegrationTests
         public void Test_DeletionOldSnapshot()
         {
             _blockManager.TryBuildGenesisBlock();
-            AddSeveralBlocks(2000);
+            AddSeveralBlocks(1000);
             ulong depth = 100;
             _dbOptimizer.ShrinkDb(depth, _blockManager.GetHeight(), true);
             var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
@@ -164,7 +164,11 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 foreach (var tx in topUpReceipts)
                 {
-                    _transactionPool.Add(tx);
+                    var added = _transactionPool.Add(tx);
+                    if (added != OperatingError.UnsupportedTransaction && added != OperatingError.Ok)
+                    {
+                        Assert.That(false, $"top up tx not added to pool {added}");
+                    }
                 }
 
                 var takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
@@ -184,7 +188,11 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 foreach (var tx in randomReceipts)
                 {
-                    _transactionPool.Add(tx);
+                    var added = _transactionPool.Add(tx);
+                    if (added != OperatingError.UnsupportedTransaction && added != OperatingError.Ok)
+                    {
+                        Assert.That(false, $"random tx not added to pool {added}");
+                    }
                 }
 
                 takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
