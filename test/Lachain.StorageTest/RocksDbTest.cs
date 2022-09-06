@@ -61,7 +61,6 @@ namespace Lachain.StorageTest
         }
 
         [Test]
-        [Repeat(1)]
         public void Test_SeekAndSerialized()
         {
             
@@ -95,10 +94,10 @@ namespace Lachain.StorageTest
                     Assert.That(iterator.Valid());
                     var key = iterator.Key();
                     var value = iterator.Value();
-                    iterator = iterator.Next();
                     Assert.AreEqual(bytes, key);
                     Assert.AreEqual(values[iter], value);
                     iter++;
+                    iterator = iterator.Next();
                 }
             }
             Assert.That(!iterator.Valid());
@@ -489,6 +488,7 @@ namespace Lachain.StorageTest
                 dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted; 
                 bool res = Monitor.Wait(_deletionWorker);
                 Logger.LogInformation($"lock released in DeleteOldSnapshot {res}");
+                Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
             }
 
             Logger.LogInformation($"deleted {2 * expectedDeleteCount} old keys");
@@ -587,6 +587,7 @@ namespace Lachain.StorageTest
                 dbShrinkStatus = DbShrinkStatus.AsyncDeletionStarted;
                 bool res = Monitor.Wait(_deletionWorker);
                 Logger.LogInformation($"lock released in DeleteOldSnapshot {res}");
+                Assert.AreEqual(DbShrinkStatus.DeletionStep2Complete, dbShrinkStatus);
             }
 
             Logger.LogInformation($"deleted {2*expectedDeleteCount} temp keys");
@@ -793,6 +794,7 @@ namespace Lachain.StorageTest
 
         private void Commit()
         {
+            Logger.LogInformation("Committing batch");
             _batchWrite.Commit();
             Initialize();
         }
