@@ -141,6 +141,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     Assert.AreEqual(null, version, $"{repo} for block {fromBlock} is not deleted");
                 }
             }
+            Console.WriteLine("db shrink test complete");
         }
 
         private void AddSeveralBlocks(ulong blockCount)
@@ -163,18 +164,20 @@ namespace Lachain.CoreTest.IntegrationTests
                 }
 
                 bool topUpSucces = true;
+                int txNo = 0;
                 foreach (var tx in topUpReceipts)
                 {
                     var added = _transactionPool.Add(tx);
                     if (added != OperatingError.UnsupportedTransaction && added != OperatingError.Ok)
                     {
-                        Assert.That(false, $"top up tx not added to pool {added}, for block {currentHeight}");
+                        Assert.That(false, $"top up tx not added to pool {added}, for block {currentHeight}, tx {txNo}");
                     }
                     if (added == OperatingError.UnsupportedTransaction)
                     {
                         topUpSucces = false;
-                        continue;
+                        break;
                     }
+                    txNo++;
                 }
 
                 var takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
