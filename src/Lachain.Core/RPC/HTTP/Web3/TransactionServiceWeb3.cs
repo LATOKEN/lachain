@@ -66,7 +66,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _blockManager = blockManager;
         }
 
-        public Transaction MakeTransaction(SignedTransactionBase ethTx)
+        public Transaction MakeTransaction(LegacyTransactionChainId ethTx)
         {
             return new Transaction
             {
@@ -84,7 +84,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_verifyRawTransaction")]
         public string VerifyRawTransaction(string rawTx)
         {
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx.HexToBytes());
             var useNewChainId =
                 HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
             var signature = ethTx.Signature.R.Concat(ethTx.Signature.S).Concat(ethTx.Signature.V).ToSignature(useNewChainId);
@@ -184,7 +184,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_sendRawTransaction")]
         public string SendRawTransaction(string rawTx)
         {
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx.HexToBytes());
 
             var r = ethTx.Signature.R;
             while (r.Length < 32)

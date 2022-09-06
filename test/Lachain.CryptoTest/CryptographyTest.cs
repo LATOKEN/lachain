@@ -326,7 +326,7 @@ namespace Lachain.CryptoTest
             var rawTx =
                 "0xf86d808504a817c800832dc6c0948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a76400008025a0115105d96a43f41a5ea562bb3e591cbfa431a8cdae9c3030457adca2cb854f78a012fb41922c53c73473563003667ed8e783359c91d95b42301e1955d530b1ca33";
 
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx.HexToBytes());
             Console.WriteLine("ETH RLP: " + ethTx.GetRLPEncodedRaw().ToHex());
 
             var nonce = ethTx.Nonce.ToHex();

@@ -26,13 +26,13 @@ namespace Lachain.Crypto
             return useNewId ? _newChainId : _oldChainId;
         }
         
-        public static TransactionChainId GetEthTx(this Transaction t, Signature? s, bool useNewId)
+        public static LegacyTransactionChainId GetEthTx(this Transaction t, Signature? s, bool useNewId)
         {
             var nonce = t.Nonce == 0
                 ? Array.Empty<byte>()
                 : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray().TrimLeadingZeros();
             var sig = s is null  ?  Array.Empty<byte>() : s.Encode().AsSpan();
-            var ethTx = new Nethereum.Signer.TransactionChainId(
+            var ethTx = new Nethereum.Signer.LegacyTransactionChainId(
                 nonce,
                 new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),

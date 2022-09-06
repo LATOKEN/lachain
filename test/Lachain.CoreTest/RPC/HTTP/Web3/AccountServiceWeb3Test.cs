@@ -197,7 +197,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var rawTx2 = MakeDummyTx(HardforkHeights.IsHardfork_9Active(1));
 
-            var ethTx = new TransactionChainId(rawTx2.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
 
@@ -222,7 +222,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var rawTx2 = MakeDummyTx(HardforkHeights.IsHardfork_9Active(1));
 
-            var ethTx = new TransactionChainId(rawTx2.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx2.HexToBytes());
             var address = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
 
@@ -335,7 +335,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
 
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx.HexToBytes());
 
             var txHashSent = _transactionApiService.SendRawTransaction(rawTx);
 

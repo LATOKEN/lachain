@@ -49,7 +49,7 @@ namespace Lachain.Crypto
                 header.Nonce.ToBytes().ToArray(),
             };
 
-            return Nethereum.RLP.RLP.EncodeElementsAndList(headerBytes).Keccak();
+            return Nethereum.RLP.RLP.EncodeDataItemsAsElementOrListAndCombineAsList(headerBytes).Keccak();
         }
 
         public static UInt256 Keccak(this IEnumerable<byte> buffer)
