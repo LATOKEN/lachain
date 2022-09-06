@@ -162,12 +162,18 @@ namespace Lachain.CoreTest.IntegrationTests
                         HardforkHeights.IsHardfork_9Active(currentHeight + 1)));
                 }
 
+                bool topUpSucces = true;
                 foreach (var tx in topUpReceipts)
                 {
                     var added = _transactionPool.Add(tx);
                     if (added != OperatingError.UnsupportedTransaction && added != OperatingError.Ok)
                     {
-                        Assert.That(false, $"top up tx not added to pool {added}");
+                        Assert.That(false, $"top up tx not added to pool {added}, for block {currentHeight}");
+                    }
+                    if (added == OperatingError.UnsupportedTransaction)
+                    {
+                        topUpSucces = false;
+                        continue;
                     }
                 }
 
@@ -176,7 +182,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 var result = ExecuteBlock(block, takenTxes.ToArray());
                 Assert.AreEqual(result, OperatingError.Ok);
                 var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
-                Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
+                if (topUpSucces) Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
+                else Assert.AreEqual(executedBlock!.TransactionHashes.Count, 0);
                 currentHeight++;
 
                 foreach (var tx in executedBlock.TransactionHashes)
@@ -186,12 +193,12 @@ namespace Lachain.CoreTest.IntegrationTests
                         persistedTx++;
                 }
 
-                foreach (var tx in randomReceipts)
+                if (topUpSucces)
                 {
-                    var added = _transactionPool.Add(tx);
-                    if (added != OperatingError.UnsupportedTransaction && added != OperatingError.Ok)
+                    foreach (var tx in randomReceipts)
                     {
-                        Assert.That(false, $"random tx not added to pool {added}");
+                        var added = _transactionPool.Add(tx);
+                        Assert.AreEqual(OperatingError.Ok, added);
                     }
                 }
 
@@ -200,7 +207,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 result = ExecuteBlock(block, takenTxes.ToArray());
                 Assert.AreEqual(result, OperatingError.Ok);
                 executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
-                Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
+                if (topUpSucces) Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
+                else Assert.AreEqual(executedBlock!.TransactionHashes.Count, 0);
                 currentHeight++;
                 
                 foreach (var tx in executedBlock.TransactionHashes)
