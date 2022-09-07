@@ -116,7 +116,9 @@ namespace Lachain.Console
                 var dbShrink = _container.Resolve<IDbShrink>();
                 var dbContext = _container.Resolve<IRocksDbContext>(); 
 
-                dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(), options.consistencyCheck);
+                var consistencyCheckOption = options.consistencyCheck.ToLower();
+                var consistencyCheck = consistencyCheckOption == "true" ? true : false;
+                dbShrink.ShrinkDb(options.depth, stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight(), consistencyCheck);
                 dbContext.CompactAll();
             }
             else 
