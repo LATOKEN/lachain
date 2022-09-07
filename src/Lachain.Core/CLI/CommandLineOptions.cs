@@ -117,6 +117,6 @@ namespace Lachain.Core.CLI
         public ulong depth { get; set; } = 100;
         
         [Option('h', "consistencyCheck", Required = false, HelpText = "Consistency check after dbCompact \"hard\"")]
-        public bool consistencyCheck { get; set; } = false;
+        public string consistencyCheck { get; set; } = "false";
     }
 }
