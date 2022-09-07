@@ -101,20 +101,21 @@ namespace Lachain.Networking.Hub
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void SendVal(byte[] publicKey, byte[] message)
         {
-            // TODO: uncomment this
-            //CommunicationHub.Net.Hub.SendVal(publicKey, CompressUtils.DeflateCompress(message).ToArray());
+            CommunicationHub.Net.Hub.SendVal(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void ConnectValidatorChannel()
         {
-            // TODO: Connect to validator channel
+            CommunicationHub.Net.Hub.ConnectVal();
+
         }
-        
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void DisconnectValidatorChannel()
         {
-            // TODO: Disconnect from validator channel
+            CommunicationHub.Net.Hub.DisconnectVal();
+
         }
 
         public void Dispose()
