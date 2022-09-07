@@ -197,6 +197,7 @@ namespace Lachain.Storage.DbCompact
                         + $"exception:\n{exception}");
                 }
             }
+            Logger.LogTrace($"Snapshots for blocks in range [{fromBlock} , {totalBlocks}] are okay");
         }
 
         private void DeleteOldSnapshot(ulong lastBlock)
