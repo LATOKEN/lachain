@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -22,22 +23,28 @@ using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
+using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage;
 using Lachain.Storage.DbCompact;
+using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
+using Lachain.Storage.Trie;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using NUnit.Framework;
+using NLog;
 
 namespace Lachain.CoreTest.IntegrationTests
 {
     [TestFixture]
     public class DbShrinkTest
     {
+        private static readonly ILogger<DbShrinkTest> Logger =
+            LoggerFactory.GetLoggerForClass<DbShrinkTest>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private static readonly ITransactionSigner Signer = new TransactionSigner();
 
@@ -48,6 +55,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private IConfigManager _configManager = null!;
         private IDbShrink _dbOptimizer = null!;
         private IRocksDbContext _dbContext = null!;
+        private ISnapshotIndexRepository _snapshotIndexer = null!;
         private IContainer? _container;
 
         public DbShrinkTest()
@@ -74,6 +82,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "config.json"),
                 new RunOptions()
             ));
+            LogManager.Configuration.Variables["consoleLogLevel"] = "Trace";
+            LogManager.ReconfigExistingLoggers();
             
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
@@ -86,6 +96,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _configManager = _container.Resolve<IConfigManager>();
             _dbOptimizer = _container.Resolve<IDbShrink>();
             _dbContext = _container.Resolve<IRocksDbContext>();
+            _snapshotIndexer = _container.Resolve<ISnapshotIndexRepository>();
 
             // set chainId from config
             if (TransactionUtils.ChainId(false) == 0)
@@ -110,42 +121,48 @@ namespace Lachain.CoreTest.IntegrationTests
             _blockManager.TryBuildGenesisBlock();
             AddSeveralBlocks(100);
             ulong depth = 10;
-            _dbOptimizer.ShrinkDb(depth, _blockManager.GetHeight(), true);
+            var totalBlocks = _blockManager.GetHeight();
+            var lastBlock = _dbOptimizer.StartingBlockToKeep(depth, totalBlocks);
+            var oldNodes = GetAllNodes(0, lastBlock - 1);
+            var newNodes = GetAllNodes(lastBlock, totalBlocks);
+            RemoveNewNodes(oldNodes, newNodes);
+            Logger.LogTrace($"old nodes count: {oldNodes.Count}");
+            Logger.LogTrace($"new nodes count: {newNodes.Count}");
+
+            _dbOptimizer.ShrinkDb(depth, totalBlocks, true);
             WaitForDbShrink();
-            var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
-            var lastBlock = _dbOptimizer.StartingBlockToKeep(depth, _blockManager.GetHeight());
-            for (ulong fromBlock = _dbOptimizer.GetOldestSnapshotInDb(); fromBlock < lastBlock; fromBlock++)
-            {
-                foreach (var repo in repos)
-                {
-                    var prefix = EntryPrefix.SnapshotIndex.BuildPrefix(
-                        ((uint) repo).ToBytes().Concat(fromBlock.ToBytes()).ToArray()
-                    );
-                    var version = _dbContext.Get(prefix);
-                    Assert.AreEqual(null, version, $"{repo} for block {fromBlock} is not deleted");
-                }
-            }
+            CheckNodes(oldNodes, false);
+            CheckNodes(newNodes, true);
+            Assert.AreEqual(lastBlock, _dbOptimizer.GetOldestSnapshotInDb());
+            CheckVersions(0, lastBlock - 1, false);
+            CheckVersions(lastBlock, _blockManager.GetHeight(), true);
 
             AddSeveralBlocks(10);
+            newNodes = GetAllNodes(lastBlock, _blockManager.GetHeight());
             var startingBlock = _dbOptimizer.GetOldestSnapshotInDb();
+            Assert.AreNotEqual(0, startingBlock);
+            Assert.AreEqual(lastBlock, startingBlock);
             depth = _dbOptimizer.StartingBlockToKeep(startingBlock, _blockManager.GetHeight());
             _dbOptimizer.ShrinkDb(depth, _blockManager.GetHeight(), true);
             WaitForDbShrink();
+            Assert.AreEqual(startingBlock, _dbOptimizer.GetOldestSnapshotInDb());
+            CheckNodes(newNodes, true);
+
+            oldNodes = GetAllNodes(lastBlock, lastBlock);
+            newNodes = GetAllNodes(lastBlock + 1, _blockManager.GetHeight());
+            RemoveNewNodes(oldNodes, newNodes);
+            Logger.LogTrace($"old nodes count: {oldNodes.Count}");
+            Logger.LogTrace($"new nodes count: {newNodes.Count}");
             _dbOptimizer.ShrinkDb(depth - 1, _blockManager.GetHeight(), true);
             WaitForDbShrink();
-            lastBlock = _dbOptimizer.StartingBlockToKeep(depth, _blockManager.GetHeight());
-            for (ulong fromBlock = _dbOptimizer.GetOldestSnapshotInDb(); fromBlock < lastBlock; fromBlock++)
-            {
-                foreach (var repo in repos)
-                {
-                    var prefix = EntryPrefix.SnapshotIndex.BuildPrefix(
-                        ((uint) repo).ToBytes().Concat(fromBlock.ToBytes()).ToArray()
-                    );
-                    var version = _dbContext.Get(prefix);
-                    Assert.AreEqual(null, version, $"{repo} for block {fromBlock} is not deleted");
-                }
-            }
-            Console.WriteLine("db shrink test complete");
+            lastBlock++;
+            Assert.AreEqual(lastBlock, _dbOptimizer.GetOldestSnapshotInDb());
+            CheckNodes(oldNodes, false);
+            CheckNodes(newNodes, true);
+
+            CheckVersions(lastBlock, _blockManager.GetHeight(), true);
+            CheckVersions(0, lastBlock - 1, false);
+            Logger.LogTrace("db shrink test complete");
         }
 
         private void WaitForDbShrink()
@@ -158,9 +175,81 @@ namespace Lachain.CoreTest.IntegrationTests
                 var waiting = TimeUtils.CurrentTimeMillis() - startTime;
                 if (waiting >= waitTime)
                 {
-                    Console.WriteLine($"waiting for db shrink to finish for {waiting / 1000.0} seconds");
+                    Logger.LogWarning($"waiting for db shrink to finish for {waiting / 1000.0} seconds");
                 }
             }
+        }
+
+        private void CheckVersions(ulong fromBlock, ulong toBlock, bool exist)
+        {
+            var repos = Enum.GetValues(typeof(RepositoryType)).Cast<RepositoryType>();
+            for (ulong block = fromBlock; block <= toBlock; block++)
+            {
+                foreach (var repo in repos)
+                {
+                    if (repo == RepositoryType.MetaRepository)
+                        continue;
+                    var prefix = EntryPrefix.SnapshotIndex.BuildPrefix(
+                        ((uint) repo).ToBytes().Concat(fromBlock.ToBytes()).ToArray()
+                    );
+                    var version = _dbContext.Get(prefix);
+                    if (!exist) Assert.AreEqual(null, version, $"{repo} for block {block} is not deleted");
+                    else Assert.AreNotEqual(null, version, $"{repo} for block {block} is not found");
+                }
+            }
+        }
+
+        private void CheckNodes(IDictionary<ulong,IHashTrieNode> nodes, bool exist)
+        {
+            foreach (var (id, node) in nodes)
+            {
+                var prefix = EntryPrefix.PersistentHashMap.BuildPrefix(id);
+                var value = NodeSerializer.ToBytes(node);
+                if (exist) Assert.AreEqual(value, _dbContext.Get(prefix));
+                else Assert.AreEqual(null, _dbContext.Get(prefix));
+
+                prefix = EntryPrefix.VersionByHash.BuildPrefix(node.Hash);
+                value = UInt64Utils.ToBytes(id);
+                if (exist) Assert.AreEqual(value, _dbContext.Get(prefix));
+                else Assert.AreEqual(null, _dbContext.Get(prefix));
+            }
+        }
+
+        private void RemoveNewNodes(
+            IDictionary<ulong,IHashTrieNode> oldNodes,
+            IDictionary<ulong,IHashTrieNode> newNodes
+        )
+        {
+            foreach (var (key, value) in newNodes)
+            {
+                if (oldNodes.TryGetValue(key, out var node))
+                {
+                    Assert.AreEqual(node, value);
+                    Assert.That(oldNodes.Remove(key));
+                }
+            }
+        }
+
+        private IDictionary<ulong,IHashTrieNode> GetAllNodes(ulong fromBlock, ulong toBlock)
+        {
+            IDictionary<ulong, IHashTrieNode> nodes = new ConcurrentDictionary<ulong, IHashTrieNode>();
+            for (var block = fromBlock; block <= toBlock; block++)
+            {
+                var snapshots = _snapshotIndexer.GetSnapshotForBlock(block).GetAllSnapshot();
+                foreach (var snapshot in snapshots)
+                {
+                    var trieNodes = snapshot.GetState();
+                    foreach (var node in trieNodes)
+                    {
+                        if (nodes.TryGetValue(node.Key, out var value))
+                        {
+                            Assert.AreEqual(value, node.Value);
+                        }
+                        else nodes.Add(node);
+                    }
+                }
+            }
+            return nodes;
         }
 
         private void AddSeveralBlocks(ulong blockCount)
@@ -241,7 +330,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 }
             }
 
-            Console.WriteLine($"Tx persisted {persistedTx} out of {blockCount * 20}");
+            Logger.LogTrace($"Tx persisted {persistedTx} out of {blockCount * 20}");
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)
@@ -321,7 +410,7 @@ namespace Lachain.CoreTest.IntegrationTests
             block.Hash = header.Keccak();
 
             var status = _blockManager.Execute(block, receipts, true, true);
-            Console.WriteLine($"Executed block: {block.Header.Index}");
+            Logger.LogInformation($"Executed block: {block.Header.Index}");
             return status;
         }
 
