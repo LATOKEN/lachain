@@ -58,7 +58,8 @@ namespace Lachain.ConsensusTest
             {
                 Assert.IsTrue(_coins[i].Terminated, $"protocol {i} did not terminate");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                results[i] = _resultInterceptors[i].Result;
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                results[i] = _resultInterceptors[i].Result[0];
             }
 
             Assert.AreEqual(1, results.Distinct().Count(), "all guys should get same coin");

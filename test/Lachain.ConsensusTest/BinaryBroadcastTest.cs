@@ -82,7 +82,8 @@ namespace Lachain.ConsensusTest
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result[0]);
             }
         }
 
@@ -102,7 +103,8 @@ namespace Lachain.ConsensusTest
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                Assert.AreEqual(new BoolSet(false), _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(new BoolSet(false), _resultInterceptors[i].Result[0]);
             }
         }
 
@@ -124,7 +126,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result[0]);
             }
         }
 
@@ -159,7 +162,9 @@ namespace Lachain.ConsensusTest
                 received[i] = new SortedSet<int>();
 
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                var values = _resultInterceptors[i].Result;
+                Assert.AreEqual(1, _resultInterceptors[i].ResultSet);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                var values = _resultInterceptors[i].Result[0];
 
                 foreach (var b in values.Values())
                     received[i].Add(b ? 1 : 0);

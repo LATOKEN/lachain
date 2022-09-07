@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
@@ -49,7 +50,7 @@ namespace Lachain.ConsensusTest
 
     public class ProtocolInvoker<TId, TResult> : IConsensusProtocol where TId : IProtocolIdentifier
     {
-        public TResult Result;
+        public List<TResult> Result = new List<TResult>();
 
         public int ResultSet;
         public IProtocolIdentifier Id { get; } = new InvokerId();
@@ -74,7 +75,7 @@ namespace Lachain.ConsensusTest
             if (message.External || !(message.InternalMessage is ProtocolResult<TId, TResult> result)) return;
             _logger.LogTrace($"{Id}: got result from {result.From}");
             ResultSet++;
-            Result = result.Result;
+            Result.Add(result.Result);
         }
 
         public void Start()
@@ -85,7 +86,7 @@ namespace Lachain.ConsensusTest
         {
         }
 
-        public TResult GetResult()
+        public List<TResult> GetResult()
         {
             return Result;
         }

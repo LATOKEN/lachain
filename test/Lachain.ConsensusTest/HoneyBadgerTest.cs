@@ -144,7 +144,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result[0].Count);
             }
         }
 
@@ -177,7 +178,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n - f, _resultInterceptors[i].Result[0].Count);
             }
         }
 
@@ -205,7 +207,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result[0].Count);
             }
         }
 
@@ -245,7 +248,7 @@ namespace Lachain.ConsensusTest
             List<TransactionReceipt>[] txes = new List<TransactionReceipt>[n];
             for (int i = 0 ; i < n ; i++)
             {
-                var rawShares = _resultInterceptors[i].GetResult();
+                var rawShares = _resultInterceptors[i].GetResult()[0];
                 txes[i] = new List<TransactionReceipt>();
                 // if (i == 0 && rawShares is null) continue;
                 Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}");
@@ -340,7 +343,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result[0].Count);
             }
             Stop(n);
         }
@@ -381,7 +385,7 @@ namespace Lachain.ConsensusTest
             List<TransactionReceipt>[] txes = new List<TransactionReceipt>[n];
             for (int i = 0 ; i < n ; i++)
             {
-                var rawShares = _resultInterceptors[i].GetResult();
+                var rawShares = _resultInterceptors[i].GetResult()[0];
                 txes[i] = new List<TransactionReceipt>();
                 // if (i == 0 && rawShares is null) continue;
                 Logger.LogInformation($"Got result for {_resultInterceptors[i].Id}");
@@ -477,7 +481,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result[0].Count);
             }
             Stop(n);
         }
@@ -515,7 +520,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n - f, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n - f, _resultInterceptors[i].Result[0].Count);
             }
         }
 

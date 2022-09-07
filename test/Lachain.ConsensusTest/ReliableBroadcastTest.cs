@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Google.Protobuf;
 using NUnit.Framework;
 using Lachain.Consensus;
@@ -11,6 +12,7 @@ using Lachain.Proto;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using MCL.BLS12_381.Net;
+using NLog;
 
 namespace Lachain.ConsensusTest
 {
@@ -18,7 +20,7 @@ namespace Lachain.ConsensusTest
     public class ReliableBroadcastTest
     {
         private const int Sender = 0;
-        private readonly Random _rnd = new Random();
+        private readonly Random _rnd = new Random((int) TimeUtils.CurrentTimeMillis());
 
         private DeliveryService _deliveryService = null!;
         private IConsensusProtocol[] _broadcasts = null!;
@@ -26,7 +28,14 @@ namespace Lachain.ConsensusTest
         private ProtocolInvoker<ReliableBroadcastId, EncryptedShare>[] _resultInterceptors = null!;
         private IPrivateConsensusKeySet[] _wallets = null!;
         private IPublicConsensusKeySet _publicKeys = null!;
-        private EncryptedShare _testShare = null!;
+        private EncryptedShare[] _testShare = new EncryptedShare[0];
+
+        [SetUp]
+        public void SetUp()
+        {
+            LogManager.Configuration.Variables["consoleLogLevel"] = "Trace";
+            LogManager.ReconfigExistingLoggers();
+        }
 
         private void SetUp(int n, int f)
         {
@@ -46,11 +55,15 @@ namespace Lachain.ConsensusTest
                 _broadcasters[i] = new BroadcastSimulator(i, _publicKeys, _wallets[i], _deliveryService, false);
                 _resultInterceptors[i] = new ProtocolInvoker<ReliableBroadcastId, EncryptedShare>();
             }
-
-            var bytes = Enumerable.Range(0, 32)
-                .Select(x => (byte) (x * x * 0))
-                .ToArray();
-            _testShare = new EncryptedShare(G1.Generator, bytes, G2.Generator, Sender);
+            
+            _testShare = new EncryptedShare[n];
+            for (int i = 0 ; i < n ; i++)
+            {
+                var bytes = Enumerable.Range(0, 32)
+                    .Select(x => (byte) (x * x * (1+i)))
+                    .ToArray();
+                _testShare[i] = new EncryptedShare(G1.Generator, bytes, G2.Generator, i);
+            }
         }
 
 
@@ -107,7 +120,7 @@ namespace Lachain.ConsensusTest
             SetUpAllHonestNSenders(n, f);
             _deliveryService.RepeatProbability = repeatProbability;
             _deliveryService.Mode = mode;
-            var rnd = new Random();
+            var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
             var mutePlayers = new List<int>();
             while (_deliveryService.MutedPlayers.Count < f)
             {
@@ -119,7 +132,7 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i)
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
-                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
+                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare[i]));
 
                 for (var j = 0; j < n; ++j)
                 {
@@ -133,13 +146,29 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i)
             {
                 if (!mutePlayers.Contains(i))
+                {
                     _broadcasts[i].WaitFinish();
+                    for (int j = 0 ; j < n ; j++)
+                    {
+                        if (j != i)
+                        {
+                            var rbdId = new ReliableBroadcastId(j, 0);
+                            var rbc = _broadcasters[i].GetProtocolById(rbdId)!;
+                            rbc.WaitFinish();
+                        }
+                    }
+                }
             }
 
             for (var i = 0; i < n; ++i)
             {
                 if (!mutePlayers.Contains(i))
-                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                {
+                    Assert.AreEqual(n, _resultInterceptors[i].ResultSet);
+                    Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                    var sortedResult = _resultInterceptors[i].Result.OrderBy(share => share.Id).ToArray();
+                    Assert.AreEqual(_testShare, sortedResult);
+                }
             }
 
             for (var i = 0; i < n; ++i)
@@ -171,7 +200,7 @@ namespace Lachain.ConsensusTest
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
                     _resultInterceptors[i].Id, (_broadcasts[i].Id as ReliableBroadcastId)!,
-                    i == Sender ? _testShare : null
+                    i == Sender ? _testShare[i] : null
                 ));
             }
 
@@ -184,7 +213,7 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i)
             {
                 if (!mutePlayers.Contains(i))
-                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                    Assert.AreEqual(_testShare[i], _resultInterceptors[i].Result);
             }
 
             for (var i = 0; i < n; ++i)
@@ -203,14 +232,16 @@ namespace Lachain.ConsensusTest
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
                     _resultInterceptors[i].Id, (_broadcasts[i].Id as ReliableBroadcastId)!,
-                    i == Sender ? _testShare : null
+                    i == Sender ? _testShare[i] : null
                 ));
             }
 
             for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
             for (var i = 0; i < n; ++i)
             {
-                Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                Assert.AreEqual(1, _resultInterceptors[i].ResultSet);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_testShare[Sender], _resultInterceptors[i].Result[0]);
             }
 
             for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminate");
@@ -224,7 +255,7 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i)
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>
-                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare));
+                    (_resultInterceptors[i].Id, new ReliableBroadcastId(i, 0), _testShare[i]));
 
                 for (var j = 0; j < n; ++j)
                 {
@@ -236,14 +267,39 @@ namespace Lachain.ConsensusTest
                 }
             }
 
-            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
             for (var i = 0; i < n; ++i)
             {
-                Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                _broadcasts[i].WaitFinish();
+                for (int j = 0 ; j < n ; j++)
+                {
+                    if (j != i)
+                    {
+                        var rbdId = new ReliableBroadcastId(j, 0);
+                        var rbc = _broadcasters[i].GetProtocolById(rbdId)!;
+                        rbc.WaitFinish();
+                    }
+                }
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                Assert.AreEqual(n, _resultInterceptors[i].ResultSet);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                var sortedResult = _resultInterceptors[i].Result.OrderBy(share => share.Id).ToArray();
+                Assert.AreEqual(_testShare, sortedResult);
             }
 
             for (var i = 0; i < n; ++i) Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
         }
+
+        // private void Print(EncryptedShare share)
+        // {
+        //     var bytes = share.V;
+        //     Console.WriteLine($"bytes length: {bytes.Length}");
+        //     foreach (var ele in bytes)
+        //         Console.WriteLine(ele);
+        //     Console.WriteLine($"id: {share.Id}");
+        // }
 
         [Test]
         [Timeout(5000)]
@@ -256,7 +312,7 @@ namespace Lachain.ConsensusTest
             {
                 _broadcasters[i].InternalRequest(new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
                     _resultInterceptors[i].Id, (_broadcasts[i].Id as ReliableBroadcastId)!,
-                    i == Sender ? _testShare : null
+                    i == Sender ? _testShare[i] : null
                 ));
             }
 
@@ -266,7 +322,9 @@ namespace Lachain.ConsensusTest
                 // Check true share only for NOT silent players
                 if (!silentId.Contains(i))
                 {
-                    Assert.AreEqual(_testShare, _resultInterceptors[i].Result);
+                    Assert.AreEqual(1, _resultInterceptors[i].ResultSet);
+                    Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                    Assert.AreEqual(_testShare[Sender], _resultInterceptors[i].Result[0]);
                 }
             }
 
@@ -370,8 +428,8 @@ namespace Lachain.ConsensusTest
         [Repeat(5)]
         public void TestNSenders_FullRandom()
         {
-            var n = _rnd.Next(10);
-            var f = _rnd.Next((n - 1) / 3 + 1);
+            var n = _rnd.Next(4, 10);
+            var f = _rnd.Next(1, (n - 1) / 3 + 1);
             var mode = _rnd.SelectRandom(Enum.GetValues(typeof(DeliveryServiceMode)).Cast<DeliveryServiceMode>());
             var prob = _rnd.NextDouble();
             RunNSenders(n, f, mode, prob);

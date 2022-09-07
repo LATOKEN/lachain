@@ -133,9 +133,10 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_acs[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol {i} has emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(n, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(n, _resultInterceptors[i].Result[0].Count);
 
-                outputs.Add(_resultInterceptors[i].Result);
+                outputs.Add(_resultInterceptors[i].Result[0]);
             }
 
             CheckOutput(n, f, inputs.ToArray(), outputs.ToArray());
