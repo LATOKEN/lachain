@@ -143,6 +143,8 @@ namespace Lachain.Core.Consensus
 
         private bool IsEraNearFuture(long era, long currentEra)
         {
+            // allow message if consensus has not started yet.
+            if (currentEra == -1) return true;
             long allowedEra = 5;
             if (era < currentEra) return false;
             if (era - currentEra <= allowedEra) return true;
