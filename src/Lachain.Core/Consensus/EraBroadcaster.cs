@@ -201,17 +201,20 @@ namespace Lachain.Core.Consensus
             {
                 if (message.External)
                 {
-                    var protocol = GetProtocolById(protocolId);
-                    if (protocol is null)
+                    IConsensusProtocol? protocol;
+                    // lock before getting protocol, otherwise protocol can be created in the meantime
+                    // and this particular message will never be delivered
+                    lock (_postponedMessages)
                     {
-                        lock (_postponedMessages)
+                        protocol = GetProtocolById(protocolId);
+                        if (protocol is null)
                         {
                             _postponedMessages
                                 .PutIfAbsent(protocolId, new List<MessageEnvelope>())
                                 .Add(message);
                         }
                     }
-                    else protocol.ReceiveMessage(message);
+                    if (!(protocol is null)) protocol.ReceiveMessage(message);
                 }
                 else Logger.LogWarning("Internal message should not be here");
             }
