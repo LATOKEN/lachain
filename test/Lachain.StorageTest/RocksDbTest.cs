@@ -116,16 +116,16 @@ namespace Lachain.StorageTest
             prefix[1] = 3;
             for (int iter = 0 ; iter < test; iter++)
             {
-                var bytes = TestUtils.GetRandomValue(8);
+                var bytes = TestUtils.GetRandomBytes(8);
                 var num = BitConverter.ToUInt64(bytes);
                 Assert.AreEqual(bytes, UInt64Utils.ToBytes(num));
                 keys.Add(num);
                 var key = BuildPrefix(prefix, num);
-                var value = TestUtils.GetRandomValue();
+                var value = TestUtils.GetRandomBytes();
                 if (values.Count > 0)
                 {
                     while (value.SequenceEqual(values.Last().Item2))
-                        value = TestUtils.GetRandomValue(1);
+                        value = TestUtils.GetRandomBytes(1);
                 }
                 Save(key, value);
                 values.Add((num,value));
@@ -288,8 +288,8 @@ namespace Lachain.StorageTest
                     if (j == noOfPrefix - 1) prefix[1] = 255;
                     for (int iter = 0 ; iter < noOfTest; iter++)
                     {
-                        var bytes = TestUtils.GetRandomValue(8);
-                        var value = TestUtils.GetRandomValue();
+                        var bytes = TestUtils.GetRandomBytes(8);
+                        var value = TestUtils.GetRandomBytes();
                         keyValues.Add((BuildPrefix(prefix, bytes), value));
                         prefixKeyValues.Add((prefix, (BitConverter.ToUInt64(bytes), value)));
                     }
@@ -399,9 +399,9 @@ namespace Lachain.StorageTest
             var pairs = new List<((ulong, UInt256), byte[])>();
             for (int iter = 0; iter < idCount; iter++)
             {
-                var id = BitConverter.ToUInt64(TestUtils.GetRandomValue(8));
-                var hash = TestUtils.GetRandomValue(32).ToUInt256();
-                var value = TestUtils.GetRandomValue();
+                var id = BitConverter.ToUInt64(TestUtils.GetRandomBytes(8));
+                var hash = TestUtils.GetRandomBytes(32).ToUInt256();
+                var value = TestUtils.GetRandomBytes();
                 pairs.Add(((id, hash), value));
             }
 
@@ -481,9 +481,9 @@ namespace Lachain.StorageTest
             var pairs = new List<((ulong, UInt256), byte[])>();
             for (int iter = 0; iter < idCount; iter++)
             {
-                var id = BitConverter.ToUInt64(TestUtils.GetRandomValue(8));
-                var hash = TestUtils.GetRandomValue(32).ToUInt256();
-                var value = TestUtils.GetRandomValue();
+                var id = BitConverter.ToUInt64(TestUtils.GetRandomBytes(8));
+                var hash = TestUtils.GetRandomBytes(32).ToUInt256();
+                var value = TestUtils.GetRandomBytes();
                 pairs.Add(((id, hash), value));
             }
 
@@ -820,14 +820,14 @@ namespace Lachain.StorageTest
             var prevPrefix = new byte[0];
             for (int i = 0 ; i < noOfPrefix; i++)
             {
-                var prefix = TestUtils.GetRandomValue(2);
+                var prefix = TestUtils.GetRandomBytes(2);
                 while (prefix.SequenceEqual(prevPrefix))
-                    prefix = TestUtils.GetRandomValue(2);
+                    prefix = TestUtils.GetRandomBytes(2);
                 prevPrefix = prefix;
                 for (int iter = 0; iter < noOfTest; iter++)
                 {
-                    var bytes = TestUtils.GetRandomValue(8);
-                    var value = TestUtils.GetRandomValue();
+                    var bytes = TestUtils.GetRandomBytes(8);
+                    var value = TestUtils.GetRandomBytes();
                     var num = BitConverter.ToUInt64(bytes);
                     if(returnData)
                         prefixKeyValues.Add((prefix, (num, value)));
