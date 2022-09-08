@@ -8,6 +8,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Network;
@@ -145,8 +146,8 @@ namespace Lachain.Core.Consensus
         {
             // allow message if consensus has not started yet.
             if (currentEra == -1) return true;
-            long allowedEra = 5;
             if (era < currentEra) return false;
+            long allowedEra = 2 * (long) StakingContract.CycleDuration;
             if (era - currentEra <= allowedEra) return true;
             return false;
         }
