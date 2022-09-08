@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
@@ -70,6 +71,7 @@ namespace Lachain.ConsensusTest
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void ReceiveMessage(MessageEnvelope message)
         {
             if (message.External || !(message.InternalMessage is ProtocolResult<TId, TResult> result)) return;
