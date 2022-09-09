@@ -8,6 +8,7 @@ using Lachain.Consensus.Messages;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Network;
@@ -143,8 +144,12 @@ namespace Lachain.Core.Consensus
 
         private bool IsEraNearFuture(long era, long currentEra)
         {
-            long allowedEra = 5;
+            // allow message if consensus has not started yet.
+            if (currentEra == -1) return true;
             if (era < currentEra) return false;
+            // this ensures that the current node missed at least one full cycle
+            // and is not a validator for 'era'
+            long allowedEra = 2 * (long) StakingContract.CycleDuration;
             if (era - currentEra <= allowedEra) return true;
             return false;
         }
