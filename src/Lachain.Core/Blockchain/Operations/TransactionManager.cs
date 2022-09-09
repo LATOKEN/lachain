@@ -190,8 +190,6 @@ namespace Lachain.Core.Blockchain.Operations
                 return _transactionVerifier.VerifyTransactionImmediately(transaction, useNewChainId, cacheEnabled)
                     ? OperatingError.Ok
                     : OperatingError.InvalidSignature;
-
-            memoryUsed++;
             
             return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
