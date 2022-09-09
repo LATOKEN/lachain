@@ -147,6 +147,8 @@ namespace Lachain.Core.Consensus
             // allow message if consensus has not started yet.
             if (currentEra == -1) return true;
             if (era < currentEra) return false;
+            // this ensures that the current node missed at least one full cycle
+            // and is not a validator for 'era'
             long allowedEra = 2 * (long) StakingContract.CycleDuration;
             if (era - currentEra <= allowedEra) return true;
             return false;
