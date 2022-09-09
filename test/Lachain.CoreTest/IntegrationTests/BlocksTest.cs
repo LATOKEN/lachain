@@ -270,7 +270,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _blockManager.TryBuildGenesisBlock();
             var startTime = TimeUtils.CurrentTimeMillis();
             int blockCount = 10;
-            int txCount = 1000;
+            int txCount = 100;
             AddSeveralBlocks(blockCount, txCount);
             var timePassed = TimeUtils.CurrentTimeMillis() - startTime;
             Logger.LogInformation($"time passed without tx verifier: {timePassed} ms");
