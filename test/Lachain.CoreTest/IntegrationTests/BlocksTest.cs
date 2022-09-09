@@ -265,7 +265,6 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
-        [Repeat(10)]
         public void Test_TxVerifierPerformanceCompare()
         {
             _blockManager.TryBuildGenesisBlock();
