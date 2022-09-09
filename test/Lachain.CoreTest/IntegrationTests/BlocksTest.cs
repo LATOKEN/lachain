@@ -265,20 +265,32 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        [Repeat(10)]
         public void Test_TxVerifierPerformanceCompare()
         {
             _blockManager.TryBuildGenesisBlock();
-            var startTime = TimeUtils.CurrentTimeMillis();
+            _txVerifier.Start();
             int blockCount = 10;
             int txCount = 100;
+            var startTime = TimeUtils.CurrentTimeMillis();
             AddSeveralBlocks(blockCount, txCount);
             var timePassed = TimeUtils.CurrentTimeMillis() - startTime;
             Logger.LogInformation($"time passed without tx verifier: {timePassed} ms");
-            _txVerifier.Start();
+            
             startTime = TimeUtils.CurrentTimeMillis();
             AddSeveralBlocks(blockCount, txCount, true);
             var timePassedWithTxVerifier = TimeUtils.CurrentTimeMillis() - startTime;
             Logger.LogInformation($"time passed with tx verifier: {timePassedWithTxVerifier} ms");
+            
+            startTime = TimeUtils.CurrentTimeMillis();
+            AddSeveralBlocks(blockCount, txCount, true);
+            timePassedWithTxVerifier += TimeUtils.CurrentTimeMillis() - startTime;
+            Logger.LogInformation($"time passed with tx verifier: {timePassedWithTxVerifier} ms");
+
+            startTime = TimeUtils.CurrentTimeMillis();
+            AddSeveralBlocks(blockCount, txCount);
+            timePassed += TimeUtils.CurrentTimeMillis() - startTime;
+            Logger.LogInformation($"time passed without tx verifier: {timePassed} ms");
             Logger.LogInformation($"tx verifier is efficient? {timePassedWithTxVerifier < timePassed}");
         }
 
