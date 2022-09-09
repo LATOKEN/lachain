@@ -13,7 +13,7 @@ namespace Lachain.ConsensusTest
     [TestFixture]
     public class BinaryAgreementTest
     {
-        private readonly Random _rnd = new Random();
+        private readonly Random _rnd = new Random((int) TimeUtils.CurrentTimeMillis());
         private DeliveryService _deliveryService = null!;
         private IConsensusProtocol[] _broadcasts = null!;
         private IConsensusBroadcaster[] _broadcasters = null!;
@@ -87,15 +87,16 @@ namespace Lachain.ConsensusTest
                     _resultInterceptors[i].ResultSet, 1,
                     $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}"
                 );
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
             }
 
             bool? res = null;
             for (var i = 0; i < n; ++i)
             {
                 if (_deliveryService.MutedPlayers.Contains(i)) continue;
-                var ans = _resultInterceptors[i].Result;
+                var ans = _resultInterceptors[i].Result[0];
                 res ??= ans;
-                Assert.AreEqual(res, _resultInterceptors[i].Result);
+                Assert.AreEqual(res, _resultInterceptors[i].Result[0]);
             }
 
             Assert.IsNotNull(res);
@@ -206,7 +207,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(true, _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(true, _resultInterceptors[i].Result[0]);
             }
         }
 
@@ -234,7 +236,8 @@ namespace Lachain.ConsensusTest
             {
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1,
                     $"protocol has {i} emitted result not once but {_resultInterceptors[i].ResultSet}");
-                Assert.AreEqual(false, _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(false, _resultInterceptors[i].Result[0]);
             }
         }
     }
