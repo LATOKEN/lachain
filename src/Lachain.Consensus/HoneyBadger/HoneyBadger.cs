@@ -147,9 +147,21 @@ namespace Lachain.Consensus.HoneyBadger
                         if (Wallet.GetTpkeVerificationKey(share.Id) is null)
                             _decryptedShares[share.Id].Clear();
                         else
+                        {
+                            var shares = _decryptedShares[share.Id].ToList();
                             _decryptedShares[share.Id] = _decryptedShares[share.Id]
                                 .Where(ps => Wallet.GetTpkeVerificationKey(ps.DecryptorId)!.VerifyShare(share, ps))
                                 .ToHashSet();
+                            var ids = _decryptedShares[share.Id].Select(share => share.DecryptorId).ToList();
+                            foreach (var dShare in shares)
+                            {
+                                if (!ids.Contains(dShare.DecryptorId))
+                                {
+                                    Logger.LogInformation($"decrypted share {share.Id} with decryptor id {dShare.DecryptorId} skipped"
+                                        + $"for verification failed");
+                                }
+                            }
+                        }
                     }
                 }
 
