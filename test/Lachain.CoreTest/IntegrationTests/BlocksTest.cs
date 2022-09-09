@@ -21,6 +21,7 @@ using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using Lachain.Crypto.Misc;
+using Lachain.Logger;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -34,6 +35,7 @@ namespace Lachain.CoreTest.IntegrationTests
     [TestFixture]
     public class BlocksTest
     {
+        private static readonly ILogger<BlocksTest> Logger = LoggerFactory.GetLoggerForClass<BlocksTest>();
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
         private static readonly ITransactionSigner Signer = new TransactionSigner();
 
@@ -42,6 +44,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private IStateManager _stateManager = null!;
         private IPrivateWallet _wallet = null!;
         private IConfigManager _configManager = null!;
+        private ITransactionVerifier _txVerifier = null!;
         private IContainer? _container;
 
         public BlocksTest()
@@ -78,6 +81,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _wallet = _container.Resolve<IPrivateWallet>();
             _transactionPool = _container.Resolve<ITransactionPool>();
             _configManager = _container.Resolve<IConfigManager>();
+            _txVerifier = _container.Resolve<ITransactionVerifier>();
 
             // set chainId from config
             if (TransactionUtils.ChainId(false) == 0)
@@ -258,6 +262,106 @@ namespace Lachain.CoreTest.IntegrationTests
 
             result = EmulateBlock(block);
             Assert.AreEqual(OperatingError.InvalidMultisig, result);
+        }
+
+        [Test]
+        public void Test_TxVerifierPerformanceCompare()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            var startTime = TimeUtils.CurrentTimeMillis();
+            int blockCount = 10;
+            int txCount = 1000;
+            AddSeveralBlocks(blockCount, txCount);
+            var timePassed = TimeUtils.CurrentTimeMillis() - startTime;
+            Logger.LogInformation($"time passed without tx verifier: {timePassed} ms");
+            _txVerifier.Start();
+            startTime = TimeUtils.CurrentTimeMillis();
+            AddSeveralBlocks(blockCount, txCount, true);
+            var timePassedWithTxVerifier = TimeUtils.CurrentTimeMillis() - startTime;
+            Logger.LogInformation($"time passed with tx verifier: {timePassedWithTxVerifier} ms");
+            Logger.LogInformation($"tx verifier is efficient? {timePassedWithTxVerifier < timePassed}");
+        }
+
+        private void AddSeveralBlocks(int blockCount, int txCount, bool useTxVerifier = false)
+        {
+            var currentHeight = _blockManager.GetHeight();
+            var persistedTx = 0;
+            for (var iter = 0; iter < blockCount; iter++)
+            {
+                var topUpReceipts = new List<TransactionReceipt>();
+                var randomReceipts = new List<TransactionReceipt>();
+                var coverTxFeeAmount = Money.Parse("0.0000000001");
+                for (var i = 0; i < txCount; i++)
+                {
+                    var tx = TestUtils.GetCustomTransaction("0", "0.000000000000000001", HardforkHeights.IsHardfork_9Active(currentHeight + 2));
+                    randomReceipts.Add(tx);
+                    topUpReceipts.Add(TopUpBalanceTx(tx.Transaction.From,
+                        (tx.Transaction.Value.ToMoney() + coverTxFeeAmount).ToUInt256(), i, 
+                        HardforkHeights.IsHardfork_9Active(currentHeight + 1)));
+                }
+
+                bool topUpSucces = true;
+                int txNo = 0;
+                foreach (var tx in topUpReceipts)
+                {
+                    var added = _transactionPool.Add(tx);
+                    if (added != OperatingError.UnsupportedTransaction && added != OperatingError.Ok)
+                    {
+                        Assert.That(false, $"top up tx not added to pool {added}, for block {currentHeight}, tx {txNo}");
+                    }
+                    if (added == OperatingError.UnsupportedTransaction)
+                    {
+                        topUpSucces = false;
+                        break;
+                    }
+                    txNo++;
+                }
+
+                var takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
+                if (useTxVerifier) _txVerifier.VerifyTransactions(takenTxes, HardforkHeights.IsHardfork_9Active(currentHeight + 1));
+                var block = BuildNextBlock(takenTxes.ToArray());
+                var result = ExecuteBlock(block, takenTxes.ToArray());
+                Assert.AreEqual(result, OperatingError.Ok);
+                var executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
+                if (topUpSucces) Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
+                else Assert.AreEqual(executedBlock!.TransactionHashes.Count, 0);
+                currentHeight++;
+
+                foreach (var tx in executedBlock.TransactionHashes)
+                {
+                    var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx);
+                    if (!(receipt is null) && receipt.Status == TransactionStatus.Executed)
+                        persistedTx++;
+                }
+
+                if (topUpSucces)
+                {
+                    foreach (var tx in randomReceipts)
+                    {
+                        var added = _transactionPool.Add(tx);
+                        Assert.AreEqual(OperatingError.Ok, added);
+                    }
+                }
+
+                takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
+                if (useTxVerifier) _txVerifier.VerifyTransactions(takenTxes, HardforkHeights.IsHardfork_9Active(currentHeight + 1));
+                block = BuildNextBlock(takenTxes.ToArray());
+                result = ExecuteBlock(block, takenTxes.ToArray());
+                Assert.AreEqual(result, OperatingError.Ok);
+                executedBlock = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(block.Header.Index);
+                if (topUpSucces) Assert.AreEqual(executedBlock!.TransactionHashes.Count, takenTxes.Count);
+                else Assert.AreEqual(executedBlock!.TransactionHashes.Count, 0);
+                currentHeight++;
+
+                foreach (var tx in executedBlock.TransactionHashes)
+                {
+                    var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx);
+                    if (!(receipt is null) && receipt.Status == TransactionStatus.Executed)
+                        persistedTx++;
+                }
+            }
+
+            Logger.LogTrace($"Tx persisted {persistedTx} out of {blockCount * 20}");
         }
 
         public void ExecuteTxesInSeveralBlocks(List<TransactionReceipt> txes)
