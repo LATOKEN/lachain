@@ -274,23 +274,22 @@ namespace Lachain.CoreTest.IntegrationTests
             var startTime = TimeUtils.CurrentTimeMillis();
             AddSeveralBlocks(blockCount, txCount);
             var timePassed = TimeUtils.CurrentTimeMillis() - startTime;
-            Logger.LogInformation($"time passed without tx verifier: {timePassed} ms");
             
             startTime = TimeUtils.CurrentTimeMillis();
             AddSeveralBlocks(blockCount, txCount, true);
             var timePassedWithTxVerifier = TimeUtils.CurrentTimeMillis() - startTime;
-            Logger.LogInformation($"time passed with tx verifier: {timePassedWithTxVerifier} ms");
             
             startTime = TimeUtils.CurrentTimeMillis();
             AddSeveralBlocks(blockCount, txCount, true);
             timePassedWithTxVerifier += TimeUtils.CurrentTimeMillis() - startTime;
-            Logger.LogInformation($"time passed with tx verifier: {timePassedWithTxVerifier} ms");
 
             startTime = TimeUtils.CurrentTimeMillis();
             AddSeveralBlocks(blockCount, txCount);
             timePassed += TimeUtils.CurrentTimeMillis() - startTime;
+            Logger.LogInformation($"time passed with tx verifier: {timePassedWithTxVerifier} ms");
             Logger.LogInformation($"time passed without tx verifier: {timePassed} ms");
             Logger.LogInformation($"tx verifier is efficient? {timePassedWithTxVerifier < timePassed}");
+            _txVerifier.Stop();
         }
 
         private void AddSeveralBlocks(int blockCount, int txCount, bool useTxVerifier = false)
