@@ -39,13 +39,6 @@ namespace Lachain.Core.Blockchain.Operations
         public event EventHandler<(TransactionReceipt, TransactionStatus)>? OnVerificationCompleted;
         public event EventHandler<object?>? OnVerificationStarted;
 
-        // for testing purpose only
-        private ulong txAdded = 0;
-        // for testing purpose only
-        public ulong TxAdded => txAdded;
-        // for testing purpose only
-        public int QueuedTxes => _transactionQueue.Count;
-
         public void VerifyTransaction(TransactionReceipt acceptedTransaction, ECDSAPublicKey publicKey, bool useNewChainId)
         {
             var address = _crypto.ComputeAddress(publicKey.EncodeCompressed()).ToUInt160();
@@ -81,14 +74,16 @@ namespace Lachain.Core.Blockchain.Operations
             // We verify transactions that are processed for current era
             // if, for some reason, transactions from previous era is not processed yet, no need to process them anymore
             OnVerificationStarted?.Invoke(this, null);
+            foreach (var tx in acceptedTransactions)
+            {
+                if (tx is null)
+                    throw new ArgumentNullException(nameof(tx));
+            }
+            
             lock (_queueNotEmpty)
             {
-                txAdded += (ulong) acceptedTransactions.Count;
                 foreach (var tx in acceptedTransactions)
                 {
-                    if (tx is null)
-                        throw new ArgumentNullException(nameof(tx));
-
                     _transactionQueue.Enqueue(new KeyValuePair<TransactionReceipt, bool>(tx, useNewChainId));
                 }
                 Monitor.PulseAll(_queueNotEmpty);

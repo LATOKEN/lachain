@@ -38,9 +38,6 @@ namespace Lachain.Core.Blockchain.Operations
         public event EventHandler<TransactionReceipt>? OnTransactionFailed;
         public event EventHandler<TransactionReceipt>? OnTransactionExecuted;
 
-        // for testing purpose only
-        private ulong memoryUsed = 0;
-
         public TransactionManager(
             ITransactionVerifier transactionVerifier,
             IContractRegisterer contractRegisterer,
@@ -58,18 +55,8 @@ namespace Lachain.Core.Blockchain.Operations
             transactionVerifier.OnVerificationStarted += OnVerificationStarted;
         }
 
-        // for testing purpose only
-        private void CheckUsage()
-        {
-            Logger.LogInformation($"Memory used: {memoryUsed}");
-            Logger.LogInformation($"Transaction added: {_transactionVerifier.TxAdded}");
-            Logger.LogInformation($"Current processed txes: {_processedTransactions.Count}");
-            Logger.LogInformation($"Queued txes: {_transactionVerifier.QueuedTxes}");
-        }
-
         public void ClearProcessedTransactions()
         {
-            CheckUsage();
             lock (_processedTransactions)
             {
                 _transactionVerifier.ClearQueue();

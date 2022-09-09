@@ -6,10 +6,6 @@ namespace Lachain.Core.Blockchain.Interface
 {
     public interface ITransactionVerifier
     {
-        // for testing purpose only
-        int QueuedTxes { get; }
-        // for testing purpose only
-        ulong TxAdded { get; }
         event EventHandler<(TransactionReceipt, TransactionStatus)>? OnVerificationCompleted;
         event EventHandler<object?>? OnVerificationStarted;
 

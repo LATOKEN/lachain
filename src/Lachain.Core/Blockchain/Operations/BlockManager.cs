@@ -251,8 +251,6 @@ namespace Lachain.Core.Blockchain.Operations
                     out var gasUsed,
                     out _
                 );
-                // for testing purpose only
-                Logger.LogInformation($"{removedTransactions.Count} txes failed in emulation");
                 // currentStateHash represents the stateHash just after the changes to the chain
                 // due to these transactions that were valid and executed
                 var currentStateHash = _stateManager.LastApprovedSnapshot.StateHash;
@@ -316,9 +314,8 @@ namespace Lachain.Core.Blockchain.Operations
                 var snapshotBefore = _stateManager.LastApprovedSnapshot;
                 var startTime = TimeUtils.CurrentTimeMillis();
                 var operatingError = _Execute(
-                    block, transactions, out var removed, out _, false, out var gasUsed, out var totalFee
+                    block, transactions, out _, out _, false, out var gasUsed, out var totalFee
                 );
-                Logger.LogInformation($"{removed.Count} txes failed in execution");
                 if (operatingError != OperatingError.Ok)
                 {
                     Logger.LogError($"Error occured while executing block: {operatingError}");

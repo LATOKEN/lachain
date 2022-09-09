@@ -73,6 +73,7 @@ namespace Lachain.Core.Blockchain.Pool
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnBlockPersisted(object? sender, Block block)
         {
             lock (_toDeleteRepo)
@@ -82,8 +83,6 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
                 _toDeleteRepo.Clear();
             }
-            // for testing purpose only
-            Logger.LogInformation("Finished OnBlockPersisted");
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -156,10 +155,6 @@ namespace Lachain.Core.Blockchain.Pool
             if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
             {
-                // for testing purpose only
-                Logger.LogInformation($"pool nonce: {GetNextNonceForAddress(receipt.Transaction.From)} state nonce: "
-                    + $"{_transactionManager.CalcNextTxNonce(receipt.Transaction.From)} for receipt: from "
-                    + $"{receipt.Transaction.From.ToHex()}, nonce {receipt.Transaction.Nonce}");
                 return OperatingError.InvalidNonce;
             }
 
@@ -332,13 +327,7 @@ namespace Lachain.Core.Blockchain.Pool
                     nextNonce.Add(address, _transactionManager.CalcNextTxNonce(address));
 
                 if(receipt.Transaction.Nonce != nextNonce[address] || !IsBalanceValid(receipt))
-                {
-                    // for testing purpose only
-                    Logger.LogInformation($"receipt nonce: {receipt.Transaction.Nonce}, next nonce: "
-                        + $"{nextNonce[address]} for receipt: from {receipt.Transaction.From.ToHex()}, "
-                        + $"nonce {receipt.Transaction.Nonce}");
                     toErase.Add(receipt);
-                }
                 else
                     nextNonce[address]++;
             }
