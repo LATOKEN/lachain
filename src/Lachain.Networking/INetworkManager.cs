@@ -9,7 +9,7 @@ namespace Lachain.Networking
         IMessageFactory MessageFactory { get; }
         void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, bool priorityMessage);
         void Start();
-        void BroadcastLocalTransaction(List<TransactionReceipt> txes);
+        void BroadcastLocalTransaction(TransactionReceipt receipt);
         void AdvanceEra(ulong era);
         Node LocalNode { get; }
 
