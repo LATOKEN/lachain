@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
@@ -32,9 +31,6 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly INonceCalculator _nonceCalculator;
         private readonly IStateManager _stateManager;
         private readonly ITransactionHashTrackerByNonce _transactionHashTracker;
-        private readonly Thread _poolSync;
-        private bool _running = false;
-        private readonly Queue<TransactionReceipt> _receiptToSync = new Queue<TransactionReceipt>();
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
@@ -54,7 +50,7 @@ namespace Lachain.Core.Blockchain.Pool
         private ulong _lastSanitized = 0;
         private ISet<TransactionReceipt> _transactionsQueue;
 
-        public event EventHandler<List<TransactionReceipt>>? TransactionAdded;
+        public event EventHandler<TransactionReceipt>? TransactionAdded;
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
         public TransactionPool(
@@ -75,61 +71,8 @@ namespace Lachain.Core.Blockchain.Pool
             _transactionsQueue = new HashSet<TransactionReceipt>();
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
-            _poolSync = new Thread(SyncPool);
-        }
-
-        public void StartSync()
-        {
-            if (_running)
-                return;
-            
-            _poolSync.Start();
-        }
-
-        private void SyncPool()
-        {
-            const int giveOthersSomeTime = 500;
-            _running = true;
-            while (_running)
-            {
-                try
-                {
-                    var receipts = new List<TransactionReceipt>();
-                    lock (_receiptToSync)
-                    {
-                        while (_receiptToSync.Count == 0)
-                            Monitor.Wait(_receiptToSync);
-                        
-                        while (_receiptToSync.Count > 0)
-                        {
-                            var receipt = _receiptToSync.Dequeue();
-                            receipts.Add(receipt);
-                        }
-                    }
-
-                    if (receipts.Count > 0)
-                    {
-                        TransactionAdded?.Invoke(this, receipts);
-                        Thread.Sleep(giveOthersSomeTime);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    Logger.LogError($"Failed to sync transactions: {exception}");
-                }
-            }
-        }
-
-        private void AddTxToSync(TransactionReceipt tx)
-        {
-            lock (_receiptToSync)
-            {
-                _receiptToSync.Enqueue(tx);
-                Monitor.PulseAll(_receiptToSync);
-            }
         }
         
-        [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnBlockPersisted(object? sender, Block block)
         {
             lock (_toDeleteRepo)
@@ -314,7 +257,7 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
             }
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
-            if (notify) AddTxToSync(receipt);
+            if (notify) TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
         private bool IsGovernanceTx(TransactionReceipt receipt)
@@ -383,9 +326,7 @@ namespace Lachain.Core.Blockchain.Pool
                     nextNonce.Add(address, _transactionManager.CalcNextTxNonce(address));
 
                 if(receipt.Transaction.Nonce != nextNonce[address] || !IsBalanceValid(receipt))
-                {
                     toErase.Add(receipt);
-                }
                 else
                     nextNonce[address]++;
             }
@@ -401,10 +342,10 @@ namespace Lachain.Core.Blockchain.Pool
                 }
             }
 
-            if (toErase.Count > 0)
+            if (wasTransactionsQueue != _transactionsQueue.Count)
             {
                 Logger.LogTrace(
-                    $"Sanitized mempool; dropped {toErase.Count} txs"
+                    $"Sanitized mempool; dropped {wasTransactionsQueue - _transactionsQueue.Count} txs"
                 );
             }
 
@@ -620,12 +561,6 @@ namespace Lachain.Core.Blockchain.Pool
         private ulong BlockHeight()
         {
             return _lastSanitized;
-        }
-
-        public void Stop()
-        {
-            _running = false;
-            _poolSync.Join();
         }
     }
 }
