@@ -72,13 +72,27 @@ namespace Lachain.Core.Network
         {
             lock (_txLock)
             {
-                var txs = transactions.OrderBy(tx => tx, new ReceiptComparer()).ToArray();
+                var txs = transactions.ToArray();
                 Logger.LogTrace($"Received {txs.Length} transactions from peer {publicKey.ToHex()}");
                 var persisted = 0u;
                 foreach (var tx in txs)
                 {
-                    // transaction will be verified in Pool
-                    var error = _transactionPool.Add(tx, false);
+                    if (tx.Signature.IsZero())
+                    {
+                        Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
+                        if (_transactionPool.Add(tx, false) == OperatingError.Ok)
+                            persisted++;
+                        continue;
+                    }
+
+                    var error = _transactionManager.Verify(tx, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
+                    if (error != OperatingError.Ok)
+                    {
+                        Logger.LogTrace($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
+                        continue;
+                    }
+
+                    error = _transactionPool.Add(tx, false);
                     if (error == OperatingError.Ok)
                         persisted++;
                     else
