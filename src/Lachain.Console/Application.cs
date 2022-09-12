@@ -175,7 +175,6 @@ namespace Lachain.Console
             // pending transactions are restored from pool repository to in-memory storage
             // it's important to restore pool after transactionVerifier and before blockSynchronizer starts
             transactionPool.Restore();
-            transactionPool.StartSync();
 
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");
