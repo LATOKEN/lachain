@@ -98,7 +98,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool);
 
             _transactionApiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
-                _transactionPool, _contractRegisterer, _privateWallet);
+                _transactionPool, _contractRegisterer, _privateWallet, _blockManager);
             
             _blockManager.TryBuildGenesisBlock();
 
