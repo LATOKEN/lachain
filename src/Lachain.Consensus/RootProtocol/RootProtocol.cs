@@ -22,6 +22,7 @@ namespace Lachain.Consensus.RootProtocol
         private readonly EcdsaKeyPair _keyPair;
         private readonly RootProtocolId _rootId;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private ValidatorAttendance? _validatorAttendance;
         private readonly ICrypto _crypto = CryptoProvider.GetCrypto();
         private IBlockProducer? _blockProducer;
         private ulong? _nonce;
@@ -90,6 +91,9 @@ namespace Lachain.Consensus.RootProtocol
                 var verified = false;
                 try
                 {
+                    var index = message.SignedHeaderMessage.Header.Index;
+                    if (index != (ulong) Id.Era)
+                        throw new Exception($"Invalid header index {index} for era {Id.Era}");
                     verified = _crypto.VerifySignatureHashed(
                         signedHeaderMessage.Header.Keccak().ToBytes(),
                         signedHeaderMessage.Signature.Encode(),
@@ -130,7 +134,6 @@ namespace Lachain.Consensus.RootProtocol
                     var validatorAttendance = GetOrCreateValidatorAttendance(message.SignedHeaderMessage.Header.Index);
                     validatorAttendance!.IncrementAttendanceForCycle(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(),
                         message.SignedHeaderMessage.Header.Index / _cycleDuration);
-                    _validatorAttendanceRepository.SaveState(validatorAttendance.ToBytes());
                 }
                 else
                 {
@@ -296,6 +299,8 @@ namespace Lachain.Consensus.RootProtocol
             try
             {
                 _blockProducer.ProduceBlock(_receipts, _header, _multiSig);
+                _validatorAttendanceRepository.SaveState(
+                    _validatorAttendance is null ? Array.Empty<byte>() : _validatorAttendance.ToBytes());
             }
             catch (Exception e)
             {
@@ -330,10 +335,18 @@ namespace Lachain.Consensus.RootProtocol
 
         private ValidatorAttendance? GetOrCreateValidatorAttendance(ulong headerIndex)
         {
+            if (!(_validatorAttendance is null)) return _validatorAttendance;
             var bytes = _validatorAttendanceRepository.LoadState();
-            if (bytes is null || bytes.Length == 0) return new ValidatorAttendance(headerIndex / _cycleDuration);
-            return ValidatorAttendance.FromBytes(bytes, headerIndex / _cycleDuration,
-                headerIndex % _cycleDuration >= _cycleDuration / 10);
+            if (bytes is null || bytes.Length == 0)
+            {
+                _validatorAttendance = new ValidatorAttendance(headerIndex / _cycleDuration);
+            }
+            else
+            {
+                _validatorAttendance = ValidatorAttendance.FromBytes(bytes, headerIndex / _cycleDuration, 
+                        headerIndex % _cycleDuration >= _cycleDuration / 10);
+            }
+            return _validatorAttendance;
         }
     }
 }

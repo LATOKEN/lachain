@@ -388,7 +388,6 @@ namespace Lachain.Core.ValidatorStatus
                 publicKeys,
                 attendances
             );
-            _validatorAttendanceRepository.SaveState(attendanceData.ToBytes());
             AddTxToPool(tx);
         }
 
@@ -480,9 +479,9 @@ namespace Lachain.Core.ValidatorStatus
         {
             var bytes = _validatorAttendanceRepository.LoadState();
             if (bytes is null || bytes.Length == 0) return null;
-            var cycle = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() / StakingContract.CycleDuration;
-            var indexInCycle = _stateManager.CurrentSnapshot.Blocks.GetTotalBlockHeight() %
-                               StakingContract.CycleDuration;
+            var block  = _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight();
+            var cycle = block / StakingContract.CycleDuration;
+            var indexInCycle = block % StakingContract.CycleDuration;
             return ValidatorAttendance.FromBytes(bytes, cycle,
                 indexInCycle >= StakingContract.AttendanceDetectionDuration);
         }
