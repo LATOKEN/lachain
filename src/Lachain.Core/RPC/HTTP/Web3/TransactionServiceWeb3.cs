@@ -556,7 +556,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             Logger.LogInformation($"lastBlockGasUsed:: {lastBlockGasUsed}");
             Logger.LogInformation($"latestBlockHash:: {latestBlockHash}");
 
-            if (lastBlockGasUsed > gasLimit / 10)
+            if (!(lastBlockGasUsed is null) && lastBlockGasUsed > gasLimit / 10)
             {
                 return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
 
