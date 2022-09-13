@@ -802,6 +802,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             }
 
             return gasUsed;
+        }
 
         private bool IsExecutionReverted(byte[]? returnResult, out string message)
         {
