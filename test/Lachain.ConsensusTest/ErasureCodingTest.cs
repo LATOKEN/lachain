@@ -17,7 +17,7 @@ namespace Lachain.ConsensusTest
             const int nShards = 4, nErasures = 2;
             var rbc = new ReliableBroadcast(
                 new ReliableBroadcastId(0, 0),
-                new PublicConsensusKeySet(4, 1, null!, null!, Enumerable.Empty<ECDSAPublicKey>()),
+                new PublicConsensusKeySet(4, 1, null!, new Crypto.TPKE.PublicKey[]{},null!, Enumerable.Empty<ECDSAPublicKey>()),
                 null!
             );
             var data = Enumerable.Range(0, 100)

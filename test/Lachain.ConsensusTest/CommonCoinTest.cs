@@ -29,7 +29,7 @@ namespace Lachain.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[n];
             _resultInterceptors = new ProtocolInvoker<CoinId, CoinResult>[n];
             _wallets = new IPrivateConsensusKeySet[n];
-            _publicKeys = new PublicConsensusKeySet(n, f, null!, pubKeys, Enumerable.Empty<ECDSAPublicKey>());
+            _publicKeys = new PublicConsensusKeySet(n, f, null!,new Crypto.TPKE.PublicKey[]{}, pubKeys, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < n; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<CoinId, CoinResult>();
@@ -58,7 +58,8 @@ namespace Lachain.ConsensusTest
             {
                 Assert.IsTrue(_coins[i].Terminated, $"protocol {i} did not terminate");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                results[i] = _resultInterceptors[i].Result;
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                results[i] = _resultInterceptors[i].Result[0];
             }
 
             Assert.AreEqual(1, results.Distinct().Count(), "all guys should get same coin");

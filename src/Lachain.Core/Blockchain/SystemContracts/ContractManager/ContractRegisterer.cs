@@ -7,6 +7,7 @@ using System.Reflection;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager.Attributes;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -15,6 +16,9 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
 {
     public class ContractRegisterer : IContractRegisterer
     {
+        private static readonly ILogger<ContractRegisterer> Logger =
+            LoggerFactory.GetLoggerForClass<ContractRegisterer>();
+
         private readonly ConcurrentDictionary<UInt160, Type> _contracts
             = new ConcurrentDictionary<UInt160, Type>();
 
@@ -63,25 +67,53 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
             return _contracts.TryGetValue(address, out var result) ? result : null;
         }
 
-        public SystemContractCall? DecodeContract(InvocationContext context, UInt160 address, byte[] input)
+        public string? GetMethodName(UInt160 address, byte[] input)
         {
-            if (input.Length < 4) return null;
-            if (!_contracts.TryGetValue(address, out var contract) ||
-                !_signatures.TryGetValue(address, out var signatures)
-            )
+            if (!_signatures.TryGetValue(address, out var signatures))
                 return null;
+            
             var signature = ContractEncoder.MethodSignatureAsInt(input);
             if (!signatures.TryGetValue(signature, out var tuple))
                 return null;
+                
+            var (methodName, _) = tuple;
+            return methodName;
+        }
+
+        public SystemContractCall? DecodeContract(InvocationContext context, UInt160 address, byte[] input)
+        {
+            if (input.Length < 4)
+            {
+                Logger.LogWarning("Input too small");
+                return null;
+            }
+
+            if (!_contracts.TryGetValue(address, out var contract) ||
+                !_signatures.TryGetValue(address, out var signatures)
+               )
+            {
+                Logger.LogWarning("Failed to get signatures");
+                return null;
+            }
+
+            var signature = ContractEncoder.MethodSignatureAsInt(input);
+            if (!signatures.TryGetValue(signature, out var tuple))
+            {
+                Logger.LogWarning("Failed to get method info");
+                return null;
+            }
+
             var (methodName, methodInfo) = tuple;
+            Logger.LogDebug($"Method {methodName}");
             var decoder = new ContractDecoder(input);
             var instance = Activator.CreateInstance(contract, context);
             try
             {
                 return new SystemContractCall(instance, methodInfo, decoder.Decode(methodName), address);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.LogWarning($"Exception {ex} while call construction");
                 return null;
             }
         }

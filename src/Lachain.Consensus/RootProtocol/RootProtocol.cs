@@ -30,6 +30,7 @@ namespace Lachain.Consensus.RootProtocol
         private MultiSig? _multiSig;
         private ulong _cycleDuration;
         private bool _useNewChainId;
+        private bool[] _receivedHeader;
 
         private readonly List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>> _signatures =
             new List<Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>>();
@@ -43,6 +44,11 @@ namespace Lachain.Consensus.RootProtocol
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _cycleDuration = cycleDuration;
             _useNewChainId = useNewChainId;
+            // _receivedHeader is used to check if a validator has sent valid SignedHeaderMessage.
+            // We should receive at most one valid SignedHeaderMessage from a validator
+            _receivedHeader = new bool[N];
+            for (int i = 0; i < N; i++)
+                _receivedHeader[i] = false;
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -78,7 +84,7 @@ namespace Lachain.Consensus.RootProtocol
                     Logger.LogWarning($"Header we have {_header}");
                     Logger.LogWarning($"Header we received {signedHeaderMessage.Header}");
                 }
-
+                
                 // Random message can raise exception like recover id in signature verification can be out of range or 
                 // public key cannot be serialized
                 var verified = false;
@@ -106,8 +112,10 @@ namespace Lachain.Consensus.RootProtocol
                         $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}"
                     );
                 }
-                else
+                else if (!_receivedHeader[idx])
                 {
+                    // received verified header from validator
+                    _receivedHeader[idx] = true;
                     Logger.LogTrace("Add signatures");
                     _lastMessage = "Add signatures";
                     _signatures.Add(new Tuple<BlockHeader, MultiSig.Types.SignatureByValidator>(
@@ -123,6 +131,13 @@ namespace Lachain.Consensus.RootProtocol
                     validatorAttendance!.IncrementAttendanceForCycle(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(),
                         message.SignedHeaderMessage.Header.Index / _cycleDuration);
                     _validatorAttendanceRepository.SaveState(validatorAttendance.ToBytes());
+                }
+                else
+                {
+                    // discard this header because already received a valid header from this validator
+                    var pubKey = Broadcaster.GetPublicKeyById(idx)!.ToHex();
+                    Logger.LogWarning($"Already received verified header from {idx} ({pubKey}). Validator {idx} " +
+                                      $"({pubKey}) tried to send SignedHeaderMessage more than once");
                 }
 
                 CheckSignatures();
@@ -206,7 +221,7 @@ namespace Lachain.Consensus.RootProtocol
             Logger.LogTrace("TrySignHeader");
             if (_receipts is null || _nonce is null || _blockProducer is null)
             {
-                Logger.LogTrace($"Not ready yet: _hasges {_receipts is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
+                Logger.LogTrace($"Not ready yet: _hashes {_receipts is null}, _nonce {_nonce is null}, _blockProducer {_blockProducer is null}");
                 return;
             }
 
@@ -260,7 +275,10 @@ namespace Lachain.Consensus.RootProtocol
                 .Aggregate((x, y) => x.Value > y.Value ? x : y);
             Logger.LogTrace($"bestHeader.Value {bestHeader.Value} Wallet.N {Wallet.N}  Wallet.F {Wallet.F}");
             if (bestHeader.Value < Wallet.N - Wallet.F) return;
-            Logger.LogTrace($"Received {bestHeader.Value} signatures for block header");
+            Logger.LogTrace(
+                $"Received {bestHeader.Value} signatures for block header: height: {bestHeader.Key.Index}, hash: " +
+                $"{bestHeader.Key.Keccak().ToHex()}. My block header height: {_header.Index}, hash: {_header.Keccak().ToHex()}." +
+                $" My header hash matches with bestheader hash: {_header.Keccak().Equals(bestHeader.Key.Keccak())}");
             _multiSig = new MultiSig {Quorum = (uint) (Wallet.N - Wallet.F)};
             _multiSig.Validators.AddRange(Wallet.EcdsaPublicKeySet);
             foreach (var (header, signature) in _signatures)

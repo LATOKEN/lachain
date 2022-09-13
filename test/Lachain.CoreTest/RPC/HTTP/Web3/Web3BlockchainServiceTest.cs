@@ -62,7 +62,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         private BlockchainServiceWeb3 _apiService = null!;
 
-        private IConfigManager _configManager = null!;        
+        private IConfigManager _configManager = null!;     
 
         [SetUp]
         public void Setup()
@@ -99,6 +99,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             _configManager = _container.Resolve<IConfigManager>();
             _consensusManager = _container.Resolve<IConsensusManager>();
+
             if (TransactionUtils.ChainId(false) == 0)
             {
                 var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;

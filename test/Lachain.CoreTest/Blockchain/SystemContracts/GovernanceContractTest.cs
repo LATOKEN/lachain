@@ -138,12 +138,12 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 ThresholdKeyring? keyring = keygen.TryGetKeys();
                 Assert.IsNotNull(keyring);
                 var input = ContractEncoder.Encode(GovernanceInterface.MethodKeygenConfirm, cycle, 
-                    keyring!.Value.TpkePublicKey.ToBytes(), 
+                    keyring!.Value.TpkePublicKey.ToBytes(),
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray());
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.GovernanceContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, keyring!.Value.TpkePublicKey.ToBytes(), 
+                Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, keyring!.Value.TpkePublicKey.ToBytes(),
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray(), frame));
                 // set keygen state
                 Assert.IsTrue(keygen.HandleConfirm(keyring!.Value.TpkePublicKey,  

@@ -94,6 +94,9 @@ namespace Lachain.Consensus
                 if (Terminated) return;
                 Logger.LogTrace($"{Id}: protocol is terminated");
                 Terminated = true;
+                // We can empty the _queue because the messages will no longer be processed
+                // This will free some memory in case of spam messages
+                _queue.Clear();
                 Monitor.Pulse(_queueLock);
             }
         }
@@ -148,8 +151,14 @@ namespace Lachain.Consensus
         {
             lock (_queueLock)
             {
-                if (Terminated){}
-            //        Logger.LogTrace($"{Id}: got message after termination"); 
+                if (Terminated)
+                {
+                    // we should return here instead of enqueueing messages
+                    // because once terminated, the messages are not being processed anymore
+                    // so the queue will just get large unnecessarily
+                    Monitor.Pulse(_queueLock);
+                    return;
+                }
                 _queue.Enqueue(message);
                 Monitor.Pulse(_queueLock);
             }

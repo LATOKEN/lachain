@@ -28,7 +28,7 @@ namespace Lachain.ConsensusTest
             _broadcasters = new IConsensusBroadcaster[n];
             _resultInterceptors = new ProtocolInvoker<BinaryBroadcastId, BoolSet>[n];
             _privateKeys = new IPrivateConsensusKeySet[n];
-            _publicKeys = new PublicConsensusKeySet(n, f, null!, null!, Enumerable.Empty<ECDSAPublicKey>());
+            _publicKeys = new PublicConsensusKeySet(n, f, null!, new Crypto.TPKE.PublicKey[]{},null!, Enumerable.Empty<ECDSAPublicKey>());
             for (var i = 0; i < n; ++i)
             {
                 _resultInterceptors[i] = new ProtocolInvoker<BinaryBroadcastId, BoolSet>();
@@ -82,7 +82,8 @@ namespace Lachain.ConsensusTest
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result[0]);
             }
         }
 
@@ -102,7 +103,8 @@ namespace Lachain.ConsensusTest
             {
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                Assert.AreEqual(new BoolSet(false), _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(new BoolSet(false), _resultInterceptors[i].Result[0]);
             }
         }
 
@@ -124,7 +126,8 @@ namespace Lachain.ConsensusTest
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
                 if (_broadcasts[i] is SilentProtocol<BinaryBroadcastId>) continue;
                 Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
-                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result[0]);
             }
         }
 
@@ -132,8 +135,8 @@ namespace Lachain.ConsensusTest
         [Repeat(10)]
         public void TestRandomValues()
         {
-            var n = _rnd.Next(1, 10);
-            var f = _rnd.Next((n - 1) / 3 + 1);
+            var n = _rnd.Next(4, 10);
+            var f = _rnd.Next(1, (n - 1) / 3 + 1);
             SetupSomeSilent(n, f);
 
             var inputs = new int[n];
@@ -159,7 +162,9 @@ namespace Lachain.ConsensusTest
                 received[i] = new SortedSet<int>();
 
                 Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
-                var values = _resultInterceptors[i].Result;
+                Assert.AreEqual(1, _resultInterceptors[i].ResultSet);
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                var values = _resultInterceptors[i].Result[0];
 
                 foreach (var b in values.Values())
                     received[i].Add(b ? 1 : 0);

@@ -20,15 +20,17 @@ namespace Lachain.Consensus.HoneyBadger
         private readonly EncryptedShare?[] _receivedShares;
         private readonly IRawShare?[] _shares;
         private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
+        private readonly bool[][] _receivedShareFrom;
         private readonly bool[] _taken;
         private ResultStatus _requested;
         private IRawShare? _rawShare;
         private EncryptedShare? _encryptedShare;
         private ISet<IRawShare>? _result;
         private bool _takenSet;
+        private bool _skipDecryptedShareValidation;
 
         public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet,
-            PrivateKey privateKey, IConsensusBroadcaster broadcaster)
+            PrivateKey privateKey, bool skipDecryptedShareValidation, IConsensusBroadcaster broadcaster)
             : base(wallet, honeyBadgerId, broadcaster)
         {
             _honeyBadgerId = honeyBadgerId;
@@ -43,6 +45,12 @@ namespace Lachain.Consensus.HoneyBadger
             _taken = new bool[N];
             _shares = new IRawShare[N];
             _requested = ResultStatus.NotRequested;
+            _skipDecryptedShareValidation = skipDecryptedShareValidation;
+            _receivedShareFrom = new bool[N][];
+            for (var iter = 0 ; iter < N ; iter++)
+            {
+                _receivedShareFrom[iter] = new bool[N];
+            }
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -128,6 +136,8 @@ namespace Lachain.Consensus.HoneyBadger
                 new ProtocolResult<HoneyBadgerId, ISet<IRawShare>>(_honeyBadgerId, _result));
         }
 
+        // TODO: (investigate) the share is comming from ReliableBroadcast and the shareId of the share should match the senderId
+        // of that ReliableBroadcast, otherwise we might replace one share with another in _receivedShares array
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
             Logger.LogTrace($"Common subset finished {result.From}");
@@ -136,6 +146,19 @@ namespace Lachain.Consensus.HoneyBadger
                 var dec = _privateKey.Decrypt(share);
                 _taken[share.Id] = true;
                 _receivedShares[share.Id] = share;
+                if (_decryptedShares[share.Id].Count > 0) // if we have any partially decrypted shares for this share - verify them
+                {
+                    if (!_skipDecryptedShareValidation)
+                    {
+                        if (Wallet.GetTpkeVerificationKey(share.Id) is null)
+                            _decryptedShares[share.Id].Clear();
+                        else
+                            _decryptedShares[share.Id] = _decryptedShares[share.Id]
+                                .Where(ps => Wallet.GetTpkeVerificationKey(ps.DecryptorId)!.VerifyShare(share, ps))
+                                .ToHashSet();
+                    }
+                }
+
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
                 Broadcaster.Broadcast(CreateDecryptedMessage(dec));
@@ -151,7 +174,7 @@ namespace Lachain.Consensus.HoneyBadger
             CheckResult();
         }
 
-        private ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)
+        protected virtual ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)
         {
             var message = new ConsensusMessage
             {
@@ -160,6 +183,8 @@ namespace Lachain.Consensus.HoneyBadger
             return message;
         }
 
+        // DecryptorId of the message should match the senderId, otherwise the message should be discarded
+        // because HoneyBadger does not accept two messages for same DecryptorId and shareId
         // We need to handle this message carefully like how about decoding a random message with random length
         // and the value of 'share.ShareId' needs to be checked. If it is out of range, it can throw exception
         private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg, int senderId)
@@ -167,14 +192,35 @@ namespace Lachain.Consensus.HoneyBadger
             PartiallyDecryptedShare? share = null;
             try
             {
+                // DecryptorId is basically the validator id, it tells us who decrypted the message, so it should be same
+                if (msg.DecryptorId != senderId)
+                    throw new Exception($"Validator {senderId} sends message with decryptor id {msg.DecryptorId}");
+                // same decrypted id more than once prevents full decrypt
+                if (_receivedShareFrom[msg.ShareId][msg.DecryptorId])
+                    throw new Exception($"validator {senderId} sent decrypted messsage for share {msg.ShareId} twice");
+
+                _receivedShareFrom[msg.ShareId][msg.DecryptorId] = true;
                 // Converting any random bytes to G1 is not possible
                 share = Wallet.TpkePublicKey.Decode(msg);
+                if (!(_receivedShares[share.ShareId] is null))
+                {
+                    if (!_skipDecryptedShareValidation)
+                    {
+                        if (Wallet.GetTpkeVerificationKey(share.DecryptorId) is null)
+                            throw new Exception("No verification key for this sender");
+                        if (!Wallet.GetTpkeVerificationKey(share.DecryptorId)!.VerifyShare(
+                                _receivedShares[share.ShareId]!, share))
+                            throw new Exception("Invalid share");
+                    }
+                }
+
                 _decryptedShares[share.ShareId].Add(share);
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
+                share = null;
                 var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
-                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey})");
+                Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey}), exception: {ex}");
             }
 
             if (!(share is null))
