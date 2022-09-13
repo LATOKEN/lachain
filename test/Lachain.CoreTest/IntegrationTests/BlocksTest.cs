@@ -265,6 +265,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        [Ignore("add long unit tests to separate test project")]
         public void Test_TxVerifierPerformanceCompare()
         {
             _blockManager.TryBuildGenesisBlock();
