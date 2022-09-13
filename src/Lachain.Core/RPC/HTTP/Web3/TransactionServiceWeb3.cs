@@ -555,11 +555,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var gasLimit = GasMetering.DefaultBlockGasLimit;
 
             var latestBlock = _blockManager.LatestBlock();
-            var previousBlockHash = latestBlock.Hash.ToHex();
-            var lastBlockGasUsed = GetGasUsed(previousBlockHash);
+            var latestBlockHash = latestBlock.Hash.ToHex();
+            var lastBlockGasUsed = GetGasUsed(latestBlockHash);
 
             Logger.LogInformation($"lastBlockGasUsed:: {lastBlockGasUsed}");
-            Logger.LogInformation($"previousBlockHash:: {previousBlockHash}");
+            Logger.LogInformation($"latestBlockHash:: {latestBlockHash}");
 
             if (IsGreater(lastBlockGasUsed, 10, gasLimit))
             {
