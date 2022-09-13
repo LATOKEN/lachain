@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Lachain.Crypto;
 using Lachain.Proto;
@@ -9,6 +10,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
     {
         public Crypto.TPKE.PrivateKey TpkePrivateKey;
         public Crypto.TPKE.PublicKey TpkePublicKey;
+        public List<Crypto.TPKE.PublicKey> TpkeVerificationPublicKeys;
         public Crypto.ThresholdSignature.PublicKeySet ThresholdSignaturePublicKeySet;
         public Crypto.ThresholdSignature.PrivateKeyShare ThresholdSignaturePrivateKey;
 

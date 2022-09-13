@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using AustinHarris.JsonRpc;
@@ -38,13 +40,27 @@ namespace Lachain.Core.RPC.HTTP
         private readonly List<string> _privateMethods = new List<string>
         {
             "validator_start",
-            // TODO: remove this comment after the working auth
-            //"validator_stop",
+            "validator_stop",
             "fe_sendTransaction",
             "deleteTransactionPoolRepository",
             "clearInMemoryPool",
             "eth_sendTransaction",
             "eth_signTransaction",
+            "fe_unlock",
+            "fe_changePassword", 
+            "fe_sendTransaction", 
+            "sendContract", 
+            "deployContract", 
+            "la_getStateByNumber", 
+            "la_getBlockRawByNumberBatch", 
+            "la_getAllTriesHash", 
+            "la_getNodeByHashBatch", 
+            "la_getChildrenByHashBatch", 
+            "la_getChildrenByVersionBatch",
+            "la_sendRawTransactionBatchParallel",
+            "la_sendRawTransactionBatch", 
+            "validator_start_with_stake",
+            
         };
 
         public void Stop()
@@ -179,43 +195,84 @@ namespace Lachain.Core.RPC.HTTP
             return true;
         }
 
-        private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
+        public static string SerializeParams(JToken? args)
         {
-            if(context.Request.IsLocal) return true;
-
-            if(_privateMethods.Contains(body["method"]!.ToString()))
+            if (args is null)
+                return "";
+            
+            string serializedParams = string.Empty;
+            if (args.Children().Any())
             {
-                if(string.IsNullOrEmpty(signature)) return false;
-                if(string.IsNullOrEmpty(timestamp)) return false;
-                // If unix timestamp diff is longer than 30 minutes, we dont handle it
-                if(!long.TryParse(timestamp.Trim(), out long unixTimestamp)) return false;
-                TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
-                if(timeSpan.TotalMinutes >= 30)
-                    return false;
-
-                // Serialize params (format: key1value1key2value2...)
-                string serializedParams = string.Empty;
-                if(body["params"] != null && !string.IsNullOrEmpty(body["params"]!.ToString()))
+                foreach (var child in args.Children())
                 {
-                    var paramsObject = (JObject)body["params"]!;
-                    if(paramsObject != null)
+                    if (child.Type == JTokenType.Property)
                     {
-                        foreach(var param in paramsObject)
-                        {
-                            serializedParams += param.Key + param.Value?.ToString();
-                        }
+                        var prop = child as JProperty;
+                        serializedParams += prop!.Name + SerializeParams(prop.Value);
+                    }
+                    else
+                    {
+                        serializedParams += SerializeParams(child);
                     }
                 }
+            }
+            else
+            {
+                serializedParams += args.ToString();
+            }
 
-                var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
-                var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
-                var messageHash = System.Security.Cryptography.SHA256.Create().ComputeHash(messageBytes);
+            return serializedParams;
+        }
 
-                var signatureBytes = signature.HexToBytes();
-                var publicKey = _apiKey!.HexToBytes();
+        private bool _CheckAuth(JObject body, HttpListenerContext context, string signature, string timestamp)
+        {
+            try
+            {
+                if(_privateMethods.Contains(body["method"]!.ToString()))
+                {
+                    if(string.IsNullOrEmpty(signature)) return false;
+                    if(string.IsNullOrEmpty(timestamp)) return false;
+                    // If unix timestamp diff is longer than 30 minutes, we dont handle it
+                    if(!long.TryParse(timestamp.Trim(), out long unixTimestamp)) return false;
+                    TimeSpan timeSpan = DateTimeOffset.Now.Subtract(DateTimeOffset.FromUnixTimeSeconds(unixTimestamp));
+                    if(timeSpan.TotalMinutes >= 30)
+                        return false;
 
-                var secp256K1 = new Secp256k1();
-                return secp256K1.Verify(signatureBytes, messageHash, publicKey);
+                    // Serialize params (format: key1value1key2value2...)
+                    string serializedParams = SerializeParams(body["params"] as JObject);
+
+                    var messageToSign = body["method"]!.ToString() + serializedParams + timestamp;
+                    var messageBytes = Encoding.UTF8.GetBytes(messageToSign);
+                    Logger.LogTrace($"Meesage to sign: {messageBytes.ToHex()}");
+                    var messageHash = Crypto.HashUtils.KeccakBytes(messageBytes);
+                    Logger.LogTrace($"Meesage hash: {messageHash.ToHex()}");
+                    
+                    Logger.LogTrace($"API public key: {_apiKey}");
+
+                    var secp256K1 = new Secp256k1();
+                    var sigBytes = signature.HexToBytes();
+                    if (sigBytes.Length != 65)
+                        throw new Exception("Invalid signature length");
+                    var parsedSig = new byte[65];
+                    var pk = new byte[64];
+                    var recId = sigBytes[64];
+                    if (recId < 0 || recId > 3)
+                        throw new Exception($"Bad signature,  invalid recId={recId}: : recId >= 0 && recId <= 3 ");
+                    if (!secp256K1.RecoverableSignatureParseCompact(parsedSig, sigBytes.Take(64).ToArray(), recId))
+                        throw new ArgumentException(nameof(signature));
+                    if (!secp256K1.Recover(pk, parsedSig, messageHash))
+                        throw new ArgumentException("Bad signature");
+                    var result = new byte[33];
+                    if (!secp256K1.PublicKeySerialize(result, pk, Flags.SECP256K1_EC_COMPRESSED))
+                        throw new Exception("Cannot serialize recovered public key: how did it happen?");
+                    Logger.LogTrace($"Recovered public key: {result.ToHex()}");
+                    return result.ToHex() == _apiKey!;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning($"RPC auth error: {e}");
+                return false;
             }
 
             return true;

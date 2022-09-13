@@ -221,9 +221,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         return _snapshotIndexer.GetSnapshotForBlock(blockNum);
 
                     }
-                    catch(Exception e)
+                    catch(Exception)
                     {
-                        throw new Exception("Block with " + tag + " doesn't exist.");
+                        throw new RpcException(RpcErrorCode.Error, $"snapshot for block {blockNum} doesn't exist.", null);
 
                     }
                 }

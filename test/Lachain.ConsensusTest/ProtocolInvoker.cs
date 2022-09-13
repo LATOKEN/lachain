@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
@@ -49,13 +51,13 @@ namespace Lachain.ConsensusTest
 
     public class ProtocolInvoker<TId, TResult> : IConsensusProtocol where TId : IProtocolIdentifier
     {
-        public TResult Result;
+        public List<TResult> Result = new List<TResult>();
 
         public int ResultSet;
         public IProtocolIdentifier Id { get; } = new InvokerId();
 
         private readonly object _queueLock = new object();
-        private readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
+        private static readonly ILogger<AbstractProtocol> _logger = LoggerFactory.GetLoggerForClass<AbstractProtocol>();
         public bool Terminated { get; private set; }
 
         public void Terminate()
@@ -69,12 +71,13 @@ namespace Lachain.ConsensusTest
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void ReceiveMessage(MessageEnvelope message)
         {
             if (message.External || !(message.InternalMessage is ProtocolResult<TId, TResult> result)) return;
             _logger.LogTrace($"{Id}: got result from {result.From}");
             ResultSet++;
-            Result = result.Result;
+            Result.Add(result.Result);
         }
 
         public void Start()
@@ -83,6 +86,11 @@ namespace Lachain.ConsensusTest
 
         public void WaitFinish()
         {
+        }
+
+        public List<TResult> GetResult()
+        {
+            return Result;
         }
 
         public bool WaitFinish(TimeSpan timeout)

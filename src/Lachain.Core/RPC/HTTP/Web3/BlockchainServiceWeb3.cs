@@ -1,26 +1,26 @@
 using System;
 using System.Linq;
 using AustinHarris.JsonRpc;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.BlockchainFilter;
+using Lachain.Core.Consensus;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
+using Lachain.Storage.Trie;
+using Lachain.Utility;
 using Lachain.Utility.JSON;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
-using Lachain.Core.Blockchain.Hardfork;
-using Lachain.Core.Blockchain.SystemContracts;
-using Lachain.Storage.Trie;
-using Lachain.Utility;
-using Lachain.Core.BlockchainFilter;
-using Lachain.Core.Consensus;
 
 
 namespace Lachain.Core.RPC.HTTP.Web3
@@ -551,8 +551,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
 
             if ((!(fromBlock is null) || !(toBlock is null)) && !(blockhash is null))
-                throw new Exception(
-                    "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed.");
+                throw new RpcException(
+                    RpcErrorCode.Error,
+                    "If blockHash is present in in the filter criteria, then neither fromBlock nor toBlock are allowed."
+                );
 
             ulong? start = _blockManager.GetHeight();
             if (!(fromBlock is null))
@@ -594,10 +596,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         addresses = BlockchainFilterUtils.GetAddresses(arrayAddr);
                         break;
                     case JValue valueAddr:
-                        addresses.Add(((string?)valueAddr ?? throw new Exception("Invalid address value")).HexToUInt160());
+                        addresses.Add(((string?)valueAddr ?? 
+                            throw new RpcException(RpcErrorCode.Error, "Invalid address value")).HexToUInt160());
                         break;
                     default:
-                        throw new Exception("Invalid address value");
+                        throw new RpcException(RpcErrorCode.Error, $"Invalid address value: {address}");
                 }
             }
 
@@ -710,6 +713,30 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 }
             }
             return protocols;
+        }
+
+        [JsonRpcMethod("la_getValidatorsAfterBlock")]
+        public JArray GetValidatorsAfterBlock(string blockTag)
+        {
+            if (blockTag == "pending")
+                blockTag = "latest"; // current validators are the validators after latest block
+            var blockNum = GetBlockNumberByTag(blockTag);
+            try
+            {
+                var validators = _snapshotIndexer.GetSnapshotForBlock(blockNum!.Value).Validators.GetValidatorsPublicKeys().ToArray();
+                var result = new JArray();
+                foreach (var publicKey in validators)
+                {
+                    result.Add(Web3DataFormatUtils.Web3Data(publicKey.EncodeCompressed()));
+                }
+                return result;
+            }
+            catch (Exception exception)
+            {
+                Logger.LogWarning($"Exception occured trying to get validators after block {blockNum!.Value}: {exception}");
+                return new JArray();
+            }
+            
         }
 
         private ulong? GetBlockNumberByTag(string blockTag)

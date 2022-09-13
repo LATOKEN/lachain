@@ -39,13 +39,13 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public JObject GetStakeTransaction(JObject opts) 
         {
             var staker = opts["stakerAddress"]?.ToString().HexToBytes().ToUInt160() ?? 
-                    throw new Exception($"\"stakerAddress\" {opts["stakerAddress"]} is not valid");
+                    throw new RpcException(RpcErrorCode.Error, $"\"stakerAddress\" {opts["stakerAddress"]} is not valid");
 
             var validatorPubKey = opts["validatorPublicKey"]?.ToString().HexToBytes() ??
-                    throw new Exception($"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
+                    throw new RpcException(RpcErrorCode.Error, $"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
 
             var stakeAmount = Money.Parse(opts["stakeAmount"]?.ToString() ??
-                                    throw new Exception($"\"stakeAmount\" {opts["stakeAmount"]} is not valid")
+                                    throw new RpcException(RpcErrorCode.Error, $"\"stakeAmount\" {opts["stakeAmount"]} is not valid")
             );
             var tx = _transactionBuilder.InvokeTransaction(
                 staker,
@@ -67,10 +67,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public JObject GetRequestStakeWithdrawalTransaction(JObject opts) 
         {
             var from = opts["from"]?.ToString().HexToBytes().ToUInt160() ?? 
-                    throw new Exception($"\"from\" {opts["from"]} is not valid");
+                    throw new RpcException(RpcErrorCode.Error, $"\"from\" {opts["from"]} is not valid");
 
             var validatorPubKey = opts["validatorPublicKey"]?.ToString().HexToBytes() ??
-                    throw new Exception($"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
+                    throw new RpcException(RpcErrorCode.Error, $"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
 
             var tx = _transactionBuilder.InvokeTransaction(
                 from,
@@ -91,10 +91,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public JObject GetWithdrawStakeTransaction(JObject opts) 
         {
             var from = opts["from"]?.ToString().HexToBytes().ToUInt160() ?? 
-                    throw new Exception($"\"from\" {opts["from"]} is not valid");
+                    throw new RpcException(RpcErrorCode.Error, $"\"from\" {opts["from"]} is not valid");
 
             var validatorPubKey = opts["validatorPublicKey"]?.ToString().HexToBytes() ??
-                    throw new Exception($"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
+                    throw new RpcException(RpcErrorCode.Error, $"\"validatorPublicKey\" {opts["validatorPublicKey"]} is not valid");
 
             var tx = _transactionBuilder.InvokeTransaction(
                 from,

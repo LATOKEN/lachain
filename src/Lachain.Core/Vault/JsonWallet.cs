@@ -21,7 +21,7 @@ namespace Lachain.Core.Vault
         }
 
         [JsonProperty("tpkeKeys")] public Dictionary<ulong, string>? TpkePrivateKeys { get; set; }
-
+        
         [JsonProperty("thresholdSignatureKeys")]
         public Dictionary<ulong, string>? ThresholdSignatureKeys { get; set; }
 

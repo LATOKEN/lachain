@@ -9,6 +9,8 @@ namespace Lachain.Core.Blockchain.Interface
     {
         Type? GetContractByAddress(UInt160 address);
 
+        string? GetMethodName(UInt160 address, byte[] input);
+
         SystemContractCall? DecodeContract(InvocationContext context, UInt160 address, byte[] input);
     }
 }

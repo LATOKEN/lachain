@@ -1,10 +1,19 @@
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Proto;
+using Prometheus;
 
 namespace Lachain.Core.Blockchain.VM
 {
     public class ContractInvoker : IContractInvoker
     {
+        private static readonly Gauge SystemContractFail = Metrics.CreateGauge(
+            "lachain_latest_block_system_contract_call_fail",
+            "Index of latest block where system contract call failed",
+            new GaugeConfiguration
+            {
+                LabelNames = new[] {"contract", "method"}
+            }
+        );
         // TODO: this is hack
         private static IContractRegisterer _contractRegisterer = null!;
         
@@ -32,7 +41,14 @@ namespace Lachain.Core.Blockchain.VM
             var call = _contractRegisterer.DecodeContract(context, address, input);
             if (call is null)
                 return InvocationResult.WithStatus(ExecutionStatus.ExecutionHalted);
-            return VirtualMachine.InvokeSystemContract(call, context, input, gasLimit);
+            var result = VirtualMachine.InvokeSystemContract(call, context, input, gasLimit);
+            if (result.Status != ExecutionStatus.Ok)
+            {
+                var contract = _contractRegisterer.GetContractByAddress(address);
+                var method = _contractRegisterer.GetMethodName(address, input);
+                SystemContractFail.WithLabels(contract!.ToString(), method!).Set(context.Receipt.Block);
+            }
+            return result;
         }
     }
 }
