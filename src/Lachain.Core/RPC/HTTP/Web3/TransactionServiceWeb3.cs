@@ -544,11 +544,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 : throw new Exception("Error in contract call");
         }
 
-        private bool IsGreater(ulong? lastBlockGasUsed, ulong percent, ulong gasLimit)
-        {
-            return lastBlockGasUsed * 100 > percent * gasLimit;
-        }
-
         [JsonRpcMethod("eth_gasPrice")]
         public string GetNetworkGasPrice()
         {
@@ -561,7 +556,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             Logger.LogInformation($"lastBlockGasUsed:: {lastBlockGasUsed}");
             Logger.LogInformation($"latestBlockHash:: {latestBlockHash}");
 
-            if (IsGreater(lastBlockGasUsed, 10, gasLimit))
+            if (lastBlockGasUsed > gasLimit / 10)
             {
                 return Web3DataFormatUtils.Web3Number(_stateManager.CurrentSnapshot.NetworkGasPrice.ToUInt256());
 
