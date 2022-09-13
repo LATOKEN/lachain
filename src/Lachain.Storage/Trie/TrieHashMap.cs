@@ -465,12 +465,6 @@ namespace Lachain.Storage.Trie
             return _node;
         }
 
-        private void DeleteNode(ulong id, IHashTrieNode node, IDbShrinkRepository _repo)
-        {
-            _lruCache.Remove(id);
-            _repo.DeleteNode(id , node);
-        }
-
         public ulong SaveNodeId(ulong root, IDbShrinkRepository _repo)
         {
             if (_repo.NodeIdExists(root) || root == 0) return 0;
@@ -486,48 +480,9 @@ namespace Lachain.Storage.Trie
                 }
             }
             
-            _repo.WriteNodeId(root);
+            _repo.WriteNodeIdAndHash(root, node);
 
             return nodeIdSaved + 1;
-        }
-
-        public ulong DeleteNodeId(ulong root, IDbShrinkRepository _repo)
-        {
-            if (!_repo.NodeIdExists(root) || root == 0) return 0;
-            var node = TryGetNodeById(root, _repo);
-            if (node is null) throw new Exception($"Corrupted trie: found null node for nodeId {root}");
-
-            ulong nodeIdDeleted = 0;
-            foreach (var childId in node.Children)
-            {
-                if (childId != 0)
-                {
-                    nodeIdDeleted += DeleteNodeId(childId, _repo);
-                }
-            }
-            
-            _repo.DeleteNodeId(root);
-
-            return nodeIdDeleted + 1;
-        }
-
-        public ulong DeleteNodes(ulong root, IDbShrinkRepository _repo)
-        {
-            if (_repo.NodeIdExists(root) || root == 0) return 0;
-            var node = TryGetNodeById(root, _repo);
-            if (node is null) return 0;
-            
-            ulong nodesDeleted = 0;
-            foreach (var childId in node.Children)
-            {
-                if (childId != 0)
-                {
-                    nodesDeleted += DeleteNodes(childId, _repo);
-                }
-            }
-
-            DeleteNode(root , node, _repo);
-            return nodesDeleted + 1;
         }
     }
 }

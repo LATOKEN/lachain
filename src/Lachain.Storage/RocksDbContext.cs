@@ -76,6 +76,30 @@ namespace Lachain.Storage
             _rocksDb.Remove(key, null, _writeOptions);
         }
 
+        // Get an iterator for a key that is greater than or equal to 'prefix' but less than 'upperBound'
+        // check with iterator.Valid() if such key exists
+        public Iterator? GetIteratorWithUpperBound(byte[] prefix, byte[] upperBound)
+        {
+            var readOptions = new ReadOptions();
+            readOptions.SetPrefixSameAsStart(true); // to get existing keys only
+            readOptions.SetIterateUpperBound(new List<byte>(upperBound).ToArray());
+            return GetIterator(prefix, readOptions);
+        }
+
+        // Get an iterator for a key that is greater than or equal to 'prefix'
+        // check with iterator.Valid() if such key exists
+        public Iterator? GetIteratorForValidKeys(byte[] prefix)
+        {
+            var readOptions = new ReadOptions();
+            readOptions.SetPrefixSameAsStart(true); // to get existing keys only
+            return GetIterator(prefix, readOptions);
+        }
+
+        private Iterator? GetIterator(byte[] key, ReadOptions? readOptions)
+        {
+            return _rocksDb.NewIterator(null, readOptions).Seek(key);
+        }
+
         public void CompactAll()
         {
             Logger.LogInformation($"Starting Compaction.");

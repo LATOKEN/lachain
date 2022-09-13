@@ -14,6 +14,8 @@ namespace Lachain.Storage
         void SaveBatch(WriteBatch batch);
         void Save(IEnumerable<byte> key, IEnumerable<byte> content);
         void Delete(byte[] key);
+        Iterator? GetIteratorWithUpperBound(byte[] prefix, byte[] upperBound);
+        Iterator? GetIteratorForValidKeys(byte[] prefix);
         void CompactAll();
     }
 }

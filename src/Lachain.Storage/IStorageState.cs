@@ -31,7 +31,5 @@ namespace Lachain.Storage
         void ClearCache();
         ulong Cancel();
         ulong SaveNodeId(IDbShrinkRepository _repo);
-        ulong DeleteNodeId(IDbShrinkRepository _repo);
-        ulong DeleteNodes(IDbShrinkRepository _repo);
     }
 }
