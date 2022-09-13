@@ -280,10 +280,9 @@ namespace Lachain.Consensus.RootProtocol
 
             try
             {
-                if (_validatorAttendance is null)
-                    throw new Exception("validator attendance cannot be null");
                 _blockProducer.ProduceBlock(_receipts, _header, _multiSig);
-                _validatorAttendanceRepository.SaveState(_validatorAttendance.ToBytes());
+                _validatorAttendanceRepository.SaveState(
+                    _validatorAttendance is null ? Array.Empty<byte>() : _validatorAttendance.ToBytes());
             }
             catch (Exception e)
             {
