@@ -1,0 +1,158 @@
+{
+  "network": {
+    "chainId": 25,
+    "newChainId": 225,
+    "cycleDuration": 1000,
+    "validatorsCount": 7,
+    "peers": [
+      "03bdf64f7ef0dfda0b76bd99252bf46f29bd51f665d90c81d4e573423154415e01",
+      "02d211225be34950e4712d9766b07fc0183e9bd841465e708ca91c28afff199be1",
+      "03ee7c0c6619a48a34ac68a133c85c5d91635d63a92e30fe996ed6b1da881e64c6",
+      "027592db70af663c7081d9a669bd84180be55ed638cd1f707c8db08a31813312e4",
+      "03f7796444c6a24cb095112bfec955d78a68c7e05d2383df852dbb0d407d321fa9",
+      "02f43e9ccd044b5b8d576f3db9230777a01c2b570613337e8d3af3226614b60bb5",
+      "03856ea750920e9bac9944a8ccfb91bebca80a87ab4f7eff4acdf52b87ec6de5ae",
+      "02d5571ffae30e2b3488b6107d433fb80daa924998fc19eac7555e347151e8289b",
+      "0359492b001ed30bb3cabe2e7534dbf22cbc5c5e5a053b55ed08bae66cfdafbd86",
+      "034c72700fd9fe687048e412e76aca8d2dee8cc517e3d4f3b86c2edceeeb1ac6b5"
+    ],
+    "forceIPv6": false,
+    "maxPeers": 100,
+    "bootstrapAddresses": [
+      "QmNMVBQoSvyH2Wu6ADxm4xBCCusEpwMn5biarLpNkgaE2F@65.108.81.178:41011",
+      "QmchPuQC87vKJqZLWUvDZnA4JquN9qMmfZyot6mF8jv9p2@65.108.81.177:41012",
+      "QmQMYJorWmgB84xqJxcCqAaeWsbuKzdH3ruY8PzfN5R4rJ@65.21.183.235:41013",
+      "QmX1FgaX9JQ6zeZoPpQs3grCCusUov4aYbc6PDi2PF6v8a@65.108.60.127:41014",
+      "QmWjFbhCpeJeoM1CdwFAS6jfrSs3mGz8mQJNmY3VUtCtox@23.88.44.63:41015",
+      "QmQaiSVnwsx8xMwcFizZngxroXxW2fg4d7VRT9Z6EpkJS4@135.181.86.241:41016",
+      "QmdyDHjEpagECRJrAdiwD7TyHouumpfE6cYXKX4YKVf8Bm@23.88.114.94:41017",
+      "QmfRqtb4GMzyEHyQdZKsFn53hhjuCvTSvbXDFT7h7txtRH@65.108.250.176:41018",
+      "Qmat5gHJgYr27A7GTtSrHrWQMa8N9KN5J1ePDEQj8iLwBC@95.217.187.216:41019",
+      "QmWdqVdNBNBhHtRnHxkxZC2yQcbArdQ8B9jrkFZWV7krLW@65.21.60.236:41020"
+    ],
+    "hubLogLevel": "Trace",
+    "hubMetricsPort": 7072,
+    "networkName": "mainnet"
+  },
+  "genesis": {
+    "TPKEPublicKey": "0x02000000dc4c685c1ff5374b0459a630fbb39c3157f3af02c7c8541ef8dcf8488db409134c31170a06002673a1f5d450f50e6998",
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000",
+    "balances": {
+      "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395": "110000000",
+      "0x5c45f40d16eb0c97a96340ab7ce2d45b613e3ea3": "100",
+      "0xc5e13c92afd6751e426aa490cd505009824e59fc": "100",
+      "0x7dd7438593cfe63455a00d2f0beecd7a3654221c": "100",
+      "0xd779bc2ca93c90215d19e9ce2ba8d4b03a3dbe8f": "100",
+      "0x4c3550365b82b3a30b15d3f22e33652d19a1a249": "100",
+      "0x3ef749ffeac78139206191f3a7e1878ccebfcc33": "100",
+      "0xfb79e7092ffacef84c88e484c2245a8e3620a0df": "100",
+      "0xb20188bfc6f3284a77e2283420fb64e4ad514a42": "100",
+      "0xc28a6b8a3ddb2cdef493ff861dd868c09790813a": "100",
+      "0x97836ba434bd957804aa25b9f97c7a7e9a48f2cc": "100"
+    },
+    "validators": [
+      {
+        "ECDSAPublicKey": "03bdf64f7ef0dfda0b76bd99252bf46f29bd51f665d90c81d4e573423154415e01",
+        "thresholdSignaturePublicKey": "0x8afbbefafa9fbcf1045cfc6c61dfe7e4c78cdcfdfcf905de2276f846487fb9ad7a13199080debd92a5b7c807283a0a96",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "02d211225be34950e4712d9766b07fc0183e9bd841465e708ca91c28afff199be1",
+        "thresholdSignaturePublicKey": "0xd298134cb2037497b1d091d450c1b78967ab00f887b1702c85b2d069a830ff65803b4537a552d0f4f2bfd8e062aceb95",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "03ee7c0c6619a48a34ac68a133c85c5d91635d63a92e30fe996ed6b1da881e64c6",
+        "thresholdSignaturePublicKey": "0x06674b0818d8e1cf662bd62718d296c6026156aaf856d9779e1ca051d0cc2d2c05186a9e3821affeed4fef671859db0f",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "027592db70af663c7081d9a669bd84180be55ed638cd1f707c8db08a31813312e4",
+        "thresholdSignaturePublicKey": "0x276f86b62aee3d4bfceb834ac70478e454dbb8c7b1111d32a86a0478ce2155171cd268c8086eb475f0802ee279cb508b",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "03f7796444c6a24cb095112bfec955d78a68c7e05d2383df852dbb0d407d321fa9",
+        "thresholdSignaturePublicKey": "0x13cd0d8ad1e9dac01245ea46b921f7da8d34ad9dd419f2aca778e08bbf4688f0a866c7969ecf1b609c64264b6f5b780e",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "02f43e9ccd044b5b8d576f3db9230777a01c2b570613337e8d3af3226614b60bb5",
+        "thresholdSignaturePublicKey": "0x9111df290e323a61d6a1494a0e716e947c4243ab876fe9e8e33ac321b9b99b24c8b99df61c6abfbae1cef21aa7ba1494",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "03856ea750920e9bac9944a8ccfb91bebca80a87ab4f7eff4acdf52b87ec6de5ae",
+        "thresholdSignaturePublicKey": "0x5027fa6763f9d26efae3f379bd3ee2008b118ce059ea403730a03f6ec7f9fa06625253ffb90577d80208545adcf57e98",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "02d5571ffae30e2b3488b6107d433fb80daa924998fc19eac7555e347151e8289b",
+        "thresholdSignaturePublicKey": "0x3778b94161787bbc826332b29fd140143d7e4ca6fcc0895d22c4661c8e81d1606eee780acea847ddfb095be34c6b3088",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "0359492b001ed30bb3cabe2e7534dbf22cbc5c5e5a053b55ed08bae66cfdafbd86",
+        "thresholdSignaturePublicKey": "0x752bf0cf04e3a012dc06286813a29189555a505dd9638418c0d1623edbc49a89bbcd8e19163f654ea77054c8c119c991",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      },
+      {
+        "ECDSAPublicKey": "034c72700fd9fe687048e412e76aca8d2dee8cc517e3d4f3b86c2edceeeb1ac6b5",
+        "thresholdSignaturePublicKey": "0x9c66f1ada355a9659f73af5da0c574a45619ca42abe153ed165d92cf5a06f04da0bad99d647bbaef05c444fa40081704",
+        "stakerAddress": "0x9C68dDCc8F821888DaAd51B5B37d5125C6607395",
+        "stakeAmount": "10000000"
+      }
+    ]
+  },
+  "rpc": {
+    "hosts": [
+      "+"
+    ],
+    "port": 7070,
+    "metricsPort": 7071,
+    "apiKey": ""
+  },
+  "vault": {
+    "path": "wallet.json",
+    "password": ""
+  },
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainLachain"
+  },
+  "blockchain": {
+    "targetBlockTime": 5000
+  },
+  "hardfork": {
+    "hardfork_1": 1525000,
+    "hardfork_2": 1525000,
+    "hardfork_3": 1525000,
+    "hardfork_4": 2250000,
+    "hardfork_5": 2550000,
+    "hardfork_6": 2780000,
+    "hardfork_7": 2840000,
+    "hardfork_8": 3205000,
+    "hardfork_9": 3709350,
+    "hardfork_10": 3985000,
+    "hardfork_11": 5251000,
+    "hardfork_12": 5405300
+  },
+  "version": {
+    "configVersion": 14
+  },
+  "cache": {
+    "blockHeight": {
+      "sizeLimit": 100
+    }
+  }
+}
