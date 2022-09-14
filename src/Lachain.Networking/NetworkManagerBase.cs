@@ -188,9 +188,9 @@ namespace Lachain.Networking
             }
         }
 
-        public void BroadcastLocalTransaction(TransactionReceipt e)
+        public void BroadcastLocalTransaction(TransactionReceipt[] txes)
         {
-            Broadcast(MessageFactory.SyncPoolReply(new[] {e}));
+            Broadcast(MessageFactory.SyncPoolReply(txes));
         }
 
         public void Broadcast(NetworkMessage networkMessage)
