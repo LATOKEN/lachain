@@ -114,6 +114,8 @@ namespace Lachain.Console
                     throw new Exception("No 'hardfork' section in config file");
             HardforkHeights.SetHardforkHeights(hardforkConfig);
 
+            // pool sync worker should start before rpc starts working
+            transactionPool.StartPoolSync();
             rpcManager.Start();
             
             if (options.RollBackTo.HasValue)
