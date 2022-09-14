@@ -5,15 +5,17 @@ using Lachain.Proto;
 
 namespace Lachain.Core.Blockchain.Pool
 {
-    public interface ITransactionPool
+    public interface ITransactionPool : IDisposable
     {
-        event EventHandler<TransactionReceipt>? TransactionAdded;
+        event EventHandler<List<TransactionReceipt>>? TransactionAdded;
 
         IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions { get; }
 
         TransactionReceipt? GetByHash(UInt256 hash);
 
         void Restore();
+        
+        void StartPoolSync();
 
         IEnumerable<UInt256> GetTransactionPoolRepository();
 

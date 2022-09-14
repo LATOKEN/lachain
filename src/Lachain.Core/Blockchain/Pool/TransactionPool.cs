@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
@@ -50,8 +51,11 @@ namespace Lachain.Core.Blockchain.Pool
         private ulong _lastSanitized = 0;
         private ISet<TransactionReceipt> _transactionsQueue;
 
-        public event EventHandler<TransactionReceipt>? TransactionAdded;
+        public event EventHandler<List<TransactionReceipt>>? TransactionAdded;
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
+        private readonly Thread _poolSyncThread;
+        private bool _poolSyncRunning;
+        private readonly Queue<TransactionReceipt> _transactionToSync;
 
         public TransactionPool(
             IPoolRepository poolRepository,
@@ -71,6 +75,50 @@ namespace Lachain.Core.Blockchain.Pool
             _transactionsQueue = new HashSet<TransactionReceipt>();
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
+            _poolSyncThread = new Thread(PoolSyncWorker);
+            _poolSyncRunning = false;
+            _transactionToSync = new Queue<TransactionReceipt>();
+        }
+
+        private void PoolSyncWorker()
+        {
+            var waitingTime = 500;
+            while (_poolSyncRunning)
+            {
+                lock (_transactionToSync)
+                {
+                    while (_transactionsQueue.Count == 0)
+                        Monitor.Wait(_transactionToSync);
+
+                    var txes = new List<TransactionReceipt>();
+                    while (_transactionToSync.Count > 0)
+                    {
+                        var tx = _transactionToSync.Dequeue();
+                        txes.Add(tx);
+                    }
+                    TransactionAdded?.Invoke(this, txes);
+                }
+                // wait for several txes to appear, so we send several txes together in pool-sync
+                Thread.Sleep(waitingTime);
+            }
+        }
+
+        private void AddTransactionToSync(TransactionReceipt tx)
+        {
+            if (!_poolSyncRunning) return;
+            lock (_transactionToSync)
+            {
+                _transactionToSync.Enqueue(tx);
+                Monitor.PulseAll(_transactionToSync);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void StartPoolSync()
+        {
+            if (_poolSyncRunning) return;
+            _poolSyncRunning = true;
+            _poolSyncThread.Start();
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -258,7 +306,7 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
             }
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
-            if (notify) TransactionAdded?.Invoke(this, receipt);
+            if (notify) AddTransactionToSync(receipt);
             return OperatingError.Ok;
         }
         private bool IsGovernanceTx(TransactionReceipt receipt)
@@ -562,6 +610,13 @@ namespace Lachain.Core.Blockchain.Pool
         private ulong BlockHeight()
         {
             return _lastSanitized;
+        }
+
+        public void Dispose()
+        {
+            _poolSyncRunning = false;
+            if (_poolSyncThread.ThreadState == ThreadState.Running)
+                _poolSyncThread.Join();
         }
     }
 }
