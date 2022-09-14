@@ -272,6 +272,7 @@ namespace Lachain.Core.Blockchain.Operations
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void BlockPersisted(Block block)
         {
+            _transactionManager.ClearProcessedTransactions();
             _snapshotIndexRepository.SaveSnapshotForBlock(block.Header.Index, _stateManager.LastApprovedSnapshot);
             // a new block is committed to the storage
 

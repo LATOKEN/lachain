@@ -25,7 +25,6 @@ namespace Lachain.Core.Blockchain.Pool
     {
         private static readonly ILogger<TransactionPool> Logger = LoggerFactory.GetLoggerForClass<TransactionPool>();
 
-        private readonly ITransactionVerifier _transactionVerifier;
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
@@ -55,7 +54,6 @@ namespace Lachain.Core.Blockchain.Pool
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
         public TransactionPool(
-            ITransactionVerifier transactionVerifier,
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
@@ -64,7 +62,6 @@ namespace Lachain.Core.Blockchain.Pool
             ITransactionHashTrackerByNonce transactionHashTracker
         )
         {
-            _transactionVerifier = transactionVerifier;
             _poolRepository = poolRepository;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
@@ -76,6 +73,7 @@ namespace Lachain.Core.Blockchain.Pool
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnBlockPersisted(object? sender, Block block)
         {
             lock (_toDeleteRepo)
@@ -191,7 +189,6 @@ namespace Lachain.Core.Blockchain.Pool
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
                 return result;
-            _transactionVerifier.VerifyTransaction(receipt, useNewChainId);
 
             bool oldTxExist = false;
             TransactionReceipt? oldTx = null;
@@ -346,10 +343,10 @@ namespace Lachain.Core.Blockchain.Pool
                 }
             }
 
-            if (wasTransactionsQueue != _transactionsQueue.Count)
+            if (toErase.Count > 0)
             {
                 Logger.LogTrace(
-                    $"Sanitized mempool; dropped {wasTransactionsQueue - _transactionsQueue.Count} txs"
+                    $"Sanitized mempool; dropped {toErase.Count} txs"
                 );
             }
 
