@@ -1,6 +1,7 @@
 {
   "network": {
     "chainId": 25,
+    "newChainId": 225,
     "cycleDuration": 1000,
     "validatorsCount": 7,
     "peers": [
@@ -18,16 +19,16 @@
     "forceIPv6": false,
     "maxPeers": 100,
     "bootstrapAddresses": [
-      "QmNMVBQoSvyH2Wu6ADxm4xBCCusEpwMn5biarLpNkgaE2F@80.78.241.166:41011",
-      "QmchPuQC87vKJqZLWUvDZnA4JquN9qMmfZyot6mF8jv9p2@31.31.201.188:41012",
-      "QmQMYJorWmgB84xqJxcCqAaeWsbuKzdH3ruY8PzfN5R4rJ@89.108.79.2:41013",
-      "QmX1FgaX9JQ6zeZoPpQs3grCCusUov4aYbc6PDi2PF6v8a@178.21.8.124:41014",
-      "QmWjFbhCpeJeoM1CdwFAS6jfrSs3mGz8mQJNmY3VUtCtox@185.46.10.4:41015",
-      "QmQaiSVnwsx8xMwcFizZngxroXxW2fg4d7VRT9Z6EpkJS4@80.78.254.52:41016",
-      "QmdyDHjEpagECRJrAdiwD7TyHouumpfE6cYXKX4YKVf8Bm@80.78.254.154:41017",
-      "QmfRqtb4GMzyEHyQdZKsFn53hhjuCvTSvbXDFT7h7txtRH@194.58.120.197:41018",
-      "Qmat5gHJgYr27A7GTtSrHrWQMa8N9KN5J1ePDEQj8iLwBC@31.31.201.59:41019",
-      "QmWdqVdNBNBhHtRnHxkxZC2yQcbArdQ8B9jrkFZWV7krLW@80.78.246.183:41020"
+      "QmNMVBQoSvyH2Wu6ADxm4xBCCusEpwMn5biarLpNkgaE2F@65.108.81.178:41011",
+      "QmchPuQC87vKJqZLWUvDZnA4JquN9qMmfZyot6mF8jv9p2@65.108.81.177:41012",
+      "QmQMYJorWmgB84xqJxcCqAaeWsbuKzdH3ruY8PzfN5R4rJ@65.21.183.235:41013",
+      "QmX1FgaX9JQ6zeZoPpQs3grCCusUov4aYbc6PDi2PF6v8a@65.108.60.127:41014",
+      "QmWjFbhCpeJeoM1CdwFAS6jfrSs3mGz8mQJNmY3VUtCtox@23.88.44.63:41015",
+      "QmQaiSVnwsx8xMwcFizZngxroXxW2fg4d7VRT9Z6EpkJS4@135.181.86.241:41016",
+      "QmdyDHjEpagECRJrAdiwD7TyHouumpfE6cYXKX4YKVf8Bm@23.88.114.94:41017",
+      "QmfRqtb4GMzyEHyQdZKsFn53hhjuCvTSvbXDFT7h7txtRH@65.108.250.176:41018",
+      "Qmat5gHJgYr27A7GTtSrHrWQMa8N9KN5J1ePDEQj8iLwBC@95.217.187.216:41019",
+      "QmWdqVdNBNBhHtRnHxkxZC2yQcbArdQ8B9jrkFZWV7krLW@65.21.60.236:41020"
     ],
     "hubLogLevel": "Trace",
     "hubMetricsPort": 7072,
@@ -119,11 +120,11 @@
     ],
     "port": 7070,
     "metricsPort": 7071,
-    "apiKey": "place real api key here"
+    "apiKey": ""
   },
   "vault": {
     "path": "wallet.json",
-    "password": "place real wallet password here"
+    "password": ""
   },
   "storage": {
     "provider": "RocksDB",
@@ -133,11 +134,25 @@
     "targetBlockTime": 5000
   },
   "hardfork": {
-    "hardfork_1": 0,
-    "hardfork_2": 0,
-    "hardfork_3": 0
+    "hardfork_1": 1525000,
+    "hardfork_2": 1525000,
+    "hardfork_3": 1525000,
+    "hardfork_4": 2250000,
+    "hardfork_5": 2550000,
+    "hardfork_6": 2780000,
+    "hardfork_7": 2840000,
+    "hardfork_8": 3205000,
+    "hardfork_9": 3709350,
+    "hardfork_10": 3985000,
+    "hardfork_11": 5251000,
+    "hardfork_12": 5405300
   },
   "version": {
-    "configVersion": 4
+    "configVersion": 14
+  },
+  "cache": {
+    "blockHeight": {
+      "sizeLimit": 100
+    }
   }
 }

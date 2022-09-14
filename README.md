@@ -3,7 +3,7 @@
 
 ### Build the project
 
-# Linux
+#### Linux
 ```
 > git clone https://github.com/LATOKEN/lachain
 > cd lachain
@@ -14,7 +14,7 @@
 As result `Lachain.Console` file will be placed in `/src/Lachain.Console/bin/Release/net5.0/linux-x64/publish/`
 After that place `Lachain.Console` file in the same folder with appropriate config.json and start it
 
-# Windows 
+#### Windows 
 ```
 > git clone https://github.com/LATOKEN/lachain
 > cd lachain
@@ -25,7 +25,7 @@ After that place `Lachain.Console` file in the same folder with appropriate conf
 As result `Lachain.Console` file will be placed in `/src/Lachain.Console/bin/Release/net5.0/win-x64/publish/`
 After that place `Lachain.Console` file in the same folder with appropriate config.json and start it
 
-# MacOS 
+#### MacOS 
 ```
 > git clone https://github.com/LATOKEN/lachain
 > cd lachain

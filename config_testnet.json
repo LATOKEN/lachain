@@ -1,6 +1,7 @@
 {
   "network": {
     "chainId": 26,
+    "newChainId": 226,
     "cycleDuration": 1000,
     "validatorsCount": 4,
     "peers": [
@@ -65,11 +66,11 @@
     ],
     "port": 7070,
     "metricsPort": 7071,
-    "apiKey": "place real ECDSA public key here"
+    "apiKey": "asdasdasd"
   },
   "vault": {
     "path": "wallet.json",
-    "password": "place real password here"
+    "password": ""
   },
   "storage": {
     "provider": "RocksDB",
@@ -80,9 +81,24 @@
   },
   "hardfork": {
     "hardfork_1": 773000,
-    "hardfork_2": 900000
+    "hardfork_2": 900000,
+    "hardfork_3": 1220000,
+    "hardfork_4": 1904000,
+    "hardfork_5": 2239000,
+    "hardfork_6": 2543000,
+    "hardfork_7": 2615000,
+    "hardfork_8": 3000000,
+    "hardfork_9": 3095300,
+    "hardfork_10": 3628500,
+    "hardfork_11": 4933000,
+    "hardfork_12": 5073300
   },
   "version": {
-    "configVersion": 3
+    "configVersion": 14
+  },
+  "cache": {
+    "blockHeight": {
+      "sizeLimit": 100
+    }
   }
 }
