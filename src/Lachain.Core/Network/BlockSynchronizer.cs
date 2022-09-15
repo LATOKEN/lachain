@@ -13,6 +13,7 @@ using Lachain.Core.Consensus;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 using NLog;
 
@@ -252,7 +253,7 @@ namespace Lachain.Core.Network
                     var reply = _networkManager.MessageFactory.PingReply(
                         TimeUtils.CurrentTimeMillis(), _stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()
                     );
-                    _networkBroadcaster.Broadcast(reply, true);
+                    _networkBroadcaster.Broadcast(reply, NetworkMessagePriority.PeerSyncMessage);
                     Logger.LogTrace($"Broadcasted our height: {reply.PingReply.BlockHeight}");
                 }
                 catch (Exception e)
@@ -307,7 +308,8 @@ namespace Lachain.Core.Network
                     foreach (var peer in peers)
                     {
                         _networkManager.SendTo(
-                            peer, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound), true
+                            peer, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound),
+                            NetworkMessagePriority.PeerSyncMessage
                         );
                     }
 
