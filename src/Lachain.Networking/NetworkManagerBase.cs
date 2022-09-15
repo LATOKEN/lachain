@@ -10,6 +10,7 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
 
@@ -62,9 +63,9 @@ namespace Lachain.Networking
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");
         }
 
-        public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, bool priorityMessage)
+        public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
-            GetClientWorker(publicKey)?.AddMsgToQueue(message, priorityMessage);
+            GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
         }
 
         public void Start()
@@ -158,7 +159,7 @@ namespace Lachain.Networking
                     _ => throw new InvalidOperationException()
                 };
                 // we should never reply with priority, requests can be spammed
-                peer.AddMsgToQueue(msg, false);
+                peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
             };
         }
 
@@ -196,12 +197,12 @@ namespace Lachain.Networking
 
         public void BroadcastLocalTransaction(TransactionReceipt e)
         {
-            Broadcast(MessageFactory.SyncPoolReply(new[] {e}), false);
+            Broadcast(MessageFactory.SyncPoolReply(new[] {e}), NetworkMessagePriority.PoolSyncMessage);
         }
 
-        public void Broadcast(NetworkMessage networkMessage, bool priorityMessage)
+        public void Broadcast(NetworkMessage networkMessage, NetworkMessagePriority priority)
         {
-            _broadcaster.AddMsgToQueue(networkMessage, priorityMessage);
+            _broadcaster.AddMsgToQueue(networkMessage, priority);
         }
 
         private void Stop()
