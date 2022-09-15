@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Google.Protobuf;
@@ -7,6 +6,7 @@ using Lachain.Consensus;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 using Prometheus;
 
@@ -34,10 +34,9 @@ namespace Lachain.Networking.Hub
         private readonly Thread _worker;
         private bool _isConnected = false;
         private int _eraMsgCounter;
-        private readonly object _messageReceived = new object();
 
-        private readonly Queue<NetworkMessage> _nonPriorityMessageQueue = new Queue<NetworkMessage>();
-        private readonly Queue<NetworkMessage> _priorityMessageQueue = new Queue<NetworkMessage>();
+        private readonly C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)> _messageQueue 
+            = new C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)>(new NetworkMessageComparer());
 
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
@@ -71,57 +70,36 @@ namespace Lachain.Networking.Hub
         }
 
 
-        public void AddMsgToQueue(NetworkMessage message, bool priorityMessage)
+        public void AddMsgToQueue(NetworkMessage message, NetworkMessagePriority priority)
         {
-            if (priorityMessage)
+            lock (_messageQueue)
             {
-                lock (_priorityMessageQueue)
-                    _priorityMessageQueue.Enqueue(message);
+                _messageQueue.Add((priority, message));
+                Monitor.PulseAll(_messageQueue);
             }
-            else
-            {
-                lock (_nonPriorityMessageQueue)
-                    _nonPriorityMessageQueue.Enqueue(message);
-            }
-
-            lock (_messageReceived)
-                Monitor.PulseAll(_messageReceived);
         }
 
         private void Worker()
         {
             _isConnected = true;
+            const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
+
             while (_isConnected)
             {
 
                 try
                 {
-                    lock (_messageReceived)
-                    {
-                        while (_priorityMessageQueue.Count == 0 && _nonPriorityMessageQueue.Count == 0)
-                            Monitor.Wait(_messageReceived);
-                    }
-                    
                     var now = TimeUtils.CurrentTimeMillis();
                     MessageBatchContent toSend = new MessageBatchContent();
 
-                    const int maxSendSize = 64 * 1024; // let's not send more than 64 KiB at once
-                    bool isPriorityMessage = false;
-                    lock (_priorityMessageQueue)
+                    lock (_messageQueue)
                     {
-                        while (_priorityMessageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
-                        {
-                            var message = _priorityMessageQueue.Dequeue();
-                            toSend.Messages.Add(message);
-                            isPriorityMessage = true;
-                        }
-                    }
+                        while (_messageQueue.Count == 0)
+                            Monitor.Wait(_messageQueue);
 
-                    lock (_nonPriorityMessageQueue)
-                    {
-                        while (_nonPriorityMessageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
+                        while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                         {
-                            var message = _nonPriorityMessageQueue.Dequeue();
+                            var message = _messageQueue.DeleteMin().Item2;
                             toSend.Messages.Add(message);
                         }
                     }
@@ -150,10 +128,7 @@ namespace Lachain.Networking.Hub
                                 .Inc(message.CalculateSize());
                         }
 
-                        if (isPriorityMessage)
-                            _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-                        else
-                            _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                        _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                         _eraMsgCounter += 1;
                     }
                     
@@ -169,10 +144,13 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
-            lock (_priorityMessageQueue)
-                _priorityMessageQueue.Clear();
-            lock (_nonPriorityMessageQueue)
-                _nonPriorityMessageQueue.Clear();
+            lock (_messageQueue)
+            {
+                while (_messageQueue.Count > 0)
+                    _messageQueue.DeleteMin();
+
+                Monitor.PulseAll(_messageQueue);
+            }
             Stop();
         }
 
