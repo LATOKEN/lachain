@@ -153,7 +153,7 @@ namespace Lachain.Networking.Hub
                         if (isPriorityMessage)
                             _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                         else
-                            _hubConnector.TrySend(PeerPublicKey, megaBatchBytes);
+                            _hubConnector.Send(PeerPublicKey, megaBatchBytes);
                         _eraMsgCounter += 1;
                     }
                     

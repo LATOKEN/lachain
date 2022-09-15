@@ -17,13 +17,10 @@ namespace Lachain.Networking.Hub
         private readonly IMessageFactory _messageFactory;
         private readonly int _hubMetricsPort;
 
-        private Thread? _sender;
         private Thread? _readWorker;
         private readonly Thread _hubThread;
 
         public event EventHandler<byte[]>? OnMessage;
-
-        private readonly Queue<(byte[], byte[])> _messageQueue = new Queue<(byte[], byte[])>();
 
         public HubConnector(string hubBootstrapAddresses, byte[] hubPrivateKey, string networkName, int version,  int minPeerVersion, int chainId, int hubMetricsPort, IMessageFactory messageFactory, string? logLevel)
         {
@@ -67,10 +64,8 @@ namespace Lachain.Networking.Hub
             Thread.Sleep(TimeSpan.FromMilliseconds(5_000));
             Logger.LogDebug("Establishing bi-directional connection with hub");
             _readWorker = new Thread(ReadWorker);
-            _sender = new Thread(SendMessages);
             _running = true;
             _readWorker.Start();
-            _sender.Start();
         }
 
         private void ReadWorker()
@@ -100,49 +95,9 @@ namespace Lachain.Networking.Hub
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Send(byte[] publicKey, byte[] message)
         {
             CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
-        }
-
-        public void TrySend(byte[] publicKey, byte[] message)
-        {
-            lock (_messageQueue)
-            {
-                _messageQueue.Enqueue((publicKey, message));
-                Monitor.PulseAll(_messageQueue);
-            }
-        }
-
-        private void SendMessages()
-        {
-            const int waitForSomeTime = 500;
-            while (_running)
-            {
-                try
-                {               
-                    lock (_messageQueue)
-                    {
-                        while (_messageQueue.Count == 0)
-                            Monitor.Wait(_messageQueue);
-
-                        while (_messageQueue.Count > 0)
-                        {
-                            byte[] publicKey;
-                            byte[] message;
-                            (publicKey, message) = _messageQueue.Dequeue();
-                            Send(publicKey, message);
-                        }
-                    }       
-
-                    Thread.Sleep(waitForSomeTime);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError($"Error occured while sending message: {e}");
-                }
-            }
         }
 
         public void Dispose()
@@ -152,7 +107,6 @@ namespace Lachain.Networking.Hub
                 CommunicationHub.Net.Hub.Stop();
             _started = false;
             _readWorker?.Join();
-            _sender?.Join();
         }
     }
 }
