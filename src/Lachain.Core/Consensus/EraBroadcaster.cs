@@ -18,6 +18,7 @@ using Lachain.Core.Vault;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 using MessageEnvelope = Lachain.Consensus.Messages.MessageEnvelope;
 
@@ -102,7 +103,7 @@ namespace Lachain.Core.Consensus
                 }
                 else
                 {
-                    _consensusMessageDeliverer.SendTo(publicKey, payload);
+                    _consensusMessageDeliverer.SendTo(publicKey, payload, NetworkMessagePriority.ConsensusMessage);
                 }
             }
         }
@@ -128,7 +129,7 @@ namespace Lachain.Core.Consensus
             }
 
             var payload = _messageFactory.ConsensusMessage(message);
-            _consensusMessageDeliverer.SendTo(_validators!.EcdsaPublicKeySet[index], payload);
+            _consensusMessageDeliverer.SendTo(_validators!.EcdsaPublicKeySet[index], payload, NetworkMessagePriority.ConsensusMessage);
         }
 
         public void Dispatch(ConsensusMessage message, int from)

@@ -10,6 +10,7 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
+using Lachain.Utility;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
 
@@ -54,7 +55,6 @@ namespace Lachain.Networking
             _hubConnector.OnMessage += _HandleMessage;
 
             _broadcaster = new ClientWorker(new byte[33], _messageFactory, _hubConnector);
-            _broadcaster.Start();
         }
 
         public void AdvanceEra(ulong era)
@@ -63,23 +63,29 @@ namespace Lachain.Networking
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");
         }
 
-        public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message)
+        public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
-            CreateMsgChannel(publicKey)?.AddMsgToQueue(message);
+            GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
         }
 
         public void Start()
         {
+            _broadcaster.Start();
             _hubConnector.Start();
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private ClientWorker? CreateMsgChannel(ECDSAPublicKey publicKey)
+        private ClientWorker? GetClientWorker(ECDSAPublicKey publicKey)
         {
             if (_messageFactory.GetPublicKey().Equals(publicKey)) return null;
             if (_clientWorkers.TryGetValue(publicKey, out var existingWorker))
                 return existingWorker;
 
+            return CreateMsgChannel(publicKey);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private ClientWorker? CreateMsgChannel(ECDSAPublicKey publicKey)
+        {
             Logger.LogTrace($"Connecting to peer {publicKey.ToHex()}");
             var worker = new ClientWorker(publicKey, _messageFactory, _hubConnector);
             _clientWorkers.Add(publicKey, worker);
@@ -115,7 +121,7 @@ namespace Lachain.Networking
                 return;
             }
 
-            var worker = CreateMsgChannel(batch.Sender);
+            var worker = GetClientWorker(batch.Sender);
             if (worker is null)
             {
                 Logger.LogWarning($"Got batch from {batch.Sender.ToHex()} but cannot connect to him, skipping");
@@ -152,7 +158,8 @@ namespace Lachain.Networking
                     GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
                     _ => throw new InvalidOperationException()
                 };
-                peer.AddMsgToQueue(msg);
+                // we should never reply with priority, requests can be spammed
+                peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
             };
         }
 
@@ -190,12 +197,12 @@ namespace Lachain.Networking
 
         public void BroadcastLocalTransaction(TransactionReceipt e)
         {
-            Broadcast(MessageFactory.SyncPoolReply(new[] {e}));
+            Broadcast(MessageFactory.SyncPoolReply(new[] {e}), NetworkMessagePriority.PoolSyncMessage);
         }
 
-        public void Broadcast(NetworkMessage networkMessage)
+        public void Broadcast(NetworkMessage networkMessage, NetworkMessagePriority priority)
         {
-            _broadcaster.AddMsgToQueue(networkMessage);
+            _broadcaster.AddMsgToQueue(networkMessage, priority);
         }
 
         private void Stop()

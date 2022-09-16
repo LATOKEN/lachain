@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using Lachain.Proto;
+using Lachain.Utility;
 
 namespace Lachain.Networking
 {
     public interface INetworkManager : IDisposable
     {
         IMessageFactory MessageFactory { get; }
-        void SendTo(ECDSAPublicKey publicKey, NetworkMessage message);
+        void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority);
         void Start();
         void BroadcastLocalTransaction(TransactionReceipt receipt);
         void AdvanceEra(ulong era);
