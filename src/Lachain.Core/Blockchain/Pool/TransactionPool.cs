@@ -73,6 +73,7 @@ namespace Lachain.Core.Blockchain.Pool
             _blockManager.OnBlockPersisted += OnBlockPersisted;
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnBlockPersisted(object? sender, Block block)
         {
             lock (_toDeleteRepo)
@@ -342,10 +343,10 @@ namespace Lachain.Core.Blockchain.Pool
                 }
             }
 
-            if (wasTransactionsQueue != _transactionsQueue.Count)
+            if (toErase.Count > 0)
             {
                 Logger.LogTrace(
-                    $"Sanitized mempool; dropped {wasTransactionsQueue - _transactionsQueue.Count} txs"
+                    $"Sanitized mempool; dropped {toErase.Count} txs"
                 );
             }
 
