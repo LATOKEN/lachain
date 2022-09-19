@@ -1,5 +1,5 @@
 ﻿using System;
-using Lachain.Networking.Hub;
+using System.Collections.Generic;
 using Lachain.Proto;
 using Lachain.Utility;
 
@@ -10,7 +10,7 @@ namespace Lachain.Networking
         IMessageFactory MessageFactory { get; }
         void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority);
         void Start();
-        void ConnectValidatorChannel();
+        void ConnectValidatorChannel(List<ECDSAPublicKey> validators);
         void DisconnectValidatorChannel();
         void BroadcastLocalTransaction(TransactionReceipt receipt);
         void AdvanceEra(ulong era);
@@ -22,6 +22,5 @@ namespace Lachain.Networking
         event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
-        event EventHandler<ClientWorker>? OnClientWorkerAdded;
     }
 }
