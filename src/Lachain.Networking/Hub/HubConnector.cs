@@ -103,14 +103,12 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.SendVal(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void ConnectValidatorChannel()
         {
             CommunicationHub.Net.Hub.ConnectVal();
 
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void DisconnectValidatorChannel()
         {
             CommunicationHub.Net.Hub.DisconnectVal();
