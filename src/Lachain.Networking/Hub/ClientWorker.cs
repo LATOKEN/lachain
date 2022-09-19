@@ -34,8 +34,8 @@ namespace Lachain.Networking.Hub
         private readonly HubConnector _hubConnector;
         private readonly Thread _worker;
         private bool _isConnected = false;
+        private bool _isValidator = false;
         private int _eraMsgCounter;
-        public event EventHandler<(byte[], Action<bool> callback)>? OnSend;
 
         private readonly C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)> _messageQueue 
             = new C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)>(new NetworkMessageComparer());
@@ -79,6 +79,11 @@ namespace Lachain.Networking.Hub
                 _messageQueue.Add((priority, message));
                 Monitor.PulseAll(_messageQueue);
             }
+        }
+
+        public void SetValidator(bool isValidator)
+        {
+            _isValidator = isValidator;
         }
 
         private void Worker()
@@ -130,7 +135,7 @@ namespace Lachain.Networking.Hub
                                 .Inc(message.CalculateSize());
                         }
 
-                        OnSend?.Invoke(this, (PeerPublicKey, Send(megaBatchBytes)));
+                        Send(megaBatchBytes);
                         _eraMsgCounter += 1;
                     }
                     
@@ -144,14 +149,10 @@ namespace Lachain.Networking.Hub
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private Action<bool> Send(byte[] megaBatchBytes)
+        private void Send(byte[] megaBatchBytes)
         {
-            return isNextValidator =>
-            {
-                if (isNextValidator) _hubConnector.SendVal(PeerPublicKey, megaBatchBytes);
-                else _hubConnector.Send(PeerPublicKey, megaBatchBytes);
-            };
+            if (_isValidator) _hubConnector.SendVal(PeerPublicKey, megaBatchBytes);
+            else _hubConnector.Send(PeerPublicKey, megaBatchBytes);
         }
 
         public void Dispose()
