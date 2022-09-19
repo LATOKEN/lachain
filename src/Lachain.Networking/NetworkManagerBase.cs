@@ -86,13 +86,18 @@ namespace Lachain.Networking
                 _hubConnector.ConnectValidatorChannel();
             }
 
-            var validatorsToDisconnect = _connectedValidators.Where(x => !validators.Contains(x));
+            validators = validators.OrderBy(
+                x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
+            _connectedValidators = _connectedValidators.OrderBy(
+                x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
+
+            var validatorsToDisconnect = RemovePublicKeys(_connectedValidators, validators);
             foreach (var publicKey in validatorsToDisconnect)
             {
                 GetClientWorker(publicKey)?.SetValidator(false);
             }
 
-            var validatorsToConnect = validators.Where(x => !_connectedValidators.Contains(x));
+            var validatorsToConnect = RemovePublicKeys(validators, _connectedValidators);
             foreach (var publicKey in validatorsToConnect)
             {
                 GetClientWorker(publicKey)?.SetValidator(true);
@@ -120,6 +125,35 @@ namespace Lachain.Networking
                 _validatorChannelConnected = false;
                 _hubConnector.DisconnectValidatorChannel();
             }
+        }
+
+        // both input lists need to be sorted and no duplicate element allowed
+        // removing items from source which is present in keysToRemove
+        // in O(source.Count + keysToRemove.Count) complexity
+        private List<ECDSAPublicKey> RemovePublicKeys(
+            List<ECDSAPublicKey> source,
+            List<ECDSAPublicKey> keysToRemove
+        )
+        {
+            var res = new List<ECDSAPublicKey>();
+            int iter = 0;
+            foreach (var publicKey in source)
+            {
+                bool found = false;
+                while (iter < keysToRemove.Count)
+                {
+                    var key = keysToRemove[iter];
+                    var compare = key.Buffer.Cast<IComparable<byte>>().
+                        CompareLexicographically(publicKey.Buffer);
+                    if (compare == 0) found = true;
+                    else if (compare > 0) break;
+
+                    iter++;
+                }
+
+                if (!found) res.Add(publicKey);
+            }
+            return res;
         }
 
         private ClientWorker? GetClientWorker(ECDSAPublicKey publicKey)
