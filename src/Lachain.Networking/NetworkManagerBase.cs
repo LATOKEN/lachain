@@ -10,6 +10,7 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
@@ -28,9 +29,12 @@ namespace Lachain.Networking
         private readonly MessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
         private readonly ClientWorker _broadcaster;
+        private bool _validatorChannelConnected = false;
 
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
+
+        private List<ECDSAPublicKey> _connectedValidators = new List<ECDSAPublicKey>();
 
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
@@ -55,7 +59,6 @@ namespace Lachain.Networking
             _hubConnector.OnMessage += _HandleMessage;
 
             _broadcaster = new ClientWorker(new byte[33], _messageFactory, _hubConnector);
-            OnClientWorkerAdded?.Invoke(this, _broadcaster);
         }
 
         public void AdvanceEra(ulong era)
@@ -75,16 +78,48 @@ namespace Lachain.Networking
             _hubConnector.Start();
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public void ConnectValidatorChannel()
+        public void ConnectValidatorChannel(List<ECDSAPublicKey> validators)
         {
-            _hubConnector.ConnectValidatorChannel();
+            if (!_validatorChannelConnected)
+            {
+                _validatorChannelConnected = true;
+                _hubConnector.ConnectValidatorChannel();
+            }
+
+            var validatorsToDisconnect = _connectedValidators.Where(x => !validators.Contains(x));
+            foreach (var publicKey in validatorsToDisconnect)
+            {
+                GetClientWorker(publicKey)?.SetValidator(false);
+            }
+
+            var validatorsToConnect = validators.Where(x => !_connectedValidators.Contains(x));
+            foreach (var publicKey in validatorsToConnect)
+            {
+                GetClientWorker(publicKey)?.SetValidator(true);
+            }
+            
+            lock (_connectedValidators)
+            {
+                _connectedValidators.Clear();
+                _connectedValidators = new List<ECDSAPublicKey>(validators);
+            }
         }
         
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void DisconnectValidatorChannel()
         {
-            _hubConnector.DisconnectValidatorChannel();
+
+            foreach (var publicKey in _connectedValidators)
+            {
+                GetClientWorker(publicKey)?.SetValidator(false);
+            }
+            lock (_connectedValidators)
+                _connectedValidators.Clear();
+
+            if (_validatorChannelConnected)
+            {
+                _validatorChannelConnected = false;
+                _hubConnector.DisconnectValidatorChannel();
+            }
         }
 
         private ClientWorker? GetClientWorker(ECDSAPublicKey publicKey)
@@ -101,7 +136,6 @@ namespace Lachain.Networking
         {
             Logger.LogTrace($"Connecting to peer {publicKey.ToHex()}");
             var worker = new ClientWorker(publicKey, _messageFactory, _hubConnector);
-            OnClientWorkerAdded?.Invoke(this, worker);
             _clientWorkers.Add(publicKey, worker);
             worker.Start();
             return worker;
@@ -245,6 +279,5 @@ namespace Lachain.Networking
         public event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         public event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
-        public event EventHandler<ClientWorker>? OnClientWorkerAdded;
     }
 }
