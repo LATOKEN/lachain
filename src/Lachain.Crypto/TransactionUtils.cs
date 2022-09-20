@@ -26,25 +26,26 @@ namespace Lachain.Crypto
             return useNewId ? _newChainId : _oldChainId;
         }
         
-        public static LegacyTransactionChainId GetEthTx(this Transaction t, Signature? s, bool useNewId)
+        public static RLPSigner GetEthTx(this Transaction t, Signature? s, bool useNewId)
         {
             var nonce = t.Nonce == 0
                 ? Array.Empty<byte>()
                 : new BigInteger(t.Nonce).ToByteArray().Reverse().ToArray().TrimLeadingZeros();
             var sig = s is null  ?  Array.Empty<byte>() : s.Encode().AsSpan();
-            var ethTx = new Nethereum.Signer.LegacyTransactionChainId(
+            var rlpSigner = new Nethereum.Signer.RLPSigner(new byte[][]{
                 nonce,
                 new BigInteger(t.GasPrice).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 new BigInteger(t.GasLimit).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
                 t.To.ToBytes(), // this may be empty, same as passing null
                 t.Value.ToBytes(false,  true),
                 t.Invocation.ToArray(),
-                new BigInteger(ChainId(useNewId)).ToByteArray().Reverse().ToArray().TrimLeadingZeros(),
+                new BigInteger(ChainId(useNewId)).ToByteArray().Reverse().ToArray().TrimLeadingZeros(), null, null},
                 sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(0, 32).ToArray().TrimLeadingZeros(),
                 sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(32, 32).ToArray().TrimLeadingZeros(),
-                sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(64, sig.Length - 64).ToArray().TrimLeadingZeros()
+                sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(64, sig.Length - 64).ToArray().TrimLeadingZeros(), 
+                7
             );
-            return ethTx;
+            return rlpSigner;
         }
         public static IEnumerable<byte> Rlp(this Transaction t, bool useNewId)
         {
