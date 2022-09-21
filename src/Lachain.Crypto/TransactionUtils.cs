@@ -43,7 +43,7 @@ namespace Lachain.Crypto
                 sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(0, 32).ToArray().TrimLeadingZeros(),
                 sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(32, 32).ToArray().TrimLeadingZeros(),
                 sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(64, sig.Length - 64).ToArray().TrimLeadingZeros(), 
-                7
+                6
             );
             return rlpSigner;
         }
@@ -52,11 +52,37 @@ namespace Lachain.Crypto
             var ethTx = t.GetEthTx(null, useNewId);
             return ethTx.GetRLPEncodedRaw();
         }
+        
+        public static byte[] LAEncodeSigned(SignedData signedData, int numberOfElements)
+        {
+            List<byte[]> numArrayList = new List<byte[]>();
+            for (int index = 0; index < numberOfElements; ++index)
+                numArrayList.Add(Nethereum.RLP.RLP.EncodeElement(signedData.Data[index]));
+            byte[] numArray1;
+            byte[] numArray2;
+            byte[] numArray3;
+            if (signedData.IsSigned())
+            {
+                numArray1 = Nethereum.RLP.RLP.EncodeElement(signedData.V);
+                numArray2 = Nethereum.RLP.RLP.EncodeElement(signedData.R);
+                numArray3 = Nethereum.RLP.RLP.EncodeElement(signedData.S);
+            }
+            else
+            {
+                numArray1 = Nethereum.RLP.RLP.EncodeElement(Nethereum.Model.DefaultValues.EMPTY_BYTE_ARRAY);
+                numArray2 = Nethereum.RLP.RLP.EncodeElement(Nethereum.Model.DefaultValues.EMPTY_BYTE_ARRAY);
+                numArray3 = Nethereum.RLP.RLP.EncodeElement(Nethereum.Model.DefaultValues.EMPTY_BYTE_ARRAY);
+            }
+            numArrayList.Add(numArray1);
+            numArrayList.Add(numArray2);
+            numArrayList.Add(numArray3);
+            return Nethereum.RLP.RLP.EncodeList(numArrayList.ToArray());
+        }
 
         public static IEnumerable<byte> RlpWithSignature(this Transaction t, Signature s, bool useNewId)
         {
             var ethTx = t.GetEthTx(s, useNewId);
-            return ethTx.GetRLPEncoded();
+            return LAEncodeSigned(new SignedData( ethTx.Data, ethTx.Signature), 6);
         }
 
         public static UInt256 RawHash(this Transaction t, bool useNewId)
