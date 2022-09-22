@@ -30,6 +30,7 @@ namespace Lachain.Networking
         private readonly HubConnector _hubConnector;
         private readonly ClientWorker _broadcaster;
         private bool _validatorChannelConnected = false;
+        private bool _started = false;
 
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
@@ -76,10 +77,13 @@ namespace Lachain.Networking
         {
             _broadcaster.Start();
             _hubConnector.Start();
+            _started = true;
         }
 
         public void ConnectValidatorChannel(List<ECDSAPublicKey> validators)
         {
+            if (!_started) return;
+            
             if (!_validatorChannelConnected)
             {
                 _validatorChannelConnected = true;
@@ -112,6 +116,7 @@ namespace Lachain.Networking
         
         public void DisconnectValidatorChannel()
         {
+            if (!_started) return;
 
             foreach (var publicKey in _connectedValidators)
             {
