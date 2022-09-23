@@ -1,5 +1,16 @@
 [![Build Status](https://travis-ci.com/LAToken/lachain.svg?branch=dev)](https://travis-ci.com/LAToken/lachain)
 
+## LACHAIN
+LACHAIN is a blockchain with Proof-of-Stake with HoneyBadgerBFT consensus and smart contracts in WASM eVM . 
+
+Proof-of-Stake in this case is based on the [VRF](https://en.wikipedia.org/wiki/Verifiable_random_function) lottery where chances to win are proportional to the validator's stake. 
+
+Current validator set creates blocks with [HoneyBadgerBFT consensus](https://eprint.iacr.org/2016/199.pdf) protocol.
+
+### Security Audit
+An [official security audit](audit/Lachain-consensus-audit-report.pdf) has been completed on LACHAIN HoneyBadgerBFT consensus implementation by [Hashex](https://hashex.org). 
+
+
 
 ### Build the project
 
