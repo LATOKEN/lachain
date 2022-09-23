@@ -13,6 +13,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Networking;
+using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
@@ -107,6 +108,21 @@ namespace Lachain.CryptoTest
         }
 
         [Test]
+        public void Test_HeaderKeccak()
+        {
+            var header = new BlockHeader
+            {
+                PrevBlockHash = UInt256Utils.Zero,
+                MerkleRoot = UInt256Utils.Zero,
+                Index = 0,
+                StateHash = UInt256Utils.Zero,
+                Nonce = 1
+            };
+            Console.WriteLine(HashUtils.Keccak(header).ToHex());
+            Assert.AreEqual("0x3cf92ed8492413af89861763a3718cb9afd415ddb2bca10d2e8038cf2d1afb7f", HashUtils.Keccak(header).ToHex());
+        }
+ 
+        [Test]
         public void Test_AesGcmEncryptDecryptRoundTrip()
         {
             var key = Crypto.GenerateRandomBytes(32);
@@ -182,6 +198,32 @@ namespace Lachain.CryptoTest
             var endTs = TimeUtils.CurrentTimeMillis();
             Console.WriteLine($"Full sign + recover time: {endTs - startTs}ms");
             Console.WriteLine($"Per 1 iteration: {(double) (endTs - startTs) / n}ms");
+        }
+
+        [Test]
+        public void Test_TxHash()
+        {
+            var fromAddress = UInt160Utils.Zero;
+            var tx = new Transaction
+            {
+                From = fromAddress,
+                Nonce = (ulong) 0,
+                Value = Money.Parse("10").ToUInt256(),
+                To = "0x316fd97d8e47a2dec2c8783db740f08a10a13f4e".HexToUInt160(),
+                GasPrice = 0,
+            };
+            Console.WriteLine($"Tx old full rlp is {tx.RlpWithSignature(SignatureUtils.ZeroOld, false).ToHex()}");
+            Assert.AreEqual("0xe580000094316fd97d8e47a2dec2c8783db740f08a10a13f4e888ac7230489e8000080008080" ,
+                tx.RlpWithSignature(SignatureUtils.ZeroOld, false).ToHex());
+            Console.WriteLine($"Tx new full rlp is {tx.RlpWithSignature(SignatureUtils.ZeroNew, true).ToHex()}");
+            Assert.AreEqual("0xe780000094316fd97d8e47a2dec2c8783db740f08a10a13f4e888ac7230489e80000808200008080" ,
+                tx.RlpWithSignature(SignatureUtils.ZeroNew, true).ToHex());
+            Console.WriteLine($"Tx old full hash is {tx.FullHash(SignatureUtils.ZeroOld, false).ToHex()}");
+            Assert.AreEqual("0xe115bce0fbf8e927b1f3e4068c2b486281e5d298fdbbfa4b947c62329fc85abc" ,
+                tx.FullHash(SignatureUtils.ZeroOld, false).ToHex());
+            Console.WriteLine($"Tx new full hash is {tx.FullHash(SignatureUtils.ZeroNew, true).ToHex()}");
+            Assert.AreEqual("0xad0a8811b4fc0c0f058678a2e0bf76f4d040b0214d6819be39a28dd414d97889" ,
+                tx.FullHash(SignatureUtils.ZeroNew, true).ToHex());
         }
 
 

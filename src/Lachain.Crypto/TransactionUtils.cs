@@ -82,6 +82,10 @@ namespace Lachain.Crypto
         public static IEnumerable<byte> RlpWithSignature(this Transaction t, Signature s, bool useNewId)
         {
             var ethTx = t.GetEthTx(s, useNewId);
+            // TODO: This method differs from the RLPSigmer.GetRLPEncoded from Nethereum version >= 4.0.0
+            // for transactions with zero signature (we use such txes in genesis block and for system txes)
+            // So our serialization of such txes differs from ethereum serialization,  need to fix it in future
+            // (requires hardfork)
             return LAEncodeSigned(new SignedData( ethTx.Data, ethTx.Signature), 6);
         }
 
