@@ -49,4 +49,9 @@ After that place `Lachain.Console` file in the same folder with appropriate conf
 
 ### Config files
 Use `config_mainnet.json` template to connect to the LACHAIN mainnet or `config_testnet.json` to connect to the testnet.
-Rename required template to the `config.json` and change `rpc/apiKey` to the real hex dump of the ECDSA public key and `vault/password` to the real password you want to use to encode your wallet,  after that place resulting `config.json` to the folder where `Lachain.Console` is placed, 
+Rename required template to the `config.json` and change `rpc/apiKey` to the real hex dump of the ECDSA public key and `vault/password` to the real password you want to use to encode your wallet,  after that place resulting `config.json` to the folder where `Lachain.Console` is placed.
+
+### Docker 
+1. Set config.json in the repo root (for example,  rename config_testnet.json or config_mainnet.json to the config.json)
+2. `docker-compose build`
+3. `docker-compose up`

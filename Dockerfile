@@ -17,10 +17,10 @@ COPY src/ /lachain/
 COPY wasm/ /wasm/
 WORKDIR /lachain/Lachain.Console
 RUN dotnet publish -c Release -o out
+COPY config.json ./out
 
 FROM mcr.microsoft.com/dotnet/runtime:5.0-buster-slim
 RUN apt update && apt install -y libc6-dev
 WORKDIR /lachain
 COPY --from=build-env /lachain/Lachain.Console/out .
-RUN rm -rf /lachain/wallet.json /lachain/config.json
 ENTRYPOINT ["dotnet", "/lachain/Lachain.Console.dll"]
