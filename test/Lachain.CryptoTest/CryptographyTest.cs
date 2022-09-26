@@ -346,18 +346,11 @@ namespace Lachain.CryptoTest
             };
             var rlp = tx.Rlp(false);
             // This is correct rlp with chain id 25. Check here: https://toolkit.abdk.consulting/ethereum#transaction
-            var expectedRlp = 
-                "0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080198080"
-                    .HexToBytes();
-            Assert.IsTrue(rlp.SequenceEqual(expectedRlp));
+            Assert.AreEqual("0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080198080", rlp.ToHex());
 
             rlp = tx.Rlp(true);
             // This is correct rlp with chain id 225. Check here: https://toolkit.abdk.consulting/ethereum#transaction
-            expectedRlp = 
-                "0xef8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d631000008081e18080"
-                    .HexToBytes();
-            Assert.IsTrue(rlp.SequenceEqual(expectedRlp));
-
+            Assert.AreEqual("0xef8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d631000008081e18080", rlp.ToHex());
         }
 
         [Test]
