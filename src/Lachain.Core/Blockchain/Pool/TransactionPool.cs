@@ -108,8 +108,11 @@ namespace Lachain.Core.Blockchain.Pool
                 
                 if (tx is null)
                     continue;
-                if(Add(tx, false) != OperatingError.Ok)
+                if (Add(tx, false) != OperatingError.Ok)
+                {
+                    Logger.LogWarning($"Tx {tx.Hash.ToHex()} was removed from pool during Restore");
                     transactionsToRemove.Add(tx.Hash);
+                }
             }
             // if a transaction was not added to the pool, that means it's not a valid 
             // transactions, so we should also erase it from the persistent storage
@@ -150,11 +153,16 @@ namespace Lachain.Core.Blockchain.Pool
 
             /* don't add to transaction pool transactions with the same hashes */
             if (_transactions.ContainsKey(receipt.Hash))
+            {
+                Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool,  already exists");
                 return OperatingError.AlreadyExists;
+            }
+
             /* verify transaction before adding */
             if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
             {
+                Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool,  invalid nonce");
                 return OperatingError.InvalidNonce;
             }
 
@@ -164,7 +172,11 @@ namespace Lachain.Core.Blockchain.Pool
                 // system transaction will not be replaced by same nonce
                 // do we need to check nonce for system txes???
                 if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                {
+                    Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool, invalid nonce in system tx");
                     return OperatingError.InvalidNonce;
+                }
+
                 if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
@@ -172,7 +184,10 @@ namespace Lachain.Core.Blockchain.Pool
 
             /* check if the address has enough gas */
             if (!IsBalanceValid(receipt))
+            {
+                Logger.LogWarning($"Tx {receipt.Hash.ToHex()} was not added,  invalid balance");
                 return OperatingError.InsufficientBalance;
+            }
 
             // Stop accept regular txes 100 blocks before Hardfork_6
             if (HardforkHeights.IsHardfork_9Active(BlockHeight() + 100) &&
@@ -180,7 +195,10 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 if (!receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) &&
                     !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
+                {
+                    Logger.LogWarning($"Tx {receipt.Hash.ToHex()} was not added, hardfork_6 pool block");
                     return OperatingError.UnsupportedTransaction;
+                }
             }
             
             // we use next height here because block header should be signed with the same chainId
@@ -188,7 +206,10 @@ namespace Lachain.Core.Blockchain.Pool
             bool useNewChainId = HardforkHeights.IsHardfork_9Active(BlockHeight() + 1);
             var result = _transactionManager.Verify(receipt, useNewChainId);
             if (result != OperatingError.Ok)
+            {
+                Logger.LogWarning($"Tx {receipt.Hash.ToHex()} was not added, failed to verify");
                 return result;
+            }
 
             bool oldTxExist = false;
             TransactionReceipt? oldTx = null;
