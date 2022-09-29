@@ -82,7 +82,7 @@ namespace Lachain.Core.Consensus
             // and takes ceil(BatchSize / validatorCount) number of transactions. If the
             // transactions are selected randomly, then the expected number of transactions
             // in a block is BatchSize.
-            var taken = _transactionPool.Peek(BatchSize, txNum, (ulong) era);
+            var taken = _transactionPool.Peek(BatchSize, txNum);
             Logger.LogTrace($"Proposed Transactions Count: {taken.Count()}");
             return taken;
         }

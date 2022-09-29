@@ -288,7 +288,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     txNo++;
                 }
 
-                var takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
+                var takenTxes = _transactionPool.Peek(1000, 1000);
                 var block = BuildNextBlock(takenTxes.ToArray());
                 var result = ExecuteBlock(block, takenTxes.ToArray());
                 Assert.AreEqual(result, OperatingError.Ok);
@@ -313,7 +313,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     }
                 }
 
-                takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
+                takenTxes = _transactionPool.Peek(1000, 1000);
                 block = BuildNextBlock(takenTxes.ToArray());
                 result = ExecuteBlock(block, takenTxes.ToArray());
                 Assert.AreEqual(result, OperatingError.Ok);

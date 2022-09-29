@@ -21,7 +21,7 @@ namespace Lachain.Core.Blockchain.Pool
 
         OperatingError Add(TransactionReceipt receipt, bool notify = true);
 
-        IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake, ulong era = 0);
+        IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake);
 
         uint Size();
         void Clear();

@@ -328,7 +328,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     txNo++;
                 }
 
-                var takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
+                var takenTxes = _transactionPool.Peek(1000, 1000);
                 if (useTxVerifier) _txVerifier.VerifyTransactions(takenTxes, HardforkHeights.IsHardfork_9Active(currentHeight + 1));
                 var block = BuildNextBlock(takenTxes.ToArray());
                 var result = ExecuteBlock(block, takenTxes.ToArray());
@@ -354,7 +354,7 @@ namespace Lachain.CoreTest.IntegrationTests
                     }
                 }
 
-                takenTxes = _transactionPool.Peek(1000, 1000, currentHeight + 1);
+                takenTxes = _transactionPool.Peek(1000, 1000);
                 if (useTxVerifier) _txVerifier.VerifyTransactions(takenTxes, HardforkHeights.IsHardfork_9Active(currentHeight + 1));
                 block = BuildNextBlock(takenTxes.ToArray());
                 result = ExecuteBlock(block, takenTxes.ToArray());
@@ -387,7 +387,7 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 var remBlocks = total - it;
                 var txesToTake = txes.Count / remBlocks;
-                var takenTxes = _transactionPool.Peek(txesToTake, txesToTake, _blockManager.GetHeight() + 1);
+                var takenTxes = _transactionPool.Peek(txesToTake, txesToTake);
                 var block = BuildNextBlock(takenTxes.ToArray());
                 var result = ExecuteBlock(block, takenTxes.ToArray());
                 Assert.AreEqual(result, OperatingError.Ok);

@@ -182,7 +182,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
         private TransactionReceipt[] GetCurrentPoolTxes(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000, era).ToArray();
+            return _transactionPool.Peek(1000, 1000).ToArray();
         }
 
         private Block BuildNextBlock(TransactionReceipt[]? receipts = null)

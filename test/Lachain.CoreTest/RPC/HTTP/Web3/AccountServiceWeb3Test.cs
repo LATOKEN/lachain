@@ -364,7 +364,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
         private TransactionReceipt[] GetCurrentPoolTxes(ulong era)
         {
-            return _transactionPool.Peek(1000, 1000, era).ToArray();
+            return _transactionPool.Peek(1000, 1000).ToArray();
         }
 
         // from BlockTest.cs
