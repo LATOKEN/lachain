@@ -153,10 +153,12 @@ namespace Lachain.Core.Blockchain.Pool
             }
 
             /* verify transaction before adding */
-            if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
-                _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
+            var poolNonce = GetNextNonceForAddress(receipt.Transaction.From);
+            var stateNonce = _transactionManager.CalcNextTxNonce(receipt.Transaction.From);
+            if (poolNonce < receipt.Transaction.Nonce ||
+                stateNonce > receipt.Transaction.Nonce)
             {
-                Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool,  invalid nonce");
+                Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool,  invalid nonce: poolNonce {poolNonce}, stateNonce {stateNonce},  tx nonce {receipt.Transaction.Nonce}");
                 return OperatingError.InvalidNonce;
             }
 
@@ -165,7 +167,7 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 // system transaction will not be replaced by same nonce
                 // do we need to check nonce for system txes???
-                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                if (poolNonce != receipt.Transaction.Nonce)
                 {
                     Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool, invalid nonce in system tx");
                     return OperatingError.InvalidNonce;
