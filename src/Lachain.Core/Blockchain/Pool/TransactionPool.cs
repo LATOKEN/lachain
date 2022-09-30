@@ -29,7 +29,6 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
         private readonly IStateManager _stateManager;
-        private readonly ITransactionHashTrackerByNonce _transactionHashTracker;
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
@@ -56,15 +55,13 @@ namespace Lachain.Core.Blockchain.Pool
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            IStateManager stateManager,
-            ITransactionHashTrackerByNonce transactionHashTracker
+            IStateManager stateManager
         )
         {
             _poolRepository = poolRepository;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _stateManager = stateManager;
-            _transactionHashTracker = transactionHashTracker;
             _transactionsQueue = new HashSet<TransactionReceipt>();
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
@@ -215,9 +212,16 @@ namespace Lachain.Core.Blockchain.Pool
                 if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
                 {
                     /* this tx will try to replace an old one */
-                    oldTxExist = _transactionHashTracker.TryGetTransactionHash(receipt.Transaction.From,
-                        receipt.Transaction.Nonce, out var oldTxHash);
-                    if (!oldTxExist)
+                    var addressTxes = _transactions
+                        .Where(pair => pair.Value.Transaction.From.Equals(receipt.Transaction.From))
+                        .Where(pair => pair.Value.Transaction.Nonce.Equals(receipt.Transaction.Nonce))
+                        .ToList();
+                    if (addressTxes.Count > 0)
+                    {
+                        oldTxExist = true;
+                        oldTx = addressTxes[0].Value;
+                    }
+                    else
                     {
                         Logger.LogWarning($"Max nonce for address {receipt.Transaction.From} is "
                               + $"{GetNextNonceForAddress(receipt.Transaction.From)}. But cannot find transaction "
@@ -225,13 +229,6 @@ namespace Lachain.Core.Blockchain.Pool
                         return OperatingError.TransactionLost;
                     }
 
-                    if (!_transactions.TryGetValue(oldTxHash!, out oldTx))
-                    {
-                        Logger.LogTrace(
-                            $"Transaction {receipt.Hash.ToHex()} cannot replace the old transaction {oldTxHash!.ToHex()}. "
-                            + $"Probable reason: old transaction is already proposed to block");
-                        return OperatingError.TransactionLost;
-                    }
                     if (oldTx.Transaction.GasPrice >= receipt.Transaction.GasPrice)
                     {
                         // discard new transaction, it has less gas price than the old one
@@ -253,9 +250,9 @@ namespace Lachain.Core.Blockchain.Pool
                     
                     // remove the old transaction from pool
                     _transactionsQueue.Remove(oldTx);
-                    _transactions.TryRemove(oldTxHash!, out var _);
+                    _transactions.TryRemove(oldTx.Hash, out var _);
                     Logger.LogTrace(
-                        $"Transaction {oldTxHash!.ToHex()} with nonce: {oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice}" +
+                        $"Transaction {oldTx.Hash!.ToHex()} with nonce: {oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice}" +
                         $" in pool is replaced by transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
                         $"{receipt.Transaction.GasPrice}");
                 }
