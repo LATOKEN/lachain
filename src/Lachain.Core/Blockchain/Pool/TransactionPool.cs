@@ -28,7 +28,6 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly IPoolRepository _poolRepository;
         private readonly ITransactionManager _transactionManager;
         private readonly IBlockManager _blockManager;
-        private readonly INonceCalculator _nonceCalculator;
         private readonly IStateManager _stateManager;
         private readonly ITransactionHashTrackerByNonce _transactionHashTracker;
 
@@ -57,7 +56,6 @@ namespace Lachain.Core.Blockchain.Pool
             IPoolRepository poolRepository,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
-            INonceCalculator nonceCalculator,
             IStateManager stateManager,
             ITransactionHashTrackerByNonce transactionHashTracker
         )
@@ -65,7 +63,6 @@ namespace Lachain.Core.Blockchain.Pool
             _poolRepository = poolRepository;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
-            _nonceCalculator = nonceCalculator;
             _stateManager = stateManager;
             _transactionHashTracker = transactionHashTracker;
             _transactionsQueue = new HashSet<TransactionReceipt>();
@@ -256,7 +253,6 @@ namespace Lachain.Core.Blockchain.Pool
                     
                     // remove the old transaction from pool
                     _transactionsQueue.Remove(oldTx);
-                    _nonceCalculator.TryRemove(oldTx);
                     _transactions.TryRemove(oldTxHash!, out var _);
                     Logger.LogTrace(
                         $"Transaction {oldTxHash!.ToHex()} with nonce: {oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice}" +
@@ -266,9 +262,6 @@ namespace Lachain.Core.Blockchain.Pool
                 /* put transaction to pool queue */
                 _transactions[receipt.Hash] = receipt;
                 _transactionsQueue.Add(receipt);
-
-                /* add to the _nonceCalculator to efficiently calculate nonce */
-                _nonceCalculator.TryAdd(receipt);
             }
 
             /* write transaction to persistence storage */
@@ -324,7 +317,6 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 foreach(var receipt in lastProposed)
                 {
-                    _nonceCalculator.TryRemove(receipt);
                     _toDeleteRepo.Add(receipt);
                 }
                 _proposed.Remove(era, out var _);
@@ -358,7 +350,6 @@ namespace Lachain.Core.Blockchain.Pool
                 foreach (var receipt in toErase)
                 {
                     _transactionsQueue.Remove(receipt);
-                    _nonceCalculator.TryRemove(receipt);
                     _transactions.TryRemove(receipt.Hash, out var _);
                     _toDeleteRepo.Add(receipt);
                 }
@@ -523,15 +514,6 @@ namespace Lachain.Core.Blockchain.Pool
                 throw new Exception("transactions and transactionQueue should be of same size");
             }
 
-            // at this point nonce-calculator and transaction should have the 
-            // same set of transactions
-
-            if(_transactions.Count() != _nonceCalculator.Count())
-            {
-                Logger.LogError($"_transactions count: {_transactions.Count()} != _nonceCalculator: {_nonceCalculator.Count()}");
-                throw new Exception("transactions and nonceCalculator should be of same size");
-            }
-
             // Proposed should be empty
             if(_proposed.Count() != 0)
             {
@@ -553,7 +535,6 @@ namespace Lachain.Core.Blockchain.Pool
         {
             _transactions.Clear();
             _transactionsQueue.Clear();
-            _nonceCalculator.Clear();
         }
 
         // It totally clears all the transactions in the persistent storage
@@ -566,11 +547,23 @@ namespace Lachain.Core.Blockchain.Pool
 
         // Depending on all the transactions already added to the block and the transactions
         // stored in the pool, this method calculates the next nonce for an address 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetNextNonceForAddress(UInt160 address)
         {
             // poolNonce represents the max nonce of all the transactions by this address
-            var poolNonce = _nonceCalculator.GetMaxNonceForAddress(address);
+            ulong? poolNonce = null;
+            lock (_transactions)
+            {
+                var addressTxes = _transactions
+                    .Where(pair => pair.Value.Transaction.From.Equals(address))
+                    .OrderBy(pair => pair.Value.Transaction.Nonce)
+                    .Reverse()
+                    .ToList();
+                if (addressTxes.Count > 0)
+                {
+                    poolNonce = addressTxes[0].Value.Transaction.Nonce;
+                }
+            }
+
             // stateNonce calculates the next nonce for an address from the transactions that
             // have been already added to the blocks
             var stateNonce = _transactionManager.CalcNextTxNonce(address);
