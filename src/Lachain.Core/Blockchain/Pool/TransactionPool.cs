@@ -33,6 +33,8 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
 
+        private readonly List<TransactionReceipt> _postponed;
+
         // _proposed stores the list of proposed transactions that was proposed an era
         // _proposed should always contain at most one entry representing the last era and
         // the list of transactions proposed during that era
@@ -155,8 +157,14 @@ namespace Lachain.Core.Blockchain.Pool
             /* verify transaction before adding */
             var poolNonce = GetNextNonceForAddress(receipt.Transaction.From);
             var stateNonce = _transactionManager.CalcNextTxNonce(receipt.Transaction.From);
-            if (poolNonce < receipt.Transaction.Nonce ||
-                stateNonce > receipt.Transaction.Nonce)
+            if (poolNonce < receipt.Transaction.Nonce)
+            {
+                Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to postponed list: poolNonce {poolNonce}, stateNonce {stateNonce},  tx nonce {receipt.Transaction.Nonce}");
+                _postponed.Add(receipt);
+                return OperatingError.Ok;
+            } 
+            
+            if(stateNonce > receipt.Transaction.Nonce)
             {
                 Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool,  invalid nonce: poolNonce {poolNonce}, stateNonce {stateNonce},  tx nonce {receipt.Transaction.Nonce}");
                 return OperatingError.InvalidNonce;
@@ -271,6 +279,17 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
             }
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
+            
+            // try to send postponed txes
+            var nextTxes = _postponed
+                .Where(x => x.Transaction.From.Equals(receipt.Transaction.From) && x.Transaction.Nonce == receipt.Transaction.Nonce + 1)
+                .ToList();
+            if (nextTxes.Count > 0)
+            {
+                if (Add(nextTxes[0], true) == OperatingError.Ok)
+                    _postponed.Remove(nextTxes[0]);
+            }
+
             if (notify) TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
