@@ -33,7 +33,7 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
 
-        private readonly List<TransactionReceipt> _postponed;
+        private readonly List<TransactionReceipt> _postponed = new List<TransactionReceipt>();
 
         // _proposed stores the list of proposed transactions that was proposed an era
         // _proposed should always contain at most one entry representing the last era and
