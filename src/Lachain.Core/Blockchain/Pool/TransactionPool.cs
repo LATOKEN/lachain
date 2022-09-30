@@ -79,6 +79,21 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
                 _toDeleteRepo.Clear();
             }
+
+            List<TransactionReceipt> toAdd = new List<TransactionReceipt>();
+            lock (_postponed)
+            {
+                foreach (var r in _postponed)
+                {
+                    if(_transactionManager.CalcNextTxNonce(r.Transaction.From) == r.Transaction.Nonce)
+                        toAdd.Add(r);
+                }
+            }
+
+            foreach (var r in toAdd)
+            {
+                Add(r);
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -160,10 +175,18 @@ namespace Lachain.Core.Blockchain.Pool
             if (poolNonce < receipt.Transaction.Nonce)
             {
                 Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to postponed list: poolNonce {poolNonce}, stateNonce {stateNonce},  tx nonce {receipt.Transaction.Nonce}");
-                _postponed.Add(receipt);
+                lock (_postponed)
+                {
+                    _postponed.Add(receipt);
+                }
                 return OperatingError.Ok;
             } 
             
+            lock (_postponed)
+            {
+                _postponed.Remove(receipt);
+            }
+
             if(stateNonce > receipt.Transaction.Nonce)
             {
                 Logger.LogWarning($"Tx {receipt.Hash.ToHex()} wasn't added to pool,  invalid nonce: poolNonce {poolNonce}, stateNonce {stateNonce},  tx nonce {receipt.Transaction.Nonce}");
@@ -287,7 +310,12 @@ namespace Lachain.Core.Blockchain.Pool
             if (nextTxes.Count > 0)
             {
                 if (Add(nextTxes[0], true) == OperatingError.Ok)
-                    _postponed.Remove(nextTxes[0]);
+                {
+                    lock (_postponed)
+                    {
+                        _postponed.Remove(nextTxes[0]);
+                    }
+                }
             }
 
             if (notify) TransactionAdded?.Invoke(this, receipt);
