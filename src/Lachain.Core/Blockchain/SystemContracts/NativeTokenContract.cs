@@ -127,6 +127,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             );
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
+            if (HardforkHeights.IsHardfork_13Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                return result ? ExecutionStatus.Ok : ExecutionStatus.ExecutionHalted;
             return ExecutionStatus.Ok;
         }
 
@@ -141,6 +143,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
             var result = _context.Snapshot.Balances.TransferBalance(from, recipient, value.ToMoney());
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
+            if (HardforkHeights.IsHardfork_13Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+                return result ? ExecutionStatus.Ok : ExecutionStatus.ExecutionHalted;
             return ExecutionStatus.Ok;
         }
 
