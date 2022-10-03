@@ -483,7 +483,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         
                 return transferInvRes.Status == ExecutionStatus.Ok
                     ? (gasUsed + transferInvRes.GasUsed).ToHex()
-                    : Web3DataFormatUtils.Web3Number(gasUsed);
+                    : throw new Exception("Error in funds transfer");
             }
         
             if (!(contract is null))
@@ -502,6 +502,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", destination, tx.Value);
                         var transferResult =
                             ContractInvoker.Invoke(ContractRegisterer.LatokenContract, transferContext, localInvocation, GasMetering.DefaultBlockGasLimit);
+                        if (transferResult.Status != ExecutionStatus.Ok)
+                            return transferResult;
                         gasUsed += transferResult.GasUsed;
                     }
                     var res = VirtualMachine.InvokeWasmContract(
