@@ -547,6 +547,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", destination, tx.Value);
                     var transferResult =
                         ContractInvoker.Invoke(ContractRegisterer.LatokenContract, transferContext, localInvocation, GasMetering.DefaultBlockGasLimit);
+                    if (transferResult.Status != ExecutionStatus.Ok)
+                        return transferResult;
                     gasUsed += transferResult.GasUsed;
                 }
                 var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
@@ -568,11 +570,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             {
                 throw new RpcException(
                     RpcErrorCode.Warning,
-                    "execution reverted: " + message,
+                    $"execution reverted: {systemContractInvRes.Status.ToString()}, {message}",
                     systemContractInvRes.ReturnValue.ToHex(true)
                 );
             }
-            throw new Exception("Error in system contract call");
+            throw new RpcException(RpcErrorCode.Warning,$"Error in contract call {systemContractInvRes.Status.ToString()}");
         }
 
         [JsonRpcMethod("eth_gasPrice")]
