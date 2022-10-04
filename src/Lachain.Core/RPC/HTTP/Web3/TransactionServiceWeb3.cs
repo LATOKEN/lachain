@@ -456,7 +456,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         invRes.ReturnValue.ToHex(true)
                     );
                 }
-                throw new Exception("Error in contract call");
+                throw new RpcException(RpcErrorCode.Warning,$"Error in systen contract call: {invRes.Status.ToString()}");
             }
             
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
@@ -483,7 +483,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         
                 return transferInvRes.Status == ExecutionStatus.Ok
                     ? (gasUsed + transferInvRes.GasUsed).ToHex()
-                    : throw new Exception("Error in funds transfer");
+                    : throw new RpcException(RpcErrorCode.Warning,$"Error in funds transfer: {transferInvRes.Status.ToString()}");
             }
         
             if (!(contract is null))
@@ -526,11 +526,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 {
                     throw new RpcException(
                         RpcErrorCode.Warning,
-                        "execution reverted: " + revertReason,
+                        $"execution reverted: {invRes.Status.ToString()}, {revertReason}",
                         invRes.ReturnValue.ToHex(true)
                     );
                 }
-                throw new Exception("Error in contract call");
+                throw new RpcException(RpcErrorCode.Warning,$"Error in contract call {invRes.Status.ToString()}");
             }
         
             InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
