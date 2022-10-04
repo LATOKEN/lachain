@@ -422,8 +422,8 @@ namespace Lachain.Core.Config
                             throw new ApplicationException("No hardfork section in config");
             hardforks.Hardfork_13 ??= network.NetworkName switch
             {
-                "mainnet" => 5930300,
-                "testnet" => 5620300,
+                "mainnet" => 5935300,
+                "testnet" => 5625300,
                 "devnet" => 1525000,
                 _ => 0
             };
