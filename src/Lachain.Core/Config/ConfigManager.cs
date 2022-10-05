@@ -441,7 +441,8 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
 
-        // version 16 of config should contain cache option
+        // version 16 of config should contain updated blockchain.TargetBlockTime (4000 ms) 
+        // and new blockchain.TargetTransactionsPerBlock (800) 
         private void _UpdateConfigToV16()
         {   
             const int newTargetBlockTime = 4000; //ms
