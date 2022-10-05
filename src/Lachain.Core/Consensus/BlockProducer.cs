@@ -18,7 +18,8 @@ using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
-
+using Lachain.Core.Config;
+using Lachain.Core.Blockchain;
 namespace Lachain.Core.Consensus
 {
     /*
@@ -45,7 +46,7 @@ namespace Lachain.Core.Consensus
         private readonly IStateManager _stateManager;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionVerifier _transactionVerifier;
-        private const int BatchSize = 1000; // TODO: calculate batch size
+        private readonly int txPerBlock; // TODO: calculate batch size
 
         public BlockProducer(
             ITransactionVerifier transactionVerifier,
@@ -54,6 +55,7 @@ namespace Lachain.Core.Consensus
             IBlockSynchronizer blockSynchronizer,
             IBlockManager blockManager,
             IStateManager stateManager, 
+            IConfigManager configManager,
             ITransactionBuilder transactionBuilder
         )
         {
@@ -64,6 +66,7 @@ namespace Lachain.Core.Consensus
             _blockManager = blockManager;
             _stateManager = stateManager;
             _transactionBuilder = transactionBuilder;
+            txPerBlock = Convert.ToInt32(configManager.GetConfig<BlockchainConfig>("blockchain")?.TargetTransactionsPerBlock ?? 1_000);
         }
 
         // Given an era, returns a proposed set of transaction receipts
@@ -71,7 +74,7 @@ namespace Lachain.Core.Consensus
         {
         
             var n = _validatorManager.GetValidators(era - 1)!.N;
-            var txNum = (BatchSize + n - 1) / n;
+            var txNum = (txPerBlock + n - 1) / n;
             if(era < 0)
             {
                 Logger.LogError($"era : {era} should not be negative");
@@ -82,7 +85,7 @@ namespace Lachain.Core.Consensus
             // and takes ceil(BatchSize / validatorCount) number of transactions. If the
             // transactions are selected randomly, then the expected number of transactions
             // in a block is BatchSize.
-            var taken = _transactionPool.Peek(BatchSize, txNum, (ulong) era);
+            var taken = _transactionPool.Peek(txPerBlock, txNum, (ulong) era);
             Logger.LogTrace($"Proposed Transactions Count: {taken.Count()}");
             return taken;
         }
