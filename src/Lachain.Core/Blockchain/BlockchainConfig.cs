@@ -6,5 +6,6 @@ namespace Lachain.Core.Blockchain
     {
         // targetBlockTime in miliseconds
         [JsonProperty("targetBlockTime")] public ulong TargetBlockTime;
+        [JsonProperty("targetTransactionsPerBlock")] public ulong TargetTransactionsPerBlock;
     }
 }
