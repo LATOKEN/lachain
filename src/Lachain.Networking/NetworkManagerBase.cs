@@ -73,6 +73,11 @@ namespace Lachain.Networking
             GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
         }
 
+        public void SendImmediately(ECDSAPublicKey publicKey, NetworkMessage message, bool val)
+        {
+            GetClientWorker(publicKey)?.SendImmediately(message, val);
+        }
+
         public void Start()
         {
             _broadcaster.Start();
@@ -80,38 +85,10 @@ namespace Lachain.Networking
             _started = true;
         }
 
-        public void ConnectValidatorChannel(List<ECDSAPublicKey> validators)
+        public void ConnectValidatorChannel(byte[] validator)
         {
             if (!_started) return;
-            
-            if (!_validatorChannelConnected)
-            {
-                _validatorChannelConnected = true;
-                _hubConnector.ConnectValidatorChannel();
-            }
-
-            validators = validators.OrderBy(
-                x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
-            _connectedValidators = _connectedValidators.OrderBy(
-                x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
-
-            var validatorsToDisconnect = RemovePublicKeys(_connectedValidators, validators);
-            foreach (var publicKey in validatorsToDisconnect)
-            {
-                GetClientWorker(publicKey)?.SetValidator(false);
-            }
-
-            var validatorsToConnect = RemovePublicKeys(validators, _connectedValidators);
-            foreach (var publicKey in validatorsToConnect)
-            {
-                GetClientWorker(publicKey)?.SetValidator(true);
-            }
-            
-            lock (_connectedValidators)
-            {
-                _connectedValidators.Clear();
-                _connectedValidators = new List<ECDSAPublicKey>(validators);
-            }
+            _hubConnector.ConnectValidatorChannel(validator);
         }
         
         public void DisconnectValidatorChannel()

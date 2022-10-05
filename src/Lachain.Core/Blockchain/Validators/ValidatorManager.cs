@@ -22,26 +22,26 @@ namespace Lachain.Core.Blockchain.Validators
 
         public ValidatorManager(
             ISnapshotIndexRepository snapshotIndexRepository,
-            IBlockManager blockManager,
+            // IBlockManager blockManager,
             INetworkManager networkManager
         )
         {
             _snapshotIndexRepository = snapshotIndexRepository;
             _networkManager = networkManager;
 
-            blockManager.OnBlockPersisted += OnBlockPersisted;
+            // blockManager.OnBlockPersisted += OnBlockPersisted;
         }
 
-        private void OnBlockPersisted(object? sender, Block block)
-        {
-            var validators = _snapshotIndexRepository.GetSnapshotForBlock(block.Header.Index).Validators
-                .GetValidatorsPublicKeys().ToList();
+        // private void OnBlockPersisted(object? sender, Block block)
+        // {
+        //     var validators = _snapshotIndexRepository.GetSnapshotForBlock(block.Header.Index).Validators
+        //         .GetValidatorsPublicKeys().ToList();
 
-            var myPublicKey = _networkManager.MessageFactory.GetPublicKey();
-            if (validators.Contains(myPublicKey))
-                _networkManager.ConnectValidatorChannel(validators);
-            else _networkManager.DisconnectValidatorChannel();
-        }
+        //     var myPublicKey = _networkManager.MessageFactory.GetPublicKey();
+        //     if (validators.Contains(myPublicKey))
+        //         _networkManager.ConnectValidatorChannel(validators);
+        //     else _networkManager.DisconnectValidatorChannel();
+        // }
 
         public IPublicConsensusKeySet? GetValidators(long afterBlock)
         {

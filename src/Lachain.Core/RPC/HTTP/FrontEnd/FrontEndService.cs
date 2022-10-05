@@ -14,6 +14,7 @@ using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Logger;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
@@ -37,9 +38,11 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         private readonly IValidatorStatusManager _validatorStatusManager;
         private readonly ILocalTransactionRepository _localTransactionRepository;
         private readonly ITransactionManager _transactionManager;
+        private readonly INetworkManager _networkManager;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         public FrontEndService(
+            INetworkManager networkManager,
             IStateManager stateManager,
             ITransactionPool transactionPool,
             ITransactionSigner transactionSigner,
@@ -50,6 +53,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             ITransactionManager transactionManager
         )
         {
+            _networkManager = networkManager;
             _stateManager = stateManager;
             _transactionPool = transactionPool;
             _transactionSigner = transactionSigner;
@@ -58,6 +62,32 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             _validatorStatusManager = validatorStatusManager;
             _privateWallet = privateWallet;
             _transactionManager = transactionManager;
+        }
+
+        [JsonRpcMethod("connectVal")]
+        private void ConnectVal(string pubKey)
+        {
+            var key = HexUtils.HexToBytes(pubKey);
+            _networkManager.ConnectValidatorChannel(key);
+        }
+
+        [JsonRpcMethod("sendImmediately")]
+        private void SendImmediately(string pubKey, bool val)
+        {
+            var key = HexUtils.HexToBytes(pubKey);
+            var msg = new NetworkMessage
+            {
+                SyncBlocksRequest = new SyncBlocksRequest
+                {
+                    FromHeight = 100,
+                    ToHeight = 10
+                }
+            };
+            var ecdsaKey = new ECDSAPublicKey
+            {
+                Buffer = ByteString.CopyFrom(key)
+            };
+            _networkManager.SendImmediately(ecdsaKey, msg, val);
         }
 
         [JsonRpcMethod("fe_getBalance")]

@@ -12,6 +12,7 @@ using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.RPC.HTTP.FrontEnd;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
+using Lachain.Networking;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.UtilityTest;
@@ -33,6 +34,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
         private IValidatorStatusManager? _validatorStatusManager;
         private IPrivateWallet? _privateWallet;
         private ITransactionManager? _transactionManager;
+        private INetworkManager? _networkManager;
 
         private FrontEndService? _fes;
 
@@ -64,8 +66,9 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             _privateWallet = _container.Resolve<IPrivateWallet>();
             _transactionManager = _container.Resolve<ITransactionManager>();
             _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
+            _networkManager = _container.Resolve<INetworkManager>();
             ServiceBinder.BindService<GenericParameterAttributes>();
-            _fes = new FrontEndService(_stateManager, _transactionPool, _transactionSigner,
+            _fes = new FrontEndService(_networkManager, _stateManager, _transactionPool, _transactionSigner,
                 _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet, _transactionManager);
            
         }

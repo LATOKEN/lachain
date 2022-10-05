@@ -71,6 +71,39 @@ namespace Lachain.Networking.Hub
             _worker.Join();
         }
 
+        public void SendImmediately(NetworkMessage message, bool val)
+        {
+            MessageBatchContent toSend = new MessageBatchContent();
+            toSend.Messages.Add(message);
+
+            if (toSend.Messages.Count > 0)
+            {
+                var megaBatch = _messageFactory.MessagesBatch(toSend.Messages);
+                var megaBatchBytes = megaBatch.ToByteArray();
+                if (megaBatchBytes.Length == 0)
+                    throw new Exception("Cannot send empty message");
+                Logger.LogTrace(
+                    $"Sending {toSend.Messages.Count} messages to hub, {megaBatchBytes.Length} bytes total, peer = {PeerPublicKey.ToHex()}"); 
+                var messageTypes = toSend.Messages.Select(m =>
+                    m.MessageCase != NetworkMessage.MessageOneofCase.ConsensusMessage
+                        ? m.MessageCase.ToString()
+                        : m.ConsensusMessage.PrettyTypeString()
+                );
+                Logger.LogTrace($"Messages types: {string.Join("; ", messageTypes)}");
+                foreach (var msg in toSend.Messages)
+                {
+                    MessageCounter
+                        .WithLabels(PeerPublicKey.ToHex(), msg.MessageCase.ToString())
+                        .Inc();
+                    MessageBytesCounter
+                        .WithLabels(PeerPublicKey.ToHex(), msg.MessageCase.ToString())
+                        .Inc(msg.CalculateSize());
+                }
+
+                if (val) _hubConnector.SendVal(PeerPublicKey, megaBatchBytes);
+                else _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+            }
+        }
 
         public void AddMsgToQueue(NetworkMessage message, NetworkMessagePriority priority)
         {
@@ -151,8 +184,9 @@ namespace Lachain.Networking.Hub
 
         private void Send(byte[] megaBatchBytes)
         {
-            if (_isValidator) _hubConnector.SendVal(PeerPublicKey, megaBatchBytes);
-            else _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+            _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+            // if (_isValidator) _hubConnector.SendVal(PeerPublicKey, megaBatchBytes);
+            // else _hubConnector.Send(PeerPublicKey, megaBatchBytes);
         }
 
         public void Dispose()

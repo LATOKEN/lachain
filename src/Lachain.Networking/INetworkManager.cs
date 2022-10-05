@@ -10,7 +10,8 @@ namespace Lachain.Networking
         IMessageFactory MessageFactory { get; }
         void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority);
         void Start();
-        void ConnectValidatorChannel(List<ECDSAPublicKey> validators);
+        void ConnectValidatorChannel(byte[] validator);
+        void SendImmediately(ECDSAPublicKey publicKey, NetworkMessage message, bool val);
         void DisconnectValidatorChannel();
         void BroadcastLocalTransaction(TransactionReceipt receipt);
         void AdvanceEra(ulong era);

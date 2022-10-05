@@ -103,9 +103,9 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.SendVal(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
-        public void ConnectValidatorChannel()
+        public void ConnectValidatorChannel(byte[] publicKye)
         {
-            CommunicationHub.Net.Hub.ConnectVal();
+            CommunicationHub.Net.Hub.ConnectVal(publicKye);
 
         }
 
