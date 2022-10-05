@@ -6,12 +6,14 @@ using Lachain.Core.CLI;
 using Lachain.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Lachain.Core.Blockchain;
+
 
 namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 15;
+        private const ulong _CurrentVersion = 16;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -69,6 +71,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV14();
             if (version < 15)
                 _UpdateConfigToV15();
+            if (version < 16)
+                _UpdateConfigToV16();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -437,6 +441,26 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
 
+        // version 16 of config should contain cache option
+        private void _UpdateConfigToV16()
+        {   
+            const int newTargetBlockTime = 4000; //ms
+
+            var blockchain = GetConfig<BlockchainConfig>("blockchain") ??
+                            throw new ApplicationException("No blockchain section in config");
+
+            blockchain.TargetBlockTime = newTargetBlockTime;
+
+            _config["blockchain"] = JObject.FromObject(blockchain);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            
+            version.Version = 16;
+            _config["version"] = JObject.FromObject(version);
+
+            _SaveCurrentConfig();
+        }
         private void _SaveCurrentConfig()
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
