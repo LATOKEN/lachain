@@ -66,7 +66,7 @@ namespace Lachain.Core.Consensus
             _blockManager = blockManager;
             _stateManager = stateManager;
             _transactionBuilder = transactionBuilder;
-            txPerBlock = Convert.ToInt32(configManager.GetConfig<BlockchainConfig>("blockchain")?.TargetTransactionsPerBlock ?? 1_000);
+            txPerBlock = configManager.GetConfig<BlockchainConfig>("blockchain")?.TargetTransactionsPerBlock ?? 1_000;
         }
 
         // Given an era, returns a proposed set of transaction receipts
