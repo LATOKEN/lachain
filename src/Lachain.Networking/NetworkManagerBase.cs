@@ -94,19 +94,7 @@ namespace Lachain.Networking
         public void DisconnectValidatorChannel()
         {
             if (!_started) return;
-
-            foreach (var publicKey in _connectedValidators)
-            {
-                GetClientWorker(publicKey)?.SetValidator(false);
-            }
-            lock (_connectedValidators)
-                _connectedValidators.Clear();
-
-            if (_validatorChannelConnected)
-            {
-                _validatorChannelConnected = false;
-                _hubConnector.DisconnectValidatorChannel();
-            }
+            _hubConnector.DisconnectValidatorChannel();
         }
 
         // both input lists need to be sorted and no duplicate element allowed

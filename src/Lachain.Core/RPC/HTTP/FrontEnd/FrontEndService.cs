@@ -70,6 +70,12 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
             var key = HexUtils.HexToBytes(pubKey);
             _networkManager.ConnectValidatorChannel(key);
         }
+        
+        [JsonRpcMethod("disconnectVal")]
+        private void DisconnectVal(string pubKey)
+        {
+            _networkManager.DisconnectValidatorChannel();
+        }
 
         [JsonRpcMethod("sendImmediately")]
         private void SendImmediately(string pubKey, bool val)

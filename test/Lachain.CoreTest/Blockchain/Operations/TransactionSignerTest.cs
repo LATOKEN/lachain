@@ -90,7 +90,19 @@ namespace Lachain.CoreTest.Blockchain.Operations
             Assert.AreEqual(keyPair.PublicKey.ToHex(), publicKey.ToHex());
             Assert.AreEqual(keyPair.PublicKey.GetAddress().ToHex(), publicKey.GetAddress().ToHex());
         }
-        
+
+        [Test]
+        public void Test_Test()
+        {
+            BigInteger s;
+            BigInteger a = 10000000000;
+            BigInteger b = a;
+            s = a * b;
+            // 7766279631452241920
+            // 100000000000000000000
+            Console.WriteLine(s);
+        }   
+
         [Test]
         public void Test_SignIssue()
         {
