@@ -445,15 +445,17 @@ namespace Lachain.Core.Config
         // and new blockchain.TargetTransactionsPerBlock (800) 
         private void _UpdateConfigToV16()
         {   
+            const int oldTargetBlockTime = 5000; //ms
             const int newTargetBlockTime = 4000; //ms
             const int newTargetTransactionsPerBlock = 800; 
 
             var blockchain = GetConfig<BlockchainConfig>("blockchain") ??
                             throw new ApplicationException("No blockchain section in config");
 
-            blockchain.TargetBlockTime = newTargetBlockTime;
-            blockchain.TargetTransactionsPerBlock = newTargetTransactionsPerBlock;
+            if (blockchain.TargetBlockTime == oldTargetBlockTime)
+                blockchain.TargetBlockTime = newTargetBlockTime;
 
+            blockchain.TargetTransactionsPerBlock = newTargetTransactionsPerBlock;
             _config["blockchain"] = JObject.FromObject(blockchain);
 
             var version = GetConfig<VersionConfig>("version") ??
