@@ -98,8 +98,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
                 HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
-            }
-            StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
+            }    
         }
 
         [TearDown]

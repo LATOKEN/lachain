@@ -8,6 +8,7 @@ using NUnit.Framework;
 using Lachain.Core.DI;
 using Lachain.Storage.State;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Vault;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
@@ -93,6 +94,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
                 HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
             }
             ServiceBinder.BindService<GenericParameterAttributes>();
 

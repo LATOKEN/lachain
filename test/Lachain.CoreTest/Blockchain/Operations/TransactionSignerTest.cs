@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Operations;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
 using Lachain.Crypto;
@@ -46,6 +47,7 @@ namespace Lachain.CoreTest.Blockchain.Operations
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
                 HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
             }
         }
 
