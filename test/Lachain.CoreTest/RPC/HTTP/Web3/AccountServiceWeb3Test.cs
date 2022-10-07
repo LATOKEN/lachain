@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.UtilityTest;
@@ -141,8 +142,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var beforeBalance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(tx.Transaction.From);
             var sentValue = new Money(tx.Transaction.Value);
-            var afterBalance = beforeBalance - sentValue - new Money(tx.Transaction.GasLimit * tx.Transaction.GasPrice);
-            var knownAfterBalance = Money.Parse("1000") - sentValue - new Money(tx.Transaction.GasLimit * tx.Transaction.GasPrice);
+            var afterBalance = beforeBalance - sentValue - new Money(new BigInteger(tx.Transaction.GasLimit) * tx.Transaction.GasPrice);
+            var knownAfterBalance = Money.Parse("1000") - sentValue - new Money(new BigInteger(tx.Transaction.GasLimit) * tx.Transaction.GasPrice);
             Assert.AreEqual(knownAfterBalance, afterBalance);
             var balance = _apiService.GetBalance(tx.Transaction.From.ToHex(), "pending");
             Assert.IsTrue(Web3DataFormatUtils.Web3Number(afterBalance.ToWei().ToUInt256()) == balance);

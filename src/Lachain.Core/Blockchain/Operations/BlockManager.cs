@@ -592,7 +592,7 @@ namespace Lachain.Core.Blockchain.Operations
         private OperatingError _CheckTransactionGasLimit(Transaction transaction, IBlockchainSnapshot snapshot)
         {
             /* check available LA balance */
-            var fee = new Money(transaction.GasLimit * transaction.GasPrice);
+            var fee = new Money(new BigInteger(transaction.GasLimit) * transaction.GasPrice);
             return snapshot.Balances.GetBalance(transaction.From).CompareTo(fee) < 0
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
@@ -611,7 +611,7 @@ namespace Lachain.Core.Blockchain.Operations
             TransactionReceipt transaction, IBlockchainSnapshot snapshot, out Money fee
         )
         {
-            fee = new Money(transaction.GasUsed * transaction.Transaction.GasPrice);
+            fee = new Money(new BigInteger(transaction.GasUsed) * transaction.Transaction.GasPrice);
             /* transfer fee from wallet to validator */
             if (fee == Money.Zero) return OperatingError.Ok;
 

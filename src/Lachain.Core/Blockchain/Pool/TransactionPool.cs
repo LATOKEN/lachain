@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
@@ -269,7 +270,7 @@ namespace Lachain.Core.Blockchain.Pool
         private bool IsBalanceValid(TransactionReceipt receipt)
         {
             var balance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receipt.Transaction.From);
-            var fee = new Money(receipt.Transaction.GasLimit * receipt.Transaction.GasPrice);
+            var fee = new Money(new BigInteger(receipt.Transaction.GasLimit) * receipt.Transaction.GasPrice);
             return balance.CompareTo(fee) >= 0;
         }
 
