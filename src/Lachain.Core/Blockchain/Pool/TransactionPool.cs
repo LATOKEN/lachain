@@ -371,7 +371,7 @@ namespace Lachain.Core.Blockchain.Pool
 
                 if (_proposed.ContainsKey(era))
                 {
-                    Logger.LogError("Asking for transactions for era {era} more than once");
+                    Logger.LogError($"Asking for transactions for era {era} more than once");
                     throw new Exception("Proposing transactions multiple times for same era");
                 }
 
