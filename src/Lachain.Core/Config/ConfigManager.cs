@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
 using Lachain.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Lachain.Core.Blockchain;
 
 
 namespace Lachain.Core.Config

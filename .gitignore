@@ -254,6 +254,9 @@ paket-files/
 .idea/
 *.sln.iml
 
+#VScode
+.vscode/
+
 PublishProfiles
 
 src/Lachain.Console/config.json

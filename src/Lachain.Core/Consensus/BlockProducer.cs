@@ -4,6 +4,7 @@ using System.Linq;
 using Google.Protobuf;
 using Lachain.Logger;
 using Lachain.Consensus;
+using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
@@ -13,13 +14,12 @@ using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Blockchain.VM;
+using Lachain.Core.Config;
 using Lachain.Core.Network;
 using Lachain.Crypto;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Utils;
-using Lachain.Core.Config;
-using Lachain.Core.Blockchain;
 namespace Lachain.Core.Consensus
 {
     /*
