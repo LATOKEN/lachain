@@ -39,8 +39,7 @@ namespace Lachain.Core.Blockchain.Pool
         // _proposed stores the list of proposed transactions that was proposed an era
         // _proposed should always contain at most one entry representing the last era and
         // the list of transactions proposed during that era
-        private readonly ConcurrentDictionary<ulong, List<TransactionReceipt>> _proposed 
-            = new ConcurrentDictionary<ulong, List<TransactionReceipt>>();
+        private readonly IList<TransactionReceipt> _proposed = new List<TransactionReceipt>();
 
         // _toDeleteRepo represents the transactions that have been removed from the in-memory pool, 
         // but have not been removed from the pool yet. 
@@ -299,15 +298,12 @@ namespace Lachain.Core.Blockchain.Pool
             // this makes sure that the transactions that failed during
             // emulation is removed from _nonceCalculator
 
-            if(_proposed.TryGetValue(era, out var lastProposed))
+            foreach(var receipt in _proposed)
             {
-                foreach(var receipt in lastProposed)
-                {
-                    _nonceCalculator.TryRemove(receipt);
-                    _toDeleteRepo.Add(receipt);
-                }
-                _proposed.Remove(era, out var _);
+                _nonceCalculator.TryRemove(receipt);
+                _toDeleteRepo.Add(receipt);
             }
+            _proposed.Clear();
 
             // make sure that - transactions with bad nonces
             // and not enough balance are removed
@@ -354,30 +350,21 @@ namespace Lachain.Core.Blockchain.Pool
             CheckConsistency();
             return;
         }
-        private IReadOnlyCollection<TransactionReceipt> Take(HashSet<UInt256> txHashesTaken, ulong era)
+
+        private IReadOnlyCollection<TransactionReceipt> Take(List<UInt256> txHashesTaken, ulong era)
         {
             // Should we add lock (_transactions) here? Because old txes can be replaced by new ones
             lock (_transactions)
             {
-                List<TransactionReceipt> result = new List<TransactionReceipt>();
-                foreach (var hash in txHashesTaken)
+                if (_proposed.Count > 0)
                 {
-                    if (!_transactions.ContainsKey(hash))
-                        throw new Exception("Transaction does not exist in the _transaction hashset");
-
-                    result.Add(_transactions[hash]);
-                }
-
-                if (_proposed.ContainsKey(era))
-                {
-                    Logger.LogError($"Asking for transactions for era {era} more than once");
+                    Logger.LogError($"Asking for transactions for era {era}, but _proposed is not empty");
                     throw new Exception("Proposing transactions multiple times for same era");
                 }
-
-                _proposed.TryAdd(era, new List<TransactionReceipt>(result));
-
-                foreach (var tx in result)
+                foreach (var hash in txHashesTaken)
                 {
+                    var tx = _transactions[hash];
+                    _proposed.Add(tx);
                     _transactionsQueue.Remove(tx);
                     bool canErase = _transactions.TryRemove(tx.Hash, out var _);
                     if (canErase is false)
@@ -391,7 +378,7 @@ namespace Lachain.Core.Blockchain.Pool
                         $"_transaction.Count = {_transactions.Count} is not equal to _transactionsQueue.Count = {_transactionsQueue.Count}");
                 }
 
-                return result;
+                return new List<TransactionReceipt>(_proposed);
             }
         }
 
@@ -399,7 +386,7 @@ namespace Lachain.Core.Blockchain.Pool
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake, ulong era)
         {
             // Should we add lock (_transactions) here? Because old txes can be replaced by new ones
-            Logger.LogTrace($"Proposing Transactions from pool");
+            Logger.LogTrace($"Proposing Transactions from pool  for era {era}");
             // try sanitizing mempool ...
             lock (_toDeleteRepo)
             {
@@ -412,29 +399,34 @@ namespace Lachain.Core.Blockchain.Pool
             if(era <= _lastSanitized) return new List<TransactionReceipt>();
 
             var rnd = new Random();
-            HashSet<UInt256> takenTxHashes = new HashSet<UInt256>();
+            var takenTxHashes = new List<UInt256>();
 
             lock (_transactions)
             {
                 // txes are sorted by sender and then by nonce, in reverse order. So all txes of same sender
                 // are together sorted in descending order of nonce
-                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).Reverse();
+                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).ToList();
+                orderedTransactionsQueue.Reverse();
+                var remainingTxes = new List<TransactionReceipt>();
                 // take governance transaction from transaction queue
                 TransactionReceipt? lastGovernanceTxTaken = null;
                 foreach (var receipt in orderedTransactionsQueue)
                 {
+                    bool taken = true;
                     if (!IsGovernanceTx(receipt))
                     {
                         if (lastGovernanceTxTaken is null)
-                            continue;
-
-                        if (!receipt.Transaction.From.Equals(lastGovernanceTxTaken.Transaction.From))
+                        {
+                            taken = false;
+                        }
+                        else if (!receipt.Transaction.From.Equals(lastGovernanceTxTaken.Transaction.From))
                         {
                             lastGovernanceTxTaken = null;
-                            continue;
+                            taken = false;
                         }
                         else if (receipt.Transaction.Nonce >= lastGovernanceTxTaken.Transaction.Nonce)
                         {
+                            taken = false;
                             // there is something wrong with the ordering of transactions which is unknown. need to fix this
                             Logger.LogDebug(
                                 $"receipt {lastGovernanceTxTaken.Hash.ToHex()} with nonce {lastGovernanceTxTaken.Transaction.Nonce}"
@@ -446,13 +438,15 @@ namespace Lachain.Core.Blockchain.Pool
                     }
                     else lastGovernanceTxTaken = receipt;
 
+                    if (!taken)
+                    {
+                        remainingTxes.Add(receipt);
+                        continue;
+                    }
                     // this is a governance tx or it is a tx with same sender
                     // as the lastGovernanceTxTaken tx and this tx has less nonce
                     // so we have to take it
                     var hash = receipt.Hash;
-                    if (takenTxHashes.Contains(hash) || !_transactions.ContainsKey(hash) ||
-                        _transactionManager.GetByHash(hash) != null)
-                        continue;
                     takenTxHashes.Add(hash);
                 }
 
@@ -462,14 +456,9 @@ namespace Lachain.Core.Blockchain.Pool
                 // We first greedily take some most profitable transactions. Let's group by sender and
                 // peek the best by gas price (so we do not break nonce order)
                 var txsBySender = new Dictionary<UInt160, List<TransactionReceipt>>();
-                foreach (var receipt in orderedTransactionsQueue)
+                foreach (var receipt in remainingTxes)
                 {
-                    if (IsGovernanceTx(receipt))
-                        continue;
                     var hash = receipt.Hash;
-                    if (takenTxHashes.Contains(hash) || !_transactions.ContainsKey(hash) ||
-                        _transactionManager.GetByHash(hash) != null)
-                        continue;
 
                     if (txsBySender.ContainsKey(receipt.Transaction.From))
                         txsBySender[receipt.Transaction.From].Add(receipt);
@@ -496,6 +485,7 @@ namespace Lachain.Core.Blockchain.Pool
                         // If there are more txs from this sender, add them to heap 
                         heap.Add(txsFrom.Last());
                     }
+                    else txsBySender.Remove(tx.Transaction.From);
                 }
 
                 // Regroup transactions in order to take some random subset
@@ -533,7 +523,7 @@ namespace Lachain.Core.Blockchain.Pool
             if(_proposed.Count() != 0)
             {
                 Logger.LogError($"_proposed size: {_proposed.Count()} but should be empty.");
-                throw new Exception("proposed dict should be empty");
+                throw new Exception("proposed list should be empty");
             }
         }
 
