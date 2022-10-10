@@ -107,9 +107,7 @@ namespace Lachain.Core.Blockchain.Pool
                 Logger.LogTrace($"Tx from pool: {txHash.ToHex()}");
                 var tx = _poolRepository.GetTransactionByHash(txHash);
                 
-                if (tx is null)
-                    continue;
-                if(Add(tx, false) != OperatingError.Ok)
+                if(!(tx is null) && Add(tx, false) != OperatingError.Ok)
                     transactionsToRemove.Add(tx.Hash);
             }
             // if a transaction was not added to the pool, that means it's not a valid 
@@ -153,7 +151,8 @@ namespace Lachain.Core.Blockchain.Pool
             if (_transactions.ContainsKey(receipt.Hash))
                 return OperatingError.AlreadyExists;
             /* verify transaction before adding */
-            if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
+            var maxNonce = GetNextNonceForAddress(receipt.Transaction.From);
+            if (maxNonce < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
             {
                 return OperatingError.InvalidNonce;
@@ -164,7 +163,7 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 // system transaction will not be replaced by same nonce
                 // do we need to check nonce for system txes???
-                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                if (maxNonce != receipt.Transaction.Nonce)
                     return OperatingError.InvalidNonce;
                 if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                     _poolRepository.AddTransaction(receipt);
@@ -195,7 +194,7 @@ namespace Lachain.Core.Blockchain.Pool
             TransactionReceipt? oldTx = null;
             lock (_transactions)
             {
-                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                if (maxNonce != receipt.Transaction.Nonce)
                 {
                     /* this tx will try to replace an old one */
                     oldTxExist = _transactionHashTracker.TryGetTransactionHash(receipt.Transaction.From,
@@ -203,7 +202,7 @@ namespace Lachain.Core.Blockchain.Pool
                     if (!oldTxExist)
                     {
                         Logger.LogWarning($"Max nonce for address {receipt.Transaction.From} is "
-                              + $"{GetNextNonceForAddress(receipt.Transaction.From)}. But cannot find transaction "
+                              + $"{maxNonce}. But cannot find transaction "
                               + $"for nonce {receipt.Transaction.Nonce}");
                         return OperatingError.TransactionLost;
                     }
@@ -528,15 +527,6 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 Logger.LogError($"_transactions count: {_transactions.Count()} != _transactionsQueue: {_transactionsQueue.Count()}");
                 throw new Exception("transactions and transactionQueue should be of same size");
-            }
-
-            // at this point nonce-calculator and transaction should have the 
-            // same set of transactions
-
-            if(_transactions.Count() != _nonceCalculator.Count())
-            {
-                Logger.LogError($"_transactions count: {_transactions.Count()} != _nonceCalculator: {_nonceCalculator.Count()}");
-                throw new Exception("transactions and nonceCalculator should be of same size");
             }
 
             // Proposed should be empty

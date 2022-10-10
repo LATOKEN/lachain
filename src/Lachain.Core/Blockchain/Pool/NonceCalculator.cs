@@ -21,14 +21,11 @@ namespace Lachain.Core.Blockchain.Pool
     public class NonceCalculator : INonceCalculator
     {
         private static readonly ILogger<NonceCalculator> Logger = LoggerFactory.GetLoggerForClass<NonceCalculator>();
-        private readonly ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>> _noncePerAddress
-            = new ConcurrentDictionary<UInt160, SortedSet<KeyValuePair<ulong, UInt256>>>();
+        private readonly ConcurrentDictionary<UInt160, ulong> _noncePerAddress
+            = new ConcurrentDictionary<UInt160, ulong>();
         
         // tracks the transaction hashes by their sender's address and nonce
         private readonly ITransactionHashTrackerByNonce _transactionHashTracker;
-        
-        // the count of transactions in the stucture
-        private uint _count = 0;
 
         public NonceCalculator(ITransactionHashTrackerByNonce transactionHashTracker)
         {
@@ -41,28 +38,21 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryAdd(TransactionReceipt receipt)
         {
-            var hash = receipt.Hash;
             var nonce = receipt.Transaction.Nonce;
             var from = receipt.Transaction.From;
 
-            var kv = new KeyValuePair<ulong, UInt256>(nonce, hash);
-
-            if(_noncePerAddress.TryGetValue(from, out var nonces))
+            if(_noncePerAddress.TryGetValue(from, out var maxNonce))
             {
-                bool isAdded = nonces.Add(kv);
-                if (isAdded)
+                if (nonce > maxNonce)
                 {
-                    _count++;
-                    _transactionHashTracker.TryAdd(receipt);
+                    _noncePerAddress[from] = nonce;
                 }
-                return isAdded;
+                _transactionHashTracker.TryAdd(receipt);
+                return true;
             }
             else
             {
-                var emptyNonces = new SortedSet<KeyValuePair<ulong, UInt256>>(new NonceComparer());
-                emptyNonces.Add(kv);
-                _noncePerAddress.TryAdd(from, emptyNonces);
-                _count++;
+                _noncePerAddress[from] = nonce;
                 _transactionHashTracker.TryAdd(receipt);
                 return true; 
             }
@@ -75,26 +65,19 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public bool TryRemove(TransactionReceipt receipt)
         {
-            var hash = receipt.Hash;
             var nonce = receipt.Transaction.Nonce;
             var from = receipt.Transaction.From;
 
-            var kv = new KeyValuePair<ulong, UInt256>(nonce, hash);
-
-            if(_noncePerAddress.TryGetValue(from, out var nonces))
+            if(_noncePerAddress.TryGetValue(from, out var maxNonce))
             {
-                bool canRemove = nonces.Remove(kv);
-                if(nonces.Count == 0)
+                _transactionHashTracker.TryRemove(receipt);
+                if (nonce == maxNonce)
                 {
-                    _noncePerAddress.TryRemove(from, out var _);
+                    // txes are taken or removed sequentially
+                    // if max nonce is removed that means all txes from this sender is removed
+                    return _noncePerAddress.TryRemove(from, out var _);
                 }
-
-                if (canRemove)
-                {
-                    _count--;
-                    _transactionHashTracker.TryRemove(receipt);
-                }
-                return canRemove;
+                return true;
             }
             else
             {
@@ -108,20 +91,15 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong? GetMaxNonceForAddress(UInt160 address) 
         {
-            if(!_noncePerAddress.TryGetValue(address, out var nonces))
+            if(!_noncePerAddress.TryGetValue(address, out var maxNonce))
                 return null;
             
-            return nonces.Max.Key;
+            return maxNonce;
         }
 
         public void Clear()
         {
             _noncePerAddress.Clear();
-        }
-
-        public uint Count()
-        {
-            return _count;
         }
    }
 }
