@@ -202,6 +202,7 @@ namespace Lachain.CoreTest.IntegrationTests
             }
 
             ExecuteTxesInSeveralBlocks(topUpReceipts);
+            Console.WriteLine("top tx executed");
             ExecuteTxesInSeveralBlocks(randomReceipts);
 
             // building random txes for new chain id. will send TopUpTx right now.
@@ -438,7 +439,7 @@ namespace Lachain.CoreTest.IntegrationTests
             txes = txes.OrderBy(x => x, new ReceiptComparer()).ToList();
             foreach (var tx in txes)
             {
-                _transactionPool.Add(tx);
+                Assert.AreEqual(OperatingError.Ok, _transactionPool.Add(tx));
             }
             int total = 10;
             for (int it = 0; it < total; it++)
@@ -459,8 +460,10 @@ namespace Lachain.CoreTest.IntegrationTests
                     Assert.AreNotEqual(null, executedTx, $"Transaction {tx.Hash.ToHex()} not found");
                     Assert.AreEqual(TransactionStatus.Executed, executedTx!.Status,
                         "Transaction {tx.Hash.ToHex()} was not executed properly");
+                    txes.Remove(tx);
                 }
             }
+            Assert.AreEqual(0, txes.Count);
         }
 
         private void Check_Random_Address_Storage_Changing()
