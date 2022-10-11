@@ -5,6 +5,7 @@ using System.Numerics;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Nethereum.Signer;
+using Org.BouncyCastle.Asn1.Esf;
 using Transaction = Lachain.Proto.Transaction;
 
 namespace Lachain.Crypto
@@ -85,7 +86,7 @@ namespace Lachain.Crypto
             // for transactions with zero signature (we use such txes in genesis block and for system txes)
             // So our serialization of such txes differs from ethereum serialization,  need to fix it in future
             // (requires hardfork)
-            return LAEncodeSigned(new SignedData( ethTx.Data, ethTx.Signature), 6);
+            return LAEncodeSigned(new SignedData( ethTx.Data, ethTx.Signature), LegacyTransactionChainId.NUMBER_ENCODING_ELEMENTS);
         }
 
         public static UInt256 RawHash(this Transaction t, bool useNewId)
