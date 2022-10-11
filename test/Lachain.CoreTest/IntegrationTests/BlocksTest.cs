@@ -231,7 +231,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
         
         [Test]
-        public void Test_Test()
+        public void Test_GovernanceTxHalt()
         {
             _blockManager.TryBuildGenesisBlock();
             ulong total = StakingContract.CycleDuration * 3;
