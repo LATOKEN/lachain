@@ -4,11 +4,11 @@ using System.IO;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
+using Lachain.Logger;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
 
 namespace Lachain.Core.Config
 {
@@ -17,14 +17,40 @@ namespace Lachain.Core.Config
         private const ulong _CurrentVersion = 17;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
+        public string ConfigBackupPath { get; }
         public RunOptions CommandLineOptions { get; }
+
+        private static readonly ILogger<ConfigManager> Logger = LoggerFactory.GetLoggerForClass<ConfigManager>();
+
+
         public ConfigManager(string filePath, RunOptions options)
         {
             CommandLineOptions = options;
-            var configLoader = new LocalConfigLoader(filePath);
-            _config = new Dictionary<string, object>(configLoader.LoadConfig());
             ConfigPath = filePath;
+            ConfigBackupPath = filePath + ".bak";
+            
+            try {
+                var configLoader = new LocalConfigLoader(ConfigPath);
+                _config = new Dictionary<string, object>(configLoader.LoadConfig());
+                Logger.LogInformation($"Loaded config from {ConfigPath}");
+            }
+            catch (Exception e) {
+                try {
+                    Logger.LogWarning($"Could not load config from {ConfigPath}. Trying from backup ({ConfigBackupPath})");
+                    var configLoader = new LocalConfigLoader(ConfigBackupPath);
+                    _config = new Dictionary<string, object>(configLoader.LoadConfig());
+                    Logger.LogInformation($"Loaded config from backup ({ConfigBackupPath})");
+
+                }
+                catch (Exception e2) {
+                    Logger.LogError($"Could not load config from backup ({ConfigBackupPath}). Aborting.");
+                    throw;
+                }
+
+            }
             _UpdateConfigVersion();
+            _SaveCurrentConfig();
+
         }
         
         public void UpdateWalletPassword(string password)
@@ -519,6 +545,7 @@ namespace Lachain.Core.Config
         private void _SaveCurrentConfig()
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
+            File.WriteAllText(ConfigBackupPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
         }
     }
 }
