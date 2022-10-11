@@ -42,8 +42,7 @@ namespace Lachain.Crypto
                 new BigInteger(ChainId(useNewId)).ToByteArray().Reverse().ToArray().TrimLeadingZeros(), null, null},
                 sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(0, 32).ToArray().TrimLeadingZeros(),
                 sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(32, 32).ToArray().TrimLeadingZeros(),
-                sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(64, sig.Length - 64).ToArray().TrimLeadingZeros(), 
-                6
+                sig.IsEmpty ? Array.Empty<byte>() : sig.Slice(64, sig.Length - 64).ToArray().TrimLeadingZeros() 
             );
             return rlpSigner;
         }
