@@ -6,17 +6,22 @@ using System.Text;
 using Nethereum.Signer;
 using NUnit.Framework;
 using Lachain.Core.Blockchain.Hardfork;
+using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Config;
 using Lachain.Core.CLI;
 using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
+using Lachain.Crypto.ECDSA;
 using Lachain.Networking;
+using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
+using Google.Protobuf;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 using Transaction = Lachain.Proto.Transaction;
@@ -28,6 +33,7 @@ namespace Lachain.CryptoTest
         private static readonly byte[] TestString =
             Encoding.ASCII.GetBytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
+        private static readonly ITransactionSigner Signer = new TransactionSigner();
         private IContainer? _container;
         private IConfigManager _configManager = null!; 
         [SetUp]
@@ -107,6 +113,21 @@ namespace Lachain.CryptoTest
         }
 
         [Test]
+        public void Test_HeaderKeccak()
+        {
+            var header = new BlockHeader
+            {
+                PrevBlockHash = UInt256Utils.Zero,
+                MerkleRoot = UInt256Utils.Zero,
+                Index = 0,
+                StateHash = UInt256Utils.Zero,
+                Nonce = 1
+            };
+            Console.WriteLine(HashUtils.Keccak(header).ToHex());
+            Assert.AreEqual("0x3cf92ed8492413af89861763a3718cb9afd415ddb2bca10d2e8038cf2d1afb7f", HashUtils.Keccak(header).ToHex());
+        }
+ 
+        [Test]
         public void Test_AesGcmEncryptDecryptRoundTrip()
         {
             var key = Crypto.GenerateRandomBytes(32);
@@ -182,6 +203,74 @@ namespace Lachain.CryptoTest
             var endTs = TimeUtils.CurrentTimeMillis();
             Console.WriteLine($"Full sign + recover time: {endTs - startTs}ms");
             Console.WriteLine($"Per 1 iteration: {(double) (endTs - startTs) / n}ms");
+        }
+
+        [Test]
+        public void Test_TxHash()
+        {
+            var fromAddress = UInt160Utils.Zero;
+            var tx = new Transaction
+            {
+                From = fromAddress,
+                Nonce = (ulong) 0,
+                Value = Money.Parse("10").ToUInt256(),
+                To = "0x316fd97d8e47a2dec2c8783db740f08a10a13f4e".HexToUInt160(),
+                GasPrice = 0,
+            };
+            Console.WriteLine($"Tx old full rlp is {tx.RlpWithSignature(SignatureUtils.ZeroOld, false).ToHex()}");
+            Assert.AreEqual("0xe580000094316fd97d8e47a2dec2c8783db740f08a10a13f4e888ac7230489e8000080008080" ,
+                tx.RlpWithSignature(SignatureUtils.ZeroOld, false).ToHex());
+            Console.WriteLine($"Tx new full rlp is {tx.RlpWithSignature(SignatureUtils.ZeroNew, true).ToHex()}");
+            Assert.AreEqual("0xe780000094316fd97d8e47a2dec2c8783db740f08a10a13f4e888ac7230489e80000808200008080" ,
+                tx.RlpWithSignature(SignatureUtils.ZeroNew, true).ToHex());
+            Console.WriteLine($"Tx old full hash is {tx.FullHash(SignatureUtils.ZeroOld, false).ToHex()}");
+            Assert.AreEqual("0xe115bce0fbf8e927b1f3e4068c2b486281e5d298fdbbfa4b947c62329fc85abc" ,
+                tx.FullHash(SignatureUtils.ZeroOld, false).ToHex());
+            Console.WriteLine($"Tx new full hash is {tx.FullHash(SignatureUtils.ZeroNew, true).ToHex()}");
+            Assert.AreEqual("0xad0a8811b4fc0c0f058678a2e0bf76f4d040b0214d6819be39a28dd414d97889" ,
+                tx.FullHash(SignatureUtils.ZeroNew, true).ToHex());
+        }
+
+        [Test]
+        public void Test_TxHash2()
+        {
+            // verify from here: https://toolkit.abdk.consulting/ethereum#transaction
+            var fromAddress = "0x6Bc32575ACb8754886dC283c2c8ac54B1Bd93195".HexToUInt160();
+            var tx = new Transaction
+            {
+                From = fromAddress,
+                Nonce = (ulong) 1,
+                Value = Money.Parse("10").ToUInt256(),
+                To = "0x316fd97d8e47a2dec2c8783db740f08a10a13f4e".HexToUInt160(),
+                GasPrice = 1,
+                GasLimit = 100000000,
+                Invocation = ByteString.CopyFrom(
+                    "0x7f7465737432000000000000000000000000000000000000000000000000000000600057".HexToBytes()
+                )
+            };
+            Assert.AreEqual("0xf84d01018405f5e10094316fd97d8e47a2dec2c8783db740f08a10a13f4e888ac7230489e80000a47f7465737432000000000000000000000000000000000000000000000000000000600057198080",
+                tx.Rlp(false).ToHex());
+            
+            // sign with old chain id
+            var keyPair = new EcdsaKeyPair("0xd95d6db65f3e2223703c5d8e205d98e3e6b470f067b0f94f6c6bf73d4301ce48"
+                .HexToBytes().ToPrivateKey());
+            Assert.AreEqual(fromAddress, keyPair.PublicKey.GetAddress());
+            var receipt = Signer.Sign(tx, keyPair, false);
+            Assert.AreEqual("0xf88d01018405f5e10094316fd97d8e47a2dec2c8783db740f08a10a13f4e888ac7230489e80000a47f746573743200000000000000000000000000000000000000000000000000000060005755a0b2c955645623115d391852dc1bfc465720648fee9b36b9ea159e740896bf8524a00ccad3ae99d608e154fb4ba2e6959370d22fa6f93d4337aff551878d522c0cb5",
+                tx.RlpWithSignature(receipt.Signature, false).ToHex());
+            Assert.AreEqual("0x4f0da38b698584e076b33f04499a6e7d3c49b4d3f32ae1240ce270cf49809c24",
+                tx.FullHash(receipt.Signature, false).ToHex());
+            var pubKey = Crypto.RecoverSignatureHashed(tx.RawHash(false).ToBytes(), receipt.Signature.Encode(), false).ToPublicKey();
+            Assert.AreEqual(fromAddress, pubKey.GetAddress());
+
+            // sign with new chain id
+            receipt = Signer.Sign(tx, keyPair, true);
+            Assert.AreEqual("0xf88f01018405f5e10094316fd97d8e47a2dec2c8783db740f08a10a13f4e888ac7230489e80000a47f74657374320000000000000000000000000000000000000000000000000000006000578201e5a0a01aaa5475a1090122bdfc2d50a5415d6269988a09d39b6e0fb720956722b0dfa05dfbab83865382ebd27c7531bcbb81e83e7ace1f57ab069bd9931a25d873e77d",
+                tx.RlpWithSignature(receipt.Signature, true).ToHex());
+            Assert.AreEqual("0x0d3515b23c73a51224e35033c706d62fb45f68694a54348d0f47a49a45b21573",
+                tx.FullHash(receipt.Signature, true).ToHex());
+            pubKey = Crypto.RecoverSignatureHashed(tx.RawHash(true).ToBytes(), receipt.Signature.Encode(), true).ToPublicKey();
+            Assert.AreEqual(fromAddress, pubKey.GetAddress());
         }
 
 
@@ -304,18 +393,11 @@ namespace Lachain.CryptoTest
             };
             var rlp = tx.Rlp(false);
             // This is correct rlp with chain id 25. Check here: https://toolkit.abdk.consulting/ethereum#transaction
-            var expectedRlp = 
-                "0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080198080"
-                    .HexToBytes();
-            Assert.IsTrue(rlp.SequenceEqual(expectedRlp));
+            Assert.AreEqual("0xee8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d6310000080198080", rlp.ToHex());
 
             rlp = tx.Rlp(true);
             // This is correct rlp with chain id 225. Check here: https://toolkit.abdk.consulting/ethereum#transaction
-            expectedRlp = 
-                "0xef8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d631000008081e18080"
-                    .HexToBytes();
-            Assert.IsTrue(rlp.SequenceEqual(expectedRlp));
-
+            Assert.AreEqual("0xef8085012a05f2008344aa20945f193b130d7c856179aa3d738ee06fab65e7314789056bc75e2d631000008081e18080", rlp.ToHex());
         }
 
         [Test]
@@ -326,7 +408,7 @@ namespace Lachain.CryptoTest
             var rawTx =
                 "0xf86d808504a817c800832dc6c0948e7b7262e0fa4616566591d51f998f16a79fb547880de0b6b3a76400008025a0115105d96a43f41a5ea562bb3e591cbfa431a8cdae9c3030457adca2cb854f78a012fb41922c53c73473563003667ed8e783359c91d95b42301e1955d530b1ca33";
 
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx.HexToBytes());
             Console.WriteLine("ETH RLP: " + ethTx.GetRLPEncodedRaw().ToHex());
 
             var nonce = ethTx.Nonce.ToHex();

@@ -16,7 +16,7 @@
     <PackageReference Include="Google.Protobuf" Version="3.15.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0-rc.1.20451.14" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0-rc.1.20451.14" />
-    <PackageReference Include="Nethereum.Web3" Version="3.8.0" />
+    <PackageReference Include="Nethereum.Web3" Version="4.8.0" />
     <PackageReference Include="prometheus-net" Version="4.1.1" />
     <PackageReference Include="SimpleInjector" Version="5.1.0" />
   </ItemGroup>

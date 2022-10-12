@@ -17,7 +17,7 @@
     <PackageReference Include="LibVRF.Net" Version="0.0.1" />
     <PackageReference Include="MCL.BLS12_381.Native" Version="0.0.5" />
     <PackageReference Include="MCL.BLS12_381.Net" Version="0.0.4" />
-    <PackageReference Include="Nethereum.Signer" Version="3.8.0" />
+    <PackageReference Include="Nethereum.Signer" Version="4.8.0" />
     <PackageReference Include="Secp256k1.Native" Version="0.1.20" />
     <PackageReference Include="Secp256k1.Net" Version="0.1.55" />
     <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />

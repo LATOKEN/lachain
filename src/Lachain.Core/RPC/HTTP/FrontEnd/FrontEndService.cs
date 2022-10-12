@@ -338,7 +338,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
         [JsonRpcMethod("fe_verifyRawTransaction")]
         public JObject VerifyRawTransaction(string rawTx, string externalTxHash, bool useNewChainId)
         {
-            var ethTx = new TransactionChainId(rawTx.HexToBytes());
+            var ethTx = new LegacyTransactionChainId(rawTx.HexToBytes());
 
             var r = ethTx.Signature.R;
             while (r.Length < 32)
@@ -406,7 +406,7 @@ namespace Lachain.Core.RPC.HTTP.FrontEnd
                 ["v"] = Web3DataFormatUtils.Web3Number((ulong) v),
             };
         }
-        public Transaction MakeTransaction(SignedTransactionBase ethTx)
+        public Transaction MakeTransaction(LegacyTransactionChainId ethTx)
         {
             return new Transaction
             {

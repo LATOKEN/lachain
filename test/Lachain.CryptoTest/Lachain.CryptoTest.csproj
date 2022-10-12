@@ -49,7 +49,7 @@
         </ContentWithTargetPath>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Nethereum.RPC" Version="3.8.0" />
+        <PackageReference Include="Nethereum.RPC" Version="4.8.0" />
         <PackageReference Include="nunit" Version="3.12.0" />
         <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
