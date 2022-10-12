@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
@@ -269,7 +270,7 @@ namespace Lachain.Core.Blockchain.Pool
         private bool IsBalanceValid(TransactionReceipt receipt)
         {
             var balance = _stateManager.LastApprovedSnapshot.Balances.GetBalance(receipt.Transaction.From);
-            var fee = new Money(receipt.Transaction.GasLimit * receipt.Transaction.GasPrice);
+            var fee = new Money(new BigInteger(receipt.Transaction.GasLimit) * receipt.Transaction.GasPrice);
             return balance.CompareTo(fee) >= 0;
         }
 
@@ -370,7 +371,7 @@ namespace Lachain.Core.Blockchain.Pool
 
                 if (_proposed.ContainsKey(era))
                 {
-                    Logger.LogError("Asking for transactions for era {era} more than once");
+                    Logger.LogError($"Asking for transactions for era {era} more than once");
                     throw new Exception("Proposing transactions multiple times for same era");
                 }
 
@@ -416,11 +417,39 @@ namespace Lachain.Core.Blockchain.Pool
 
             lock (_transactions)
             {
+                // txes are sorted by sender and then by nonce, in reverse order. So all txes of same sender
+                // are together sorted in descending order of nonce
+                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).Reverse();
                 // take governance transaction from transaction queue
-                foreach (var receipt in _transactionsQueue)
+                TransactionReceipt? lastGovernanceTxTaken = null;
+                foreach (var receipt in orderedTransactionsQueue)
                 {
                     if (!IsGovernanceTx(receipt))
-                        continue;
+                    {
+                        if (lastGovernanceTxTaken is null)
+                            continue;
+
+                        if (!receipt.Transaction.From.Equals(lastGovernanceTxTaken.Transaction.From))
+                        {
+                            lastGovernanceTxTaken = null;
+                            continue;
+                        }
+                        else if (receipt.Transaction.Nonce >= lastGovernanceTxTaken.Transaction.Nonce)
+                        {
+                            // there is something wrong with the ordering of transactions which is unknown. need to fix this
+                            Logger.LogDebug(
+                                $"receipt {lastGovernanceTxTaken.Hash.ToHex()} with nonce {lastGovernanceTxTaken.Transaction.Nonce}"
+                                + $" came before receipt {receipt.Hash.ToHex()} with nonce {receipt.Transaction.Nonce}. "
+                                + $"Something wrong with the ordering."
+                            );
+                            throw new Exception("Someting wrong with the ordering of transactions");
+                        }
+                    }
+                    else lastGovernanceTxTaken = receipt;
+
+                    // this is a governance tx or it is a tx with same sender
+                    // as the lastGovernanceTxTaken tx and this tx has less nonce
+                    // so we have to take it
                     var hash = receipt.Hash;
                     if (takenTxHashes.Contains(hash) || !_transactions.ContainsKey(hash) ||
                         _transactionManager.GetByHash(hash) != null)
@@ -434,7 +463,6 @@ namespace Lachain.Core.Blockchain.Pool
                 // We first greedily take some most profitable transactions. Let's group by sender and
                 // peek the best by gas price (so we do not break nonce order)
                 var txsBySender = new Dictionary<UInt160, List<TransactionReceipt>>();
-                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).Reverse();
                 foreach (var receipt in orderedTransactionsQueue)
                 {
                     if (IsGovernanceTx(receipt))

@@ -4,11 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Google.Protobuf;
+using Lachain.Consensus;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Operations;
 using Lachain.Core.Blockchain.Pool;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.VM;
@@ -45,6 +47,7 @@ namespace Lachain.CoreTest.IntegrationTests
         private IPrivateWallet _wallet = null!;
         private IConfigManager _configManager = null!;
         private ITransactionVerifier _txVerifier = null!;
+        private IBlockProducer _blockProducer = null!;
         private IContainer? _container;
 
         public BlocksTest()
@@ -57,6 +60,8 @@ namespace Lachain.CoreTest.IntegrationTests
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
 
             _container = containerBuilder.Build();
 
@@ -75,6 +80,8 @@ namespace Lachain.CoreTest.IntegrationTests
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _stateManager = _container.Resolve<IStateManager>();
@@ -82,6 +89,7 @@ namespace Lachain.CoreTest.IntegrationTests
             _transactionPool = _container.Resolve<ITransactionPool>();
             _configManager = _container.Resolve<IConfigManager>();
             _txVerifier = _container.Resolve<ITransactionVerifier>();
+            _blockProducer = _container.Resolve<IBlockProducer>();
 
             // set chainId from config
             if (TransactionUtils.ChainId(false) == 0)
@@ -90,7 +98,8 @@ namespace Lachain.CoreTest.IntegrationTests
                 var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
                 TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
                 HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
-            }
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
+            }    
         }
 
         [TearDown]
@@ -141,7 +150,6 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
-        [Repeat(2)]
         public void Test_Block_Emulation()
         {
             _blockManager.TryBuildGenesisBlock();
@@ -150,7 +158,6 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
-        [Repeat(2)]
         public void Test_Block_Execution()
         {
             _blockManager.TryBuildGenesisBlock();
@@ -177,7 +184,6 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
-        [Repeat(5)]
         public void Test_Block_With_Txs_Execution()
         {
             _blockManager.TryBuildGenesisBlock();
@@ -222,6 +228,58 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.AreEqual(OperatingError.Ok, result);
             }
             ExecuteTxesInSeveralBlocks(randomReceipts);
+        }
+        
+        [Test]
+        public void Test_GovernanceTxHalt()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            ulong total = StakingContract.CycleDuration * 3;
+            for (ulong id = 1; id <= total; id++)
+            {
+                if (id % StakingContract.CycleDuration == StakingContract.VrfSubmissionPhaseDuration + 1)
+                {
+                    // add 1000 txes to pool so nonce bug triggers
+                    int count = 1000;
+                    var keyPair = _wallet.EcdsaKeyPair;
+                    var gasPrice = new Money(1).ToString();
+                    var useNewChainId = HardforkHeights.IsHardfork_9Active(id);
+                    var nonce = _transactionPool.GetNextNonceForAddress(keyPair.PublicKey.GetAddress());
+                    for (int iter = 0 ; iter < count ; iter++)
+                    {
+                        var receipt = TestUtils.GetCustomTransactionFromAddress(keyPair, "0", gasPrice, nonce, useNewChainId);
+                        var error = _transactionPool.Add(receipt);
+                        Assert.AreEqual(OperatingError.Ok, error);
+                        nonce++;
+                    }
+                }
+                var txes = _transactionPool.Peek(100, 100, id).ToArray();
+                var blockHeader = _blockProducer.CreateHeader(id, txes, id, out txes);
+                _blockProducer.ProduceBlock(txes, blockHeader!, new MultiSig());
+                var expectedBlock = _blockManager.GetByHeight(id);
+                Assert.AreEqual(expectedBlock!.Header, blockHeader);
+                Assert.AreEqual(expectedBlock!.TransactionHashes, txes.Select(tx => tx.Hash).ToArray());
+                if (id % StakingContract.CycleDuration == 0)
+                {
+                    var from = id - StakingContract.VrfSubmissionPhaseDuration;
+                    var count = 0;
+                    for (ulong height = from ; height <= id; height++)
+                    {
+                        expectedBlock = _blockManager.GetByHeight(height);
+                        foreach (var tx in expectedBlock!.TransactionHashes)
+                        {
+                            var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(tx);
+                            if (receipt!.Transaction.To.Equals(ContractRegisterer.GovernanceContract))
+                            {
+                                count++;
+                                Assert.AreEqual(TransactionStatus.Executed, receipt!.Status);
+                            }
+                        }
+                    }
+                    // for each cycle we have 4 governance contract in a one-node-network
+                    Assert.AreEqual(4, count);
+                }
+            }
         }
 
         [Test]
