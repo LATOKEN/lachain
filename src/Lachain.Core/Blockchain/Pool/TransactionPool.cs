@@ -85,10 +85,17 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public TransactionReceipt? GetByHash(UInt256 hash)
         {
-            return _transactions.TryGetValue(hash, out var tx) ? tx : _poolRepository.GetTransactionByHash(hash);
+            // all pool txes are in _transactions or _proposed.
+            // If not in any of them then must be in the state
+            if (_transactions.TryGetValue(hash, out var tx))
+                return tx;
+            
+            var txes = _proposed.Where(receipt => receipt.Hash.Equals(hash)).ToList();
+            if (txes.Count == 0)
+                return null;
+            else return txes[0];
         }
 
         // During the start of a node, it attempts to restore all the transactions
@@ -527,7 +534,6 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public uint Size()
         {
             return (uint) _transactionsQueue.Count;
@@ -553,7 +559,6 @@ namespace Lachain.Core.Blockchain.Pool
 
         // Depending on all the transactions already added to the block and the transactions
         // stored in the pool, this method calculates the next nonce for an address 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetNextNonceForAddress(UInt160 address)
         {
             // poolNonce represents the max nonce of all the transactions by this address
