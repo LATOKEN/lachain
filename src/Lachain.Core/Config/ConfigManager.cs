@@ -33,23 +33,29 @@ namespace Lachain.Core.Config
                 var configLoader = new LocalConfigLoader(ConfigPath);
                 _config = new Dictionary<string, object>(configLoader.LoadConfig());
                 Logger.LogInformation($"Loaded config from {ConfigPath}");
-            }
-            catch (Exception e) {
-                try {
-                    Logger.LogWarning($"Could not load config from {ConfigPath}. Trying from backup ({ConfigBackupPath})");
-                    var configLoader = new LocalConfigLoader(ConfigBackupPath);
-                    _config = new Dictionary<string, object>(configLoader.LoadConfig());
-                    Logger.LogInformation($"Loaded config from backup ({ConfigBackupPath})");
 
+                // Config loaded Successfully. Create backup if it does not exist
+                if (!File.Exists(ConfigBackupPath)) {       
+                    File.Copy(ConfigPath, ConfigBackupPath);
+                    Logger.LogInformation($"Created backup of config at {ConfigBackupPath}");
+                }
+            }
+            catch (Exception e) {   
+                // Config File is corrupted/missing. Try to restore from backup
+                try {
+                    Logger.LogWarning($"Could not load config from {ConfigPath}. Restoring config from backup ({ConfigBackupPath})");
+                    File.Copy(ConfigBackupPath, ConfigPath);
+                    var configLoader = new LocalConfigLoader(ConfigPath);
+                    _config = new Dictionary<string, object>(configLoader.LoadConfig());
+                    Logger.LogInformation($"Restored config to {ConfigPath} from backup ({ConfigBackupPath})");
                 }
                 catch (Exception e2) {
-                    Logger.LogError($"Could not load config from backup ({ConfigBackupPath}). Aborting.");
+                    Logger.LogError($"Could not restore config from backup ({ConfigBackupPath}). Aborting.");
                     throw;
                 }
 
             }
             _UpdateConfigVersion();
-            _SaveCurrentConfig();
 
         }
         
