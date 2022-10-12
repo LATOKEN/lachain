@@ -220,6 +220,15 @@ namespace Lachain.Core.Blockchain.Pool
                             + $"Probable reason: old transaction is already proposed to block");
                         return OperatingError.TransactionLost;
                     }
+
+                    if (!IdenticalTransaction(oldTx.Transaction, receipt.Transaction))
+                    {
+                        Logger.LogTrace(
+                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
+                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
+                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to different value is some fields");
+                        return OperatingError.DuplicatedTransaction;
+                    }
                     if (oldTx.Transaction.GasPrice >= receipt.Transaction.GasPrice)
                     {
                         // discard new transaction, it has less gas price than the old one
@@ -230,14 +239,6 @@ namespace Lachain.Core.Blockchain.Pool
                         return OperatingError.Underpriced;
                     }
                     
-                    if (!IdenticalTransaction(oldTx.Transaction, receipt.Transaction))
-                    {
-                        Logger.LogTrace(
-                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
-                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
-                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to different value is some fields");
-                        return OperatingError.DuplicatedTransaction;
-                    }
                     
                     // remove the old transaction from pool
                     _transactionsQueue.Remove(oldTx);
