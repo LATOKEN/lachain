@@ -248,6 +248,11 @@ namespace Lachain.Core.Blockchain.Pool
                         $" in pool is replaced by transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
                         $"{receipt.Transaction.GasPrice}");
                 }
+                
+                // db write could be slow, so sharing this tx with peers before persisting
+                // so peers can get it faster
+                if (notify) TransactionAdded?.Invoke(this, receipt);
+
                 /* put transaction to pool queue */
                 _transactions[receipt.Hash] = receipt;
                 _transactionsQueue.Add(receipt);
@@ -264,7 +269,6 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
             }
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
-            if (notify) TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
         private bool IsGovernanceTx(TransactionReceipt receipt)
