@@ -33,18 +33,12 @@ namespace Lachain.Core.Config
                 var configLoader = new LocalConfigLoader(ConfigPath);
                 _config = new Dictionary<string, object>(configLoader.LoadConfig());
                 Logger.LogInformation($"Loaded config from {ConfigPath}");
-
-                // Config loaded Successfully. Create backup if it does not exist
-                if (!File.Exists(ConfigBackupPath)) {       
-                    File.Copy(ConfigPath, ConfigBackupPath);
-                    Logger.LogInformation($"Created backup of config at {ConfigBackupPath}");
-                }
             }
             catch (Exception e) {   
                 // Config File is corrupted/missing. Try to restore from backup
                 try {
                     Logger.LogWarning($"Could not load config from {ConfigPath}. Restoring config from backup ({ConfigBackupPath})");
-                    File.Copy(ConfigBackupPath, ConfigPath);
+                    File.Copy(ConfigBackupPath, ConfigPath, true);
                     var configLoader = new LocalConfigLoader(ConfigPath);
                     _config = new Dictionary<string, object>(configLoader.LoadConfig());
                     Logger.LogInformation($"Restored config to {ConfigPath} from backup ({ConfigBackupPath})");
@@ -56,7 +50,9 @@ namespace Lachain.Core.Config
 
             }
             _UpdateConfigVersion();
-
+            
+            // Copy config to backup in case it is missing.
+            File.Copy(ConfigPath, ConfigBackupPath, true);
         }
         
         public void UpdateWalletPassword(string password)
@@ -550,8 +546,8 @@ namespace Lachain.Core.Config
         
         private void _SaveCurrentConfig()
         {
+            File.Copy(ConfigPath, ConfigBackupPath, true);
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
-            File.WriteAllText(ConfigBackupPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
         }
     }
 }
