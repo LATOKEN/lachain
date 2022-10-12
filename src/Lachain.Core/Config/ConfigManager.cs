@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
 using Lachain.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+
 namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 15;
+        private const ulong _CurrentVersion = 16;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -69,6 +71,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV14();
             if (version < 15)
                 _UpdateConfigToV15();
+            if (version < 16)
+                _UpdateConfigToV16();
         }
 
         // version 2 of config should contain hardfork section and height for first hardfork,
@@ -437,6 +441,31 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
 
+        // version 16 of config should contain updated blockchain.TargetBlockTime (4000 ms) 
+        // and new blockchain.TargetTransactionsPerBlock (800) 
+        private void _UpdateConfigToV16()
+        {   
+            const int oldTargetBlockTime = 5000; //ms
+            const int newTargetBlockTime = 4000; //ms
+            const int newTargetTransactionsPerBlock = 800; 
+
+            var blockchain = GetConfig<BlockchainConfig>("blockchain") ??
+                            throw new ApplicationException("No blockchain section in config");
+
+            if (blockchain.TargetBlockTime == oldTargetBlockTime)
+                blockchain.TargetBlockTime = newTargetBlockTime;
+
+            blockchain.TargetTransactionsPerBlock = newTargetTransactionsPerBlock;
+            _config["blockchain"] = JObject.FromObject(blockchain);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            
+            version.Version = 16;
+            _config["version"] = JObject.FromObject(version);
+
+            _SaveCurrentConfig();
+        }
         private void _SaveCurrentConfig()
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
