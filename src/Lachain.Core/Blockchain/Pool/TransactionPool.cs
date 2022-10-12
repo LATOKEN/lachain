@@ -147,16 +147,25 @@ namespace Lachain.Core.Blockchain.Pool
         // Attempts to add a transaction to the pool
         // if notify = true, then if it can add to the pool, then also broadcasts this
         // transaction to all its peers
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(TransactionReceipt receipt, bool notify = true)
         {
-            if (receipt is null)
-                throw new ArgumentNullException(nameof(receipt));
+            var error = ValidateTransaction(receipt);
+            if (error != OperatingError.Ok)
+            {
+                Logger.LogDebug($"Tx verification failed with error {error}");
+                return error;
+            }
+            error = PersistTransaction(receipt, notify);
+            if (error != OperatingError.Ok)
+            {
+                Logger.LogDebug($"Transaction not added to pool with error {error}");
+            }
+            return error;
+        }
 
-            /* don't add to transaction pool transactions with the same hashes */
-            if (_transactions.ContainsKey(receipt.Hash))
-                return OperatingError.AlreadyExists;
-            /* verify transaction before adding */
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private OperatingError PersistTransaction(TransactionReceipt receipt, bool notify = true)
+        {
             var maxNonce = GetNextNonceForAddress(receipt.Transaction.From);
             if (maxNonce < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
@@ -175,26 +184,6 @@ namespace Lachain.Core.Blockchain.Pool
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
             }
-
-            /* check if the address has enough gas */
-            if (!IsBalanceValid(receipt))
-                return OperatingError.InsufficientBalance;
-
-            // Stop accept regular txes 100 blocks before Hardfork_6
-            if (HardforkHeights.IsHardfork_9Active(BlockHeight() + 100) &&
-                !HardforkHeights.IsHardfork_9Active(BlockHeight()))
-            {
-                if (!receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) &&
-                    !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
-                    return OperatingError.UnsupportedTransaction;
-            }
-            
-            // we use next height here because block header should be signed with the same chainId
-            // and this txes will go to the next block
-            bool useNewChainId = HardforkHeights.IsHardfork_9Active(BlockHeight() + 1);
-            var result = _transactionManager.Verify(receipt, useNewChainId);
-            if (result != OperatingError.Ok)
-                return result;
 
             bool oldTxExist = false;
             TransactionReceipt? oldTx = null;
@@ -272,6 +261,49 @@ namespace Lachain.Core.Blockchain.Pool
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
             return OperatingError.Ok;
         }
+
+        private OperatingError ValidateTransaction(TransactionReceipt receipt)
+        {
+            if (receipt is null)
+                throw new ArgumentNullException(nameof(receipt));
+
+            /* don't add to transaction pool transactions with the same hashes */
+            if (_transactions.ContainsKey(receipt.Hash))
+                return OperatingError.AlreadyExists;
+            /* verify transaction before adding */
+            if (_transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
+            {
+                return OperatingError.InvalidNonce;
+            }
+            /* special case for system transactions */
+            if (receipt.Transaction.From.IsZero())
+            {
+                return OperatingError.Ok;
+            }
+                
+            /* check if the address has enough gas */
+            if (!IsBalanceValid(receipt))
+                return OperatingError.InsufficientBalance;
+
+            // Stop accept regular txes 100 blocks before Hardfork_6
+            if (HardforkHeights.IsHardfork_9Active(BlockHeight() + 100) &&
+                !HardforkHeights.IsHardfork_9Active(BlockHeight()))
+            {
+                if (!receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract) &&
+                    !receipt.Transaction.To.Equals(ContractRegisterer.StakingContract))
+                    return OperatingError.UnsupportedTransaction;
+            }
+            
+            // we use next height here because block header should be signed with the same chainId
+            // and this txes will go to the next block
+            bool useNewChainId = HardforkHeights.IsHardfork_9Active(BlockHeight() + 1);
+            var result = _transactionManager.Verify(receipt, useNewChainId);
+            if (result != OperatingError.Ok)
+                return result;
+
+            return OperatingError.Ok;
+        }
+
         private bool IsGovernanceTx(TransactionReceipt receipt)
         {
             return receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract);
