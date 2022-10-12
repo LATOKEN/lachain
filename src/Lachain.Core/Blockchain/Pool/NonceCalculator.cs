@@ -88,7 +88,6 @@ namespace Lachain.Core.Blockchain.Pool
         // given an address, returns the max nonce of all the transactions by this address
         // if there is no such transaction, returns null
         
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong? GetMaxNonceForAddress(UInt160 address) 
         {
             if(!_noncePerAddress.TryGetValue(address, out var maxNonce))

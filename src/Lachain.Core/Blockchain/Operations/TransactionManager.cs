@@ -137,13 +137,11 @@ namespace Lachain.Core.Blockchain.Operations
             return OperatingError.Ok;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Verify(TransactionReceipt transaction,  bool useNewChainId)
         {
             return VerifyInternal(transaction, false, useNewChainId);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError VerifyInternal(
             TransactionReceipt acceptedTransaction,
             bool canTransactionMissVerification,
@@ -182,7 +180,6 @@ namespace Lachain.Core.Blockchain.Operations
             return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, bool useNewChainId,  bool cacheEnabled)
         {
             /* First search the cache to see if the transaction is verified, otherwise verify immediately */
@@ -194,7 +191,6 @@ namespace Lachain.Core.Blockchain.Operations
             return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong CalcNextTxNonce(UInt160 from)
         {
             return _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);
