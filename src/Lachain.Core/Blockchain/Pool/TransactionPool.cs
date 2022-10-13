@@ -166,6 +166,9 @@ namespace Lachain.Core.Blockchain.Pool
         [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError PersistTransaction(TransactionReceipt receipt, bool notify = true)
         {
+            /* don't add to transaction pool transactions with the same hashes */
+            if (_transactions.ContainsKey(receipt.Hash))
+                return OperatingError.AlreadyExists;
             var maxNonce = GetNextNonceForAddress(receipt.Transaction.From);
             if (maxNonce < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
