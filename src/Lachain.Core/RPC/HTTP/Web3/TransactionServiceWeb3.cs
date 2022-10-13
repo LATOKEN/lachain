@@ -815,7 +815,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var reverReasonPrefixLength = revertReasonPrefix.Length;
             var prefixBytes = 32 + 32;
             var prefix = reverReasonPrefixLength / 2 + prefixBytes;
-            Logger.LogInformation("revert reason: " + returnResult.ToHex(true));
+            Logger.LogInformation("revert reason: " + (returnResult is null ? "null" : returnResult.ToHex(true)));
             if (returnResult is null || returnResult.Length < prefix) return false;
             
             var returnResultHex = returnResult.ToHex(true);
