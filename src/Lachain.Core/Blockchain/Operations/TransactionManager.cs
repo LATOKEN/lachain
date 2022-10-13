@@ -169,7 +169,6 @@ namespace Lachain.Core.Blockchain.Operations
             return _transactionExecuter.Verify(transaction);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey,  bool useNewChainId)
         {
             if (!_processedTransactions.TryGetValue(transaction.Hash, out var status))
