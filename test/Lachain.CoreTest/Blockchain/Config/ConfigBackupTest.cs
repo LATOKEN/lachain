@@ -85,11 +85,6 @@ namespace Lachain.CoreTest.IntegrationTests
             System.IO.File.WriteAllText(configBackupPath,string.Empty);
             ReloadConfig();
             CheckConfig(configPath, configBackupPath);
-
-            //Should throw error if neither file present
-            File.Delete(configPath);
-            File.Delete(configBackupPath);
-            Assert.Throws<System.IO.FileNotFoundException>(() => ReloadConfig());
         }
 
         private IReadOnlyDictionary<string, object> loadConfig(string _filePath) {
