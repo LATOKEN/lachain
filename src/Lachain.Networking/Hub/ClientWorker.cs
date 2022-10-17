@@ -151,7 +151,7 @@ namespace Lachain.Networking.Hub
 
         private void Send(byte[] megaBatchBytes)
         {
-            if (_isValidator) _hubConnector.SendVal(PeerPublicKey, megaBatchBytes);
+            if (_isValidator) _hubConnector.SendToValidator(PeerPublicKey, megaBatchBytes);
             else _hubConnector.Send(PeerPublicKey, megaBatchBytes);
         }
 

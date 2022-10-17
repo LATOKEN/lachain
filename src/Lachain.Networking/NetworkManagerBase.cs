@@ -29,7 +29,6 @@ namespace Lachain.Networking
         private readonly MessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
         private readonly ClientWorker _broadcaster;
-        private bool _validatorChannelConnected = false;
         private bool _started = false;
 
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
@@ -75,20 +74,14 @@ namespace Lachain.Networking
 
         public void Start()
         {
-            _broadcaster.Start();
-            _hubConnector.Start();
             _started = true;
+            _hubConnector.Start();
+            _broadcaster.Start();
         }
 
         public void ConnectValidatorChannel(List<ECDSAPublicKey> validators)
         {
             if (!_started) return;
-            
-            if (!_validatorChannelConnected)
-            {
-                _validatorChannelConnected = true;
-                _hubConnector.ConnectValidatorChannel();
-            }
 
             validators = validators.OrderBy(
                 x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
@@ -100,8 +93,14 @@ namespace Lachain.Networking
             {
                 GetClientWorker(publicKey)?.SetValidator(false);
             }
+            _hubConnector.DisconnectValidators(
+                validatorsToDisconnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
+            );
 
             var validatorsToConnect = RemovePublicKeys(validators, _connectedValidators);
+            _hubConnector.StartValidatorChannel(
+                validatorsToConnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
+            );
             foreach (var publicKey in validatorsToConnect)
             {
                 GetClientWorker(publicKey)?.SetValidator(true);
@@ -125,11 +124,7 @@ namespace Lachain.Networking
             lock (_connectedValidators)
                 _connectedValidators.Clear();
 
-            if (_validatorChannelConnected)
-            {
-                _validatorChannelConnected = false;
-                _hubConnector.DisconnectValidatorChannel();
-            }
+            _hubConnector.StopValidatorChannel();
         }
 
         // both input lists need to be sorted and no duplicate element allowed

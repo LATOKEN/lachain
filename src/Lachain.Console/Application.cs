@@ -167,8 +167,15 @@ namespace Lachain.Console
             var networkConfig = configManager.GetConfig<NetworkConfig>("network") ??
                                 throw new Exception("No 'network' section in config file");
 
+            var validators = validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight()).ToList();
             metricsService.Start();
             networkManager.Start();
+            if (validators.Contains(wallet.EcdsaKeyPair.PublicKey))
+            {
+                networkManager.ConnectValidatorChannel(
+                    validators.Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey)).ToList()
+                );
+            }
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
 
@@ -179,8 +186,7 @@ namespace Lachain.Console
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");
             blockSynchronizer.SynchronizeWith(
-                validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
-                    .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
+                validators.Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             Logger.LogInformation("Block synchronization finished, starting consensus...");
             consensusManager.Start(blockManager.GetHeight() + 1);

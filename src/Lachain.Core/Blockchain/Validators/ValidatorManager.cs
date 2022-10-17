@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Lachain.Consensus;
 using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Networking;
@@ -34,13 +35,16 @@ namespace Lachain.Core.Blockchain.Validators
 
         private void OnBlockPersisted(object? sender, Block block)
         {
-            var validators = _snapshotIndexRepository.GetSnapshotForBlock(block.Header.Index).Validators
+            if (block.Header.Index % StakingContract.CycleDuration == 0)
+            {
+                var validators = _snapshotIndexRepository.GetSnapshotForBlock(block.Header.Index).Validators
                 .GetValidatorsPublicKeys().ToList();
 
-            var myPublicKey = _networkManager.MessageFactory.GetPublicKey();
-            if (validators.Contains(myPublicKey))
-                _networkManager.ConnectValidatorChannel(validators);
-            else _networkManager.DisconnectValidatorChannel();
+                var myPublicKey = _networkManager.MessageFactory.GetPublicKey();
+                if (validators.Contains(myPublicKey))
+                    _networkManager.ConnectValidatorChannel(validators.Where(pubKey => !pubKey.Equals(myPublicKey)).ToList());
+                else _networkManager.DisconnectValidatorChannel();
+            }
         }
 
         public IPublicConsensusKeySet? GetValidators(long afterBlock)
