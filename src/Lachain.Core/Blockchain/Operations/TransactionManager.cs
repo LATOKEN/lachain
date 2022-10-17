@@ -171,23 +171,33 @@ namespace Lachain.Core.Blockchain.Operations
 
         public OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey,  bool useNewChainId)
         {
-            if (!_processedTransactions.TryGetValue(transaction.Hash, out var status))
-                return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey, useNewChainId)
-                    ? OperatingError.Ok
-                    : OperatingError.InvalidSignature;
-
-            return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+            lock (_processedTransactions)
+            {
+                if (_processedTransactions.TryGetValue(transaction.Hash, out var status))
+                {
+                    return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+                }
+            }
+            
+            return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey, useNewChainId)
+                ? OperatingError.Ok
+                : OperatingError.InvalidSignature;
         }
 
         public OperatingError VerifySignature(TransactionReceipt transaction, bool useNewChainId,  bool cacheEnabled)
         {
-            /* First search the cache to see if the transaction is verified, otherwise verify immediately */
-            if (!_processedTransactions.TryGetValue(transaction.Hash, out var status))
-                return _transactionVerifier.VerifyTransactionImmediately(transaction, useNewChainId, cacheEnabled)
-                    ? OperatingError.Ok
-                    : OperatingError.InvalidSignature;
+            /* First search the cache to see if the transaction is verified, otherwise verify immediately */         
+            lock (_processedTransactions)
+            {
+                if (_processedTransactions.TryGetValue(transaction.Hash, out var status))
+                {
+                    return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+                }
+            }
             
-            return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+            return _transactionVerifier.VerifyTransactionImmediately(transaction, useNewChainId, cacheEnabled)
+                ? OperatingError.Ok
+                : OperatingError.InvalidSignature;
         }
 
         public ulong CalcNextTxNonce(UInt160 from)
