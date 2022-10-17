@@ -96,11 +96,18 @@ namespace Lachain.Networking
             _hubConnector.DisconnectValidators(
                 validatorsToDisconnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
             );
+            Logger.LogTrace(
+                $"Disconnected validators: [{string.Join(", ", validatorsToDisconnect.Select(k => k.ToHex()))}] from validator channel"
+            );
 
             var validatorsToConnect = RemovePublicKeys(validators, _connectedValidators);
             _hubConnector.StartValidatorChannel(
                 validatorsToConnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
             );
+            Logger.LogTrace(
+                $"Connected to validator channel with validators: [{string.Join(", ", validatorsToConnect.Select(k => k.ToHex()))}]"
+            );
+
             foreach (var publicKey in validatorsToConnect)
             {
                 GetClientWorker(publicKey)?.SetValidator(true);
@@ -117,6 +124,8 @@ namespace Lachain.Networking
         {
             if (!_started) return;
 
+            Logger.LogTrace("Disconnecting from validator channel");
+
             foreach (var publicKey in _connectedValidators)
             {
                 GetClientWorker(publicKey)?.SetValidator(false);
@@ -125,6 +134,9 @@ namespace Lachain.Networking
                 _connectedValidators.Clear();
 
             _hubConnector.StopValidatorChannel();
+            Logger.LogTrace(
+                $"Disconnected validators: [{string.Join(", ", _connectedValidators.Select(k => k.ToHex()))}] from validator channel"
+            );
         }
 
         // both input lists need to be sorted and no duplicate element allowed
