@@ -102,6 +102,8 @@ namespace Lachain.Core.Blockchain.Pool
             // transactionsToRemove stores all the transactions that was not added to 
             // the in-memory pool from persistent storage
             List<UInt256> transactionsToRemove = new List<UInt256>();
+            // set the block height before adding tx to pool
+            _lastSanitized = _blockManager.GetHeight();
             foreach (var txHash in txHashes)
             {
                 Logger.LogTrace($"Tx from pool: {txHash.ToHex()}");
@@ -115,7 +117,6 @@ namespace Lachain.Core.Blockchain.Pool
             // if a transaction was not added to the pool, that means it's not a valid 
             // transactions, so we should also erase it from the persistent storage
             _poolRepository.RemoveTransactions(transactionsToRemove);
-            _lastSanitized = _blockManager.GetHeight();
             CheckConsistency();
         }
 
