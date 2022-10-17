@@ -98,21 +98,24 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
-        public void SendVal(byte[] publicKey, byte[] message)
+        public void SendToValidator(byte[] publicKey, byte[] message)
         {
-            CommunicationHub.Net.Hub.SendVal(publicKey, CompressUtils.DeflateCompress(message).ToArray());
+            CommunicationHub.Net.Hub.SendToValidator(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
-        public void ConnectValidatorChannel()
+        public void StartValidatorChannel(byte[] publicKyes)
         {
-            CommunicationHub.Net.Hub.ConnectVal();
-
+            CommunicationHub.Net.Hub.StartValidatorChannel(publicKyes);
         }
 
-        public void DisconnectValidatorChannel()
+        public void StopValidatorChannel()
         {
-            CommunicationHub.Net.Hub.DisconnectVal();
+            CommunicationHub.Net.Hub.StopValidatorChannel();
+        }
 
+        public void DisconnectValidators(byte[] publicKyes)
+        {
+            CommunicationHub.Net.Hub.DisconnectValidators(publicKyes);
         }
 
         public void Dispose()
