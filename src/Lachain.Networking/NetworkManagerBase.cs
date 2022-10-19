@@ -89,28 +89,36 @@ namespace Lachain.Networking
                 x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
 
             var validatorsToDisconnect = RemovePublicKeys(_connectedValidators, validators);
-            foreach (var publicKey in validatorsToDisconnect)
+
+            if (validatorsToDisconnect.Count > 0)
             {
-                GetClientWorker(publicKey)?.SetValidator(false);
+                foreach (var publicKey in validatorsToDisconnect)
+                {
+                    GetClientWorker(publicKey)?.SetValidator(false);
+                }
+                _hubConnector.DisconnectValidators(
+                    validatorsToDisconnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
+                );
+                Logger.LogTrace(
+                    $"Disconnected validators: [{string.Join(", ", validatorsToDisconnect.Select(k => k.ToHex()))}] from validator channel"
+                );
             }
-            _hubConnector.DisconnectValidators(
-                validatorsToDisconnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
-            );
-            Logger.LogTrace(
-                $"Disconnected validators: [{string.Join(", ", validatorsToDisconnect.Select(k => k.ToHex()))}] from validator channel"
-            );
 
             var validatorsToConnect = RemovePublicKeys(validators, _connectedValidators);
-            _hubConnector.StartValidatorChannel(
-                validatorsToConnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
-            );
-            Logger.LogTrace(
-                $"Connected to validator channel with validators: [{string.Join(", ", validatorsToConnect.Select(k => k.ToHex()))}]"
-            );
-
-            foreach (var publicKey in validatorsToConnect)
+            
+            if (validatorsToConnect.Count > 0)
             {
-                GetClientWorker(publicKey)?.SetValidator(true);
+                _hubConnector.StartValidatorChannel(
+                    validatorsToConnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
+                );
+                Logger.LogTrace(
+                    $"Connected to validator channel with validators: [{string.Join(", ", validatorsToConnect.Select(k => k.ToHex()))}]"
+                );
+
+                foreach (var publicKey in validatorsToConnect)
+                {
+                    GetClientWorker(publicKey)?.SetValidator(true);
+                }
             }
             
             lock (_connectedValidators)
@@ -122,7 +130,7 @@ namespace Lachain.Networking
         
         public void DisconnectValidatorChannel()
         {
-            if (!_started) return;
+            if (!_started || _connectedValidators.Count == 0) return;
 
             Logger.LogTrace("Disconnecting from validator channel");
 
