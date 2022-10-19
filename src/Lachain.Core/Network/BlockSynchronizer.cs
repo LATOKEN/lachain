@@ -39,6 +39,7 @@ namespace Lachain.Core.Network
 
         private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
+        private readonly object _peerHeightUpdate = new object();
         private readonly object _blocksLock = new object();
         private readonly object _txLock = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
@@ -148,6 +149,9 @@ namespace Lachain.Core.Network
                     Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig with error: {error}");
                     return false;
                 }
+                // let it know that we received a valid response
+                lock (_peerHasBlocks)
+                    Monitor.PulseAll(_peerHasBlocks);
                 // This is to tell consensus manager to terminate current era, since we trust given multisig
                 OnSignedBlockReceived?.Invoke(this, block.Header.Index);
 
@@ -173,8 +177,6 @@ namespace Lachain.Core.Network
                     return false;
                 }
 
-                lock (_peerHasBlocks)
-                    Monitor.PulseAll(_peerHasBlocks);
                 return true;
             }
         }
@@ -182,12 +184,12 @@ namespace Lachain.Core.Network
         public void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey)
         {
             Logger.Log(_logLevelForSync, $"Peer {publicKey.ToHex()} has height {blockHeight}");
-            lock (_peerHasBlocks)
+            lock (_peerHeightUpdate)
             {
                 if (_peerHeights.TryGetValue(publicKey, out var peerHeight) && blockHeight <= peerHeight)
                     return;
                 _peerHeights[publicKey] = blockHeight;
-                Monitor.PulseAll(_peerHasBlocks);
+                Monitor.PulseAll(_peerHeightUpdate);
             }
         }
 
@@ -199,8 +201,8 @@ namespace Lachain.Core.Network
             var setOfPeers = peers.ToHashSet();
             if (setOfPeers.Count == 0) return false;
 
-            lock (_peerHasBlocks)
-                Monitor.Wait(_peerHasBlocks, TimeSpan.FromSeconds(1));
+            lock (_peerHeightUpdate)
+                Monitor.Wait(_peerHeightUpdate, TimeSpan.FromSeconds(1));
             var validatorPeers = _peerHeights
                 .Where(entry => setOfPeers.Contains(entry.Key))
                 .ToArray();
@@ -296,32 +298,31 @@ namespace Lachain.Core.Network
                     const int maxBlocksToRequest = 10;
 
                     var peers = _peerHeights
-                        .Where(entry => entry.Value >= maxHeight)
-                        .Select(entry => entry.Key)
+                        .Where(entry => entry.Value > myHeight)
                         .OrderBy(_ => rnd.Next())
                         .Take(maxPeersToAsk)
                         .ToArray();
 
                     var leftBound = myHeight + 1;
-                    var rightBound = Math.Min(maxHeight, myHeight + maxBlocksToRequest);
-                    Logger.LogTrace($"Sending query for blocks [{leftBound}; {rightBound}] to {peers.Length} peers");
                     foreach (var peer in peers)
                     {
+                        var rightBound = Math.Min(peer.Value, myHeight + maxBlocksToRequest);
+                        Logger.LogTrace($"Sending query for blocks [{leftBound}; {rightBound}] to peer {peer.Key.ToHex()}");
                         _networkManager.SendTo(
-                            peer, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound),
+                            peer.Key, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound),
                             NetworkMessagePriority.PeerSyncMessage
                         );
                     }
 
-                    var waitStart = TimeUtils.CurrentTimeMillis();
-                    while (true)
+                    var waitForBlockExecution = 4000;
+                    bool gotResponse = true;
+                    lock (_peerHasBlocks)
                     {
-                        lock (_peerHasBlocks)
-                        {
-                            Monitor.Wait(_peerHasBlocks, TimeSpan.FromMilliseconds(1_000));
-                        }
-
-                        if (TimeUtils.CurrentTimeMillis() - waitStart > 5_000) break;
+                        gotResponse = Monitor.Wait(_peerHasBlocks, TimeSpan.FromMilliseconds(1_000));
+                    }
+                    if (gotResponse)
+                    {
+                        Thread.Sleep(waitForBlockExecution);
                     }
                 }
                 catch (Exception e)
