@@ -26,5 +26,6 @@ namespace Lachain.Networking
         
         [JsonProperty("validatorsCount")] public ulong? ValidatorsCount;
         
+        [JsonProperty("minValidatorsCount")] public int? MinValidatorsCount;
     }
 }

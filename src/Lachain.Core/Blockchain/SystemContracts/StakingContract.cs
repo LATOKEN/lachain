@@ -55,6 +55,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
         // for mainnet, ExpectedValidatorsCount = 8
         // for testnet, ExpectedValidatorsCount = 4
         public static BigInteger ExpectedValidatorsCount = 4;
+        
+        public static int MinValidatorsCount = 1;
 
         // A cycle represents the consecutive set of blocks where the validatorSet stays the same
         // Default 20 is not used anymore, this parameter is set from the config file
@@ -189,7 +191,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             if(networkConfig.ValidatorsCount is null)
                 throw new Exception("Validator Count is not provided");
-            ExpectedValidatorsCount = new BigInteger((ulong) networkConfig.ValidatorsCount);
+            ExpectedValidatorsCount = new BigInteger(networkConfig.ValidatorsCount ?? 7);
+            MinValidatorsCount = networkConfig.MinValidatorsCount ?? 1;
             VrfSubmissionPhaseDuration = CycleDuration / 2; 
             AttendanceDetectionDuration = CycleDuration / 10;
 
@@ -753,13 +756,22 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 if (nextValidators.Length == 0)
                     return ExecutionStatus.ExecutionHalted;
             }
-            else 
+            else if(!HardforkHeights.IsHardfork_14Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
                 if(nextValidators.Length <= CryptoUtils.PublicKeyLength)
                 {
                     Logger.LogWarning($"Only {nextValidators.Length / CryptoUtils.PublicKeyLength} validator was chosen, so validator set is not going to change");
                     nextValidators = _context.Snapshot.Validators.GetValidatorsPublicKeys()
                     .Select(pk => pk.Buffer.ToByteArray()).Flatten().ToArray();
+                }
+            }
+            else
+            {
+                if(nextValidators.Length < MinValidatorsCount * CryptoUtils.PublicKeyLength)
+                {
+                    Logger.LogWarning($"Only {nextValidators.Length / CryptoUtils.PublicKeyLength} validator was chosen, so validator set is not going to change");
+                    nextValidators = _context.Snapshot.Validators.GetValidatorsPublicKeys()
+                        .Select(pk => pk.Buffer.ToByteArray()).Flatten().ToArray();
                 }
             }
 
