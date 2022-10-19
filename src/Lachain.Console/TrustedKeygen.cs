@@ -157,6 +157,7 @@ namespace Lachain.Console
                 var walletPath = "wallet.json";
                 var vault = new VaultConfig
                 {
+                    UseVault = false,
                     Path = walletPath,
                     Password = getRandomPassword()
                 };
@@ -322,6 +323,7 @@ namespace Lachain.Console
                 var walletPath = "wallet.json";
                 var vault = new VaultConfig
                 {
+                    UseVault = false,
                     Path = walletPath,
                     Password = getRandomPassword()
                 };
