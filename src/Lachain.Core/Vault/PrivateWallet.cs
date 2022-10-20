@@ -48,7 +48,7 @@ namespace Lachain.Core.Vault
                          throw new Exception("No 'vault' section in config file");
 
             _walletPath = ReadWalletPath(configManager);
-            _walletPassword = ReadWalletPassword();
+            _walletPassword = _vaultConfig.ReadWalletPassword();
             
             _unlockEndTime = 0;
             if (!File.Exists(_walletPath))
@@ -273,41 +273,6 @@ namespace Lachain.Core.Vault
             }
             SaveWallet(_walletPath, _walletPassword);
             return true;
-        }
-
-        private string ReadWalletPassword()
-        {
-            if (_vaultConfig.UseVault == true)
-            {
-
-                var vaultAddress = _vaultConfig.VaultAddress ?? 
-                                    Environment.GetEnvironmentVariable("VAULT_ADDR") ??
-                                    throw new ArgumentNullException(nameof(_vaultConfig.VaultAddress));
-                
-                var vaultToken = _vaultConfig.VaultToken ?? 
-                                 Environment.GetEnvironmentVariable("VAULT_TOKEN") ??
-                                 throw new ArgumentNullException(nameof(_vaultConfig.VaultToken));
-                
-                var vaultMountpoint = _vaultConfig.VaultMountpoint ?? 
-                                 throw new ArgumentNullException(nameof(_vaultConfig.VaultMountpoint));
-                
-                var vaultEndpoint = _vaultConfig.VaultEndpoint ?? 
-                                      throw new ArgumentNullException(nameof(_vaultConfig.VaultEndpoint));
-
-                IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken);
-                VaultClientSettings vaultClientSettings = new VaultClientSettings(vaultAddress, authMethod);
-                IVaultClient vaultClient = new VaultClient(vaultClientSettings);
-
-                Secret<SecretData> secret = vaultClient.V1.Secrets.KeyValue.V2.ReadSecretAsync(
-                    path: vaultEndpoint,
-                    mountPoint: vaultMountpoint
-                ).Result;
-                return (string) secret.Data.Data["password"];
-            }
-            else 
-            {
-                return _vaultConfig.Password ?? throw new ArgumentNullException(nameof(_vaultConfig.Password));
-            }
         }
 
         private string ReadWalletPath(IConfigManager configManager)
