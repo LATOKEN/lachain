@@ -14,6 +14,10 @@ using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
+using VaultSharp;
+using VaultSharp.V1.AuthMethods;
+using VaultSharp.V1.AuthMethods.Token;
+using VaultSharp.V1.Commons;
 
 namespace Lachain.Core.Vault
 {
@@ -37,20 +41,51 @@ namespace Lachain.Core.Vault
 
         public PrivateWallet(IConfigManager configManager)
         {
-            var config = configManager.GetConfig<VaultConfig>("vault") ??
+            var vaultConfig = configManager.GetConfig<VaultConfig>("vault") ??
                          throw new Exception("No 'vault' section in config file");
 
             if (!(configManager.CommandLineOptions.WalletPath is null))
-                config.Path = configManager.CommandLineOptions.WalletPath;
+                vaultConfig.Path = configManager.CommandLineOptions.WalletPath;
 
-            if (config.Path is null || config.Password is null)
-                throw new ArgumentNullException(nameof(config));
+            if (vaultConfig.Path is null)
+                throw new ArgumentNullException(nameof(vaultConfig.Path));
 
-            _walletPath = Path.IsPathRooted(config.Path) || config.Path.StartsWith("~/")
-                ? config.Path
-                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), config.Path);
+            _walletPath = Path.IsPathRooted(vaultConfig.Path) || vaultConfig.Path.StartsWith("~/")
+                ? vaultConfig.Path
+                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), vaultConfig.Path);
 
-            _walletPassword = config.Password;
+            if (vaultConfig.UseVault == true)
+            {
+                if (vaultConfig.VaultToken is null || vaultConfig.VaultPath is null)
+                    throw new ArgumentNullException(nameof(vaultConfig));
+
+                IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken: vaultConfig.VaultToken);
+                VaultClientSettings vaultClientSettings = new VaultClientSettings(vaultConfig.VaultPath, authMethod);
+                IVaultClient vaultClient = new VaultClient(vaultClientSettings); 
+                
+                var secretData = new Dictionary<string, object> { { "password", "Hashi123" } };
+                vaultClient.V1.Secrets.KeyValue.V2.WriteSecretAsync(
+                    path: "/wallet-data",
+                    data: secretData,
+                    mountPoint: "secret"
+                ).Wait();
+                
+                Console.WriteLine("Secret written successfully.");
+                
+                Secret<SecretData> secret = vaultClient.V1.Secrets.KeyValue.V2.ReadSecretAsync(
+                    path: "/wallet-data",
+                    mountPoint: "secret"
+                ).Result;
+                
+                var password = secret.Data.Data["password"];
+                _walletPassword = (string) password;
+                Console.WriteLine(_walletPassword);
+            }
+            else 
+            {
+                _walletPassword = vaultConfig.Password ?? throw new ArgumentNullException(vaultConfig.Password);
+            }
+
             _unlockEndTime = 0;
             if(!File.Exists(_walletPath))
                 GenerateNewWallet(_walletPath, _walletPassword);
