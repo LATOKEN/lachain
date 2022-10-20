@@ -356,11 +356,34 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     faulty
                 );
                 var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
+
+                // in current implementation, the raw key G1 is same for tpke verification key and ts key for a single player
+                // so we are matching if it is same before voting the keyringHash
+                // another more accurate soln could be put the tpke verification keys to the keyringHash,
+                // then tpke verification keys could be different than ts keys
+                // but that will require hardfork
+                var tpkeKeys = tpkeVerificationKeys.Select(x => PublicKey.FromBytes(x)).ToArray();
+                if (tpkeKeys.Length != tsKeys.Count)
+                {
+                    Logger.LogDebug($"tpke verification keys length {tpkeKeys.Length} does not match ts keys length {tsKeys.Count}");
+                    throw new Exception("tpke verification keys length != ts keys length");
+                }
+
+                for (int iter = 0 ; iter < tpkeKeys.Length; iter++)
+                { 
+                    if (!tpkeKeys[iter].RawKey.Equals(tsKeys[iter].RawKey))
+                    {
+                        Logger.LogDebug(
+                            $"for player {iter} tpke key {tpkeKeys[iter].RawKey.ToHex()} does not match ts key {tsKeys[iter].RawKey.ToHex()}"
+                        );
+                        throw new Exception($"player {iter} has mismatched keys");
+                    }
+                }
                 keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
             }
-            catch
+            catch (Exception ex)
             {
-                Logger.LogError("GovernanceContract is halted in KeyGenConfirm");
+                Logger.LogError($"GovernanceContract is halted in KeyGenConfirm: {ex}");
                 return ExecutionStatus.ExecutionHalted;
             }
 
