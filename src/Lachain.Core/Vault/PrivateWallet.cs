@@ -35,23 +35,28 @@ namespace Lachain.Core.Vault
         private readonly string _walletPath;
         private string _walletPassword;
         private long _unlockEndTime;
-        private VaultConfig vaultConfig;
+        private VaultConfig _vaultConfig;
 
         public EcdsaKeyPair EcdsaKeyPair { get; }
         public byte[] HubPrivateKey { get; }
 
         public PrivateWallet(IConfigManager configManager)
         {
-            vaultConfig = configManager.GetConfig<VaultConfig>("vault") ??
+            _vaultConfig = configManager.GetConfig<VaultConfig>("vault") ??
                          throw new Exception("No 'vault' section in config file");
 
             _walletPath = ReadWalletPath(configManager);
             _walletPassword = ReadWalletPassword();
             
             _unlockEndTime = 0;
-            if(!File.Exists(_walletPath))
+            if (!File.Exists(_walletPath))
+            {
                 GenerateNewWallet(_walletPath, _walletPassword);
+                Logger.LogInformation("New wallet created at" + _walletPath);
+            }
+
             var needsSave = RestoreWallet(_walletPath, _walletPassword, out var keyPair, out var hubKey);
+            Logger.LogInformation("Wallet loaded from" + _walletPath);
             EcdsaKeyPair = keyPair;
             HubPrivateKey = hubKey;
             if (needsSave) SaveWallet(_walletPath, _walletPassword);
@@ -234,44 +239,56 @@ namespace Lachain.Core.Vault
             SaveWallet(_walletPath, newPassword);
             _walletPassword = newPassword;
 
+            _vaultConfig.Password = _walletPassword;
+
             return true;
         }
 
         private string ReadWalletPassword()
         {
-            if (vaultConfig.UseVault == true)
+            if (_vaultConfig.UseVault == true)
             {
-                if (vaultConfig.VaultToken is null || vaultConfig.VaultPath is null)
-                    throw new ArgumentNullException(nameof(vaultConfig));
 
-                IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken: vaultConfig.VaultToken);
-                VaultClientSettings vaultClientSettings = new VaultClientSettings(vaultConfig.VaultPath, authMethod);
+                var vaultAddress = _vaultConfig.VaultAddress ?? 
+                                    Environment.GetEnvironmentVariable("VAULT_ADDR") ??
+                                    throw new ArgumentNullException(nameof(_vaultConfig.VaultAddress));
+                
+                var vaultToken = _vaultConfig.VaultToken ?? 
+                                 Environment.GetEnvironmentVariable("VAULT_TOKEN") ??
+                                 throw new ArgumentNullException(nameof(_vaultConfig.VaultToken));
+                
+                var vaultMountpoint = _vaultConfig.VaultMountpoint ?? 
+                                 throw new ArgumentNullException(nameof(_vaultConfig.VaultMountpoint));
+                
+                var vaultEndpoint = _vaultConfig.VaultEndpoint ?? 
+                                      throw new ArgumentNullException(nameof(_vaultConfig.VaultMountpoint));
+
+                IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken);
+                VaultClientSettings vaultClientSettings = new VaultClientSettings(vaultAddress, authMethod);
                 IVaultClient vaultClient = new VaultClient(vaultClientSettings);
 
                 Secret<SecretData> secret = vaultClient.V1.Secrets.KeyValue.V2.ReadSecretAsync(
-                    path: "/wallet-data",
-                    mountPoint: "secret"
+                    path: vaultEndpoint,
+                    mountPoint: vaultMountpoint
                 ).Result;
-                
                 return (string) secret.Data.Data["password"];
-                
             }
             else 
             {
-                return vaultConfig.Password ?? throw new ArgumentNullException(nameof(vaultConfig.Password));
+                return _vaultConfig.Password ?? throw new ArgumentNullException(nameof(_vaultConfig.Password));
             }
         }
 
         private string ReadWalletPath(IConfigManager configManager)
         {
             if (!(configManager.CommandLineOptions.WalletPath is null))
-                vaultConfig.Path = configManager.CommandLineOptions.WalletPath;
-            if (vaultConfig.Path is null)
-                throw new ArgumentNullException(nameof(vaultConfig.Path));
+                _vaultConfig.Path = configManager.CommandLineOptions.WalletPath;
+            if (_vaultConfig.Path is null)
+                throw new ArgumentNullException(nameof(_vaultConfig.Path));
 
-            return Path.IsPathRooted(vaultConfig.Path) || vaultConfig.Path.StartsWith("~/")
-                ? vaultConfig.Path
-                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), vaultConfig.Path);
+            return Path.IsPathRooted(_vaultConfig.Path) || _vaultConfig.Path.StartsWith("~/")
+                ? _vaultConfig.Path
+                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), _vaultConfig.Path);
         }
     }
 }
