@@ -1062,7 +1062,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             if(unlock){
                 var config = _configManager.GetConfig<VaultConfig>("vault") ??
                          throw new Exception("No 'vault' section in config file");
-                password = config.Password!;
+                password = config.ReadWalletPassword();
                 Assert.AreEqual(true,_privateWallet.Unlock(password, time));
             }
             else{
