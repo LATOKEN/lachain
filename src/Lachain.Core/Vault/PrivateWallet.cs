@@ -36,12 +36,14 @@ namespace Lachain.Core.Vault
         private string _walletPassword;
         private long _unlockEndTime;
         private VaultConfig _vaultConfig;
+        private IConfigManager _configManager;
 
         public EcdsaKeyPair EcdsaKeyPair { get; }
         public byte[] HubPrivateKey { get; }
 
         public PrivateWallet(IConfigManager configManager)
         {
+            _configManager = configManager;
             _vaultConfig = configManager.GetConfig<VaultConfig>("vault") ??
                          throw new Exception("No 'vault' section in config file");
 
@@ -236,11 +238,40 @@ namespace Lachain.Core.Vault
         public bool ChangePassword(string currentPassword, string newPassword)
         {
             if (currentPassword != _walletPassword) return false;
-            SaveWallet(_walletPath, newPassword);
             _walletPassword = newPassword;
 
-            _vaultConfig.Password = _walletPassword;
+            if (_vaultConfig.UseVault == true)
+            {
+                var vaultAddress = _vaultConfig.VaultAddress ?? 
+                                   Environment.GetEnvironmentVariable("VAULT_ADDR") ??
+                                   throw new ArgumentNullException(nameof(_vaultConfig.VaultAddress));
+                
+                var vaultToken = _vaultConfig.VaultToken ?? 
+                                 Environment.GetEnvironmentVariable("VAULT_TOKEN") ??
+                                 throw new ArgumentNullException(nameof(_vaultConfig.VaultToken));
+                
+                var vaultMountpoint = _vaultConfig.VaultMountpoint ?? 
+                                      throw new ArgumentNullException(nameof(_vaultConfig.VaultMountpoint));
+                
+                var vaultEndpoint = _vaultConfig.VaultEndpoint ?? 
+                                    throw new ArgumentNullException(nameof(_vaultConfig.VaultEndpoint));
 
+                IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken);
+                VaultClientSettings vaultClientSettings = new VaultClientSettings(vaultAddress, authMethod);
+                IVaultClient vaultClient = new VaultClient(vaultClientSettings);
+                
+                
+                vaultClient.V1.Secrets.KeyValue.V2.WriteSecretAsync( 
+                    path: vaultEndpoint,
+                    data: new Dictionary<string, object> { { "password", _walletPassword }},
+                    mountPoint: vaultMountpoint
+                );
+            }
+            else
+            {
+                _configManager.UpdateWalletPassword(_walletPassword);
+            }
+            SaveWallet(_walletPath, _walletPassword);
             return true;
         }
 
@@ -261,7 +292,7 @@ namespace Lachain.Core.Vault
                                  throw new ArgumentNullException(nameof(_vaultConfig.VaultMountpoint));
                 
                 var vaultEndpoint = _vaultConfig.VaultEndpoint ?? 
-                                      throw new ArgumentNullException(nameof(_vaultConfig.VaultMountpoint));
+                                      throw new ArgumentNullException(nameof(_vaultConfig.VaultEndpoint));
 
                 IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken);
                 VaultClientSettings vaultClientSettings = new VaultClientSettings(vaultAddress, authMethod);

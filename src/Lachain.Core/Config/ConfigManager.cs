@@ -4,6 +4,7 @@ using System.IO;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
+using Lachain.Core.Vault;
 using Lachain.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -17,6 +18,7 @@ namespace Lachain.Core.Config
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
+        
 
         public ConfigManager(string filePath, RunOptions options)
         {
@@ -25,6 +27,19 @@ namespace Lachain.Core.Config
             _config = new Dictionary<string, object>(configLoader.LoadConfig());
             ConfigPath = filePath;
             _UpdateConfigVersion();
+        }
+        
+        public void UpdateWalletPassword(string password)
+        {
+            var vault = GetConfig<VaultConfig>("vault") ??
+                          throw new ApplicationException("No vault section in config");
+
+            if (vault.UseVault == true)
+                throw new ApplicationException("Vault is being used. Password cannot be written to config");
+
+            vault.Password = password;
+            _config["vault"] = vault;
+            _SaveCurrentConfig();
         }
 
         public T? GetConfig<T>(string name)
@@ -470,5 +485,7 @@ namespace Lachain.Core.Config
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
         }
+        
+        
     }
 }
