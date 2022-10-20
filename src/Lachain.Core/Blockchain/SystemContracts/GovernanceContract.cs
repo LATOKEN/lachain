@@ -416,6 +416,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus FinishCycle(UInt256 cycle, SystemContractExecutionFrame frame)
         {
             Logger.LogDebug("FinishCycle()");
+
+            if (!MsgSender().IsZero())
+            {
+                Logger.LogError("!MsgSender().IsZero(): governance function called by non-zero address");
+                return ExecutionStatus.ExecutionHalted;
+            }
+            
             var currentBlock = frame.InvocationContext.Receipt.Block;
             if (GetBlockNumberInCycle(currentBlock) != 0)
             {
