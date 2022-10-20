@@ -12,11 +12,13 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
         public Commitment? Commitment { get; set; }
         public readonly Fr[] Values;
         public readonly bool[] Acks;
+        public bool Confirmation;
 
         public State(int n)
         {
             Values = new Fr[n];
             Acks = new bool[n];
+            Confirmation = false;
         }
 
         public int ValueCount()
@@ -54,6 +56,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
             stream.Write(Acks.Length.ToBytes().ToArray());
             stream.Write(values);
             stream.Write(acks);
+            stream.Write(Confirmation ? new byte[1] {1} : new byte[1] {0});
             return stream.ToArray();
         }
 
@@ -66,15 +69,17 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
                 .Batch(Fr.ByteSize)
                 .Select(x => Fr.FromBytes(x.ToArray()))
                 .ToArray();
-            var acks = bytes.Slice(8 + cLen + n * Fr.ByteSize).ToArray()
+            var acks = bytes.Slice(8 + cLen + n * Fr.ByteSize, n).ToArray()
                 .Select(b => b != 0)
                 .ToArray();
+            var confirmation = bytes.Slice(8 + cLen + n * Fr.ByteSize + n).ToArray();
             var result = new State(values.Length) {Commitment = commitment};
             for (var i = 0; i < n; ++i)
             {
                 result.Values[i] = values[i];
                 result.Acks[i] = acks[i];
             }
+            result.Confirmation = confirmation[0] == 1 ? true : false;
 
             return result;
         }
@@ -85,7 +90,8 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
             if (ReferenceEquals(this, other)) return true;
             return Values.SequenceEqual(other.Values) &&
                    Acks.SequenceEqual(other.Acks) &&
-                   Equals(Commitment, other.Commitment);
+                   Equals(Commitment, other.Commitment) &&
+                   Confirmation == other.Confirmation;
         }
 
         public override bool Equals(object? obj)
@@ -98,7 +104,7 @@ namespace Lachain.Consensus.ThresholdKeygen.Data
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Values, Acks, Commitment);
+            return HashCode.Combine(Values, Acks, Commitment, Confirmation);
         }
     }
 }

@@ -287,7 +287,7 @@ namespace Lachain.Core.Vault
                     return;
                 }
 
-                if (keygen.HandleConfirm(tpkePublicKey, tsKeys))
+                if (keygen.HandleConfirm(sender, tpkePublicKey, tsKeys))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
                     Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
@@ -342,7 +342,7 @@ namespace Lachain.Core.Vault
                     return;
                 }
 
-                if (keygen.HandleConfirm(tpkePublicKey, tsKeys))
+                if (keygen.HandleConfirm(sender, tpkePublicKey, tsKeys))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
                     Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
@@ -525,7 +525,45 @@ namespace Lachain.Core.Vault
                             keygen.Faulty
                         );
 
-                        if (!keygen.HandleConfirm(tpkePublicKey, tsKeys)) continue;
+                        if (!keygen.HandleConfirm(sender, tpkePublicKey, tsKeys)) continue;
+                        var keys = keygen.TryGetKeys() ?? throw new Exception();
+                        Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
+                        Logger.LogTrace($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
+                        Logger.LogTrace(
+                            $"  - TS public key: {keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()}");
+                        Logger.LogTrace(
+                            $"  - TS public key set: {string.Join(", ", keys.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToHex()))}"
+                        );
+                        var lastBlockInCurrentCycle =
+                            (i / StakingContract.CycleDuration + 1) * StakingContract.CycleDuration;
+                        _privateWallet.AddThresholdSignatureKeyAfterBlock(
+                            lastBlockInCurrentCycle, keys.ThresholdSignaturePrivateKey
+                        );
+                        _privateWallet.AddTpkePrivateKeyAfterBlock(lastBlockInCurrentCycle, keys.TpkePrivateKey);
+                        Logger.LogDebug("New keyring saved to wallet");
+                        return true;
+                    }
+                    else if (signature == ContractEncoder.MethodSignatureAsInt(GovernanceInterface.MethodKeygenConfirmWithVerification))
+                    {
+                        Logger.LogDebug(
+                            $"Detected call of GovernanceContract.{GovernanceInterface.MethodKeygenConfirmWithVerification}");
+                        var sender = keygen.GetSenderByPublicKey(tx.RecoverPublicKey(HardforkHeights.IsHardfork_9Active(i)));
+                        if (sender < 0)
+                        {
+                            Logger.LogWarning($"Skipping call because of invalid sender: {sender}");
+                            continue;
+                        }
+
+                        var args = decoder.Decode(GovernanceInterface.MethodKeygenConfirmWithVerification);
+                        var tpkePublicKey = PublicKey.FromBytes(args[1] as byte[] ?? throw new Exception());
+                        var tsKeys = new PublicKeySet(
+                            (args[2] as byte[][] ?? throw new Exception()).Select(x =>
+                                Crypto.ThresholdSignature.PublicKey.FromBytes(x)
+                            ),
+                            keygen.Faulty
+                        );
+
+                        if (!keygen.HandleConfirm(sender, tpkePublicKey, tsKeys)) continue;
                         var keys = keygen.TryGetKeys() ?? throw new Exception();
                         Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
                         Logger.LogTrace($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
