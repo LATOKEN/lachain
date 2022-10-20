@@ -548,6 +548,32 @@ namespace Lachain.Core.Config
             _SaveCurrentConfig();
         }
         
+        // version 18 of config should contain Hardfork_15
+        private void _UpdateConfigToV18()
+        {   
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_15 ??= network.NetworkName switch
+            {
+                "mainnet" => 6311300,
+                "testnet" => 6027300,
+                "devnet" => 1750300,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            
+            version.Version = 18;
+            _config["version"] = JObject.FromObject(version);
+
+            _SaveCurrentConfig();
+        }
+
         private void _SaveCurrentConfig()
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
