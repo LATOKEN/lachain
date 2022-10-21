@@ -182,7 +182,8 @@ namespace Lachain.Core.ValidatorStatus
                             var rolls = _stakeSize.Value / StakingContract.TokenUnitsInRoll;
                             Logger.LogInformation($"Sending transaction to become staker for {rolls} rolls");
                             BecomeStaker(rolls * StakingContract.TokenUnitsInRoll);
-                            _stakeSize = null;
+                            if (_sendingTxHash != null)
+                                _stakeSize = null;
                             continue;
                         }
 
@@ -396,15 +397,17 @@ namespace Lachain.Core.ValidatorStatus
             var useNewChainId =
                 HardforkHeights.IsHardfork_9Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight() + 1);
             var receipt = _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, useNewChainId);
-            _sendingTxHash = tx.FullHash(receipt.Signature, useNewChainId);
             var result = _transactionPool.Add(receipt);
             Logger.LogDebug(result == OperatingError.Ok
                 ? $"Transaction successfully submitted: {receipt.Hash.ToHex()}"
                 : $"Cannot add tx to pool: {result}");
+            if (result == OperatingError.Ok)
+                _sendingTxHash = tx.FullHash(receipt.Signature, useNewChainId);
         }
 
         private void RequestStakeWithdrawal()
         {
+            Logger.LogInformation("RequestStakeWithdrawal");
             var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
@@ -418,6 +421,7 @@ namespace Lachain.Core.ValidatorStatus
 
         private void WithdrawStakeTx()
         {
+            Logger.LogInformation("WithdrawStakeTx");
             var tx = _transactionBuilder.InvokeTransaction(
                 _systemContractReader.NodeAddress(),
                 ContractRegisterer.StakingContract,
