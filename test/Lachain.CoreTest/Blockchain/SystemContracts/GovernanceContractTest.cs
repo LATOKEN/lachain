@@ -79,6 +79,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         [Test]
         public void Test_OneNodeCycle()
         {
+            
             var stateManager = _container?.Resolve<IStateManager>();
             var contractRegisterer = _container?.Resolve<IContractRegisterer>();
             var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
