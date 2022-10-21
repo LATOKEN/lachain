@@ -18,8 +18,6 @@ namespace Lachain.Core.Config
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
-        
-
         public ConfigManager(string filePath, RunOptions options)
         {
             CommandLineOptions = options;
@@ -32,13 +30,13 @@ namespace Lachain.Core.Config
         public void UpdateWalletPassword(string password)
         {
             var vault = GetConfig<VaultConfig>("vault") ??
-                          throw new ApplicationException("No vault section in config");
+                        throw new ApplicationException("No vault section in config");
 
             if (vault.UseVault == true)
                 throw new ApplicationException("Vault is being used. Password cannot be written to config");
 
             vault.Password = password;
-            _config["vault"] = vault;
+            _config["vault"] = JObject.FromObject(vault);
             _SaveCurrentConfig();
         }
 
@@ -485,7 +483,5 @@ namespace Lachain.Core.Config
         {
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
         }
-        
-        
     }
 }
