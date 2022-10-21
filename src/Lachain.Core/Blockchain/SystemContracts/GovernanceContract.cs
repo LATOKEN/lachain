@@ -645,9 +645,9 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (_confirmationsReceived is null)
                 return false;
             var value = _confirmationsReceived.GetValue(sender.ToBytes());
-            if (value is null || value.AsReadOnlySpan().ToUInt64() != cycle)
+            if (value.Length == 0 || value.AsReadOnlySpan().ToUInt64() != cycle)
                 return false;
-            return true;
+            return value.AsReadOnlySpan().Slice(8)[0] == 1;
         }
 
         private void ConfirmationReceivedFromPlayer(UInt160 sender, ulong cycle)
