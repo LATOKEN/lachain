@@ -306,6 +306,11 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     faulty
                 );
                 var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
+                if (!tpkeKey.RawKey.Equals(tsKeys.SharedPublicKey.RawKey))
+                {
+                    Logger.LogDebug("shared ts public key and tpke public key does not match");
+                    throw new Exception("ts shared pubKey != tpke shared pubKey");
+                }
                 keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
             }
             catch
@@ -356,6 +361,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     faulty
                 );
                 var tpkeKey = PublicKey.FromBytes(tpkePublicKey);
+
+                if (!tpkeKey.RawKey.Equals(tsKeys.SharedPublicKey.RawKey))
+                {
+                    Logger.LogDebug("shared ts public key and tpke public key does not match");
+                    throw new Exception("ts shared pubKey != tpke shared pubKey");
+                }
 
                 // in current implementation, the raw key G1 is same for tpke verification key and ts key for a single player
                 // so we are matching if it is same before voting the keyringHash
