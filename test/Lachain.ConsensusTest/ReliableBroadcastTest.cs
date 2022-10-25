@@ -7,7 +7,7 @@ using NUnit.Framework;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
-using Lachain.Crypto.TPKE;
+using Lachain.Crypto.ThresholdEncryption;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;

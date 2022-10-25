@@ -66,7 +66,7 @@ namespace Lachain.ConsensusTest
             for (uint i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].ThresholdSignaturePrivateKeyShare, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
@@ -76,13 +76,13 @@ namespace Lachain.ConsensusTest
         {
             SetUp(n, f);
             _broadcasts[0] = new HoneyBadgerMalicious(
-                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, false, _broadcasters[0]
+                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].ThresholdSignaturePrivateKeyShare, false, _broadcasters[0]
             );
             _broadcasters[0].RegisterProtocols(new[] {_broadcasts[0], _resultInterceptors[0]});
             for (uint i = 1; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].ThresholdSignaturePrivateKeyShare, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
@@ -92,13 +92,13 @@ namespace Lachain.ConsensusTest
         {
             SetUp(n, f);
             _broadcasts[0] = new HoneyBadgerSmartMalicious(
-                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].TpkePrivateKey, false, _broadcasters[0]
+                new HoneyBadgerId(Era), _publicKeys, _privateKeys[0].ThresholdSignaturePrivateKeyShare, false, _broadcasters[0]
             );
             _broadcasters[0].RegisterProtocols(new[] {_broadcasts[0], _resultInterceptors[0]});
             for (uint i = 1; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].ThresholdSignaturePrivateKeyShare, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
             }
@@ -110,7 +110,7 @@ namespace Lachain.ConsensusTest
             for (var i = 0; i < n; ++i)
             {
                 _broadcasts[i] = new HoneyBadger(
-                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].TpkePrivateKey, false, _broadcasters[i]
+                    new HoneyBadgerId(Era), _publicKeys, _privateKeys[i].ThresholdSignaturePrivateKeyShare, false, _broadcasters[i]
                 );
                 _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
                 foreach (var j in s) (_broadcasters[i] as BroadcastSimulator)?.Silent(j);

@@ -3,8 +3,8 @@ using System.Linq;
 using Google.Protobuf;
 using Lachain.Consensus;
 using Lachain.Consensus.HoneyBadger;
+using Lachain.Crypto.ThresholdEncryption;
 using Lachain.Crypto.ThresholdSignature;
-using Lachain.Crypto.TPKE;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 using TestUtility = Lachain.UtilityTest.TestUtils;
@@ -14,7 +14,7 @@ namespace Lachain.ConsensusTest
 {
     public class HoneyBadgerSmartMalicious : HoneyBadger
     {
-        public HoneyBadgerSmartMalicious(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet, PrivateKey privateKey, bool skipShareVerification, IConsensusBroadcaster broadcaster) : 
+        public HoneyBadgerSmartMalicious(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet, PrivateKeyShare privateKey, bool skipShareVerification, IConsensusBroadcaster broadcaster) : 
             base(honeyBadgerId, wallet, privateKey, skipShareVerification, broadcaster)
         {
         }
@@ -23,7 +23,7 @@ namespace Lachain.ConsensusTest
         {
             var message = new ConsensusMessage
             {
-                Decrypted = Wallet.TpkePublicKey.Encode(share)
+                Decrypted = share.Encode()
             };
             byte[] randomValue;
             ulong waitTime = 5000;
