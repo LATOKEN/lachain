@@ -141,7 +141,7 @@ namespace Lachain.Crypto.ThresholdEncryption
             return true;
         }
 
-        private RawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
+        public RawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
         {
             return FullDecryptBenchmark.Benchmark(() =>
             {
