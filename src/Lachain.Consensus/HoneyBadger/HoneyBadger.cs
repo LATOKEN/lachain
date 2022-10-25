@@ -5,7 +5,8 @@ using Lachain.Logger;
 using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto;
-using Lachain.Crypto.TPKE;
+using Lachain.Crypto.ThresholdEncryption;
+using Lachain.Crypto.ThresholdSignature;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
 
@@ -16,41 +17,19 @@ namespace Lachain.Consensus.HoneyBadger
         private static readonly ILogger<HoneyBadger> Logger = LoggerFactory.GetLoggerForClass<HoneyBadger>();
 
         private readonly HoneyBadgerId _honeyBadgerId;
-        private readonly PrivateKey _privateKey;
-        private readonly EncryptedShare?[] _receivedShares;
-        private readonly IRawShare?[] _shares;
-        private readonly ISet<PartiallyDecryptedShare>[] _decryptedShares;
-        private readonly bool[][] _receivedShareFrom;
-        private readonly bool[] _taken;
         private ResultStatus _requested;
         private IRawShare? _rawShare;
         private EncryptedShare? _encryptedShare;
         private ISet<IRawShare>? _result;
-        private bool _takenSet;
-        private bool _skipDecryptedShareValidation;
+        private IThresholdEncryptor _thresholdEncryptor;
 
         public HoneyBadger(HoneyBadgerId honeyBadgerId, IPublicConsensusKeySet wallet,
-            PrivateKey privateKey, bool skipDecryptedShareValidation, IConsensusBroadcaster broadcaster)
+            PrivateKeyShare privateKey, bool skipDecryptedShareValidation, IConsensusBroadcaster broadcaster)
             : base(wallet, honeyBadgerId, broadcaster)
         {
             _honeyBadgerId = honeyBadgerId;
-            _privateKey = privateKey;
-            _receivedShares = new EncryptedShare[N];
-            _decryptedShares = new ISet<PartiallyDecryptedShare>[N];
-            for (var i = 0; i < N; ++i)
-            {
-                _decryptedShares[i] = new HashSet<PartiallyDecryptedShare>();
-            }
-
-            _taken = new bool[N];
-            _shares = new IRawShare[N];
             _requested = ResultStatus.NotRequested;
-            _skipDecryptedShareValidation = skipDecryptedShareValidation;
-            _receivedShareFrom = new bool[N][];
-            for (var iter = 0 ; iter < N ; iter++)
-            {
-                _receivedShareFrom[iter] = new bool[N];
-            }
+            _thresholdEncryptor = new ThresholdEncryptor(privateKey, wallet.ThresholdSignaturePublicKeySet, skipDecryptedShareValidation);
         }
 
         public override void ProcessMessage(MessageEnvelope envelope)
@@ -120,7 +99,7 @@ namespace Lachain.Consensus.HoneyBadger
         {
             if (_rawShare == null) return;
             if (_encryptedShare != null) return;
-            _encryptedShare = Wallet.TpkePublicKey.Encrypt(_rawShare);
+            _encryptedShare = _thresholdEncryptor.Encrypt(_rawShare);
             Broadcaster.InternalRequest(
                 new ProtocolRequest<CommonSubsetId, EncryptedShare>(Id, new CommonSubsetId(_honeyBadgerId),
                     _encryptedShare));
@@ -141,32 +120,17 @@ namespace Lachain.Consensus.HoneyBadger
         private void HandleCommonSubset(ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result)
         {
             Logger.LogTrace($"Common subset finished {result.From}");
-            foreach (var share in result.Result)
+            var encryptedShares = result.Result.ToList();
+            var decryptedShares = _thresholdEncryptor.AddEncryptedShares(encryptedShares);
+            foreach (var dec in decryptedShares)
             {
-                var dec = _privateKey.Decrypt(share);
-                _taken[share.Id] = true;
-                _receivedShares[share.Id] = share;
-                if (_decryptedShares[share.Id].Count > 0) // if we have any partially decrypted shares for this share - verify them
-                {
-                    if (!_skipDecryptedShareValidation)
-                    {
-                        if (Wallet.GetTpkeVerificationKey(share.Id) is null)
-                            _decryptedShares[share.Id].Clear();
-                        else
-                            _decryptedShares[share.Id] = _decryptedShares[share.Id]
-                                .Where(ps => Wallet.GetTpkeVerificationKey(ps.DecryptorId)!.VerifyShare(share, ps))
-                                .ToHashSet();
-                    }
-                }
 
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
-                CheckDecryptedShares(share.Id);
+                CheckDecryptedShares(dec.ShareId);
                 Broadcaster.Broadcast(CreateDecryptedMessage(dec));
             }
 
-            _takenSet = true;
-
-            foreach (var share in result.Result)
+            foreach (var share in encryptedShares)
             {
                 CheckDecryptedShares(share.Id);
             }
@@ -178,7 +142,7 @@ namespace Lachain.Consensus.HoneyBadger
         {
             var message = new ConsensusMessage
             {
-                Decrypted = Wallet.TpkePublicKey.Encode(share)
+                Decrypted = share.Encode()
             };
             return message;
         }
@@ -189,42 +153,20 @@ namespace Lachain.Consensus.HoneyBadger
         // and the value of 'share.ShareId' needs to be checked. If it is out of range, it can throw exception
         private void HandleDecryptedMessage(TPKEPartiallyDecryptedShareMessage msg, int senderId)
         {
-            PartiallyDecryptedShare? share = null;
+            bool added;
             try
             {
-                // DecryptorId is basically the validator id, it tells us who decrypted the message, so it should be same
-                if (msg.DecryptorId != senderId)
-                    throw new Exception($"Validator {senderId} sends message with decryptor id {msg.DecryptorId}");
-                // same decrypted id more than once prevents full decrypt
-                if (_receivedShareFrom[msg.ShareId][msg.DecryptorId])
-                    throw new Exception($"validator {senderId} sent decrypted messsage for share {msg.ShareId} twice");
-
-                _receivedShareFrom[msg.ShareId][msg.DecryptorId] = true;
-                // Converting any random bytes to G1 is not possible
-                share = Wallet.TpkePublicKey.Decode(msg);
-                if (!(_receivedShares[share.ShareId] is null))
-                {
-                    if (!_skipDecryptedShareValidation)
-                    {
-                        if (Wallet.GetTpkeVerificationKey(share.DecryptorId) is null)
-                            throw new Exception("No verification key for this sender");
-                        if (!Wallet.GetTpkeVerificationKey(share.DecryptorId)!.VerifyShare(
-                                _receivedShares[share.ShareId]!, share))
-                            throw new Exception("Invalid share");
-                    }
-                }
-
-                _decryptedShares[share.ShareId].Add(share);
+                added = _thresholdEncryptor.AddDecryptedShare(msg, senderId);
             }
             catch (Exception ex)
             {
-                share = null;
+                added = false;
                 var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
                 Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey}), exception: {ex}");
             }
 
-            if (!(share is null))
-                CheckDecryptedShares(share.ShareId);
+            if (added)
+                CheckDecryptedShares(msg.ShareId);
         }
 
         // There are several potential issues in Wallet.TpkePublicKey.FullDecrypt() that needs to be resolved.
@@ -236,27 +178,20 @@ namespace Lachain.Consensus.HoneyBadger
         // corresponding validator id (depends on the relation of decryptor id and validator id)
         private void CheckDecryptedShares(int id)
         {
-            if (!_takenSet) return;
-            if (!_taken[id]) return;
-            if (_decryptedShares[id].Count < F + 1) return;
-            if (_shares[id] != null) return;
-            if (_receivedShares[id] is null) return;
-            Logger.LogTrace($"Collected {_decryptedShares[id].Count} shares for {id}, can decrypt now");
-            _shares[id] = Wallet.TpkePublicKey.FullDecrypt(_receivedShares[id]!, _decryptedShares[id].ToList());
-            CheckAllSharesDecrypted();
+            var decrypted = _thresholdEncryptor.CheckDecryptedShares(id);
+            if (decrypted)
+                CheckAllSharesDecrypted();
         }
 
         private void CheckAllSharesDecrypted()
         {
-            if (!_takenSet) return;
             if (_result != null) return;
 
-            if (_taken.Zip(_shares, (b, share) => b && share is null).Any(x => x)) return;
-
-            _result = _taken.Zip(_shares, (b, share) => (b, share))
-                .Where(x => x.b)
-                .Select(x => x.share ?? throw new Exception("impossible"))
-                .ToHashSet();
+            if (!_thresholdEncryptor.GetResult(out var fullDecryptedShares))
+            {
+                return;
+            }
+            _result = fullDecryptedShares;
 
             CheckResult();
         }
