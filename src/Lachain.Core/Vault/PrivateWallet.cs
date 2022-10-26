@@ -26,7 +26,6 @@ namespace Lachain.Core.Vault
         private readonly ISortedDictionary<ulong, PrivateKeyShare> _tsKeys =
             new TreeDictionary<ulong, PrivateKeyShare>();
         
-        private readonly ISortedDictionary<ulong, PrivateKey> _tpkeKeys = new TreeDictionary<ulong, PrivateKey>();
 
         private readonly string _walletPath;
         private string _walletPassword;
@@ -58,33 +57,6 @@ namespace Lachain.Core.Vault
             EcdsaKeyPair = keyPair;
             HubPrivateKey = hubKey;
             if (needsSave) SaveWallet(_walletPath, _walletPassword);
-        }
-
-        public PrivateKey? GetTpkePrivateKeyForBlock(ulong block)
-        {
-            try
-            {
-                return _tpkeKeys.Predecessor(block + 1).Value;
-            }
-            catch (NoSuchItemException)
-            {
-                return null;
-            }
-        }
-
-        public void AddTpkePrivateKeyAfterBlock(ulong block, PrivateKey key)
-        {
-            if (_tpkeKeys.Contains(block))
-            {
-                _tpkeKeys.Update(block, key);
-                Logger.LogWarning($"TpkePrivateKey for block {block} is overwritten");
-            }
-            else
-            {
-                _tpkeKeys.Add(block, key);
-            }
-
-            SaveWallet(_walletPath, _walletPassword);
         }
 
         public PrivateKeyShare? GetThresholdSignatureKeyForBlock(ulong block)
@@ -157,9 +129,6 @@ namespace Lachain.Core.Vault
 
             keyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
             hubKey = wallet.HubPrivateKey.HexToBytes();
-            _tpkeKeys.AddAll(wallet.TpkePrivateKeys
-                .Select(p =>
-                    new C5.KeyValuePair<ulong, PrivateKey>(p.Key, PrivateKey.FromBytes(p.Value.HexToBytes()))));
             _tsKeys.AddAll(wallet.ThresholdSignatureKeys
                 .Select(p =>
                     new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
@@ -251,7 +220,6 @@ namespace Lachain.Core.Vault
         public void DeleteKeysAfterBlock(ulong block)
         {
             _tsKeys.RemoveRangeFrom(block + 1);
-            _tpkeKeys.RemoveRangeFrom(block + 1);
             SaveWallet(_walletPath, _walletPassword);
         }
 
