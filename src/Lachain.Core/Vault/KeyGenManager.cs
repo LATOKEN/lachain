@@ -289,11 +289,10 @@ namespace Lachain.Core.Vault
                 if (keygen.HandleConfirm(tpkePublicKey, tsKeys))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
-                    Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
-                    Logger.LogTrace($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
-                    Logger.LogTrace(
-                        $"  - TPKE verification public keys: {string.Join(", ", keys.TpkeVerificationPublicKeys.Select(key => key.ToHex()))}"
-                    );
+                    var faulty = keys.ThresholdSignaturePublicKeySet.Threshold;
+                    var tpkeSharedPublicKey = new PublicKey(keys.ThresholdSignaturePublicKeySet.SharedPublicKey.RawKey, faulty);
+                    Logger.LogTrace($"Generated keyring with public hash {KeyringHashWithTpkePublicKey(tpkePublicKey, keys).ToHex()}");
+                    Logger.LogTrace($"  - TPKE public key: {tpkeSharedPublicKey.ToHex()}");
                     Logger.LogTrace(
                         $"  - TS public key: {keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()}");
                     Logger.LogTrace(
@@ -304,7 +303,6 @@ namespace Lachain.Core.Vault
                     _privateWallet.AddThresholdSignatureKeyAfterBlock(
                         lastBlockInCurrentCycle, keys.ThresholdSignaturePrivateKey
                     );
-                    _privateWallet.AddTpkePrivateKeyAfterBlock(lastBlockInCurrentCycle, keys.TpkePrivateKey);
                     Logger.LogDebug("New keyring saved to wallet");
                     _keyGenRepository.SaveKeyGenState(Array.Empty<byte>());
                 }
@@ -344,10 +342,13 @@ namespace Lachain.Core.Vault
                 if (keygen.HandleConfirm(tpkePublicKey, tsKeys))
                 {
                     var keys = keygen.TryGetKeys() ?? throw new Exception();
-                    Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
-                    Logger.LogTrace($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
+                    var faulty = keys.ThresholdSignaturePublicKeySet.Threshold;
+                    var tpkeSharedPublicKey = new PublicKey(keys.ThresholdSignaturePublicKeySet.SharedPublicKey.RawKey, faulty);
+                    var tpkeVerificationKeys = keys.ThresholdSignaturePublicKeySet.Keys.Select(key => new PublicKey(key.RawKey, faulty)).ToList();
+                    Logger.LogTrace($"Generated keyring with public hash {KeyringHashWithTpkePublicKey(tpkePublicKey, keys).ToHex()}");
+                    Logger.LogTrace($"  - TPKE public key: {tpkeSharedPublicKey.ToHex()}");
                     Logger.LogTrace(
-                        $"  - TPKE verification public keys: {string.Join(", ", keys.TpkeVerificationPublicKeys.Select(key => key.ToHex()))}"
+                        $"  - TPKE verification public keys: {string.Join(", ", tpkeVerificationKeys.Select(key => key.ToHex()))}"
                     );
                     Logger.LogTrace(
                         $"  - TS public key: {keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()}");
@@ -359,7 +360,6 @@ namespace Lachain.Core.Vault
                     _privateWallet.AddThresholdSignatureKeyAfterBlock(
                         lastBlockInCurrentCycle, keys.ThresholdSignaturePrivateKey
                     );
-                    _privateWallet.AddTpkePrivateKeyAfterBlock(lastBlockInCurrentCycle, keys.TpkePrivateKey);
                     Logger.LogDebug("New keyring saved to wallet");
                     _keyGenRepository.SaveKeyGenState(Array.Empty<byte>());
                 }
@@ -373,6 +373,12 @@ namespace Lachain.Core.Vault
         private TransactionReceipt MakeConfirmTransaction(UInt256 cycle, ThresholdKeyring keyring)
         {
             Logger.LogTrace("MakeConfirmTransaction");
+            var faulty = keyring.ThresholdSignaturePublicKeySet.Threshold;
+            // these tpke keys are valid, because G1 of ts and tpke is same
+            var tpkePubKey = new PublicKey(
+                keyring.ThresholdSignaturePublicKeySet.SharedPublicKey.RawKey,
+                faulty
+            );
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
@@ -380,7 +386,7 @@ namespace Lachain.Core.Vault
                 GovernanceInterface.MethodKeygenConfirm,
                 0,
                 cycle,
-                keyring.TpkePublicKey.ToBytes(), 
+                tpkePubKey.ToBytes(), // adding fake public key
                 keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
@@ -389,6 +395,13 @@ namespace Lachain.Core.Vault
         private TransactionReceipt MakeConfirmWithVerificationTransaction(UInt256 cycle, ThresholdKeyring keyring)
         {
             Logger.LogTrace("MakeConfirmWithVerificationTransaction");
+            var faulty = keyring.ThresholdSignaturePublicKeySet.Threshold;
+            // these tpke keys are valid, because G1 of ts and tpke is same
+            var tpkePubKey = new PublicKey(
+                keyring.ThresholdSignaturePublicKeySet.SharedPublicKey.RawKey,
+                faulty
+            );
+            var tpkeVerificationKeys = keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => new PublicKey(key.RawKey, faulty)).ToList();
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
                 _privateWallet.EcdsaKeyPair.PublicKey.GetAddress(),
                 ContractRegisterer.GovernanceContract,
@@ -396,9 +409,9 @@ namespace Lachain.Core.Vault
                 GovernanceInterface.MethodKeygenConfirmWithVerification,
                 0,
                 cycle,
-                keyring.TpkePublicKey.ToBytes(), 
+                tpkePubKey.ToBytes(),
                 keyring.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray(),
-                keyring.TpkeVerificationPublicKeys.Select(key => key.ToBytes()).ToArray()
+                tpkeVerificationKeys.Select(key => key.ToBytes()).ToArray()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
         }
@@ -526,8 +539,8 @@ namespace Lachain.Core.Vault
 
                         if (!keygen.HandleConfirm(tpkePublicKey, tsKeys)) continue;
                         var keys = keygen.TryGetKeys() ?? throw new Exception();
-                        Logger.LogTrace($"Generated keyring with public hash {keys.PublicPartHash().ToHex()}");
-                        Logger.LogTrace($"  - TPKE public key: {keys.TpkePublicKey.ToHex()}");
+                        Logger.LogTrace($"Generated keyring with public hash {KeyringHashWithTpkePublicKey(tpkePublicKey, keys).ToHex()}");
+                        Logger.LogTrace($"  - TPKE public key: {tpkePublicKey.ToHex()}");
                         Logger.LogTrace(
                             $"  - TS public key: {keys.ThresholdSignaturePrivateKey.GetPublicKeyShare().ToHex()}");
                         Logger.LogTrace(
@@ -538,7 +551,6 @@ namespace Lachain.Core.Vault
                         _privateWallet.AddThresholdSignatureKeyAfterBlock(
                             lastBlockInCurrentCycle, keys.ThresholdSignaturePrivateKey
                         );
-                        _privateWallet.AddTpkePrivateKeyAfterBlock(lastBlockInCurrentCycle, keys.TpkePrivateKey);
                         Logger.LogDebug("New keyring saved to wallet");
                         return true;
                     }
@@ -559,6 +571,11 @@ namespace Lachain.Core.Vault
             }
 
             return (start + 1, end);
+        }
+
+        private UInt256 KeyringHashWithTpkePublicKey(PublicKey tpkeKey, ThresholdKeyring keyring)
+        {
+            return tpkeKey.ToBytes().Concat(keyring.ThresholdSignaturePublicKeySet.ToBytes()).Keccak();
         }
     }
 }
