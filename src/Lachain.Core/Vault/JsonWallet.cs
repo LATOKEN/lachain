@@ -5,9 +5,9 @@ using Newtonsoft.Json;
 namespace Lachain.Core.Vault
 {
     [JsonObject]
-    public class JsonWallet
+    public class OldJsonWallet
     {
-        public JsonWallet(
+        public OldJsonWallet(
             string ecdsaPrivateKey,
             string hubPrivateKey,
             Dictionary<ulong, string> tpkePrivateKeys,
@@ -21,6 +21,28 @@ namespace Lachain.Core.Vault
         }
 
         [JsonProperty("tpkeKeys")] public Dictionary<ulong, string>? TpkePrivateKeys { get; set; }
+        
+        [JsonProperty("thresholdSignatureKeys")]
+        public Dictionary<ulong, string>? ThresholdSignatureKeys { get; set; }
+
+        [JsonProperty("ecdsaPrivateKey")] public string? EcdsaPrivateKey { get; set; }
+
+        [JsonProperty("hubPrivateKey")] public string? HubPrivateKey { get; set; }
+    }
+
+    [JsonObject]
+    public class NewJsonWallet
+    {
+        public NewJsonWallet(
+            string ecdsaPrivateKey,
+            string hubPrivateKey,
+            Dictionary<ulong, string> thresholdSignatureKeys
+        )
+        {
+            HubPrivateKey = hubPrivateKey;
+            ThresholdSignatureKeys = thresholdSignatureKeys;
+            EcdsaPrivateKey = ecdsaPrivateKey;
+        }
         
         [JsonProperty("thresholdSignatureKeys")]
         public Dictionary<ulong, string>? ThresholdSignatureKeys { get; set; }

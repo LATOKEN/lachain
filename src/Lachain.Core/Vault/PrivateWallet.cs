@@ -109,17 +109,10 @@ namespace Lachain.Core.Vault
 
         private void SaveWallet(string path, string password)
         {
-            var wallet = new JsonWallet
+            var wallet = new NewJsonWallet
             (
                 EcdsaKeyPair.PrivateKey.ToHex(),
                 HubPrivateKey.ToHex(),
-                new Dictionary<ulong, string>(
-                    _tpkeKeys.Select(p =>
-                        new System.Collections.Generic.KeyValuePair<ulong, string>(
-                            p.Key, p.Value.ToHex()
-                        )
-                    )
-                ),
                 new Dictionary<ulong, string>(
                     _tsKeys.Select(p =>
                         new System.Collections.Generic.KeyValuePair<ulong, string>(
@@ -142,14 +135,14 @@ namespace Lachain.Core.Vault
             return (keyInfo[0], keyInfo[1]);
         }
 
-        private bool RestoreWallet(string path, string password, out EcdsaKeyPair keyPair, out byte[] hubKey)
+        private bool RestoreFromOldWallet(string path, string password, out EcdsaKeyPair keyPair, out byte[] hubKey)
         {
             var encryptedContent = File.ReadAllBytes(path);
             var key = Encoding.UTF8.GetBytes(password).KeccakBytes();
             var decryptedContent =
                 Encoding.UTF8.GetString(Crypto.AesGcmDecrypt(key, encryptedContent));
 
-            var wallet = JsonConvert.DeserializeObject<JsonWallet>(decryptedContent);
+            var wallet = JsonConvert.DeserializeObject<OldJsonWallet>(decryptedContent);
             if (wallet.EcdsaPrivateKey is null)
                 throw new Exception("Decrypted wallet does not contain ECDSA key");
             var needsSave = false;
@@ -173,13 +166,67 @@ namespace Lachain.Core.Vault
                         PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
             return needsSave;
         }
+
+        private bool RestoreFromNewWallet(string path, string password, out EcdsaKeyPair keyPair, out byte[] hubKey)
+        {
+            var encryptedContent = File.ReadAllBytes(path);
+            var key = Encoding.UTF8.GetBytes(password).KeccakBytes();
+            var decryptedContent =
+                Encoding.UTF8.GetString(Crypto.AesGcmDecrypt(key, encryptedContent));
+
+            var wallet = JsonConvert.DeserializeObject<NewJsonWallet>(decryptedContent);
+            if (wallet.EcdsaPrivateKey is null)
+                throw new Exception("Decrypted wallet does not contain ECDSA key");
+            var needsSave = false;
+            if (wallet.HubPrivateKey is null)
+            {
+                wallet.HubPrivateKey = GenerateHubKey().PrivateKey;
+                needsSave = true;
+            }
+
+            wallet.ThresholdSignatureKeys ??= new Dictionary<ulong, string>();
+
+            keyPair = new EcdsaKeyPair(wallet.EcdsaPrivateKey.HexToBytes().ToPrivateKey());
+            hubKey = wallet.HubPrivateKey.HexToBytes();
+            _tsKeys.AddAll(wallet.ThresholdSignatureKeys
+                .Select(p =>
+                    new C5.KeyValuePair<ulong, PrivateKeyShare>(p.Key,
+                        PrivateKeyShare.FromBytes(p.Value.HexToBytes()))));
+            return needsSave;
+        }
+
+        private bool RestoreWallet(string path, string password, out EcdsaKeyPair keyPair, out byte[] hubKey)
+        {
+            try
+            {
+                var needsSave = RestoreFromNewWallet(path, password, out var key, out var hubPrivateKey);
+                keyPair = key;
+                hubKey = hubPrivateKey;
+                return needsSave;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogInformation($"Could not restore wallet from new configuration, trying old configuration: {ex}");
+                try
+                {
+                    var needsSave = RestoreFromOldWallet(path, password, out var key, out var hubPrivateKey);
+                    keyPair = key;
+                    hubKey = hubPrivateKey;
+                    return needsSave;
+                }
+                catch (Exception ex1)
+                {
+                    Logger.LogError($"Could not restore wallet from old or new configuration. Wallet is corrupted: {ex1}");
+                    throw;
+                }
+            }
+        }
         
         private static void GenerateNewWallet(string path, string password)
         {
-            var config = new JsonWallet(
+            var config = new NewJsonWallet(
                 CryptoProvider.GetCrypto().GenerateRandomBytes(32).ToHex(false),
                 GenerateHubKey().PrivateKey,
-                new Dictionary<ulong, string> {},
                 new Dictionary<ulong, string> {}
             );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
