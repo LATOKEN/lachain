@@ -170,9 +170,6 @@ namespace Lachain.Consensus.ThresholdKeygen
 
             return new ThresholdKeyring
             {
-                TpkePrivateKey = new PrivateKey(secretKey, _myIdx),
-                TpkePublicKey = new PublicKey(pubKeys[0], Faulty),
-                TpkeVerificationPublicKeys = new List<PublicKey>(pubKeys.Skip(1).Select(x => new PublicKey(x, Faulty))), 
                 ThresholdSignaturePrivateKey = new PrivateKeyShare(secretKey),
                 ThresholdSignaturePublicKeySet =
                     new PublicKeySet(pubKeys.Skip(1).Select(x => new Crypto.ThresholdSignature.PublicKey(x)), Faulty)
