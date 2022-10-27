@@ -198,7 +198,6 @@ namespace Lachain.Console
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
                     serializedHubPrivateKeys[i],
-                    tpkeKeyGen.GetPrivKey(i).ToHex(),
                     privShares[i].ToHex(),
                     vault.Password
                 );
@@ -363,7 +362,6 @@ namespace Lachain.Console
                     $"wallet{i + 1:D2}.json",
                     ecdsaPrivateKeys[i],
                     serializedHubPrivateKeys[i],
-                    tpkeKeyGen.GetPrivKey(i).ToHex(),
                     privShares[i].ToHex(),
                     vault.Password
                 );
@@ -393,12 +391,11 @@ namespace Lachain.Console
             );
         }
 
-        private static void GenWallet(string path, string ecdsaKey, string hubKey, string tpkeKey, string tsKey, string password)
+        private static void GenWallet(string path, string ecdsaKey, string hubKey, string tsKey, string password)
         {
-            var config = new JsonWallet(
+            var config = new NewJsonWallet(
                 ecdsaKey,
                 hubKey,
-                new Dictionary<ulong, string> { { 0, tpkeKey } },
                 new Dictionary<ulong, string> { { 0, tsKey } }
             );
             var json = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(config));
