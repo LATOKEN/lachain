@@ -106,8 +106,6 @@ namespace Lachain.ConsensusTest
                         continue;
                     }
 
-                    Assert.IsTrue(curKey.Value.TpkePrivateKey.ToBytes()
-                        .SequenceEqual(curKeys[i]!.Value.TpkePrivateKey.ToBytes()));
                     Assert.AreEqual(curKey.Value.PublicPartHash(), curKeys[i]!.Value.PublicPartHash());
                 }
 
@@ -129,7 +127,6 @@ namespace Lachain.ConsensusTest
 
             for (var i = 0; i < n; ++i)
             {
-                Assert.AreEqual(keys[0].TpkePublicKey, keys[i].TpkePublicKey);
                 Assert.AreEqual(keys[0].ThresholdSignaturePublicKeySet, keys[i].ThresholdSignaturePublicKeySet);
             }
 

@@ -20,6 +20,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.TPKE;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Containers;
@@ -137,16 +138,18 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             {
                 ThresholdKeyring? keyring = keygen.TryGetKeys();
                 Assert.IsNotNull(keyring);
+                var faulty = keyring.Value.ThresholdSignaturePublicKeySet.Threshold;
+                var tpkePubKey = new PublicKey(keyring.Value.ThresholdSignaturePublicKeySet.SharedPublicKey.RawKey, faulty);
                 var input = ContractEncoder.Encode(GovernanceInterface.MethodKeygenConfirm, cycle, 
-                    keyring!.Value.TpkePublicKey.ToBytes(),
+                    tpkePubKey.ToBytes(),
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray());
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.GovernanceContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, keyring!.Value.TpkePublicKey.ToBytes(),
+                Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, tpkePubKey.ToBytes(),
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray(), frame));
                 // set keygen state
-                Assert.IsTrue(keygen.HandleConfirm(keyring!.Value.TpkePublicKey,  
+                Assert.IsTrue(keygen.HandleConfirm(tpkePubKey,  
                     keyring!.Value.ThresholdSignaturePublicKeySet));
             }
             // check no validators in storage
@@ -226,16 +229,18 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             {
                 ThresholdKeyring? keyring = keygen.TryGetKeys();
                 Assert.IsNotNull(keyring);
+                var faulty = keyring.Value.ThresholdSignaturePublicKeySet.Threshold;
+                var tpkePubKey = new PublicKey(keyring.Value.ThresholdSignaturePublicKeySet.SharedPublicKey.RawKey, faulty);
                 var input = ContractEncoder.Encode(GovernanceInterface.MethodKeygenConfirm, cycle, 
-                    keyring!.Value.TpkePublicKey.ToBytes(), 
+                    tpkePubKey.ToBytes(), 
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray());
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.GovernanceContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, keyring!.Value.TpkePublicKey.ToBytes(), 
+                Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, tpkePubKey.ToBytes(), 
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray(), frame));
                 // set keygen state
-                Assert.IsTrue(keygen.HandleConfirm(keyring!.Value.TpkePublicKey,  
+                Assert.IsTrue(keygen.HandleConfirm(tpkePubKey,  
                     keyring!.Value.ThresholdSignaturePublicKeySet));
             }
             
