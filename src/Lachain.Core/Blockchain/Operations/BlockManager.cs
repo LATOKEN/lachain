@@ -762,7 +762,14 @@ namespace Lachain.Core.Blockchain.Operations
                     v.ThresholdSignaturePublicKey.HexToBytes()
                 )).ToArray()
             );
-            snapshot.Validators.SetConsensusState(initialConsensusState, false);
+            ConsensusStateStatus format;
+            if (HardforkHeights.IsHardfork_15Active(0))
+                format = ConsensusStateStatus.StateWithOnlyValidatorInfo;
+            else if (HardforkHeights.IsHardfork_12Active(0))
+                format = ConsensusStateStatus.StateWithTpkeVerification;
+            else
+                format = ConsensusStateStatus.OldState;
+            snapshot.Validators.SetConsensusState(initialConsensusState, format);
 
             // stake delegation happens even before genesis block
             // stake delegation means - some other address stakes for the validators
