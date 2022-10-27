@@ -9,6 +9,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodKeygenSendValue = "keygenSendValue(uint256,uint256,bytes[])";
         public const string MethodKeygenConfirm = "keygenConfirm(uint256,bytes,bytes[])";
         public const string MethodKeygenConfirmWithVerification = "keygenConfirmWithVerification(uint256,bytes,bytes[],bytes[])";
+        public const string MethodKeygenConfirmWithOnlyTS = "keygenConfirmOnlyTS(uint256,bytes[])";
         public const string MethodFinishCycle = "finishCycle(uint256)";
         public const string MethodIsNextValidator = "isNextValidator(bytes)";
         public const string MethodDistributeCycleRewardsAndPenalties = "distibuteCycleRewardsAndPenalties(uint256)";
@@ -18,6 +19,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string EventKeygenSendValue = "KeygenSendValue(uint256,bytes[])";
         public const string EventKeygenConfirm = "KeygenConfirm(bytes,bytes[])";
         public const string EventKeygenConfirmWithVerificationKeys = "KeygenConfirmWithVerificationKeys(bytes,bytes[])";
+        public const string EventKeygenConfirmWithOnlyTS = "keygenConfirmOnlyTS(bytes[])";
         public const string EventFinishCycle = "FinishCycle()";
         public const string EventDistributeCycleRewardsAndPenalties = "DistibuteCycleRewardsAndPenalties(uint256)";
 
@@ -30,6 +32,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             MethodFinishCycle,
             MethodKeygenConfirm,
             MethodKeygenConfirmWithVerification, 
+            MethodKeygenConfirmWithOnlyTS,
             MethodIsNextValidator
         };
 
@@ -44,6 +47,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
             EventKeygenSendValue,
             EventKeygenConfirm,
             EventKeygenConfirmWithVerificationKeys, 
+            EventKeygenConfirmWithOnlyTS,
             EventFinishCycle,
             EventDistributeCycleRewardsAndPenalties
         };
