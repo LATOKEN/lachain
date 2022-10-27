@@ -516,7 +516,7 @@ namespace Lachain.Core.Config
                 "mainnet" => 6311300,
                 "testnet" => 6027300,
                 "devnet" => 1750300,
-                _ => 0
+                _ => 10
             };
             _config["hardfork"] = JObject.FromObject(hardforks);
 
