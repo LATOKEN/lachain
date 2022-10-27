@@ -142,6 +142,14 @@ namespace Lachain.Consensus.ThresholdKeygen
             return _confirmations[keyringHash] == Players - Faulty;
         }
 
+        public bool HandleConfirm(PublicKeySet tsKeys)
+        {
+            var keyringHash = tsKeys.ToBytes().Keccak();
+            _confirmations.PutIfAbsent(keyringHash, 0);
+            _confirmations[keyringHash] += 1;
+            return _confirmations[keyringHash] == Players - Faulty;
+        }
+
         public bool Finished()
         {
             return _keyGenStates.Count(s => s.ValueCount() > 2 * Faulty) > Faulty;
