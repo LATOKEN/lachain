@@ -281,7 +281,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         }
         
         public static JObject Web3TransactionReceipt(
-            TransactionReceipt receipt, UInt256 blockHash, ulong blockNumber, ulong cumulativeGasUsed, JArray logs
+            TransactionReceipt receipt, UInt256? blockHash, ulong blockNumber, ulong cumulativeGasUsed, JArray logs
         )
         {
             return new JObject

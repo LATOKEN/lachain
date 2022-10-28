@@ -118,8 +118,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var hash = txHash.HexToBytes().ToUInt256();
             var receipt = _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(hash);
             if (receipt is null) return null;
-            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt!.Block);
-            if (block is null) return null; // ???
+            var block = _stateManager.LastApprovedSnapshot.Blocks.GetBlockByHeight(receipt.Block);
             
             var eventCount = _stateManager.LastApprovedSnapshot.Events.GetTotalTransactionEvents(receipt.Hash);
             var events = new List<EventObject>();
@@ -131,8 +130,8 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 events.Add(eventLog);
             }
             
-            return Web3DataFormatUtils.Web3TransactionReceipt(receipt, block!.Hash, receipt.Block, 
-                receipt.GasUsed, Web3DataFormatUtils.Web3EventArray(events, receipt!.Block, block!.Hash));
+            return Web3DataFormatUtils.Web3TransactionReceipt(receipt, block?.Hash, receipt.Block, 
+                receipt.GasUsed, Web3DataFormatUtils.Web3EventArray(events, receipt.Block, block?.Hash));
         }
 
         [JsonRpcMethod("eth_getTransactionByHash")]
