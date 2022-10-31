@@ -393,6 +393,20 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenConfirmCost);
+
+            var senderPubKey = _context.Receipt.RecoverPublicKey(
+                HardforkHeights.IsHardfork_9Active(_context.Snapshot.Blocks.GetTotalBlockHeight())
+            );
+            var nextValidators = _nextValidators.Get()
+                .Batch(CryptoUtils.PublicKeyLength)
+                .Select(x => x.ToArray().ToPublicKey())
+                .ToArray();
+            if (!nextValidators.Contains(senderPubKey))
+            {
+                Logger.LogDebug($"non validator (public key: {senderPubKey.ToHex()}) sent MethodKeygenConfirmWithOnlyTS tx");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
 
