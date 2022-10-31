@@ -380,6 +380,67 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return ExecutionStatus.Ok;
         }
 
+        [ContractMethod(GovernanceInterface.MethodKeygenConfirmWithOnlyTS)]
+        public ExecutionStatus KeygenConfirmWithOnlyTS(UInt256 cycle, byte[][] thresholdSignaturePublicKeys, SystemContractExecutionFrame frame)
+        {
+            Logger.LogDebug(
+                $"KeygenConfirmWithOnlyTS([{string.Join(", ", thresholdSignaturePublicKeys.Select(s => s.ToHex()))}])");
+            if (cycle.ToBigInteger() != GetConsensusGeneration(frame))
+            {
+                Logger.LogWarning($"Invalid cycle: {cycle}, now is {GetConsensusGeneration(frame)}");
+                return ExecutionStatus.Ok;
+            }
+
+            frame.ReturnValue = new byte[] { };
+            frame.UseGas(GasMetering.KeygenConfirmCost);
+
+            var senderPubKey = _context.Receipt.RecoverPublicKey(
+                HardforkHeights.IsHardfork_9Active(_context.Snapshot.Blocks.GetTotalBlockHeight())
+            );
+            var nextValidators = _nextValidators.Get()
+                .Batch(CryptoUtils.PublicKeyLength)
+                .Select(x => x.ToArray().ToPublicKey())
+                .ToArray();
+            if (!nextValidators.Contains(senderPubKey))
+            {
+                Logger.LogDebug($"non validator (public key: {senderPubKey.ToHex()}) sent MethodKeygenConfirmWithOnlyTS tx");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
+            var players = thresholdSignaturePublicKeys.Length;
+            var faulty = (players - 1) / 3;
+
+            UInt256 keyringHash;
+            PublicKeySet tsKeys;
+            try
+            {
+                tsKeys = new PublicKeySet(
+                    thresholdSignaturePublicKeys.Select(x => Lachain.Crypto.ThresholdSignature.PublicKey.FromBytes(x)),
+                    faulty
+                );
+                keyringHash = tsKeys.ToBytes().Keccak();
+            }
+            catch
+            {
+                Logger.LogError("GovernanceContract is halted in KeyGenConfirm");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
+            var gen = GetConsensusGeneration(frame);
+            var votes = GetConfirmations(keyringHash.ToBytes(), gen);
+            SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
+
+            Logger.LogDebug($"KeygenConfirmWithOnlyTS: {votes + 1} collected for this keyset");
+            if (votes + 1 != players - faulty) return ExecutionStatus.Ok;
+            Logger.LogDebug($"KeygenConfirmWithOnlyTS: succeeded since collected {votes + 1} votes");
+            _lastSuccessfulKeygenBlock.Set(new BigInteger(frame.InvocationContext.Receipt.Block).ToUInt256().ToBytes());
+            SetPlayersCount(players);
+            SetTSKeys(tsKeys);
+
+            Emit(GovernanceInterface.EventKeygenConfirmWithOnlyTS, thresholdSignaturePublicKeys);
+            return ExecutionStatus.Ok;
+        }
+
         [ContractMethod(GovernanceInterface.MethodFinishCycle)]
         public ExecutionStatus FinishCycle(UInt256 cycle, SystemContractExecutionFrame frame)
         {
@@ -399,6 +460,33 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 return ExecutionStatus.ExecutionHalted;
             }
 
+            ExecutionStatus validatorsUpdated;
+            if (HardforkHeights.IsHardfork_15Active(currentBlock))
+                validatorsUpdated = UpdateValidatorsV2(frame);
+            else
+                validatorsUpdated = UpdateValidatorsV1(frame);
+            if (validatorsUpdated != ExecutionStatus.Ok)
+                return validatorsUpdated;
+
+            var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
+                ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract,
+                Lrc20Interface.MethodBalanceOf,
+                ContractRegisterer.GovernanceContract);
+
+            if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
+            {
+                Logger.LogError("GovernanceContract is halted in FinishCycle");
+                return ExecutionStatus.ExecutionHalted;
+            }
+
+            var txFeesAmount = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
+            SetCollectedFees(txFeesAmount);
+            ClearPlayersCount();
+            return ExecutionStatus.Ok;
+        }
+
+        private ExecutionStatus UpdateValidatorsV1(SystemContractExecutionFrame frame)
+        {
             var players = GetPlayersCount();
             var gen = GetConsensusGeneration(frame) - 1;
             if (players != null)
@@ -412,7 +500,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 if (votes + 1 < players - faulty)
                 {
                     Logger.LogError(
-                        $"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}");
+                        $"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}"
+                    );
                     return ExecutionStatus.ExecutionHalted;
                 }
 
@@ -431,8 +520,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     Logger.LogWarning(k.ToHex());
                 }
 
-                _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys, tpkeKey, tpkeVerificationKeys, 
-                    HardforkHeights.IsHardfork_12Active(currentBlock));
+                if (HardforkHeights.IsHardfork_12Active(frame.InvocationContext.Receipt.Block))
+                    _context.Snapshot.Validators.UpdateValidators(
+                        ecdsaPublicKeys, tsKeys, tpkeKey, tpkeVerificationKeys, ConsensusStateStatus.StateWithTpkeVerification
+                    );
+                else
+                    _context.Snapshot.Validators.UpdateValidators(
+                        ecdsaPublicKeys, tsKeys, tpkeKey, tpkeVerificationKeys, ConsensusStateStatus.OldState
+                    );
 
                 Emit(GovernanceInterface.EventFinishCycle);
                 Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
@@ -441,21 +536,50 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 Logger.LogDebug($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
                 Logger.LogDebug($"  - TPKE public key: {tpkeKey.ToHex()}");
             }
+            return ExecutionStatus.Ok;
+        }
 
-            var balanceOfExecutionResult = Hepler.CallSystemContract(frame,
-                ContractRegisterer.LatokenContract, ContractRegisterer.GovernanceContract,
-                Lrc20Interface.MethodBalanceOf,
-                ContractRegisterer.GovernanceContract);
-
-            if (balanceOfExecutionResult.Status != ExecutionStatus.Ok)
+        private ExecutionStatus UpdateValidatorsV2(SystemContractExecutionFrame frame)
+        {
+            var players = GetPlayersCount();
+            var gen = GetConsensusGeneration(frame) - 1;
+            if (players != null)
             {
-                Logger.LogError("GovernanceContract is halted in FinishCycle");
-                return ExecutionStatus.ExecutionHalted;
-            }
+                var faulty = (players - 1) / 3;
+                var tsKeys = GetTSKeys();
+                var keyringHash = tsKeys.ToBytes().Keccak();
+                var votes = GetConfirmations(keyringHash.ToBytes(), gen);
+                if (votes + 1 < players - faulty)
+                {
+                    Logger.LogError(
+                        $"GovernanceContract is halted in FinishCycle, collected {votes} votes, need {players - faulty - 1}"
+                    );
+                    return ExecutionStatus.ExecutionHalted;
+                }
 
-            var txFeesAmount = balanceOfExecutionResult.ReturnValue!.ToUInt256().ToMoney();
-            SetCollectedFees(txFeesAmount);
-            ClearPlayersCount();
+                var ecdsaPublicKeys = _nextValidators.Get()
+                    .Batch(CryptoUtils.PublicKeyLength)
+                    .Select(x => x.ToArray().ToPublicKey())
+                    .ToArray();
+
+                foreach (var k in ecdsaPublicKeys)
+                {
+                    Logger.LogWarning(k.ToHex());
+                }
+
+                foreach (var k in tsKeys.Keys)
+                {
+                    Logger.LogWarning(k.ToHex());
+                }
+
+                _context.Snapshot.Validators.UpdateValidators(ecdsaPublicKeys, tsKeys);
+
+                Emit(GovernanceInterface.EventFinishCycle);
+                Logger.LogDebug("Enough confirmations collected, validators will be changed in the next block");
+                Logger.LogDebug(
+                    $"  - ECDSA public keys: {string.Join(", ", ecdsaPublicKeys.Select(key => key.ToHex()))}");
+                Logger.LogDebug($"  - TS public keys: {string.Join(", ", tsKeys.Keys.Select(key => key.ToHex()))}");
+            }
             return ExecutionStatus.Ok;
         }
 

@@ -11,11 +11,9 @@ namespace Lachain.Consensus
             PrivateKeyShare thresholdSignaturePrivateKeyShare)
         {
             EcdsaKeyPair = ecdsaKeyPair;
-            TpkePrivateKey = tpkePrivateKey;
             ThresholdSignaturePrivateKeyShare = thresholdSignaturePrivateKeyShare;
         }
 
-        public PrivateKey TpkePrivateKey { get; }
         public PrivateKeyShare ThresholdSignaturePrivateKeyShare { get; }
         public EcdsaKeyPair EcdsaKeyPair { get; }
     }

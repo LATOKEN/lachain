@@ -49,7 +49,7 @@ namespace Lachain.ConsensusTest
                 .ToArray();
             var tpkeVerificationKeys = Enumerable.Range(0, n)
                 .Select(i => tpkeKeygen.GetVerificationPubKey(i)).ToArray();
-            _publicKeys = new PublicConsensusKeySet(n, f, tpkeKeygen.GetPubKey(), tpkeVerificationKeys, pubKeys,
+            _publicKeys = new PublicConsensusKeySet(n, f, pubKeys,
                 ecdsaKeys.Select(k => k.PublicKey));
             _privateKeys = new IPrivateConsensusKeySet[n];
             for (var i = 0; i < n; ++i)

@@ -11,26 +11,20 @@ namespace Lachain.Consensus
     {
         public int N { get; }
         public int F { get; }
-        public PublicKey TpkePublicKey { get; }
         public PublicKeySet ThresholdSignaturePublicKeySet { get; }
         private readonly List<ECDSAPublicKey> _ecdsaPublicKeys;
         public IList<ECDSAPublicKey> EcdsaPublicKeySet => _ecdsaPublicKeys;
 
-        private List<PublicKey> _tpkeVerificationKeys;
 
         public PublicConsensusKeySet(int n, int f,
-            PublicKey tpkePublicKey,
-            IEnumerable<PublicKey> tpkeVerificationKeys, 
             PublicKeySet thresholdSignaturePublicKeySet,
             IEnumerable<ECDSAPublicKey> ecdsaPublicKeys
         )
         {
             N = n;
             F = f;
-            TpkePublicKey = tpkePublicKey;
             ThresholdSignaturePublicKeySet = thresholdSignaturePublicKeySet;
             _ecdsaPublicKeys = ecdsaPublicKeys.ToList();
-            _tpkeVerificationKeys = tpkeVerificationKeys.ToList();
         }
         
         public int GetValidatorIndex(ECDSAPublicKey publicKey)
@@ -43,16 +37,5 @@ namespace Lachain.Consensus
                 .First();
         }
 
-        public PublicKey? GetTpkeVerificationKey(int playerIdx)
-        {
-            try
-            {
-                return _tpkeVerificationKeys[playerIdx];
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
-        }
     }
 }

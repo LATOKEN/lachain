@@ -8,10 +8,6 @@ namespace Lachain.Core.Vault
         EcdsaKeyPair EcdsaKeyPair { get; }
         byte[] HubPrivateKey { get; }
 
-        Crypto.TPKE.PrivateKey? GetTpkePrivateKeyForBlock(ulong block);
-
-        void AddTpkePrivateKeyAfterBlock(ulong block, Crypto.TPKE.PrivateKey key);
-
         Crypto.ThresholdSignature.PrivateKeyShare? GetThresholdSignatureKeyForBlock(ulong block);
 
         void AddThresholdSignatureKeyAfterBlock(ulong block, Crypto.ThresholdSignature.PrivateKeyShare key);

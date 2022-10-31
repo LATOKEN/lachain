@@ -34,8 +34,6 @@ namespace Lachain.Core.Blockchain.Validators
                 Logger.LogTrace($"Fetched {n} validators f={f}");
                 return new PublicConsensusKeySet(
                     n, f,
-                    PublicKey.FromBytes(state.TpkePublicKey),
-                    state.TpkeVerificationKeys.Select(x => PublicKey.FromBytes(x)),
                     new PublicKeySet(
                         state.Validators.Select(v =>
                             Crypto.ThresholdSignature.PublicKey.FromBytes(v.ThresholdSignaturePublicKey)),

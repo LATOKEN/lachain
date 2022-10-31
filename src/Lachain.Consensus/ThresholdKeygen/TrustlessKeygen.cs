@@ -142,6 +142,14 @@ namespace Lachain.Consensus.ThresholdKeygen
             return _confirmations[keyringHash] == Players - Faulty;
         }
 
+        public bool HandleConfirm(PublicKeySet tsKeys)
+        {
+            var keyringHash = tsKeys.ToBytes().Keccak();
+            _confirmations.PutIfAbsent(keyringHash, 0);
+            _confirmations[keyringHash] += 1;
+            return _confirmations[keyringHash] == Players - Faulty;
+        }
+
         public bool Finished()
         {
             return _keyGenStates.Count(s => s.ValueCount() > 2 * Faulty) > Faulty;
@@ -170,9 +178,6 @@ namespace Lachain.Consensus.ThresholdKeygen
 
             return new ThresholdKeyring
             {
-                TpkePrivateKey = new PrivateKey(secretKey, _myIdx),
-                TpkePublicKey = new PublicKey(pubKeys[0], Faulty),
-                TpkeVerificationPublicKeys = new List<PublicKey>(pubKeys.Skip(1).Select(x => new PublicKey(x, Faulty))), 
                 ThresholdSignaturePrivateKey = new PrivateKeyShare(secretKey),
                 ThresholdSignaturePublicKeySet =
                     new PublicKeySet(pubKeys.Skip(1).Select(x => new Crypto.ThresholdSignature.PublicKey(x)), Faulty)

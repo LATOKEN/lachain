@@ -38,7 +38,7 @@ namespace Lachain.ConsensusTest
             var shares = keygen.GetPrivateShares().ToArray();
             var pubKeys = new PublicKeySet(shares.Select(share => share.GetPublicKeyShare()), f);
             _publicKeys = new PublicConsensusKeySet(
-                n, f, null!, new Crypto.TPKE.PublicKey[]{}, pubKeys,
+                n, f, pubKeys,
                 Enumerable.Range(0, n)
                     .Select(i => new ECDSAPublicKey {Buffer = ByteString.CopyFrom(i.ToBytes().ToArray())})
             );
