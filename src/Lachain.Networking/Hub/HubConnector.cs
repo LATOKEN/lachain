@@ -93,9 +93,9 @@ namespace Lachain.Networking.Hub
             }
         }
 
-        public void Send(byte[] publicKey, byte[] message)
+        public void Send(byte[] publicKey, byte[] message, bool isConsensus)
         {
-            CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
+            CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray(), (int) isConsensus);
         }
 
         public void SetPeerPublicKey(byte[] publicKey, int peerId)
