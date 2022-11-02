@@ -9,5 +9,7 @@ namespace Lachain.Core.Config
         string ConfigPath { get; }
 
         RunOptions CommandLineOptions { get; }
+
+        void UpdateWalletPassword(string password);
     }
 }

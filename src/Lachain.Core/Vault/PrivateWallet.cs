@@ -14,6 +14,10 @@ using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Newtonsoft.Json;
 using PublicKey = Lachain.Crypto.TPKE.PublicKey;
+using VaultSharp;
+using VaultSharp.V1.AuthMethods;
+using VaultSharp.V1.AuthMethods.Token;
+using VaultSharp.V1.Commons;
 
 namespace Lachain.Core.Vault
 {
@@ -31,30 +35,30 @@ namespace Lachain.Core.Vault
         private readonly string _walletPath;
         private string _walletPassword;
         private long _unlockEndTime;
+        private VaultConfig _vaultConfig;
+        private IConfigManager _configManager;
 
         public EcdsaKeyPair EcdsaKeyPair { get; }
         public byte[] HubPrivateKey { get; }
 
         public PrivateWallet(IConfigManager configManager)
         {
-            var config = configManager.GetConfig<VaultConfig>("vault") ??
+            _configManager = configManager;
+            _vaultConfig = configManager.GetConfig<VaultConfig>("vault") ??
                          throw new Exception("No 'vault' section in config file");
 
-            if (!(configManager.CommandLineOptions.WalletPath is null))
-                config.Path = configManager.CommandLineOptions.WalletPath;
-
-            if (config.Path is null || config.Password is null)
-                throw new ArgumentNullException(nameof(config));
-
-            _walletPath = Path.IsPathRooted(config.Path) || config.Path.StartsWith("~/")
-                ? config.Path
-                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), config.Path);
-
-            _walletPassword = config.Password;
+            _walletPath = ReadWalletPath(configManager);
+            _walletPassword = _vaultConfig.ReadWalletPassword();
+            
             _unlockEndTime = 0;
-            if(!File.Exists(_walletPath))
+            if (!File.Exists(_walletPath))
+            {
                 GenerateNewWallet(_walletPath, _walletPassword);
+                Logger.LogInformation("New wallet created at" + _walletPath);
+            }
+
             var needsSave = RestoreWallet(_walletPath, _walletPassword, out var keyPair, out var hubKey);
+            Logger.LogInformation("Wallet loaded from" + _walletPath);
             EcdsaKeyPair = keyPair;
             HubPrivateKey = hubKey;
             if (needsSave) SaveWallet(_walletPath, _walletPassword);
@@ -234,10 +238,53 @@ namespace Lachain.Core.Vault
         public bool ChangePassword(string currentPassword, string newPassword)
         {
             if (currentPassword != _walletPassword) return false;
-            SaveWallet(_walletPath, newPassword);
             _walletPassword = newPassword;
 
+            if (_vaultConfig.UseVault == true)
+            {
+                var vaultAddress = _vaultConfig.VaultAddress ?? 
+                                   Environment.GetEnvironmentVariable("VAULT_ADDR") ??
+                                   throw new ArgumentNullException(nameof(_vaultConfig.VaultAddress));
+                
+                var vaultToken = _vaultConfig.VaultToken ?? 
+                                 Environment.GetEnvironmentVariable("VAULT_TOKEN") ??
+                                 throw new ArgumentNullException(nameof(_vaultConfig.VaultToken));
+                
+                var vaultMountpoint = _vaultConfig.VaultMountpoint ?? 
+                                      throw new ArgumentNullException(nameof(_vaultConfig.VaultMountpoint));
+                
+                var vaultEndpoint = _vaultConfig.VaultEndpoint ?? 
+                                    throw new ArgumentNullException(nameof(_vaultConfig.VaultEndpoint));
+
+                IAuthMethodInfo authMethod = new TokenAuthMethodInfo(vaultToken);
+                VaultClientSettings vaultClientSettings = new VaultClientSettings(vaultAddress, authMethod);
+                IVaultClient vaultClient = new VaultClient(vaultClientSettings);
+                
+                
+                vaultClient.V1.Secrets.KeyValue.V2.WriteSecretAsync( 
+                    path: vaultEndpoint,
+                    data: new Dictionary<string, object> { { "password", _walletPassword }},
+                    mountPoint: vaultMountpoint
+                );
+            }
+            else
+            {
+                _configManager.UpdateWalletPassword(_walletPassword);
+            }
+            SaveWallet(_walletPath, _walletPassword);
             return true;
+        }
+
+        private string ReadWalletPath(IConfigManager configManager)
+        {
+            if (!(configManager.CommandLineOptions.WalletPath is null))
+                _vaultConfig.Path = configManager.CommandLineOptions.WalletPath;
+            if (_vaultConfig.Path is null)
+                throw new ArgumentNullException(nameof(_vaultConfig.Path));
+
+            return Path.IsPathRooted(_vaultConfig.Path) || _vaultConfig.Path.StartsWith("~/")
+                ? _vaultConfig.Path
+                : Path.Join(Path.GetDirectoryName(Path.GetFullPath(configManager.ConfigPath)), _vaultConfig.Path);
         }
     }
 }

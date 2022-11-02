@@ -90,7 +90,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
         [Repeat(2)]
         public void Test_PasswordChange()
         {
-            var initialPassword = _configManager.GetConfig<VaultConfig>("vault")?.Password;
+            var initialPassword = _configManager.GetConfig<VaultConfig>("vault")?.ReadWalletPassword();
             var newPassword = "abcde";
             
             // Change wallet password
