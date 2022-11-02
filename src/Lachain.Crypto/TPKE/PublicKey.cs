@@ -22,6 +22,8 @@ namespace Lachain.Crypto.TPKE
             _t = t;
         }
 
+        public G1 RawKey => _y;
+
         public EncryptedShare Encrypt(IRawShare rawShare)
         {
             return EncryptBenchmark.Benchmark(() =>
