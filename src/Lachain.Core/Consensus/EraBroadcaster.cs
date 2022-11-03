@@ -36,7 +36,7 @@ namespace Lachain.Core.Consensus
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
-        private readonly IMessageEnvelopeRepository _messageEnvelopeRepository;
+        private readonly MessageEnvelopeRepositoryManager _messageEnvelopeRepositoryManager;
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
@@ -71,7 +71,7 @@ namespace Lachain.Core.Consensus
             _era = era;
             _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
-            _messageEnvelopeRepository = messageEnvelopeRepository;
+            _messageEnvelopeRepositoryManager = new MessageEnvelopeRepositoryManager(messageEnvelopeRepository);
         }
 
         public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
@@ -113,7 +113,17 @@ namespace Lachain.Core.Consensus
 
         public void RestoreState()
         {
-            
+            foreach (var messageEnvelope in _messageEnvelopeRepositoryManager.GetMessages())
+            {
+                if (messageEnvelope.External)
+                {
+                    Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+            }
         }
 
         public void SendToValidator(ConsensusMessage message, int index)
