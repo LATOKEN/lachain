@@ -4,12 +4,12 @@ using Lachain.Storage.Repositories;
 
 namespace Lachain.Consensus.Messages
 {
-    public class RootProtocolMessageRepositoryManager
+    public class MessageEnvelopeRepositoryManager
     {
         private IMessageEnvelopeRepository _repository;
         private MessageEnvelopeList _messageEnvelopeList;
         
-        public RootProtocolMessageRepositoryManager(IMessageEnvelopeRepository repository)
+        public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository)
         {
             _repository = repository;
             var bytes = repository.LoadMessages();
