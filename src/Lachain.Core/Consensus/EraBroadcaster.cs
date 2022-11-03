@@ -36,6 +36,7 @@ namespace Lachain.Core.Consensus
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IMessageEnvelopeRepository _messageEnvelopeRepository;
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
@@ -59,7 +60,8 @@ namespace Lachain.Core.Consensus
 
         public EraBroadcaster(
             long era, IConsensusMessageDeliverer consensusMessageDeliverer,
-            IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository
+            IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository,
+            IMessageEnvelopeRepository messageEnvelopeRepository
         )
         {
             _consensusMessageDeliverer = consensusMessageDeliverer;
@@ -69,6 +71,7 @@ namespace Lachain.Core.Consensus
             _era = era;
             _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+            _messageEnvelopeRepository = messageEnvelopeRepository;
         }
 
         public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
@@ -106,6 +109,11 @@ namespace Lachain.Core.Consensus
                     _consensusMessageDeliverer.SendTo(publicKey, payload, NetworkMessagePriority.ConsensusMessage);
                 }
             }
+        }
+
+        public void RestoreState()
+        {
+            
         }
 
         public void SendToValidator(ConsensusMessage message, int index)

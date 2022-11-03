@@ -31,6 +31,7 @@ namespace Lachain.Core.Consensus
         private readonly IConsensusMessageDeliverer _consensusMessageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IMessageEnvelopeRepository _messageEnvelopeRepository;
         private readonly INetworkManager _networkManager;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockManager _blockManager;
@@ -58,6 +59,7 @@ namespace Lachain.Core.Consensus
             IBlockSynchronizer blockSynchronizer,
             IPrivateWallet privateWallet,
             IValidatorAttendanceRepository validatorAttendanceRepository,
+            IMessageEnvelopeRepository messageEnvelopeRepository,
             IConfigManager configManager,
             INetworkManager networkManager,
             IKeyGenManager keyGenManager
@@ -69,6 +71,7 @@ namespace Lachain.Core.Consensus
             _blockManager = blockManager;
             _privateWallet = privateWallet;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+            _messageEnvelopeRepository = messageEnvelopeRepository;
             _networkManager = networkManager;
             _keyGenManager = keyGenManager;
             _terminated = false;
@@ -181,7 +184,8 @@ namespace Lachain.Core.Consensus
                     
                     CurrentEra += 1;
                     _eras[CurrentEra] = new EraBroadcaster(
-                        CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
+                        CurrentEra, _consensusMessageDeliverer, _privateWallet, 
+                        _validatorAttendanceRepository, _messageEnvelopeRepository
                     );
                     Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
                 }
@@ -196,7 +200,8 @@ namespace Lachain.Core.Consensus
             {
                 Logger.LogTrace("Create EraBroadcaster");
                 _eras[CurrentEra] = new EraBroadcaster(
-                    CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
+                    CurrentEra, _consensusMessageDeliverer, _privateWallet, 
+                    _validatorAttendanceRepository, _messageEnvelopeRepository
                 );
             }
 
