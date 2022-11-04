@@ -178,7 +178,6 @@ namespace Lachain.Core.Consensus
                         default:
                             throw new InvalidOperationException("Unexpected template parameters for ProtocolResponse");
                     }
-                    
                 }
                 else
                 {
