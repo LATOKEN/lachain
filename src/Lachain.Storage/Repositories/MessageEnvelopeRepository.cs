@@ -4,11 +4,11 @@ using Lachain.Proto;
 
 namespace Lachain.Storage.Repositories
 {
-    public class RootProtocolMessageRepository : IMessageEnvelopeRepository
+    public class MessageEnvelopeRepository : IMessageEnvelopeRepository
     {
         private readonly IRocksDbContext _rocksDbContext;
 
-        public RootProtocolMessageRepository(IRocksDbContext rocksDbContext)
+        public MessageEnvelopeRepository(IRocksDbContext rocksDbContext)
         {
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }

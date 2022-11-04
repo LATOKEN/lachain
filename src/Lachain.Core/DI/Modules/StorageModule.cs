@@ -30,6 +30,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<ISnapshotIndexRepository, SnapshotIndexRepository>();
             containerBuilder.RegisterSingleton<IKeyGenRepository, KeyGenRepository>();
             containerBuilder.RegisterSingleton<IValidatorAttendanceRepository, ValidatorAttendanceRepository>();
+            containerBuilder.RegisterSingleton<IMessageEnvelopeRepository, MessageEnvelopeRepository>();
             containerBuilder.RegisterSingleton<ILocalTransactionRepository, LocalTransactionRepository>();
 
             /* database query */ 
