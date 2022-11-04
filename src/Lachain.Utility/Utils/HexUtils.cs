@@ -58,9 +58,9 @@ namespace Lachain.Utility.Utils
             return prefix ? $"0x{sb}" : sb.ToString();
         }
 
-        public static UInt256 HexToUInt256(this string buffer)
+        public static UInt256 HexToUInt256(this string buffer, bool addLeadingZeros = false)
         {
-            return buffer.HexToBytes().ToUInt256();
+            return buffer.HexToBytes().ToUInt256(addLeadingZeros);
         }
 
         public static UInt160 HexToUInt160(this string buffer)
