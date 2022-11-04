@@ -369,7 +369,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             };
 
             var result = _apiService!.EstimateGas(opts);
-            Assert.AreEqual(result, "0x2e1d22");
+            Assert.AreEqual(result, "0x2eae18");
 
             var receipt = TestUtils.GetRandomTransaction(false);
             opts = new JObject
