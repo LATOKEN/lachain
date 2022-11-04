@@ -1,6 +1,8 @@
+using Lachain.Utility.Serialization;
+
 namespace Lachain.Consensus.Messages
 {
-    public interface IInternalMessage
+    public interface IInternalMessage: IByteSerializable
     {
         IProtocolIdentifier From { get; }
         IProtocolIdentifier? To { get; }

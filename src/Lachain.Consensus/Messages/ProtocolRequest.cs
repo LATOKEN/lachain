@@ -1,3 +1,5 @@
+using System;
+
 namespace Lachain.Consensus.Messages
 {
     public class ProtocolRequest<TIdType, TInputType> : IInternalMessage where TIdType : IProtocolIdentifier
@@ -14,5 +16,14 @@ namespace Lachain.Consensus.Messages
         public IProtocolIdentifier From { get; }
 
         public IProtocolIdentifier To { get; }
+        public byte[] ToBytes()
+        {
+            throw new NotImplementedException();
+        }
+
+        public static ProtocolRequest<TIdType, TInputType> FromBytes(byte[] bytes)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
