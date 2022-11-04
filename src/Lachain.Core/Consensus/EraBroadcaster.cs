@@ -15,6 +15,8 @@ using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
+using Lachain.Crypto;
+using Lachain.Crypto.TPKE;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -119,9 +121,68 @@ namespace Lachain.Core.Consensus
                 {
                     Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
                 }
+                else if (messageEnvelope.TypeString() == MessageEnvelope.PROTOCOL_REQUEST)
+                {
+                    switch (messageEnvelope.InternalMessage)
+                    {
+                        case ProtocolRequest<BinaryAgreementId, bool> request:
+                            InternalRequest(request);
+                            break;
+                        case ProtocolRequest<BinaryBroadcastId, bool> request:
+                            InternalRequest(request);
+                            break;
+                        case ProtocolRequest<CoinId, object?> request:
+                            InternalRequest(request);
+                            break;
+                        case ProtocolRequest<CommonSubsetId, EncryptedShare> request:
+                            InternalRequest(request);
+                            break;
+                        case ProtocolRequest<HoneyBadgerId, IRawShare> request:
+                            InternalRequest(request);
+                            break;
+                        case ProtocolRequest<ReliableBroadcastId, EncryptedShare?> request:
+                            InternalRequest(request);
+                            break;
+                        case ProtocolRequest<RootProtocolId, IBlockProducer> request:
+                            InternalRequest(request);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Unexpected template parameters for ProtocolRequest");
+                    }
+                }
+                else if (messageEnvelope.TypeString() == MessageEnvelope.PROTOCOL_RESPONSE)
+                {
+                    switch (messageEnvelope.InternalMessage)
+                    {
+                        case ProtocolResult<BinaryAgreementId, bool> result:
+                            InternalResponse(result);
+                            break;
+                        case ProtocolResult<BinaryBroadcastId, BoolSet> result:
+                            InternalResponse(result);
+                            break;
+                        case ProtocolResult<CoinId, CoinResult>	result:
+                            InternalResponse(result);
+                            break;
+                        case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
+                            InternalResponse(result);
+                            break;
+                        case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
+                            InternalResponse(result);
+                            break;
+                        case ProtocolResult<ReliableBroadcastId, EncryptedShare> result:
+                            InternalResponse(result);
+                            break;
+                        case ProtocolResult<RootProtocolId, object?> result:
+                            InternalResponse(result);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Unexpected template parameters for ProtocolResponse");
+                    }
+                    
+                }
                 else
                 {
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException($"Unknown message type {messageEnvelope.TypeString()}");
                 }
             }
         }
