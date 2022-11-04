@@ -121,7 +121,7 @@ namespace Lachain.Core.Consensus
                 {
                     Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
                 }
-                else if (messageEnvelope.TypeString() == MessageEnvelope.PROTOCOL_REQUEST)
+                else if (messageEnvelope.isProtocolRequest)
                 {
                     switch (messageEnvelope.InternalMessage)
                     {
@@ -150,7 +150,7 @@ namespace Lachain.Core.Consensus
                             throw new InvalidOperationException("Unexpected template parameters for ProtocolRequest");
                     }
                 }
-                else if (messageEnvelope.TypeString() == MessageEnvelope.PROTOCOL_RESPONSE)
+                else if (messageEnvelope.isProtocolResponse)
                 {
                     switch (messageEnvelope.InternalMessage)
                     {

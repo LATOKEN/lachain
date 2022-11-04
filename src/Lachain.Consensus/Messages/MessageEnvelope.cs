@@ -27,6 +27,8 @@ namespace Lachain.Consensus.Messages
         }
 
         public bool External => !(ExternalMessage is null);
+        public bool isProtocolRequest => !(InternalMessage is null) && TypeString() == PROTOCOL_REQUEST;
+        public bool isProtocolResponse => !(InternalMessage is null) && TypeString() == PROTOCOL_RESPONSE;
 
         public string TypeString()
         {
