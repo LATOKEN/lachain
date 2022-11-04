@@ -1,8 +1,9 @@
 using Lachain.Proto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Consensus.Messages
 {
-    public class MessageEnvelope
+    public class MessageEnvelope : IByteSerializable
     {
         public const string PROTOCOL_REQUEST = "ProtocolRequest";
         public const string PROTOCOL_RESPONSE = "ProtocolResponse";
@@ -33,6 +34,16 @@ namespace Lachain.Consensus.Messages
             return InternalMessage!.GetType().GetGenericTypeDefinition().Name.Contains("Request")
                 ? PROTOCOL_REQUEST
                 : PROTOCOL_RESPONSE;
+        }
+
+        public byte[] ToBytes()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public static MessageEnvelope FromBytes(byte[] bytes)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
