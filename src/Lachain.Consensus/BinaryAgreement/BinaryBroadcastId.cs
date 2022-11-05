@@ -67,7 +67,7 @@ namespace Lachain.Consensus.BinaryAgreement
             var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
             var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
             var agreement = decoded[1].RLPData.AsReadOnlySpan().ToInt64();
-            var epoch = decoded[1].RLPData.AsReadOnlySpan().ToInt64();
+            var epoch = decoded[2].RLPData.AsReadOnlySpan().ToInt64();
             return new BinaryBroadcastId(era, agreement, epoch);
         }
     }

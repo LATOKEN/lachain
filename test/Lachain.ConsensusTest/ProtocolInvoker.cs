@@ -35,6 +35,11 @@ namespace Lachain.ConsensusTest
             return $"Invoker {Id}";
         }
 
+        public byte[] ToByteArray()
+        {
+            throw new NotImplementedException();
+        }
+
         public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;

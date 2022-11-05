@@ -62,7 +62,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
             var senderId = decoded[0].RLPData.AsReadOnlySpan().ToInt32();
             var era = decoded[1].RLPData.AsReadOnlySpan().ToInt64();
-            return new ReliableBroadcastId(senderId, era);
+            return new ReliableBroadcastId(senderId, (int) era);
         }
     }
 }

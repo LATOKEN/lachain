@@ -91,11 +91,11 @@ namespace Lachain.Consensus.Messages
 
                 if (isProtocolRequest == 1)
                 {
-                    message = GetProtocolRequestFromBytes(protocolType, decoded[4].RLPData);
+                    message = GetProtocolRequestFromByteArray(protocolType, decoded[4].RLPData);
                 }
                 else if (isProtocolRequest == 0)
                 {
-                    message = GetProtocolResponseFromBytes(protocolType, decoded[4].RLPData);
+                    message = GetProtocolResponseFromByteArray(protocolType, decoded[4].RLPData);
                 }
                 else
                 {
