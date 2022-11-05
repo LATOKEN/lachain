@@ -11,6 +11,7 @@ using Lachain.ConsensusTest;
 using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 using MCL.BLS12_381.Net;
 using NUnit.Framework;
 
@@ -66,12 +67,16 @@ namespace Lachain.ConsensusTest
         {
             var binaryBroadcastId = new BinaryBroadcastId(random.Next(), random.Next(), random.Next());
             Assert.AreEqual(binaryBroadcastId, BinaryBroadcastId.FromByteArray(binaryBroadcastId.ToByteArray()));
+
+            var bs = TestSerializationAndGet_BoolSet();
         }
         
         private void TestSerializationAndAdd_CommonCoin()
         {
             var coinId = new CoinId(random.Next(), random.Next(), random.Next());
             Assert.AreEqual(coinId, CoinId.FromByteArray(coinId.ToByteArray()));
+
+            var cr = TestSerializationAndGet_Coinresult();
         }
         private void TestSerializationAndAdd_CommonSubset()
         {
@@ -114,5 +119,24 @@ namespace Lachain.ConsensusTest
             Assert.AreEqual(share, RawShare.FromByteArray(share.ToByteArray()));
             return share;
         }
+        
+        private CoinResult TestSerializationAndGet_Coinresult()
+        {
+            var rnd = new byte[32];
+            random.NextBytes(rnd);
+            var coinResult = new CoinResult(rnd);
+            Assert.AreEqual(coinResult, CoinResult.FromByteArray(coinResult.ToByteArray()));
+            return coinResult;
+        }
+
+        private BoolSet TestSerializationAndGet_BoolSet()
+        {
+            bool[] bools = { random.Next(0, 1) == 1, random.Next(0, 1) == 0 };
+            var bs = new BoolSet(bools);
+            Assert.AreEqual(bs, BoolSet.FromByteArray(bs.ToByteArray()));
+            return bs;
+        }
+
+
     }
 }
