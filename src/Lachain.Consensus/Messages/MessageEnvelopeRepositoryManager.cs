@@ -18,7 +18,7 @@ namespace Lachain.Consensus.Messages
 
             if (isPresent)
             {
-                _messageEnvelopeList = MessageEnvelopeList.FromBytes(bytes);
+                _messageEnvelopeList = MessageEnvelopeList.FromByteArray(bytes);
             }
                 
         }
@@ -61,7 +61,7 @@ namespace Lachain.Consensus.Messages
 
         private void SaveToDb(MessageEnvelopeList messageEnvelopeList)
         {
-            _repository.SaveMessages(messageEnvelopeList.ToBytes());
+            _repository.SaveMessages(messageEnvelopeList.ToByteArray());
         }
     }
 }

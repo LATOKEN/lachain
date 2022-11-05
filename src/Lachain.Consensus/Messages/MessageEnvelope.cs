@@ -52,7 +52,7 @@ namespace Lachain.Consensus.Messages
                 : PROTOCOL_RESPONSE;
         }
 
-        public byte[] ToBytes()
+        public byte[] ToByteArray()
         {
             var list = new List<byte[]>();
             list.Add(ValidatorIndex.ToBytes().ToArray());
@@ -66,13 +66,13 @@ namespace Lachain.Consensus.Messages
                 list.Add( (isProtocolRequest ? 1 : 0).ToBytes().ToArray());
                 var protocolType = (int) ProtocolTypeMethods.GetProtocolType(InternalMessage.To);
                 list.Add(protocolType.ToBytes().ToArray());
-                list.Add(InternalMessage.ToBytes());
+                list.Add(InternalMessage.ToByteArray());
             }
             
             return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
         }
 
-        public static MessageEnvelope FromBytes(byte[] bytes)
+        public static MessageEnvelope FromByteArray(byte[] bytes)
         {
             var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
             var validatorIndex = decoded[0].RLPData.AsReadOnlySpan().ToInt32();
@@ -105,45 +105,46 @@ namespace Lachain.Consensus.Messages
             }
         }
         
-        private static IInternalMessage GetProtocolRequestFromBytes(ProtocolType protocolType, byte[] bytes)
-        {switch (protocolType)
-            {
-                case ProtocolType.BinaryAgreement:
-                    return ProtocolRequest<BinaryAgreementId, bool>.FromBytes(bytes);
-                case ProtocolType.BinaryBroadcast:
-                    return ProtocolRequest<BinaryBroadcastId, bool>.FromBytes(bytes);
-                case ProtocolType.CommonCoin:
-                    return ProtocolRequest<CoinId, object?>.FromBytes(bytes);
-                case ProtocolType.CommonSubset:
-                    return ProtocolRequest<CommonSubsetId, EncryptedShare>.FromBytes(bytes);
-                case ProtocolType.HoneyBadger:
-                    return ProtocolRequest<HoneyBadgerId, IRawShare>.FromBytes(bytes);
-                case ProtocolType.ReliableBroadcast:
-                    return ProtocolRequest<ReliableBroadcastId, EncryptedShare?>.FromBytes(bytes);
-                case ProtocolType.RootProtocol:
-                    return ProtocolRequest<RootProtocolId, IBlockProducer>.FromBytes(bytes);
-                default:
-                    throw new InvalidOperationException($"Unknown Protocol Type {protocolType}");
-            }
-        }
-        private static IInternalMessage GetProtocolResponseFromBytes(ProtocolType protocolType, byte[] bytes)
+        private static IInternalMessage GetProtocolRequestFromByteArray(ProtocolType protocolType, byte[] bytes)
         {
             switch (protocolType)
             {
                 case ProtocolType.BinaryAgreement:
-                    return ProtocolResult<BinaryAgreementId, bool>.FromBytes(bytes);
+                    return ProtocolRequest<BinaryAgreementId, bool>.FromByteArray(bytes);
                 case ProtocolType.BinaryBroadcast:
-                    return ProtocolResult<BinaryBroadcastId, BoolSet>.FromBytes(bytes);
+                    return ProtocolRequest<BinaryBroadcastId, bool>.FromByteArray(bytes);
                 case ProtocolType.CommonCoin:
-                    return ProtocolResult<CoinId, CoinResult>.FromBytes(bytes);
+                    return ProtocolRequest<CoinId, object?>.FromByteArray(bytes);
                 case ProtocolType.CommonSubset:
-                    return ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>.FromBytes(bytes);
+                    return ProtocolRequest<CommonSubsetId, EncryptedShare>.FromByteArray(bytes);
                 case ProtocolType.HoneyBadger:
-                    return ProtocolResult<HoneyBadgerId, EncryptedShare>.FromBytes(bytes);
+                    return ProtocolRequest<HoneyBadgerId, IRawShare>.FromByteArray(bytes);
                 case ProtocolType.ReliableBroadcast:
-                    return ProtocolResult<ReliableBroadcastId, EncryptedShare?>.FromBytes(bytes);
+                    return ProtocolRequest<ReliableBroadcastId, EncryptedShare?>.FromByteArray(bytes);
                 case ProtocolType.RootProtocol:
-                    return ProtocolResult<RootProtocolId, object?>.FromBytes(bytes);
+                    return ProtocolRequest<RootProtocolId, IBlockProducer>.FromByteArray(bytes);
+                default:
+                    throw new InvalidOperationException($"Unknown Protocol Type {protocolType}");
+            }
+        }
+        private static IInternalMessage GetProtocolResponseFromByteArray(ProtocolType protocolType, byte[] bytes)
+        {
+            switch (protocolType)
+            {
+                case ProtocolType.BinaryAgreement:
+                    return ProtocolResult<BinaryAgreementId, bool>.FromByteArray(bytes);
+                case ProtocolType.BinaryBroadcast:
+                    return ProtocolResult<BinaryBroadcastId, BoolSet>.FromByteArray(bytes);
+                case ProtocolType.CommonCoin:
+                    return ProtocolResult<CoinId, CoinResult>.FromByteArray(bytes);
+                case ProtocolType.CommonSubset:
+                    return ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>.FromByteArray(bytes);
+                case ProtocolType.HoneyBadger:
+                    return ProtocolResult<HoneyBadgerId, EncryptedShare>.FromByteArray(bytes);
+                case ProtocolType.ReliableBroadcast:
+                    return ProtocolResult<ReliableBroadcastId, EncryptedShare?>.FromByteArray(bytes);
+                case ProtocolType.RootProtocol:
+                    return ProtocolResult<RootProtocolId, object?>.FromByteArray(bytes);
                 default:
                 throw new InvalidOperationException($"Unknown Protocol Type {protocolType}");
             }

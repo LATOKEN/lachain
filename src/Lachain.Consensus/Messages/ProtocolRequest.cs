@@ -22,12 +22,12 @@ namespace Lachain.Consensus.Messages
         public IProtocolIdentifier From { get; }
 
         public IProtocolIdentifier To { get; }
-        public byte[] ToBytes()
+        public byte[] ToByteArray()
         {
             var list = new List<byte[]>();
             list.Add(((int)ProtocolTypeMethods.GetProtocolType(From)).ToBytes().ToArray());
-            list.Add(From.ToBytes().ToArray());
-            list.Add(To.ToBytes().ToArray());
+            list.Add(From.ToByteArray().ToArray());
+            list.Add(To.ToByteArray().ToArray());
 
             switch (Input)
             {
@@ -37,7 +37,7 @@ namespace Lachain.Consensus.Messages
                     list.Add((b ? 1: 0).ToBytes().ToArray());
                     break;
                 case IByteSerializable b:
-                    list.Add(b.ToBytes().ToArray());
+                    list.Add(b.ToByteArray().ToArray());
                     break;
                 default:
                     throw new InvalidOperationException("Unrecognized TInputType");
@@ -46,7 +46,7 @@ namespace Lachain.Consensus.Messages
             return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
         }
 
-        public static ProtocolRequest<TIdType, TInputType> FromBytes(byte[] bytes)
+        public static ProtocolRequest<TIdType, TInputType> FromByteArray(byte[] bytes)
         {
             throw new NotImplementedException();
         }

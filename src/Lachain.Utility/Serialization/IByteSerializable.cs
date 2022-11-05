@@ -6,6 +6,6 @@ namespace Lachain.Utility.Serialization
     {
         // When implementing this interface make sure to implement also following methods:
         // public static MyClass FromBytes(byte[] bytes);
-        public byte[] ToBytes();
+        public byte[] ToByteArray();
     }
 }

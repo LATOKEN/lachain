@@ -23,7 +23,7 @@ namespace Lachain.Consensus.Messages
             messageList.Add(messageEnvelope);
         }
         
-        public byte[] ToBytes()
+        public byte[] ToByteArray()
         {
             var list = new List<byte[]>();
             
@@ -32,13 +32,13 @@ namespace Lachain.Consensus.Messages
 
             foreach (var message in messageList)
             {
-                list.Add(message.ToBytes());
+                list.Add(message.ToByteArray());
             }
 
             return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
         }
 
-        public static MessageEnvelopeList FromBytes(byte[] bytes)
+        public static MessageEnvelopeList FromByteArray(byte[] bytes)
         {
             var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
             var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
@@ -49,7 +49,7 @@ namespace Lachain.Consensus.Messages
             for (int i = 0; i < count; i++)
             {
                 var envelopeBytes = decoded[2 + i].RLPData;
-                messageEnvelopeList.addMessage(MessageEnvelope.FromBytes(envelopeBytes));
+                messageEnvelopeList.addMessage(MessageEnvelope.FromByteArray(envelopeBytes));
             }
 
             return messageEnvelopeList;
