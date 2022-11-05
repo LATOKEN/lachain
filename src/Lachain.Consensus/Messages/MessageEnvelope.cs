@@ -64,7 +64,7 @@ namespace Lachain.Consensus.Messages
             }
             else {
                 list.Add( (isProtocolRequest ? 1 : 0).ToBytes().ToArray());
-                var protocolType = (int) ProtocolTypeMethods.getProtocolType(InternalMessage.To);
+                var protocolType = (int) ProtocolTypeMethods.GetProtocolType(InternalMessage.To);
                 list.Add(protocolType.ToBytes().ToArray());
                 list.Add(InternalMessage.ToBytes());
             }

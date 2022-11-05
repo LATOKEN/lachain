@@ -21,7 +21,7 @@ namespace Lachain.Consensus
 
     public static class ProtocolTypeMethods
     {
-        public static ProtocolType getProtocolType(IProtocolIdentifier id)
+        public static ProtocolType GetProtocolType(IProtocolIdentifier id)
         {
             switch (id)
             {
