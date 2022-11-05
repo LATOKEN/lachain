@@ -1,3 +1,8 @@
+using System.Collections.Generic;
+using System.Linq;
+using Lachain.Utility.Serialization;
+using Nethereum.RLP;
+
 namespace Lachain.Consensus.RootProtocol
 {
     public class RootProtocolId : IProtocolIdentifier
@@ -35,6 +40,21 @@ namespace Lachain.Consensus.RootProtocol
         public override int GetHashCode()
         {
             return Era.GetHashCode();
+        }
+        public byte[] ToByteArray()
+        {
+            var list = new List<byte[]>
+            {
+                Era.ToBytes().ToArray(),
+            };
+            return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public static RootProtocolId FromByteArray(byte[] bytes)
+        {
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
+            return new RootProtocolId((int)era);
         }
     }
 }
