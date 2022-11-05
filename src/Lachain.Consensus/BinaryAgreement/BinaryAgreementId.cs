@@ -46,7 +46,7 @@ namespace Lachain.Consensus.BinaryAgreement
             return $"BA (E={Era}, A={AssociatedValidatorId})";
         }
 
-        public byte[] ToBytes()
+        public byte[] ToByteArray()
         {
             var list = new List<byte[]>();
             list.Add(Era.ToBytes().ToArray());
@@ -54,7 +54,7 @@ namespace Lachain.Consensus.BinaryAgreement
             return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
         }
 
-        public static BinaryAgreementId FromBytes(byte[] bytes)
+        public static BinaryAgreementId FromByteArray(byte[] bytes)
         {
             var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
             var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
