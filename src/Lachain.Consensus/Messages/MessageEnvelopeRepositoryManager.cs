@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Lachain.Storage.Repositories;
 
 namespace Lachain.Consensus.Messages
@@ -8,34 +9,47 @@ namespace Lachain.Consensus.Messages
     {
         private IMessageEnvelopeRepository _repository;
         private MessageEnvelopeList _messageEnvelopeList;
-        
+        public bool isPresent { get; private set; }
         public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository)
         {
             _repository = repository;
             var bytes = repository.LoadMessages();
-            _messageEnvelopeList = MessageEnvelopeList.FromBytes(bytes);
+            isPresent = !(bytes is null);
+
+            if (isPresent)
+            {
+                _messageEnvelopeList = MessageEnvelopeList.FromBytes(bytes);
+            }
+                
         }
         
         public long GetEra()
         {
+            if (!isPresent)
+            {
+                throw new InvalidOperationException("Could not find MessageEnvelopeList in db");
+            }
             return _messageEnvelopeList.era;
         }
 
         public void StartEra(long era)
         {
-            if (_messageEnvelopeList.era == era)
+            if (isPresent && _messageEnvelopeList.era == era)
             {
                 throw new ArgumentException($"Start Era called with same era number {era}");
             }
-            else
-            {
-                _messageEnvelopeList = new MessageEnvelopeList(era);
-                SaveToDb(_messageEnvelopeList);
-            }
+     
+            _messageEnvelopeList = new MessageEnvelopeList(era);
+            SaveToDb(_messageEnvelopeList);
+            isPresent = true;
         }
 
         public void AddMessage(MessageEnvelope message)
         {
+            if (!isPresent)
+            {
+                throw new InvalidOperationException("Could not find MessageEnvelopeList in db");
+            }
             _messageEnvelopeList.addMessage(message);
             SaveToDb(_messageEnvelopeList);
         }

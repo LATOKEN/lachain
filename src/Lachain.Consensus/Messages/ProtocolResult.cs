@@ -22,7 +22,7 @@ namespace Lachain.Consensus.Messages
 
         public static ProtocolResult<TIdType, TResultType> FromBytes(byte[] bytes)
         {
-            throw new NotImplementedException()
+            throw new NotImplementedException();
         }
     }
 }
