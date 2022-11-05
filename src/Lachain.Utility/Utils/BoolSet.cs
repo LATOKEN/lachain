@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Utility.Utils
 {
     // Simple struct that represents subset of {false, true}
     // Note, this is declared as struct to copy by value always
-    public struct BoolSet : IEquatable<BoolSet>, IComparable<BoolSet>
+    public struct BoolSet : IEquatable<BoolSet>, IComparable<BoolSet>, IByteSerializable
     {
         private readonly byte _mask;
 
@@ -87,6 +88,17 @@ namespace Lachain.Utility.Utils
         public override string ToString()
         {
             return $"BoolSet({String.Join(", ", Values())})";
+        }
+
+        public byte[] ToByteArray()
+        {
+            byte[] bytes = { _mask };
+            return bytes;
+        }
+
+        public static BoolSet FromByteArray(byte[] bytes)
+        {
+            return new BoolSet(bytes[0]);
         }
     }
 }
