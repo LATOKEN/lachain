@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using System.Linq;
+using Lachain.Utility.Serialization;
+using Nethereum.RLP;
 
 namespace Lachain.Crypto
 {
@@ -28,6 +31,23 @@ namespace Lachain.Crypto
             {
                 return (Id * 397) ^ (Data != null ? Data.GetHashCode() : 0);
             }
+        }
+
+        public byte[] ToByteArray()
+        {
+            var list = new List<byte[]>
+            {
+                Id.ToBytes().ToArray(),
+                Data
+            };
+            return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
+        }
+        public static RawShare FromByteArray(byte[] bytes)
+        {
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var id = decoded[0].RLPData.AsReadOnlySpan().ToInt32();
+            var bb = decoded[1].RLPData;
+            return new RawShare(bb, id);
         }
 
         public int Id { get; }
