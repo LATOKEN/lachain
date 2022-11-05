@@ -1,0 +1,46 @@
+{
+  "network": {
+    "magic": 56754,
+    "host": "tcp://172.16.238.1",
+    "port": 5050,
+    "peers": [
+    ],
+    "forceIPv6": false,
+    "maxPeers": 100,
+    "bootstrapAddresses": []
+  },
+  "genesis" : {
+    "balances": {
+      "0xe855e8f8e5f66a84c62800e9fc8fa06d77c35baf": "100.0",
+      "0x6c809b2845b1334bd860988d24adccc9fab2a28d": "123.321",
+      "0x6bc32575acb8754886dc283c2c8ac54b1bd93195": "1000000.0"
+    },
+    "validators": [
+      {
+        "ECDSAPublicKey": "02e5974f3e1e9599ff5af036b5d6057d80855e7182afb4c2fa1fe38bc6efb9072b",
+        "thresholdSignaturePublicKey": "0xa89024362500526196412db2f8b2c113386af2a7c334738202d052b294d2e48999fc7d69c43b2ae2d75280446ddc5309",
+        "resolvableName": "localhost:5050"
+      }
+    ],
+    "TPKEPublicKey": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockReward": "5.000000000000000000",
+    "basicGasPrice": "0.000000100000000000"
+  },
+  "rpc": {
+    "hosts": [
+      "+"
+    ],
+    "port": 7070
+  },
+  "vault": {
+    "path": "wallet.json",
+    "password": "12345"
+  },
+  "blockchain": {
+    "targetBlockTime": 5000
+  },
+  "storage": {
+    "provider": "RocksDB",
+    "path": "ChainTest"
+  }
+}

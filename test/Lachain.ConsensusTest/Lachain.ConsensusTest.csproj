@@ -15,4 +15,10 @@
     <ProjectReference Include="..\..\src\Lachain.Consensus\Lachain.Consensus.csproj" />
     <ProjectReference Include="..\Lachain.UtilityTest\Lachain.UtilityTest.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ContentWithTargetPath Include="Resources\config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>config.json</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
 </Project>
