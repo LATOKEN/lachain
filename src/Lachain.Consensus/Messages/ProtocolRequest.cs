@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lachain.Consensus.BinaryAgreement;
 using Lachain.Utility.Serialization;
 using MCL.BLS12_381.Net;
 using Nethereum.RLP;
@@ -39,6 +40,13 @@ namespace Lachain.Consensus.Messages
                 case IByteSerializable b:
                     list.Add(b.ToByteArray().ToArray());
                     break;
+                case ISet<IByteSerializable> set:
+                    list.Add(set.Count.ToBytes().ToArray());
+                    foreach (var element in set)
+                    {
+                        list.Add(element.ToByteArray().ToArray());
+                    }
+                    break;
                 default:
                     throw new InvalidOperationException("Unrecognized TInputType");
             }
@@ -48,6 +56,12 @@ namespace Lachain.Consensus.Messages
 
         public static ProtocolRequest<TIdType, TInputType> FromByteArray(byte[] bytes)
         {
+            // switch (Type.GetTypeCode(typeof(TIdType)))
+            // {
+            //         var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            //         var protocolType = (ProtocolType) decoded[0].RLPData.AsReadOnlySpan().ToInt32();
+            //         
+            // }
             throw new NotImplementedException();
         }
     }

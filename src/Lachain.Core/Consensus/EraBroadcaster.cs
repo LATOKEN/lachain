@@ -279,7 +279,9 @@ namespace Lachain.Core.Consensus
                     throw new InvalidOperationException($"Unknown message type {message}");
             }
 
-            HandleExternalMessage(protocolId, new MessageEnvelope(message, from));
+            var messageEnvelope = new MessageEnvelope(message, from);
+            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
+            HandleExternalMessage(protocolId, messageEnvelope);
         }
 
         private void HandleExternalMessage(IProtocolIdentifier protocolId, MessageEnvelope message)
@@ -340,9 +342,11 @@ namespace Lachain.Core.Consensus
 
             Logger.LogTrace($"Protocol {request.From} requested result from protocol {request.To}");
             EnsureProtocol(request.To);
-            
+
+
+            var messageEnvelope = new MessageEnvelope(request, GetMyId());
             if (_registry.TryGetValue(request.To, out var protocol))
-                protocol?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
+                protocol?.ReceiveMessage(messageEnvelope);
             
             if (!(protocol is null))
             {
@@ -385,8 +389,9 @@ namespace Lachain.Core.Consensus
 
             // message is also delivered to self
         //    Logger.LogTrace($"Result from protocol {result.From} delivered to itself");
+            var messageEnvelope = new MessageEnvelope(result, GetMyId());
             if (_registry.TryGetValue(result.From, out var protocol))
-                protocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
+                protocol?.ReceiveMessage(messageEnvelope);
         }
 
         public int GetMyId()
