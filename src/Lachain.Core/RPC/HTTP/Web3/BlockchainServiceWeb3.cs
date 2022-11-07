@@ -651,7 +651,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             var blockNumber = GetBlockNumberByTag(blockTag);
             var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber!);
             var value = blockchainSnapshot.Storage.GetValue(address.HexToUInt160(), position.HexToUInt256(true));
-            return Web3DataFormatUtils.Web3Data(value.ToHex().HexToBytes());
+            return Web3DataFormatUtils.Web3Data(value.ToHex().HexToBytes().Reverse());
 
         }
 
