@@ -558,7 +558,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var value = blockchainSnapshot.Storage.GetValue(address, randomKey);
             Assert.AreEqual(valueSet, value);
             var valueFromApi = _apiService.GetStorageAt(address.ToHex(), randomKey.ToHex(), blockNumber.ToHex());
-            Assert.AreEqual(value.ToHex(),valueFromApi);
+            Assert.AreEqual(value.ToBytes().Reverse().ToHex(),valueFromApi);
         }
 
         public UInt256 SetRandomValueAtStorage(string blockTag , UInt160 address , UInt256 key, bool save = false)
