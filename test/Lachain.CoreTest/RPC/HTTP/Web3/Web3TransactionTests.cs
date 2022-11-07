@@ -367,6 +367,16 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             var result = _apiService!.EstimateGas(opts);
             Assert.AreEqual(result, "0x2e1d22");
+
+            var receipt = TestUtils.GetRandomTransaction(false);
+            opts = new JObject
+            {
+                ["from"] = receipt.Transaction.From.ToHex(),
+                ["to"] = receipt.Transaction.To.ToHex(),
+            };
+
+            result = _apiService!.EstimateGas(opts);
+            Assert.AreNotEqual(result, "0x");
         }
 
         [Test]
