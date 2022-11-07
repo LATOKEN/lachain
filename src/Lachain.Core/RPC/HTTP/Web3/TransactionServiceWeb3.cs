@@ -722,7 +722,6 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 Logger.LogInformation($"Contract Hash: {contractHash.ToHex()}");
                 return _transactionBuilder.DeployTransaction(fromAddress, byteCode!, gasToUse, gasPriceToUse , nonceToUse);
             }
-            if((value is null) && (data is null)) throw new RpcException(RpcErrorCode.Error, "value and data both null");
             var toAddress = ((string)to!).HexToUInt160();
             var valueToUse = UInt256Utils.Zero.ToMoney();
             if(!(value is null)) valueToUse = HexUtils.ToEvenBytesCount((string)value!).HexToBytes().ToUInt256(true).ToMoney();
