@@ -647,12 +647,10 @@ namespace Lachain.Core.RPC.HTTP.Web3
         [JsonRpcMethod("eth_getStorageAt")]
         public string GetStorageAt(string address, string position, string blockTag)
         {
-
             var blockNumber = GetBlockNumberByTag(blockTag);
             var blockchainSnapshot = _snapshotIndexer.GetSnapshotForBlock((ulong)blockNumber!);
             var value = blockchainSnapshot.Storage.GetValue(address.HexToUInt160(), position.HexToUInt256(true));
-            return Web3DataFormatUtils.Web3Data(value.ToHex().HexToBytes());
-
+            return Web3DataFormatUtils.Web3Number(value);
         }
 
         [JsonRpcMethod("eth_getWork")]
