@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Lachain.Logger;
 using Lachain.Storage.Repositories;
 
 namespace Lachain.Consensus.Messages
@@ -9,6 +10,8 @@ namespace Lachain.Consensus.Messages
     {
         private IMessageEnvelopeRepository _repository;
         private MessageEnvelopeList _messageEnvelopeList;
+        private static readonly ILogger<MessageEnvelopeRepositoryManager> Logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
+
         public bool isPresent { get; private set; }
         public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository)
         {
@@ -61,6 +64,7 @@ namespace Lachain.Consensus.Messages
 
         private void SaveToDb(MessageEnvelopeList messageEnvelopeList)
         {
+            Logger.LogTrace("Saving list to db: " + messageEnvelopeList.ToByteArray());
             _repository.SaveMessages(messageEnvelopeList.ToByteArray());
         }
     }
