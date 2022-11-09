@@ -105,7 +105,7 @@ namespace Lachain.Consensus.Messages
             var input = GetInputData(toType, decoded[4]?.RLPData);
 
             return new ProtocolRequest<TIdType, TInputType>(from, (TIdType)Convert.ChangeType(to, typeof(TIdType)),
-                (TInputType)Convert.ChangeType(to, typeof(TInputType)));
+                (TInputType) Convert.ChangeType(input, typeof(TInputType)));
         }
 
         private static object? GetInputData(ProtocolType toType, byte[]? bytes)
@@ -137,7 +137,23 @@ namespace Lachain.Consensus.Messages
                 _ => throw new ArgumentOutOfRangeException($"Unrecognized Type of From {type.ToString()}")
             };
         }
-        
 
+        protected bool Equals(ProtocolRequest<TIdType, TInputType> other)
+        {
+            return EqualityComparer<TInputType>.Default.Equals(Input, other.Input) && From.Equals(other.From) && To.Equals(other.To);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((ProtocolRequest<TIdType, TInputType>)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Input, From, To);
+        }
     }
 }
