@@ -19,8 +19,8 @@ namespace Lachain.Consensus.Messages
 {
     public class MessageEnvelope : IByteSerializable
     {
-        public const string PROTOCOL_REQUEST = "ProtocolRequest";
-        public const string PROTOCOL_RESPONSE = "ProtocolResponse";
+        public const string ProtocolRequest = "ProtocolRequest";
+        public const string ProtocolResponse = "ProtocolResponse";
         public ConsensusMessage? ExternalMessage { get; }
 
         public int ValidatorIndex { get; }
@@ -41,15 +41,15 @@ namespace Lachain.Consensus.Messages
         }
 
         public bool External => !(ExternalMessage is null);
-        public bool isProtocolRequest => !(InternalMessage is null) && TypeString() == PROTOCOL_REQUEST;
-        public bool isProtocolResponse => !(InternalMessage is null) && TypeString() == PROTOCOL_RESPONSE;
+        public bool IsProtocolRequest => !(InternalMessage is null) && TypeString() == ProtocolRequest;
+        public bool IsProtocolResponse => !(InternalMessage is null) && TypeString() == ProtocolResponse;
 
         public string TypeString()
         {
             if (External) return ExternalMessage!.PayloadCase.ToString();
             return InternalMessage!.GetType().GetGenericTypeDefinition().Name.Contains("Request")
-                ? PROTOCOL_REQUEST
-                : PROTOCOL_RESPONSE;
+                ? ProtocolRequest
+                : ProtocolResponse;
         }
 
         public byte[] ToByteArray()
@@ -63,7 +63,7 @@ namespace Lachain.Consensus.Messages
                 list.Add(ExternalMessage.ToByteArray());
             }
             else {
-                list.Add( (isProtocolRequest ? 1 : 0).ToBytes().ToArray());
+                list.Add( (IsProtocolRequest ? 1 : 0).ToBytes().ToArray());
                 var protocolType = (int) ProtocolTypeMethods.GetProtocolType(InternalMessage.To);
                 list.Add(protocolType.ToBytes().ToArray());
                 list.Add(InternalMessage.ToByteArray());
@@ -150,5 +150,22 @@ namespace Lachain.Consensus.Messages
             }
         }
 
+        protected bool Equals(MessageEnvelope other)
+        {
+            return Equals(ExternalMessage, other.ExternalMessage) && ValidatorIndex == other.ValidatorIndex && Equals(InternalMessage, other.InternalMessage);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((MessageEnvelope)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ExternalMessage, ValidatorIndex, InternalMessage);
+        }
     }
 }

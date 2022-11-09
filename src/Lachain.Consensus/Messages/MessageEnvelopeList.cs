@@ -8,29 +8,29 @@ namespace Lachain.Consensus.Messages
 {
     public class MessageEnvelopeList : IByteSerializable
     {
-        public long era { get; }
-        public ICollection<MessageEnvelope> messageList { get; }
+        public long Era { get; }
+        public ICollection<MessageEnvelope> MessageList { get; }
         
 
         public MessageEnvelopeList(long era)
         {
-            this.era = era;
-            this.messageList = new List<MessageEnvelope>();
+            this.Era = era;
+            this.MessageList = new List<MessageEnvelope>();
         }
 
-        public void addMessage(MessageEnvelope messageEnvelope)
+        public void AddMessage(MessageEnvelope messageEnvelope)
         {
-            messageList.Add(messageEnvelope);
+            MessageList.Add(messageEnvelope);
         }
         
         public byte[] ToByteArray()
         {
             var list = new List<byte[]>();
             
-            list.Add(era.ToBytes().ToArray());
-            list.Add(messageList.Count.ToBytes().ToArray());
+            list.Add(Era.ToBytes().ToArray());
+            list.Add(MessageList.Count.ToBytes().ToArray());
 
-            foreach (var message in messageList)
+            foreach (var message in MessageList)
             {
                 list.Add(message.ToByteArray());
             }
@@ -49,10 +49,29 @@ namespace Lachain.Consensus.Messages
             for (int i = 0; i < count; i++)
             {
                 var envelopeBytes = decoded[2 + i].RLPData;
-                messageEnvelopeList.addMessage(MessageEnvelope.FromByteArray(envelopeBytes));
+                messageEnvelopeList.AddMessage(MessageEnvelope.FromByteArray(envelopeBytes));
             }
 
             return messageEnvelopeList;
+        }
+
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((MessageEnvelopeList)obj);
+        }
+
+        public bool Equals(MessageEnvelopeList other)
+        {
+            return Era == other.Era && MessageList.Equals(other.MessageList);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Era, MessageList);
         }
     }
 }

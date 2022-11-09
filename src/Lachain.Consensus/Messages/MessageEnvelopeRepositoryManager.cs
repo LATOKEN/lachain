@@ -32,12 +32,12 @@ namespace Lachain.Consensus.Messages
             {
                 throw new InvalidOperationException("Could not find MessageEnvelopeList in db");
             }
-            return _messageEnvelopeList.era;
+            return _messageEnvelopeList.Era;
         }
 
         public void StartEra(long era)
         {
-            if (isPresent && _messageEnvelopeList.era == era)
+            if (isPresent && _messageEnvelopeList.Era == era)
             {
                 throw new ArgumentException($"Start Era called with same era number {era}");
             }
@@ -53,13 +53,13 @@ namespace Lachain.Consensus.Messages
             {
                 throw new InvalidOperationException("Could not find MessageEnvelopeList in db");
             }
-            _messageEnvelopeList.addMessage(message);
+            _messageEnvelopeList.AddMessage(message);
             SaveToDb(_messageEnvelopeList);
         }
 
         public ICollection<MessageEnvelope> GetMessages()
         {
-            return _messageEnvelopeList.messageList;
+            return _messageEnvelopeList.MessageList;
         }
 
         private void SaveToDb(MessageEnvelopeList messageEnvelopeList)

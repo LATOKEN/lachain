@@ -129,7 +129,7 @@ namespace Lachain.Core.Consensus
                     {
                         Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
                     }
-                    else if (messageEnvelope.isProtocolRequest)
+                    else if (messageEnvelope.IsProtocolRequest)
                     {
                         switch (messageEnvelope.InternalMessage)
                         {
@@ -159,7 +159,7 @@ namespace Lachain.Core.Consensus
                                     "Unexpected template parameters for ProtocolRequest");
                         }
                     }
-                    else if (messageEnvelope.isProtocolResponse)
+                    else if (messageEnvelope.IsProtocolResponse)
                     {
                         switch (messageEnvelope.InternalMessage)
                         {
