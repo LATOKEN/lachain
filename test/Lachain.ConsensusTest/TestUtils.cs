@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
@@ -7,8 +8,11 @@ using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
+using Lachain.Crypto;
+using Lachain.Crypto.TPKE;
 using Lachain.Proto;
 using Lachain.Utility.Utils;
+using MCL.BLS12_381.Net;
 using NUnit.Framework;
 
 namespace Lachain.ConsensusTest
@@ -74,5 +78,50 @@ namespace Lachain.ConsensusTest
                 bs.Add(false);
             return bs;
         }
+
+        public static CoinResult GenerateCoinResult(Random random)
+        {
+            return new CoinResult(G2.Generator.ToBytes());
+        }
+
+        public static EncryptedShare GenerateEncryptedShare(Random random)
+        {
+            var rnd = new byte[32];
+            random.NextBytes(rnd);
+            var share = new EncryptedShare(G1.Generator, rnd, G2.Generator, random.Next());
+            Assert.AreEqual(share, EncryptedShare.FromByteArray(share.ToByteArray()));
+            return share;
+        }
+
+        public static IRawShare GenerateIRawShare(Random random)
+        {
+            var rnd = new byte[32];
+            random.NextBytes(rnd);
+            return new RawShare(rnd, random.Next());
+        }
+
+        public static ISet<EncryptedShare> GenerateSetOfEncryptedShare(Random random)
+        {
+            var count = random.Next(1, 10);
+            var set = new HashSet<EncryptedShare>();
+            for (var i = 0; i < count; i++)
+            {
+                set.Add(GenerateEncryptedShare(random));
+            }
+
+            return set;
+        }
+        public static ISet<IRawShare> GenerateSetOfIRawShare(Random random)
+        {
+            var count = random.Next(1, 10);
+            var set = new HashSet<IRawShare>();
+            for (var i = 0; i < count; i++)
+            {
+                set.Add(GenerateIRawShare(random));
+            }
+
+            return set;
+        }
+    }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.CommonSubset;
@@ -64,47 +65,89 @@ namespace Lachain.ConsensusTest
         }
         
         
-        private MessageEnvelope TestSerializationAndAddToListBinaryBroadcast(MessageEnvelopeList _messageList)
+        private void TestSerializationAndAddToListBinaryBroadcast(MessageEnvelopeList messageList)
         {
-            var binaryBroadcastId = new BinaryBroadcastId(random.Next(), random.Next(), random.Next());
+            var binaryBroadcastId = TestUtils.GenerateBinaryBroadcastId(random);
             Assert.AreEqual(binaryBroadcastId, BinaryBroadcastId.FromByteArray(binaryBroadcastId.ToByteArray()));
-            
-            var bs = TestUtils.GenerateBoolSet(random);
-            Assert.AreEqual(bs, BoolSet.FromByteArray(bs.ToByteArray()));
-            
-            
+
             var request = new ProtocolRequest<BinaryBroadcastId, bool> 
-                (TestUtils.GenerateCommonSubsetId(random), binaryBroadcastId, true);
+                (TestUtils.GenerateBinaryAgreementId(random), binaryBroadcastId, true);
+            Assert.AreEqual(request, ProtocolRequest<BinaryBroadcastId, bool>.FromByteArray(request.ToByteArray()));
             
-            Assert.AreEqual(request, ProtocolRequest<BinaryAgreementId, bool>.FromByteArray(request.ToByteArray()));
-
-            var message = new MessageEnvelope(request, random.Next(1, 100));
-            Assert.AreEqual(message, MessageEnvelope.FromByteArray(message.ToByteArray()));
-
-            return message;
+            var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
+            messageList.AddMessage(requestMessage);
             
+            var result = new ProtocolResult<BinaryBroadcastId, bool> (binaryBroadcastId, true);
+            Assert.AreEqual(request, ProtocolResult<BinaryBroadcastId, bool>.FromByteArray(result.ToByteArray()));
+            
+            var resultMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
+            messageList.AddMessage(resultMessage);
         }
         
-        private void TestSerializationAndAddToListCommonCoin(MessageEnvelopeList _messageList)
+        private void TestSerializationAndAddToListCommonCoin(MessageEnvelopeList messageList)
         {
-            var coinId = new CoinId(random.Next(), random.Next(), random.Next());
+            var coinId = TestUtils.GenerateCoinId(random);
             Assert.AreEqual(coinId, CoinId.FromByteArray(coinId.ToByteArray()));
 
-            // var cr = TestUtils.Gene(MessageEnvelopeList _messageList);
+            var request = new ProtocolRequest<CoinId, object?> 
+                (TestUtils.GenerateBinaryAgreementId(random), coinId, null);
+            Assert.AreEqual(request, ProtocolRequest<CoinId, bool>.FromByteArray(request.ToByteArray()));
+            
+            var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
+            messageList.AddMessage(requestMessage);
+
+            var coinResult = TestUtils.GenerateCoinResult(random);
+            Assert.AreEqual(coinResult, CoinResult.FromByteArray(coinResult.ToByteArray()));
+            
+            var result = new ProtocolResult<CoinId, CoinResult> (coinId, coinResult);
+            Assert.AreEqual(request, ProtocolResult<CoinId, bool>.FromByteArray(result.ToByteArray()));
+            
+            var resultMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
+            messageList.AddMessage(resultMessage);
         }
-        private void TestSerializationAndAddToListCommonSubset(MessageEnvelopeList _messageList)
+        private void TestSerializationAndAddToListCommonSubset(MessageEnvelopeList messageList)
         {
-            var commonSubsetId = new CommonSubsetId(random.Next());
+            var commonSubsetId = TestUtils.GenerateCommonSubsetId(random);
             Assert.AreEqual(commonSubsetId, CommonSubsetId.FromByteArray(commonSubsetId.ToByteArray()));
 
-            var share = TestSerializationAndGetEncryptedShare();
-        }
-        private void TestSerializationAndAddToListHoneyBadger(MessageEnvelopeList _messageList)
-        {
-            var honeyBadgerId = new HoneyBadgerId(random.Next());
-            Assert.AreEqual(honeyBadgerId, HoneyBadgerId.FromByteArray(honeyBadgerId.ToByteArray()));
+            var request = new ProtocolRequest<CommonSubsetId, EncryptedShare> 
+                (TestUtils.GenerateCommonSubsetId(random), commonSubsetId, TestUtils.GenerateEncryptedShare(random));
+            Assert.AreEqual(request, ProtocolRequest<CommonSubsetId, bool>.FromByteArray(request.ToByteArray()));
             
-            var share = TestSerializationAndGetIRawShare();
+            var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
+            messageList.AddMessage(requestMessage);
+
+            var result = new ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> (commonSubsetId, TestUtils.GenerateSetOfEncryptedShare(random));
+            Assert.AreEqual(request, ProtocolResult<CommonSubsetId, bool>.FromByteArray(result.ToByteArray()));
+            
+            var resultMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
+            messageList.AddMessage(resultMessage);
+        }
+        private void TestSerializationAndAddToListHoneyBadger(MessageEnvelopeList messageList)
+        {
+            var honeyBadgerId = TestUtils.GenerateHoneyBadgerId(random);
+            Assert.AreEqual(honeyBadgerId, HoneyBadgerId.FromByteArray(honeyBadgerId.ToByteArray()));
+
+            var request = new ProtocolRequest<HoneyBadgerId, IRawShare> 
+                (TestUtils.GenerateHoneyBadgerId(random), honeyBadgerId, TestUtils.GenerateIRawShare(random));
+            Assert.AreEqual(request, ProtocolRequest<HoneyBadgerId, bool>.FromByteArray(request.ToByteArray()));
+            
+            var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
+            messageList.AddMessage(requestMessage);
+
+            var result = new ProtocolResult<HoneyBadgerId, ISet<IRawShare>> (honeyBadgerId, TestUtils.GenerateSetOfIRawShare(random));
+            Assert.AreEqual(request, ProtocolResult<HoneyBadgerId, bool>.FromByteArray(result.ToByteArray()));
+            
+            var resultMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
+            messageList.AddMessage(resultMessage);
         }
         private void TestSerializationAndAddToListReliableBroadcast(MessageEnvelopeList _messageList)
         {
@@ -116,41 +159,7 @@ namespace Lachain.ConsensusTest
             var rootProtocolId = new RootProtocolId(random.Next());
             Assert.AreEqual(rootProtocolId, RootProtocolId.FromByteArray(rootProtocolId.ToByteArray()));
         }
-
-        private EncryptedShare TestSerializationAndGetEncryptedShare()
-        {
-            var rnd = new byte[32];
-            random.NextBytes(rnd);
-            var share = new EncryptedShare(G1.Generator, rnd, G2.Generator, random.Next());
-            Assert.AreEqual(share, EncryptedShare.FromByteArray(share.ToByteArray()));
-            return share;
-        }
-        private IRawShare TestSerializationAndGetIRawShare()
-        {
-            var rnd = new byte[32];
-            random.NextBytes(rnd);
-            var share = new RawShare(rnd, random.Next());
-            Assert.AreEqual(share, RawShare.FromByteArray(share.ToByteArray()));
-            return share;
-        }
         
-        private CoinResult TestSerializationAndGetCoinResult()
-        {
-            var rnd = new byte[32];
-            random.NextBytes(rnd);
-            var coinResult = new CoinResult(rnd);
-            Assert.AreEqual(coinResult, CoinResult.FromByteArray(coinResult.ToByteArray()));
-            return coinResult;
-        }
-
-        private BoolSet TestSerializationAndGetBoolSet()
-        {
-            bool[] bools = { random.Next(0, 1) == 1, random.Next(0, 1) == 1 };
-            var bs = new BoolSet(bools);
-            Assert.AreEqual(bs, BoolSet.FromByteArray(bs.ToByteArray()));
-            return bs;
-        }
-
 
     }
 }
