@@ -137,7 +137,7 @@ namespace Lachain.Consensus.BinaryAgreement
                 return;
             }
 
-            _receivedValues[sender].Add(b == 1);
+            _receivedValues[sender] = _receivedValues[sender].Add(b == 1);
             ++_receivedCount[b];
 
             if (!_wasBvalBroadcasted[b] && _receivedCount[b] >= F + 1)
