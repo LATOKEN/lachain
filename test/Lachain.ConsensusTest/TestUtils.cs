@@ -84,8 +84,10 @@ namespace Lachain.ConsensusTest
             return new CoinResult(G2.Generator.ToBytes());
         }
 
-        public static EncryptedShare GenerateEncryptedShare(Random random)
+        public static EncryptedShare? GenerateEncryptedShare(Random random, bool canBeNull)
         {
+            if (canBeNull && random.Next(0, 1) == 1)
+                return null;
             var rnd = new byte[32];
             random.NextBytes(rnd);
             var share = new EncryptedShare(G1.Generator, rnd, G2.Generator, random.Next());
@@ -106,7 +108,7 @@ namespace Lachain.ConsensusTest
             var set = new HashSet<EncryptedShare>();
             for (var i = 0; i < count; i++)
             {
-                set.Add(GenerateEncryptedShare(random));
+                set.Add(GenerateEncryptedShare(random, false));
             }
 
             return set;
@@ -122,6 +124,5 @@ namespace Lachain.ConsensusTest
 
             return set;
         }
-    }
     }
 }
