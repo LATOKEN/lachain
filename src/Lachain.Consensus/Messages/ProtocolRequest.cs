@@ -102,10 +102,10 @@ namespace Lachain.Consensus.Messages
             var toType = (ProtocolType)decoded[2].RLPData.AsReadOnlySpan().ToInt32();
             var to = GetProtocolIdentifier(toType, decoded[3].RLPData);
 
-            var input = GetInputData(toType, decoded[4]?.RLPData);
+            var input = decoded.Count >= 5 ? GetInputData(toType, decoded[4]?.RLPData): null;
 
-            return new ProtocolRequest<TIdType, TInputType>(from, (TIdType)Convert.ChangeType(to, typeof(TIdType)),
-                (TInputType) Convert.ChangeType(input, typeof(TInputType)));
+            
+            return new ProtocolRequest<TIdType, TInputType>(from, (TIdType) to, (TInputType) input );
         }
 
         private static object? GetInputData(ProtocolType toType, byte[]? bytes)

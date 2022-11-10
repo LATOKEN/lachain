@@ -97,18 +97,17 @@ namespace Lachain.Consensus.Messages
         {
             var decoded = (RLPCollection)RLP.Decode(bytes.ToArray());
             
-            var toType = (ProtocolType)decoded[2].RLPData.AsReadOnlySpan().ToInt32();
-            var from = GetProtocolIdentifier(toType, decoded[3].RLPData);
+            var toType = (ProtocolType)decoded[0].RLPData.AsReadOnlySpan().ToInt32();
+            var from = GetProtocolIdentifier(toType, decoded[1].RLPData);
 
             var result = GetResultData(toType, decoded);
 
-            return new ProtocolResult<TIdType, TResultType>((TIdType)Convert.ChangeType(from, typeof(TIdType)),
-                (TResultType)Convert.ChangeType(result, typeof(TResultType)));
+            return new ProtocolResult<TIdType, TResultType>((TIdType) from,(TResultType) result);
         }
 
         private static object? GetResultData(ProtocolType toType, RLPCollection decoded)
         {
-            var bytes = decoded[4].RLPData;
+            var bytes = decoded[2].RLPData;
             return toType switch
             {
                 ProtocolType.BinaryAgreement => bytes.AsReadOnlySpan().ToInt32() == 1,
@@ -137,11 +136,11 @@ namespace Lachain.Consensus.Messages
 
         private static ISet<EncryptedShare> GetSetOfEncryptedShareFromBytes(RLPCollection decoded)
         {
-            var count = decoded[5].RLPData.AsReadOnlySpan().ToInt32();
+            var count = decoded[2].RLPData.AsReadOnlySpan().ToInt32();
             ISet <EncryptedShare> set = new HashSet<EncryptedShare>();
             for (var i = 0; i < count; i++)
             {
-                var share = EncryptedShare.FromByteArray(decoded[6+i].RLPData);
+                var share = EncryptedShare.FromByteArray(decoded[3+i].RLPData);
                 set.Add(share);
             }
 
@@ -161,6 +160,42 @@ namespace Lachain.Consensus.Messages
                 ProtocolType.RootProtocol => RootProtocolId.FromByteArray(bytes),
                 _ => throw new ArgumentOutOfRangeException($"Unrecognized Type of From {type.ToString()}")
             };
+        }
+
+        protected bool Equals(ProtocolResult<TIdType, TResultType> other)
+        {
+            return EqualityComparer<TIdType>.Default.Equals(Id, other.Id) && ResultEquals(Result, other.Result);
+        }
+
+        private bool ResultEquals(TResultType result, TResultType otherResult)
+        {
+            if (result is null || otherResult is null) {
+                return result is null && otherResult is null;
+            }
+
+            switch (result)
+            {
+                case ISet<EncryptedShare> encryptedShares:
+                    return encryptedShares.SetEquals((ISet<EncryptedShare>) otherResult);
+                case ISet<IRawShare> rawShares:
+                    return rawShares.SetEquals((ISet<IRawShare>) otherResult);
+                default:
+                    return EqualityComparer<TResultType>.Default.Equals(result, otherResult);
+                    
+            }
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((ProtocolResult<TIdType, TResultType>)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, Result);
         }
     }
 }

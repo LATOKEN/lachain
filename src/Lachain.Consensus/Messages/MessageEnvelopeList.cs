@@ -25,16 +25,12 @@ namespace Lachain.Consensus.Messages
         
         public byte[] ToByteArray()
         {
-            var list = new List<byte[]>();
-            
-            list.Add(Era.ToBytes().ToArray());
-            list.Add(MessageList.Count.ToBytes().ToArray());
-
-            foreach (var message in MessageList)
+            var list = new List<byte[]>
             {
-                list.Add(message.ToByteArray());
-            }
-
+                Era.ToBytes().ToArray(),
+                MessageList.Count.ToBytes().ToArray()
+            };
+            list.AddRange(MessageList.ToList().Select(message => message.ToByteArray()));
             return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
         }
 
