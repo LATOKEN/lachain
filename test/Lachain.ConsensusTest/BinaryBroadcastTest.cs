@@ -66,6 +66,21 @@ namespace Lachain.ConsensusTest
             }
         }
 
+        private void SetupOneSpammer(int n , int f, int spammer)
+        {
+            SetUp(n, f);
+            for (uint i = 0; i < n; ++i)
+            {
+                if (i == spammer) continue;
+                _broadcasts[i] = new BinaryBroadcast(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[i]);
+            }
+            _broadcasts[spammer] = new BinaryBroadcastSpammer(new BinaryBroadcastId(0, 0, 0), _publicKeys, _broadcasters[spammer]);
+            for (var i = 0 ; i < n ; i++)
+            {
+                _broadcasters[i].RegisterProtocols(new[] {_broadcasts[i], _resultInterceptors[i]});
+            }
+        }
+
         [Test]
         public void TestBinaryBroadcastAllOne_7_2()
         {
@@ -181,6 +196,29 @@ namespace Lachain.ConsensusTest
                 }
 
                 Assert.Greater(received[i].Count, 0, "all correct nodes should output something");
+            }
+        }
+
+        [Test]
+        public void TestOneSpammer_7_2()
+        {
+            const int n = 7, f = 2, spammerId = 6;
+            SetupOneSpammer(n, f, spammerId);
+            for (var i = 0; i < n; ++i)
+                _broadcasters[i].InternalRequest(new ProtocolRequest<BinaryBroadcastId, bool>(
+                    _resultInterceptors[i].Id, (_broadcasts[i].Id as BinaryBroadcastId)!, true
+                ));
+            // spammer will spam unwanted value 'false' N times to each validator
+            (_broadcasts[spammerId] as BinaryBroadcastSpammer)!.SpamBVal(false);
+
+            for (var i = 0; i < n; ++i) _broadcasts[i].WaitFinish();
+
+            for (var i = 0; i < n; ++i)
+            {
+                Assert.IsTrue(_broadcasts[i].Terminated, $"protocol {i} did not terminated");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, 1, $"protocol {i} emitted result not once");
+                Assert.AreEqual(_resultInterceptors[i].ResultSet, _resultInterceptors[i].Result.Count);
+                Assert.AreEqual(new BoolSet(true), _resultInterceptors[i].Result[0]);
             }
         }
     }
