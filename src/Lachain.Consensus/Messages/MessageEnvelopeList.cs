@@ -62,7 +62,7 @@ namespace Lachain.Consensus.Messages
 
         public bool Equals(MessageEnvelopeList other)
         {
-            return Era == other.Era && MessageList.Equals(other.MessageList);
+            return Era == other.Era && MessageList.SequenceEqual(other.MessageList);
         }
 
         public override int GetHashCode()
