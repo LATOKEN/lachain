@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Google.Protobuf;
 using Lachain.Consensus;
@@ -33,6 +34,7 @@ namespace Lachain.Networking.Hub
         private readonly HubConnector _hubConnector;
         private readonly Thread _worker;
         private bool _isConnected = false;
+        private bool _isValidator = false;
         private int _eraMsgCounter;
 
         private readonly C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)> _messageQueue 
@@ -77,6 +79,11 @@ namespace Lachain.Networking.Hub
                 _messageQueue.Add((priority, message));
                 Monitor.PulseAll(_messageQueue);
             }
+        }
+
+        public void SetValidator(bool isValidator)
+        {
+            _isValidator = isValidator;
         }
 
         private void Worker()
@@ -128,7 +135,7 @@ namespace Lachain.Networking.Hub
                                 .Inc(message.CalculateSize());
                         }
 
-                        _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                        Send(megaBatchBytes);
                         _eraMsgCounter += 1;
                     }
                     
@@ -140,6 +147,12 @@ namespace Lachain.Networking.Hub
                     Logger.LogError($"Failed to send messages: {exception}");
                 }
             }
+        }
+
+        private void Send(byte[] megaBatchBytes)
+        {
+            if (_isValidator) _hubConnector.SendToValidator(PeerPublicKey, megaBatchBytes);
+            else _hubConnector.Send(PeerPublicKey, megaBatchBytes);
         }
 
         public void Dispose()

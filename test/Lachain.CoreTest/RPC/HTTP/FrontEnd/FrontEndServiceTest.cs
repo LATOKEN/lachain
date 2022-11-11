@@ -51,6 +51,8 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
             _container = containerBuilder.Build();
 
             _configManager = _container.Resolve<IConfigManager>();
@@ -61,11 +63,7 @@ namespace Lachain.CoreTest.RPC.HTTP.FrontEnd
             _localTransactionRepository = _container.Resolve<ILocalTransactionRepository>();
             _privateWallet = _container.Resolve<IPrivateWallet>();
             _transactionManager = _container.Resolve<ITransactionManager>();
-            _validatorStatusManager = _validatorStatusManager = new ValidatorStatusManager(
-                _transactionPool, _container.Resolve<ITransactionSigner>(), _container.Resolve<ITransactionBuilder>(),
-                _privateWallet, _stateManager, _container.Resolve<IValidatorAttendanceRepository>(),
-                _container.Resolve<ISystemContractReader>()
-            );
+            _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
             ServiceBinder.BindService<GenericParameterAttributes>();
             _fes = new FrontEndService(_stateManager, _transactionPool, _transactionSigner,
                 _systemContractReader, _localTransactionRepository, _validatorStatusManager, _privateWallet, _transactionManager);

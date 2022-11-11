@@ -10,6 +10,7 @@ using Lachain.Crypto.ECDSA;
 using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
+using Lachain.Storage.Repositories;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
@@ -28,9 +29,12 @@ namespace Lachain.Networking
         private readonly MessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
         private readonly ClientWorker _broadcaster;
+        private bool _started = false;
 
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
+
+        private List<ECDSAPublicKey> _connectedValidators = new List<ECDSAPublicKey>();
 
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
@@ -70,8 +74,106 @@ namespace Lachain.Networking
 
         public void Start()
         {
-            _broadcaster.Start();
+            _started = true;
             _hubConnector.Start();
+            _broadcaster.Start();
+        }
+
+        public void ConnectValidatorChannel(List<ECDSAPublicKey> validators)
+        {
+            if (!_started) return;
+
+            validators = validators.OrderBy(
+                x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
+            _connectedValidators = _connectedValidators.OrderBy(
+                x => x, new ComparisonUtils.ECDSAPublicKeyComparer()).ToList();
+
+            var validatorsToDisconnect = RemovePublicKeys(_connectedValidators, validators);
+
+            if (validatorsToDisconnect.Count > 0)
+            {
+                foreach (var publicKey in validatorsToDisconnect)
+                {
+                    GetClientWorker(publicKey)?.SetValidator(false);
+                }
+                _hubConnector.DisconnectValidators(
+                    validatorsToDisconnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
+                );
+                Logger.LogTrace(
+                    $"Disconnected validators: [{string.Join(", ", validatorsToDisconnect.Select(k => k.ToHex()))}] from validator channel"
+                );
+            }
+
+            var validatorsToConnect = RemovePublicKeys(validators, _connectedValidators);
+            
+            if (validatorsToConnect.Count > 0)
+            {
+                _hubConnector.StartValidatorChannel(
+                    validatorsToConnect.Select(pubKey => pubKey.EncodeCompressed()).Flatten().ToArray()
+                );
+                Logger.LogTrace(
+                    $"Connected to validator channel with validators: [{string.Join(", ", validatorsToConnect.Select(k => k.ToHex()))}]"
+                );
+
+                foreach (var publicKey in validatorsToConnect)
+                {
+                    GetClientWorker(publicKey)?.SetValidator(true);
+                }
+            }
+            
+            lock (_connectedValidators)
+            {
+                _connectedValidators.Clear();
+                _connectedValidators = new List<ECDSAPublicKey>(validators);
+            }
+        }
+        
+        public void DisconnectValidatorChannel()
+        {
+            if (!_started || _connectedValidators.Count == 0) return;
+
+            Logger.LogTrace("Disconnecting from validator channel");
+
+            foreach (var publicKey in _connectedValidators)
+            {
+                GetClientWorker(publicKey)?.SetValidator(false);
+            }
+            lock (_connectedValidators)
+                _connectedValidators.Clear();
+
+            _hubConnector.StopValidatorChannel();
+            Logger.LogTrace(
+                $"Disconnected validators: [{string.Join(", ", _connectedValidators.Select(k => k.ToHex()))}] from validator channel"
+            );
+        }
+
+        // both input lists need to be sorted and no duplicate element allowed
+        // removing items from source which is present in keysToRemove
+        // in O(source.Count + keysToRemove.Count) complexity
+        private List<ECDSAPublicKey> RemovePublicKeys(
+            List<ECDSAPublicKey> source,
+            List<ECDSAPublicKey> keysToRemove
+        )
+        {
+            var res = new List<ECDSAPublicKey>();
+            int iter = 0;
+            foreach (var publicKey in source)
+            {
+                bool found = false;
+                while (iter < keysToRemove.Count)
+                {
+                    var key = keysToRemove[iter];
+                    var compare = key.Buffer.Cast<IComparable<byte>>().
+                        CompareLexicographically(publicKey.Buffer);
+                    if (compare == 0) found = true;
+                    else if (compare > 0) break;
+
+                    iter++;
+                }
+
+                if (!found) res.Add(publicKey);
+            }
+            return res;
         }
 
         private ClientWorker? GetClientWorker(ECDSAPublicKey publicKey)

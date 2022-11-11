@@ -178,11 +178,17 @@ namespace Lachain.Console
 
             blockSynchronizer.Start();
             Logger.LogInformation("Synchronizing blocks...");
+            var validators = validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight()).ToList();
             blockSynchronizer.SynchronizeWith(
-                validatorManager.GetValidatorsPublicKeys((long) blockManager.GetHeight())
-                    .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
+                validators.Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             Logger.LogInformation("Block synchronization finished, starting consensus...");
+            if (validators.Contains(wallet.EcdsaKeyPair.PublicKey))
+            {
+                networkManager.ConnectValidatorChannel(
+                    validators.Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey)).ToList()
+                );
+            }
             consensusManager.Start(blockManager.GetHeight() + 1);
             validatorStatusManager.Start(false);
 

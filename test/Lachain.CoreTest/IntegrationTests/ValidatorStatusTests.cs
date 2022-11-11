@@ -53,6 +53,8 @@ namespace Lachain.CoreTest.IntegrationTests
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
 
             _container = containerBuilder.Build();
         }
@@ -69,6 +71,8 @@ namespace Lachain.CoreTest.IntegrationTests
             containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            containerBuilder.RegisterModule<ConsensusModule>();
+            containerBuilder.RegisterModule<NetworkModule>();
             _container = containerBuilder.Build();
             _blockManager = _container.Resolve<IBlockManager>();
             _stateManager = _container.Resolve<IStateManager>();
@@ -84,11 +88,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
                 StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
             }
-            _validatorStatusManager = new ValidatorStatusManager(
-                _transactionPool, _container.Resolve<ITransactionSigner>(), _container.Resolve<ITransactionBuilder>(),
-                _wallet, _stateManager, _container.Resolve<IValidatorAttendanceRepository>(),
-                _container.Resolve<ISystemContractReader>()
-            );
+            _validatorStatusManager = _container.Resolve<IValidatorStatusManager>();
         }
 
         [TearDown]

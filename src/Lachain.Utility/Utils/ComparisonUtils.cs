@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Lachain.Proto;
 
 namespace Lachain.Utility.Utils
 {
@@ -19,6 +21,16 @@ namespace Lachain.Utility.Utils
                 if (xit.Current is null || yit.Current is null) throw new ArgumentNullException();
                 var res = xit.Current.CompareTo(yit.Current);
                 if (res != 0) return res;
+            }
+        }
+
+        public class ECDSAPublicKeyComparer : IComparer<ECDSAPublicKey?>
+        {
+            public int Compare(ECDSAPublicKey? x, ECDSAPublicKey? y)
+            {
+                if (x is null) return y is null ? 0 : -1;
+                if (y is null) return 1;
+                return x.Buffer.Cast<IComparable<byte>>().CompareLexicographically(y.Buffer);
             }
         }
     }

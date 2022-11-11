@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Consensus;
+using Lachain.Core.Blockchain.Interface;
+using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using NLog.Fluent;
@@ -14,12 +17,34 @@ namespace Lachain.Core.Blockchain.Validators
     public class ValidatorManager : IValidatorManager
     {
         private readonly ISnapshotIndexRepository _snapshotIndexRepository;
+        private readonly INetworkManager _networkManager;
         private static readonly ILogger<ValidatorManager> Logger = LoggerFactory.GetLoggerForClass<ValidatorManager>();
         private readonly Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>> _pubkeyCache = new Dictionary<long, IReadOnlyCollection<ECDSAPublicKey>>();
 
-        public ValidatorManager(ISnapshotIndexRepository snapshotIndexRepository)
+        public ValidatorManager(
+            ISnapshotIndexRepository snapshotIndexRepository,
+            IBlockManager blockManager,
+            INetworkManager networkManager
+        )
         {
             _snapshotIndexRepository = snapshotIndexRepository;
+            _networkManager = networkManager;
+
+            blockManager.OnBlockPersisted += OnBlockPersisted;
+        }
+
+        private void OnBlockPersisted(object? sender, Block block)
+        {
+            if (block.Header.Index % StakingContract.CycleDuration == 0)
+            {
+                var validators = _snapshotIndexRepository.GetSnapshotForBlock(block.Header.Index).Validators
+                .GetValidatorsPublicKeys().ToList();
+
+                var myPublicKey = _networkManager.MessageFactory.GetPublicKey();
+                if (validators.Contains(myPublicKey))
+                    _networkManager.ConnectValidatorChannel(validators.Where(pubKey => !pubKey.Equals(myPublicKey)).ToList());
+                else _networkManager.DisconnectValidatorChannel();
+            }
         }
 
         public IPublicConsensusKeySet? GetValidators(long afterBlock)
