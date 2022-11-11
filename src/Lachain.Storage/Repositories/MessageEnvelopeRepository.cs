@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Lachain.Proto;
 
 namespace Lachain.Storage.Repositories
 {
@@ -19,7 +17,7 @@ namespace Lachain.Storage.Repositories
             _rocksDbContext.Save(key, messages);
         }
 
-        public byte[] LoadMessages()
+        public byte[]? LoadMessages()
         {   
             var key = EntryPrefix.MessageEnvelope.BuildPrefix();
             return _rocksDbContext.Get(key);

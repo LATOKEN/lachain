@@ -8,7 +8,7 @@ using Lachain.Consensus.RootProtocol;
 
 namespace Lachain.Consensus
 {
-    public enum ProtocolType: int
+    public enum ProtocolType
     {
         BinaryAgreement = 1,
         BinaryBroadcast = 2,
@@ -23,25 +23,17 @@ namespace Lachain.Consensus
     {
         public static ProtocolType GetProtocolType(IProtocolIdentifier id)
         {
-            switch (id)
+            return id switch
             {
-                case BinaryAgreementId _:
-                    return ProtocolType.BinaryAgreement;
-                case BinaryBroadcastId _:
-                    return ProtocolType.BinaryBroadcast;
-                case CoinId _:
-                    return ProtocolType.CommonCoin;
-                case CommonSubsetId _:
-                    return ProtocolType.CommonSubset;
-                case HoneyBadgerId _:
-                    return ProtocolType.HoneyBadger;
-                case ReliableBroadcastId _:
-                    return ProtocolType.ReliableBroadcast;
-                case RootProtocolId _:
-                    return ProtocolType.RootProtocol;
-                default:
-                    throw new ArgumentException("Unknown protocol type");
-            }
+                BinaryAgreementId _ => ProtocolType.BinaryAgreement,
+                BinaryBroadcastId _ => ProtocolType.BinaryBroadcast,
+                CoinId _ => ProtocolType.CommonCoin,
+                CommonSubsetId _ => ProtocolType.CommonSubset,
+                HoneyBadgerId _ => ProtocolType.HoneyBadger,
+                ReliableBroadcastId _ => ProtocolType.ReliableBroadcast,
+                RootProtocolId _ => ProtocolType.RootProtocol,
+                _ => throw new ArgumentException("Unknown protocol type")
+            };
         }
     }
 }

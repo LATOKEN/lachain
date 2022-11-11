@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Consensus.Messages;
 using Lachain.Utility.Serialization;
 using Nethereum.RLP;
 
@@ -48,9 +47,11 @@ namespace Lachain.Consensus.BinaryAgreement
 
         public byte[] ToByteArray()
         {
-            var list = new List<byte[]>();
-            list.Add(Era.ToBytes().ToArray());
-            list.Add(AssociatedValidatorId.ToBytes().ToArray());
+            var list = new List<byte[]>
+            {
+                Era.ToBytes().ToArray(),
+                AssociatedValidatorId.ToBytes().ToArray()
+            };
             return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
         }
 

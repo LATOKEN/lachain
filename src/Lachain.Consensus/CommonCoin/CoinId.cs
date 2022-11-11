@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Consensus.BinaryAgreement;
 using Lachain.Utility.Serialization;
 using Nethereum.RLP;
 

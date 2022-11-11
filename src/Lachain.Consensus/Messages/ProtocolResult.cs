@@ -125,7 +125,7 @@ namespace Lachain.Consensus.Messages
             };
         }
 
-        private static object? GetSetOfIRawShareFromBytes(RLPCollection decoded)
+        private static ISet <IRawShare> GetSetOfIRawShareFromBytes(RLPCollection decoded)
         {
             var count = decoded[2].RLPData.AsReadOnlySpan().ToInt32();
             ISet <IRawShare> set = new HashSet<IRawShare>();
@@ -182,17 +182,6 @@ namespace Lachain.Consensus.Messages
                 case ISet<EncryptedShare> encryptedShares:
                     return encryptedShares.SetEquals((ISet<EncryptedShare>) otherResult);
                 case ISet<IRawShare> rawShares:
-                    foreach (var s1 in rawShares)
-                    {
-                        foreach (var s2 in (ISet<IRawShare>) otherResult)
-                        {
-                            if (s1.Equals(s2))
-                            {
-                                var hashCode = s1.GetHashCode();
-                                var code = s2.GetHashCode();
-                            }
-                        }
-                    }
                     return rawShares.SetEquals((ISet<IRawShare>) otherResult);
                 default:
                     return EqualityComparer<TResultType>.Default.Equals(result, otherResult);

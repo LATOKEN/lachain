@@ -1,5 +1,3 @@
-using System;
-
 namespace Lachain.Utility.Serialization
 {
     public interface IByteSerializable

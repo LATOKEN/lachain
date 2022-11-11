@@ -13,7 +13,6 @@ using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
-using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
@@ -115,7 +114,7 @@ namespace Lachain.Core.Consensus
 
         public void RestoreState()
         {
-            if (!_messageEnvelopeRepositoryManager.isPresent || _messageEnvelopeRepositoryManager.GetEra() != _era)
+            if (!_messageEnvelopeRepositoryManager.IsPresent || _messageEnvelopeRepositoryManager.GetEra() != _era)
             {
                 Logger.LogInformation($"No outstanding messages from era {_era} found. Starting new era.");
                 _messageEnvelopeRepositoryManager.StartEra(_era);
