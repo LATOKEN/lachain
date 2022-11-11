@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.CommonSubset;
@@ -10,11 +7,7 @@ using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RootProtocol;
-using Lachain.Core.CLI;
-using Lachain.Core.Config;
 using Lachain.Core.DI;
-using Lachain.Core.DI.Modules;
-using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.TPKE;
 using Lachain.Utility.Utils;
@@ -187,7 +180,7 @@ namespace Lachain.ConsensusTest
         }
         private void TestSerializationAndAddToListRootProtocol(MessageEnvelopeList messageList)
         {
-            /// Only checking Result as IBlockProducer will not be same in Request
+            // Only checking Result as IBlockProducer will not be same in Request
             var rootProtocolId = TestUtils.GenerateRootProtocolId(random);
             Assert.AreEqual(rootProtocolId, RootProtocolId.FromByteArray(rootProtocolId.ToByteArray()));
             

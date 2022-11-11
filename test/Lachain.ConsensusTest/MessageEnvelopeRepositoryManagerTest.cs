@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Reflection;
 using Lachain.Consensus;
-using Lachain.Consensus.BinaryAgreement;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
@@ -33,9 +32,10 @@ namespace Lachain.ConsensusTest
                 new RunOptions()
             ));
             
-            containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConfigModule>();
             containerBuilder.RegisterModule<StorageModule>();
+            
+            containerBuilder.RegisterModule<BlockchainModule>();
             containerBuilder.RegisterModule<ConsensusModule>();
             containerBuilder.RegisterModule<NetworkModule>();
             
@@ -52,7 +52,6 @@ namespace Lachain.ConsensusTest
         {
             _container.Dispose();
             UtilityTest.TestUtils.DeleteTestChainData();
-
         }
 
         [Test]
@@ -60,9 +59,10 @@ namespace Lachain.ConsensusTest
         {
             var repo = new MessageEnvelopeRepository(_dbContext);
             var manager = new MessageEnvelopeRepositoryManager(repo);
-            Assert.AreEqual(manager.isPresent, false);
+            Assert.AreEqual(manager.IsPresent, false);
             
             manager.StartEra(23);
+            Assert.AreEqual(manager.IsPresent, true);
             Assert.AreEqual(manager.GetEra(), 23);
             Assert.AreEqual(manager.GetMessages().Count, 0);
             
@@ -81,8 +81,16 @@ namespace Lachain.ConsensusTest
             var list = manager.GetMessages();
             
             manager = new MessageEnvelopeRepositoryManager(repo);
+            Assert.AreEqual(manager.IsPresent, true);
             Assert.AreEqual(manager.GetEra(), era);
             CollectionAssert.AreEqual(manager.GetMessages(), list);
+
+            Assert.Throws<ArgumentException>(() => manager.StartEra(23));
+            
+            manager.StartEra(24);
+            Assert.AreEqual(manager.IsPresent, true);
+            Assert.AreEqual(manager.GetEra(), 24);
+            Assert.AreEqual(manager.GetMessages().Count, 0);
         }
         
         

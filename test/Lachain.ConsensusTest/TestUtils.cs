@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
@@ -27,13 +26,13 @@ namespace Lachain.ConsensusTest
 
         public static ConsensusMessage GenerateBinaryBroadcastConsensusMessage()
         {
-            var _broadcastId = new BinaryBroadcastId(2142, 42342, 13124312);
+            var broadcastId = new BinaryBroadcastId(2142, 42342, 13124312);
             var message = new ConsensusMessage
             {
                 Bval = new BValMessage
                 {
-                    Agreement = _broadcastId.Agreement,
-                    Epoch = _broadcastId.Epoch,
+                    Agreement = broadcastId.Agreement,
+                    Epoch = broadcastId.Epoch,
                     Value = true
                 }
             };
