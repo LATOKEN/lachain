@@ -1,4 +1,5 @@
 ﻿using System;
+using Lachain.Crypto.ThresholdEncryption;
 using Lachain.Utility.Serialization;
 using MCL.BLS12_381.Net;
 
@@ -18,6 +19,29 @@ namespace Lachain.Crypto.ThresholdSignature
             var mappedMessage = new G2();
             mappedMessage.SetHashOf(message);
             return GT.Pairing(RawKey, mappedMessage).Equals(GT.Pairing(G1.Generator, signature.RawSignature));
+        }
+
+        public EncryptedShare Encrypt(IRawShare rawShare)
+        {
+            var r = Fr.GetRandom();
+            var u = G1.Generator * r;
+            var shareBytes = rawShare.ToBytes();
+            var t = RawKey * r;
+            var v = Utils.XorWithHash(t, shareBytes);
+            var w = Utils.HashToG2(u, v) * r;
+            return new EncryptedShare(u, v, w, rawShare.Id);
+        }
+
+        public bool VerifyShare(EncryptedShare share, PartiallyDecryptedShare ps)
+        {
+            var h = Utils.HashToG2(share.U, share.V);
+            return GT.Pairing(ps.Ui, h).Equals(GT.Pairing(RawKey, share.W));
+        }
+
+        public bool VerifyFullDecryptedShare(EncryptedShare share, G1 interpolation)
+        {
+            var h = Utils.HashToG2(share.U, share.V);
+            return GT.Pairing(interpolation, h).Equals(GT.Pairing(RawKey, share.W));
         }
 
         public bool Equals(PublicKey other)

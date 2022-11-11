@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using MCL.BLS12_381.Net;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
-namespace Lachain.Crypto.TPKE
+namespace Lachain.Crypto.ThresholdEncryption
 {
     internal static class Utils 
     {

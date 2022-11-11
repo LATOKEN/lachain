@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
-using Google.Protobuf;
-using Lachain.Proto;
-using Lachain.Utility.Benchmark;
+using Lachain.Crypto.ThresholdEncryption;
 using Lachain.Utility.Serialization;
 using MCL.BLS12_381.Net;
 
@@ -10,9 +7,6 @@ namespace Lachain.Crypto.TPKE
 {
     public class PublicKey : IEquatable<PublicKey>, IFixedWidth
     {
-        public static readonly TimeBenchmark EncryptBenchmark = new TimeBenchmark();
-        public static readonly TimeBenchmark FullDecryptBenchmark = new TimeBenchmark();
-
         private readonly G1 _y;
         private readonly int _t;
 
@@ -26,65 +20,19 @@ namespace Lachain.Crypto.TPKE
 
         public EncryptedShare Encrypt(IRawShare rawShare)
         {
-            return EncryptBenchmark.Benchmark(() =>
-            {
-                var r = Fr.GetRandom();
-                var u = G1.Generator * r;
-                var shareBytes = rawShare.ToBytes();
-                var t = _y * r;
-                var v = Utils.XorWithHash(t, shareBytes);
-                var w = Utils.HashToG2(u, v) * r;
-                return new EncryptedShare(u, v, w, rawShare.Id);
-            });
+            var r = Fr.GetRandom();
+            var u = G1.Generator * r;
+            var shareBytes = rawShare.ToBytes();
+            var t = _y * r;
+            var v = Utils.XorWithHash(t, shareBytes);
+            var w = Utils.HashToG2(u, v) * r;
+            return new EncryptedShare(u, v, w, rawShare.Id);
         }
 
-        public PartiallyDecryptedShare Decode(TPKEPartiallyDecryptedShareMessage message)
+        public bool VerifyFullDecryptedShare(EncryptedShare share, G1 interpolation)
         {
-            var u = G1.FromBytes(message.Share.ToByteArray());
-            return new PartiallyDecryptedShare(u, message.DecryptorId, message.ShareId);
-        }
-
-        public TPKEPartiallyDecryptedShareMessage Encode(PartiallyDecryptedShare share)
-        {
-            return new TPKEPartiallyDecryptedShareMessage
-            {
-                Share = ByteString.CopyFrom(share.Ui.ToBytes()),
-                DecryptorId = share.DecryptorId,
-                ShareId = share.ShareId
-            };
-        }
-
-        public RawShare FullDecrypt(EncryptedShare share, List<PartiallyDecryptedShare> us)
-        {
-            return FullDecryptBenchmark.Benchmark(() =>
-            {
-                if (us.Count < _t)
-                {
-                    throw new Exception("Insufficient number of shares!");
-                }
-
-                var ids = new HashSet<int>();
-                foreach (var part in us)
-                {
-                    if (ids.Contains(part.DecryptorId))
-                        throw new Exception($"Id {part.DecryptorId} was provided more than once!");
-                    if (part.ShareId != share.Id)
-                        throw new Exception($"Share id mismatch for decryptor {part.DecryptorId}");
-                    ids.Add(part.DecryptorId);
-                }
-
-                var ys = new List<G1>();
-                var xs = new List<Fr>();
-
-                foreach (var part in us)
-                {
-                    xs.Add(Fr.FromInt(part.DecryptorId + 1));
-                    ys.Add(part.Ui);
-                }
-
-                var u = MclBls12381.LagrangeInterpolate(xs.ToArray(), ys.ToArray());
-                return new RawShare(Utils.XorWithHash(u, share.V), share.Id);
-            });
+            var h = Utils.HashToG2(share.U, share.V);
+            return GT.Pairing(interpolation, h).Equals(GT.Pairing(_y, share.W));
         }
 
         public bool VerifyShare(EncryptedShare share, PartiallyDecryptedShare ps)

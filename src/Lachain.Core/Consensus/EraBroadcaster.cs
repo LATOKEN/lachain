@@ -391,8 +391,8 @@ namespace Lachain.Core.Consensus
                 case HoneyBadgerId hbId:
                     var hb = new HoneyBadger(
                         hbId, _validators!,
-                        _wallet.GetTpkePrivateKeyForBlock((ulong) _era - 1)
-                        ?? throw new InvalidOperationException($"No TPKE keys present for era {_era}"),
+                        _wallet.GetThresholdSignatureKeyForBlock((ulong) _era - 1)
+                        ?? throw new InvalidOperationException($"No Threshold keys present for era {_era}"),
                         !HardforkHeights.IsHardfork_12Active((ulong)_era > 2 * StakingContract.CycleDuration ? (ulong)_era - 2 * StakingContract.CycleDuration : 0), 
                         this
                     );

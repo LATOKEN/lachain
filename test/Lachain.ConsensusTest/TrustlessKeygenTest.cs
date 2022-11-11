@@ -6,6 +6,7 @@ using Lachain.Consensus.ThresholdKeygen.Data;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
 using NUnit.Framework;
+using Lachain.Crypto.ThresholdEncryption;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Utility.Containers;
 using Lachain.Utility.Serialization;
@@ -146,13 +147,14 @@ namespace Lachain.ConsensusTest
         private void CheckKeys(IList<ThresholdKeyring> keys)
         {
             var payload = "0xDeadBeef".HexToBytes();
-            var ciphertext = keys[0].TpkePublicKey.Encrypt(new RawShare(payload, 0));
+            var ciphertext = keys[0].ThresholdSignaturePublicKeySet.SharedPublicKey.Encrypt(new RawShare(payload, 0));
             var partiallyDecryptedShares = keys
-                .Select(keyring => keyring.TpkePrivateKey)
-                .Select(key => key.Decrypt(ciphertext))
+                .Select(keyring => keyring.ThresholdSignaturePrivateKey).WithIndex()
+                .Select(key => key.item.Decrypt(ciphertext, key.index))
                 .ToList();
 
-            var restored = keys[0].TpkePublicKey.FullDecrypt(ciphertext, partiallyDecryptedShares);
+            IThresholdEncryptor encryptor = new ThresholdEncryptor(keys[0].ThresholdSignaturePrivateKey, keys[0].ThresholdSignaturePublicKeySet, false);
+            var restored = encryptor.FullDecrypt(ciphertext, partiallyDecryptedShares);
             Assert.AreEqual(payload.ToHex(), restored.Data.ToHex());
 
             var sigShares = keys

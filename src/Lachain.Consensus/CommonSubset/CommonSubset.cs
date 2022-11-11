@@ -6,7 +6,7 @@ using Lachain.Logger;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
-using Lachain.Crypto.TPKE;
+using Lachain.Crypto.ThresholdEncryption;
 
 namespace Lachain.Consensus.CommonSubset
 {

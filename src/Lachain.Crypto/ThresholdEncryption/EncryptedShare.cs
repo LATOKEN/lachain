@@ -4,7 +4,7 @@ using System.Linq;
 using Lachain.Utility.Serialization;
 using MCL.BLS12_381.Net;
 
-namespace Lachain.Crypto.TPKE
+namespace Lachain.Crypto.ThresholdEncryption
 {
     public class EncryptedShare : IEquatable<EncryptedShare>
     {

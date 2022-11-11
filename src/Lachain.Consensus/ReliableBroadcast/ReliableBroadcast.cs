@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Lachain.Consensus.Messages;
 using Lachain.Crypto;
-using Lachain.Crypto.TPKE;
+using Lachain.Crypto.ThresholdEncryption;
 using Lachain.Logger;
 using Lachain.Proto;
 using Lachain.Utility.Serialization;

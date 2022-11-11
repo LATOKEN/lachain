@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using Lachain.Crypto.ThresholdEncryption;
 using Lachain.Crypto.ThresholdSignature;
 using Lachain.Logger;
 using Lachain.Utility.Benchmark;
@@ -54,18 +55,20 @@ namespace Lachain.Crypto
             Logger.LogTrace($"  - ts_sign: {fn(ThresholdSigner.SignBenchmark)}");
             Logger.LogTrace($"  - ts_verify: {fn(ThresholdSigner.VerifyBenchmark)}");
             Logger.LogTrace($"  - ts_combine: {fn(ThresholdSigner.CombineBenchmark)}");
-            Logger.LogTrace($"  - tpke_encrypt: {fn(TPKE.PublicKey.EncryptBenchmark)}");
-            Logger.LogTrace($"  - tpke_full_decrypt: {fn(TPKE.PublicKey.FullDecryptBenchmark)}");
-            Logger.LogTrace($"  - tpke_part_decrypt: {fn(TPKE.PrivateKey.DecryptBenchmark)}");
+            Logger.LogTrace($"  - threshold_ecryption_encrypt: {fn(ThresholdEncryptor.EncryptBenchmark)}");
+            Logger.LogTrace($"  - threshold_ecryption_part_decrypt: {fn(ThresholdEncryptor.DecryptBenchmark)}");
+            Logger.LogTrace($"  - threshold_ecryption_verify: {fn(ThresholdEncryptor.VerifyBenchmark)}");
+            Logger.LogTrace($"  - threshold_ecryption_full_decrypt: {fn(ThresholdEncryptor.FullDecryptBenchmark)}");
             EcRecover.Reset();
             EcSign.Reset();
             EcVerify.Reset();
             ThresholdSigner.CombineBenchmark.Reset();
             ThresholdSigner.SignBenchmark.Reset();
             ThresholdSigner.VerifyBenchmark.Reset();
-            TPKE.PublicKey.EncryptBenchmark.Reset();
-            TPKE.PublicKey.FullDecryptBenchmark.Reset();
-            TPKE.PrivateKey.DecryptBenchmark.Reset();
+            ThresholdEncryptor.EncryptBenchmark.Reset();
+            ThresholdEncryptor.DecryptBenchmark.Reset();
+            ThresholdEncryptor.VerifyBenchmark.Reset();
+            ThresholdEncryptor.FullDecryptBenchmark.Reset();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
