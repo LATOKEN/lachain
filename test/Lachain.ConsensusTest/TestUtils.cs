@@ -73,9 +73,9 @@ namespace Lachain.ConsensusTest
         {
             var bs = new BoolSet();
             if (random.Next(0, 1) == 1)
-                bs.Add(true);
+                bs = bs.Add(true);
             if (random.Next(0, 1) == 1)
-                bs.Add(false);
+                bs = bs.Add(false);
             return bs;
         }
 
