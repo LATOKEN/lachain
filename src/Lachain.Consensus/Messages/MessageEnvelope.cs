@@ -66,7 +66,7 @@ namespace Lachain.Consensus.Messages
             }
             else {
                 list.Add( (IsProtocolRequest ? 1 : 0).ToBytes().ToArray());
-                var protocolType = (int) ProtocolTypeMethods.GetProtocolType(InternalMessage.To);
+                var protocolType = (int) InternalMessage.GetProtocolType();
                 list.Add(protocolType.ToBytes().ToArray());
                 list.Add(InternalMessage.ToByteArray());
             }
@@ -142,7 +142,7 @@ namespace Lachain.Consensus.Messages
                 case ProtocolType.CommonSubset:
                     return ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>.FromByteArray(bytes);
                 case ProtocolType.HoneyBadger:
-                    return ProtocolResult<HoneyBadgerId, EncryptedShare>.FromByteArray(bytes);
+                    return ProtocolResult<HoneyBadgerId, ISet<IRawShare>>.FromByteArray(bytes);
                 case ProtocolType.ReliableBroadcast:
                     return ProtocolResult<ReliableBroadcastId, EncryptedShare?>.FromByteArray(bytes);
                 case ProtocolType.RootProtocol:

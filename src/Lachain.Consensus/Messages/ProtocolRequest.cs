@@ -29,6 +29,11 @@ namespace Lachain.Consensus.Messages
         public IProtocolIdentifier From { get; }
 
         public IProtocolIdentifier To { get; }
+        public ProtocolType GetProtocolType()
+        {
+            return ProtocolTypeMethods.GetProtocolType(To);
+        }
+
         public byte[] ToByteArray()
         {
             var list = new List<byte[]>

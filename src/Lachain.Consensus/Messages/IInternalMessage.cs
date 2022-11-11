@@ -6,5 +6,7 @@ namespace Lachain.Consensus.Messages
     {
         IProtocolIdentifier From { get; }
         IProtocolIdentifier? To { get; }
+
+        ProtocolType GetProtocolType();
     }
 }
