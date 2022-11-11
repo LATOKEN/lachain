@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Consensus;
@@ -121,8 +122,9 @@ namespace Lachain.Core.Consensus
             }
             else
             {
-                Logger.LogInformation($"Restoring {_messageEnvelopeRepositoryManager.GetMessages().Count} Messages from era {_era}");
-                foreach (var messageEnvelope in _messageEnvelopeRepositoryManager.GetMessages())
+                var messages = _messageEnvelopeRepositoryManager.GetMessages().ToList();
+                Logger.LogInformation($"Restoring {messages.Count} Messages from era {_era}");
+                foreach (var messageEnvelope in messages)
                 {
                     if (messageEnvelope.External)
                     {

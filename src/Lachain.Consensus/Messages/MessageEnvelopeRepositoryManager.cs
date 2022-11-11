@@ -7,7 +7,7 @@ namespace Lachain.Consensus.Messages
 {
     public class MessageEnvelopeRepositoryManager
     {
-        private IMessageEnvelopeRepository _repository;
+        private readonly IMessageEnvelopeRepository _repository;
         private MessageEnvelopeList? _messageEnvelopeList;
         private static readonly ILogger<MessageEnvelopeRepositoryManager> Logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
 
@@ -53,7 +53,7 @@ namespace Lachain.Consensus.Messages
         {
             return _messageEnvelopeList.MessageList;
         }
-
+        
         private void SaveToDb(MessageEnvelopeList messageEnvelopeList)
         {
             Logger.LogTrace("Saving list to db: " + messageEnvelopeList.ToByteArray());

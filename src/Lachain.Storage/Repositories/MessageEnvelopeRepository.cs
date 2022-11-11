@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Lachain.Storage.Repositories
 {
@@ -10,13 +11,15 @@ namespace Lachain.Storage.Repositories
         {
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void SaveMessages(byte[] messages)
         {
             var key = EntryPrefix.MessageEnvelope.BuildPrefix();
             _rocksDbContext.Save(key, messages);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public byte[]? LoadMessages()
         {   
             var key = EntryPrefix.MessageEnvelope.BuildPrefix();
