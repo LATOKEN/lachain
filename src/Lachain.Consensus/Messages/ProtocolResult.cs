@@ -107,15 +107,14 @@ namespace Lachain.Consensus.Messages
 
         private static object? GetResultData(ProtocolType toType, RLPCollection decoded)
         {
-            var bytes = decoded[2].RLPData;
             return toType switch
             {
-                ProtocolType.BinaryAgreement => bytes.AsReadOnlySpan().ToInt32() == 1,
-                ProtocolType.BinaryBroadcast => BoolSet.FromByteArray(bytes),
-                ProtocolType.CommonCoin => CoinResult.FromByteArray(bytes),
+                ProtocolType.BinaryAgreement => decoded[2].RLPData.AsReadOnlySpan().ToInt32() == 1,
+                ProtocolType.BinaryBroadcast => BoolSet.FromByteArray(decoded[2].RLPData),
+                ProtocolType.CommonCoin => CoinResult.FromByteArray(decoded[2].RLPData),
                 ProtocolType.CommonSubset => GetSetOfEncryptedShareFromBytes(decoded),
                 ProtocolType.HoneyBadger => GetSetOfIRawShareFromBytes(decoded),
-                ProtocolType.ReliableBroadcast => EncryptedShare.FromBytes(bytes),
+                ProtocolType.ReliableBroadcast => EncryptedShare.FromBytes(decoded[2].RLPData),
                 ProtocolType.RootProtocol => null,
                 _ => throw new ArgumentOutOfRangeException($"Unrecognized Type of From {toType.ToString()}")
             };
@@ -123,11 +122,11 @@ namespace Lachain.Consensus.Messages
 
         private static object? GetSetOfIRawShareFromBytes(RLPCollection decoded)
         {
-            var count = decoded[5].RLPData.AsReadOnlySpan().ToInt32();
+            var count = decoded[2].RLPData.AsReadOnlySpan().ToInt32();
             ISet <IRawShare> set = new HashSet<IRawShare>();
             for (var i = 0; i < count; i++)
             {
-                var share = RawShare.FromByteArray(decoded[6+i].RLPData);
+                var share = RawShare.FromByteArray(decoded[3+i].RLPData);
                 set.Add(share);
             }
 
@@ -178,6 +177,17 @@ namespace Lachain.Consensus.Messages
                 case ISet<EncryptedShare> encryptedShares:
                     return encryptedShares.SetEquals((ISet<EncryptedShare>) otherResult);
                 case ISet<IRawShare> rawShares:
+                    foreach (var s1 in rawShares)
+                    {
+                        foreach (var s2 in (ISet<IRawShare>) otherResult)
+                        {
+                            if (s1.Equals(s2))
+                            {
+                                var hashCode = s1.GetHashCode();
+                                var code = s2.GetHashCode();
+                            }
+                        }
+                    }
                     return rawShares.SetEquals((ISet<IRawShare>) otherResult);
                 default:
                     return EqualityComparer<TResultType>.Default.Equals(result, otherResult);

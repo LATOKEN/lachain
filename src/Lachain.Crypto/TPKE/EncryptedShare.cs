@@ -50,7 +50,9 @@ namespace Lachain.Crypto.TPKE
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(U, V, W, Id);
+            // U.GetHashCode() and V.GetHashCode() is buggy
+            // The following bypasses these calls and also is an performance optimization.
+            return HashCode.Combine(U.ToBytes().Length, V.Length, W.ToBytes().Length, Id);
         }
 
         public byte[] ToByteArray()

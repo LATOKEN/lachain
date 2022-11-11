@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Utility.Serialization;
@@ -27,10 +28,7 @@ namespace Lachain.Crypto
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                return (Id * 397) ^ (Data != null ? Data.GetHashCode() : 0);
-            }
+            return HashCode.Combine(Id, Data.Length);
         }
 
         public byte[] ToByteArray()

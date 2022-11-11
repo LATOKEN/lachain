@@ -54,10 +54,12 @@ namespace Lachain.Consensus.Messages
 
         public byte[] ToByteArray()
         {
-            var list = new List<byte[]>();
-            list.Add(ValidatorIndex.ToBytes().ToArray());
-            list.Add((External ? 1 : 0).ToBytes().ToArray());
-            
+            var list = new List<byte[]>
+            {
+                ValidatorIndex.ToBytes().ToArray(),
+                (External ? 1 : 0).ToBytes().ToArray()
+            };
+
             if (External)
             {
                 list.Add(ExternalMessage.ToByteArray());
