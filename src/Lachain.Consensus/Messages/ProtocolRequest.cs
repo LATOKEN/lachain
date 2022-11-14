@@ -87,7 +87,7 @@ namespace Lachain.Consensus.Messages
                     list.Add(reliableBroadcastInput.ToByteArray());
                     break;
                 case RootProtocolId _:
-                    if (!(Input is IBlockProducer))
+                    if (!(Input is IBlockProducer) && !(Input is null))
                         throw new ArgumentException(
                             $"Unexpected Input type ({Input?.GetType()}) for ProtocolId {To.GetType()}");
                     break;
@@ -145,7 +145,12 @@ namespace Lachain.Consensus.Messages
 
         protected bool Equals(ProtocolRequest<TIdType, TInputType> other)
         {
-            return EqualityComparer<TInputType>.Default.Equals(Input, other.Input) && From.Equals(other.From) && To.Equals(other.To);
+            return To switch
+            {
+                RootProtocolId _ => From.Equals(other.From) && To.Equals(other.To),
+                _ => EqualityComparer<TInputType>.Default.Equals(Input, other.Input) && From.Equals(other.From) &&
+                     To.Equals(other.To)
+            };
         }
 
         public override bool Equals(object? obj)
@@ -158,7 +163,11 @@ namespace Lachain.Consensus.Messages
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Input, From, To);
+            return To switch
+            {
+                RootProtocolId _ => HashCode.Combine(From, To),
+                _ => HashCode.Combine(Input, From, To)
+            };
         }
     }
 }

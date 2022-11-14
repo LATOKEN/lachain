@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Lachain.Consensus;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.CommonSubset;
@@ -184,6 +185,14 @@ namespace Lachain.ConsensusTest
             var rootProtocolId = TestUtils.GenerateRootProtocolId(random);
             Assert.AreEqual(rootProtocolId, RootProtocolId.FromByteArray(rootProtocolId.ToByteArray()));
             
+            var request = new ProtocolRequest<RootProtocolId, IBlockProducer> 
+                (TestUtils.GenerateCommonSubsetId(random), rootProtocolId, null);
+            Assert.AreEqual(request, ProtocolRequest<RootProtocolId, IBlockProducer>.FromByteArray(request.ToByteArray()));
+            
+            var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
+            Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
+            messageList.AddMessage(requestMessage);
+
             var result = new ProtocolResult<RootProtocolId, object?> (rootProtocolId, null);
             Assert.AreEqual(result, ProtocolResult<RootProtocolId, object?>.FromByteArray(result.ToByteArray()));
             
