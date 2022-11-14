@@ -11,6 +11,7 @@ using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
+using Lachain.Consensus.RequestProtocols;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -39,6 +40,7 @@ namespace Lachain.Core.Consensus
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly IMessageEnvelopeRepositoryManager _messageEnvelopeRepositoryManager;
+        private readonly IRequestManager _requestManager;
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
@@ -77,12 +79,14 @@ namespace Lachain.Core.Consensus
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _messageEnvelopeRepositoryManager = messageEnvelopeRepositoryManager;
             _blockProducer = blockProducer;
+            _requestManager = new RequestManager(this, _era);
         }
 
         public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
         {
             _validators = keySet;
             _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
+            _requestManager.SetValidators(_validators.N);
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
@@ -91,6 +95,7 @@ namespace Lachain.Core.Consensus
             {
                 _registry[protocol.Id] = protocol;
                 protocol._receivedExternalMessage += PersistExternalMessae;
+                _requestManager.RegisterProtocol(protocol.Id);
             }
         }
 
