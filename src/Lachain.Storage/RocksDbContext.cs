@@ -97,7 +97,7 @@ namespace Lachain.Storage
 
         private Iterator? GetIterator(byte[] key, ReadOptions? readOptions)
         {
-            return _rocksDb.NewIterator(null, readOptions).Seek(key);
+            return _rocksDb.NewIterator(null, readOptions).Seek(new List<byte>(key).ToArray());
         }
 
         public void CompactAll()
