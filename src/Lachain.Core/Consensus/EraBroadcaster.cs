@@ -126,6 +126,7 @@ namespace Lachain.Core.Consensus
                 Logger.LogInformation($"Restoring {messages.Count} Messages from era {_era}");
                 foreach (var messageEnvelope in messages)
                 {
+                    Logger.LogTrace($"Restoring message from db, type = {messageEnvelope.TypeString()}, hashcode = {messageEnvelope.GetHashCode()}");
                     if (messageEnvelope.External)
                     {
                         Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
@@ -281,7 +282,6 @@ namespace Lachain.Core.Consensus
             }
 
             var messageEnvelope = new MessageEnvelope(message, from);
-            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
             HandleExternalMessage(protocolId, messageEnvelope);
         }
 
@@ -307,6 +307,7 @@ namespace Lachain.Core.Consensus
                                 .Add(message);
                         }
                     }
+                    _messageEnvelopeRepositoryManager.AddMessage(message);
                     if (!(protocol is null)) protocol.ReceiveMessage(message);
                 }
                 else Logger.LogWarning("Internal message should not be here");

@@ -9,7 +9,7 @@ namespace Lachain.Consensus.Messages
     {
         private readonly IMessageEnvelopeRepository _repository;
         private MessageEnvelopeList? _messageEnvelopeList;
-        private static readonly ILogger<MessageEnvelopeRepositoryManager> Logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
+        private static readonly ILogger<MessageEnvelopeRepositoryManager> logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
 
         public bool IsPresent => !(_messageEnvelopeList is null);
         public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository)
@@ -47,6 +47,7 @@ namespace Lachain.Consensus.Messages
             }
             _messageEnvelopeList.AddMessage(message);
             SaveToDb(_messageEnvelopeList);
+            logger.LogTrace($"Saved message to db, type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
         }
 
         public ICollection<MessageEnvelope> GetMessages()
@@ -56,7 +57,6 @@ namespace Lachain.Consensus.Messages
         
         private void SaveToDb(MessageEnvelopeList messageEnvelopeList)
         {
-            Logger.LogTrace("Saving list to db: " + messageEnvelopeList.ToByteArray());
             _repository.SaveMessages(messageEnvelopeList.ToByteArray());
         }
     }
