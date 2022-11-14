@@ -341,6 +341,8 @@ namespace Lachain.Core.Consensus
             {
                 _postponedMessages.Clear();
             }
+            
+            _requestManager.Terminate();
         }
 
         // Each ProtocolId is created only once to prevent spamming, Protocols are mapped against ProtocolId, so each
