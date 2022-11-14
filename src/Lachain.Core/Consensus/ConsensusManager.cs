@@ -185,7 +185,7 @@ namespace Lachain.Core.Consensus
                     CurrentEra += 1;
                     _eras[CurrentEra] = new EraBroadcaster(
                         CurrentEra, _consensusMessageDeliverer, _privateWallet, 
-                        _validatorAttendanceRepository, _messageEnvelopeRepository
+                        _validatorAttendanceRepository, _messageEnvelopeRepository, _blockProducer
                     );
                     Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
                 }
@@ -201,7 +201,7 @@ namespace Lachain.Core.Consensus
                 Logger.LogTrace("Create EraBroadcaster");
                 _eras[CurrentEra] = new EraBroadcaster(
                     CurrentEra, _consensusMessageDeliverer, _privateWallet, 
-                    _validatorAttendanceRepository, _messageEnvelopeRepository
+                    _validatorAttendanceRepository, _messageEnvelopeRepository, _blockProducer
                 );
             }
 

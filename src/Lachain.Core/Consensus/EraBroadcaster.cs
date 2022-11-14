@@ -42,6 +42,7 @@ namespace Lachain.Core.Consensus
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
+        private IBlockProducer _blockProducer;
 
         public bool Ready => _validators != null;
 
@@ -63,7 +64,7 @@ namespace Lachain.Core.Consensus
         public EraBroadcaster(
             long era, IConsensusMessageDeliverer consensusMessageDeliverer,
             IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository,
-            IMessageEnvelopeRepository messageEnvelopeRepository
+            IMessageEnvelopeRepository messageEnvelopeRepository, IBlockProducer blockProducer
         )
         {
             _consensusMessageDeliverer = consensusMessageDeliverer;
@@ -74,6 +75,7 @@ namespace Lachain.Core.Consensus
             _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _messageEnvelopeRepositoryManager = new MessageEnvelopeRepositoryManager(messageEnvelopeRepository);
+            _blockProducer = blockProducer;
         }
 
         public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
@@ -154,6 +156,7 @@ namespace Lachain.Core.Consensus
                                 InternalRequest(request);
                                 break;
                             case ProtocolRequest<RootProtocolId, IBlockProducer> request:
+                                request.Input = _blockProducer;
                                 InternalRequest(request);
                                 break;
                             default:

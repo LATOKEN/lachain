@@ -24,7 +24,7 @@ namespace Lachain.Consensus.Messages
             Input = input;
         }
 
-        public TInputType Input { get; }
+        public TInputType Input { get; set; }
 
         public IProtocolIdentifier From { get; }
 
