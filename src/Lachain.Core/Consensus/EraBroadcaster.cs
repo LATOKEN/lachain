@@ -350,6 +350,8 @@ namespace Lachain.Core.Consensus
 
 
             var messageEnvelope = new MessageEnvelope(request, GetMyId());
+            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
+            
             if (_registry.TryGetValue(request.To, out var protocol))
                 protocol?.ReceiveMessage(messageEnvelope);
             
@@ -395,6 +397,8 @@ namespace Lachain.Core.Consensus
             // message is also delivered to self
         //    Logger.LogTrace($"Result from protocol {result.From} delivered to itself");
             var messageEnvelope = new MessageEnvelope(result, GetMyId());
+            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
+
             if (_registry.TryGetValue(result.From, out var protocol))
                 protocol?.ReceiveMessage(messageEnvelope);
         }

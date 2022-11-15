@@ -47,7 +47,8 @@ namespace Lachain.Consensus.Messages
             }
             _messageEnvelopeList.AddMessage(message);
             SaveToDb(_messageEnvelopeList);
-            logger.LogTrace($"Saved message to db, type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
+            logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {_messageEnvelopeList.Era}), " +
+                            $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
         }
 
         public ICollection<MessageEnvelope> GetMessages()
