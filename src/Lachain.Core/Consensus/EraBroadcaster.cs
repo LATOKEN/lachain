@@ -336,10 +336,17 @@ namespace Lachain.Core.Consensus
             {
                 if (_callback.TryGetValue(request.To, out var existingCallback))
                 {
-                    throw new InvalidOperationException(
-                        $"Cannot have two requests from different protocols ({request.From}, " +
+                    Logger.LogWarning(
+                        $"Two requests from different protocols ({request.From}, " +
                         $"{existingCallback}) to one protocol {request.To}"
                     );
+                    
+                    // throw new InvalidOperationException(
+                    //     $"Cannot have two requests from different protocols ({request.From}, " +
+                    //     $"{existingCallback}) to one protocol {request.To}"
+                    // );
+                    
+                    return;
                 }
 
                 _callback[request.To] = request.From;
