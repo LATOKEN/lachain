@@ -14,6 +14,7 @@ namespace Lachain.Consensus.RequestProtocols
         private readonly long _era;
         private readonly IConsensusBroadcaster _broadcaster;
         private readonly IDictionary<IProtocolIdentifier, IProtocolRequestHandler> _protocolHandler;
+        private bool _terminated = false;
         public RequestManager(IConsensusBroadcaster broadcaster, long era)
         {
             _broadcaster = broadcaster;
@@ -23,6 +24,9 @@ namespace Lachain.Consensus.RequestProtocols
 
         public void Terminate()
         {
+            if (_terminated)
+                return;
+            _terminated = true;
             foreach (var (_, handler) in _protocolHandler)
             {
                 handler.Terminate();
@@ -38,6 +42,8 @@ namespace Lachain.Consensus.RequestProtocols
 
         public void RegisterProtocol(IProtocolIdentifier protocolId)
         {
+            if (_terminated)
+                return;
             if (_validators == -1)
                 throw new Exception($"RequestManager not ready yet, validators count {_validators}");
             if (_protocolHandler.TryGetValue(protocolId, out var _))
@@ -50,6 +56,8 @@ namespace Lachain.Consensus.RequestProtocols
 
         public void MessageReceived(IProtocolIdentifier protocolId, int from, ConsensusMessage msg)
         {
+            if (_terminated)
+                return;
             if (_protocolHandler.TryGetValue(protocolId, out var handler))
             {
                 handler.MessageReceived(from, msg);
