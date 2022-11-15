@@ -10,17 +10,25 @@ namespace Lachain.Consensus.Messages
     {
         public long Era { get; }
         public ICollection<MessageEnvelope> MessageList { get; }
-        
+        public ISet<MessageEnvelope> MessageSet { get; }
+
 
         public MessageEnvelopeList(long era)
         {
             this.Era = era;
             this.MessageList = new List<MessageEnvelope>();
+            this.MessageSet = new HashSet<MessageEnvelope>();
         }
 
         public void AddMessage(MessageEnvelope messageEnvelope)
         {
+            if (MessageSet.Contains(messageEnvelope))
+            {
+                throw new ArgumentException("Message already in list");
+            }
             MessageList.Add(messageEnvelope);
+            MessageSet.Add(messageEnvelope);
+
         }
         
         public byte[] ToByteArray()

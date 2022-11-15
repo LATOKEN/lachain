@@ -45,10 +45,21 @@ namespace Lachain.Consensus.Messages
             {
                 throw new InvalidOperationException("Could not find MessageEnvelopeList in db");
             }
-            _messageEnvelopeList.AddMessage(message);
-            SaveToDb(_messageEnvelopeList);
-            logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {_messageEnvelopeList.Era}), " +
-                            $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
+
+            try
+            {
+                _messageEnvelopeList.AddMessage(message);
+                SaveToDb(_messageEnvelopeList);
+                logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {_messageEnvelopeList.Era}), " +
+                                $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
+            }
+            catch (ArgumentException e)
+            {
+                logger.LogTrace($"Not saving duplicate {(message.External ? "external" : "internal")} " +
+                                $"message to db (era {_messageEnvelopeList.Era}), " +
+                                $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
+            }
+            
         }
 
         public ICollection<MessageEnvelope> GetMessages()
