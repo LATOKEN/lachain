@@ -24,12 +24,12 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         {
             _validatorsCount = validatorsCount;
             _protocolId = id;
-            _type = GetMyType(id);
+            _type = ProtocolUtils.GetProtocolType(id);
             _messageHandlers = new List<IMessageRequestHandler>();
             var requestTypes = Enum.GetValues(typeof(RequestType)).Cast<RequestType>().ToArray();
             foreach (var type in requestTypes)
             {
-                if (GetProtocolTypeForRequestType(type) == _type)
+                if (ProtocolUtils.GetProtocolTypeForRequestType(type) == _type)
                 {
                     _messageHandlers.Add(RegisterMessageHandler(type));
                 }
@@ -51,12 +51,12 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         {
             if (_terminated)
                 return;
-            var type = MessageRequestHandler.GetRequestTypeForMessageType(msg);
+            var type = MessageUtils.GetRequestTypeForMessageType(msg);
             foreach (var handler in _messageHandlers)
             {
                 if (handler.Type == type)
                 {
-                    handler.MessageReceived(from, msg);
+                    handler.MessageReceived(from, msg, type);
                 }
             }
         }
@@ -73,52 +73,6 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
                 allRequests.AddRange(requests);
             }
             return allRequests;
-        }
-
-        private ProtocolType GetMyType(IProtocolIdentifier id)
-        {
-            switch (id)
-            {
-                case RootProtocolId _:
-                    return ProtocolType.Root;
-                case HoneyBadgerId _:
-                    return ProtocolType.HoneyBadger;
-                case ReliableBroadcastId _:
-                    return ProtocolType.ReliableBroadcast;
-                case BinaryBroadcastId _:
-                    return ProtocolType.BinaryBroadcast;
-                case CoinId _:
-                    return ProtocolType.CommonCoin;
-                default:
-                    throw new Exception($"Not implemented type for protocol id {id}");
-            }
-        }
-
-        private ProtocolType GetProtocolTypeForRequestType(RequestType requestType)
-        {
-            switch (requestType)
-            {
-                case RequestType.Aux:
-                    return ProtocolType.BinaryBroadcast;
-                case RequestType.Bval:
-                    return ProtocolType.BinaryBroadcast;
-                case RequestType.Coin:
-                    return ProtocolType.CommonCoin;
-                case RequestType.Conf:
-                    return ProtocolType.BinaryBroadcast;
-                case RequestType.Decrypted:
-                    return ProtocolType.HoneyBadger;
-                case RequestType.Echo:
-                    return ProtocolType.ReliableBroadcast;
-                case RequestType.Ready:
-                    return ProtocolType.ReliableBroadcast;
-                case RequestType.SignedHeader:
-                    return ProtocolType.Root;
-                case RequestType.Val:
-                    return ProtocolType.ReliableBroadcast;
-                default:
-                    throw new Exception($"No protocol type for request type {requestType}");
-            }
         }
 
         private IMessageRequestHandler RegisterMessageHandler(RequestType type)
