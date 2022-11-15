@@ -19,6 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         private readonly ProtocolType _type;
         private readonly int _validatorsCount;
         private readonly List<IMessageRequestHandler> _messageHandlers;
+        private bool _terminated = false;
         public ProtocolRequestHandler(IProtocolIdentifier id, int validatorsCount)
         {
             _validatorsCount = validatorsCount;
@@ -37,6 +38,9 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
 
         public void Terminate()
         {
+            if (_terminated)
+                return;
+            _terminated = true;
             foreach (var handler in _messageHandlers)
                 handler.Terminate();
             _messageHandlers.Clear();
@@ -45,6 +49,8 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
 
         public void MessageReceived(int from, ConsensusMessage msg)
         {
+            if (_terminated)
+                return;
             var type = MessageRequestHandler.GetRequestTypeForMessageType(msg);
             foreach (var handler in _messageHandlers)
             {
@@ -58,6 +64,8 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         public List<(ConsensusMessage, int)> GetRequests(int requestCount)
         {
             var allRequests = new List<(ConsensusMessage, int)>();
+            if (_terminated)
+                return allRequests;
             foreach (var handler in _messageHandlers)
             {
                 var requests = handler.GetRequests(_protocolId, requestCount);
