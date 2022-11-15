@@ -13,13 +13,15 @@ namespace Lachain.Consensus.RequestProtocols
         private int _validators = -1;
         private readonly long _era;
         private readonly IConsensusBroadcaster _broadcaster;
-        private readonly IDictionary<IProtocolIdentifier, IProtocolRequestHandler> _protocolHandler;
+        private readonly IDictionary<IProtocolIdentifier, IProtocolRequestHandler> _protocolRequestHandler;
+        private readonly IDictionary<IProtocolIdentifier, IProtocolResendHandler> _protocolResendHandler;
         private bool _terminated = false;
         public RequestManager(IConsensusBroadcaster broadcaster, long era)
         {
             _broadcaster = broadcaster;
             _era = era;
-            _protocolHandler = new ConcurrentDictionary<IProtocolIdentifier, IProtocolRequestHandler>();
+            _protocolRequestHandler = new ConcurrentDictionary<IProtocolIdentifier, IProtocolRequestHandler>();
+            _protocolResendHandler = new ConcurrentDictionary<IProtocolIdentifier, IProtocolResendHandler>();
         }
 
         public void Terminate()
@@ -27,11 +29,16 @@ namespace Lachain.Consensus.RequestProtocols
             if (_terminated)
                 return;
             _terminated = true;
-            foreach (var (_, handler) in _protocolHandler)
+            foreach (var (_, handler) in _protocolRequestHandler)
             {
                 handler.Terminate();
             }
-            _protocolHandler.Clear();
+            _protocolRequestHandler.Clear();
+            foreach (var (_, handler) in _protocolResendHandler)
+            {
+                handler.Terminate();
+            }
+            _protocolResendHandler.Clear();
             Logger.LogTrace($"Request manager for era {_era} terminated");
         }
 
@@ -46,24 +53,19 @@ namespace Lachain.Consensus.RequestProtocols
                 return;
             if (_validators == -1)
                 throw new Exception($"RequestManager not ready yet, validators count {_validators}");
-            if (_protocolHandler.TryGetValue(protocolId, out var _))
+            if (_protocolRequestHandler.TryGetValue(protocolId, out var _))
             {
                 throw new Exception($"Protocol handler for protocolId {protocolId} already registered");
             }
 
-            _protocolHandler[protocolId] = new ProtocolRequestHandler(protocolId, _validators);
-        }
+            _protocolRequestHandler[protocolId] = new ProtocolRequestHandler(protocolId, _validators);
 
-        public void MessageReceived(IProtocolIdentifier protocolId, int from, ConsensusMessage msg)
-        {
-            if (_terminated)
-                return;
-            if (_protocolHandler.TryGetValue(protocolId, out var handler))
+            if (_protocolResendHandler.TryGetValue(protocolId, out var _))
             {
-                handler.MessageReceived(from, msg);
+                throw new Exception($"Protocol handler for protocolId {protocolId} already registered");
             }
-            else
-                throw new Exception($"Protocol handler for protocolId {protocolId} not registered but External message is received");
+
+            _protocolResendHandler[protocolId] = new ProtocolResendHandler(protocolId, _validators);
         }
     }
 }
