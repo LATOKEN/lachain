@@ -18,6 +18,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         private readonly RequestType _type;
         private readonly int _validators;
         private readonly int _msgPerValidator;
+        private bool _terminated = false;
         private int _remainingMsges;
         private readonly Queue<(int,int)> _messageRequests;
         public RequestType Type => _type;
@@ -43,12 +44,17 @@ namespace Lachain.Consensus.RequestProtocols.Messages
 
         public void Terminate()
         {
+            if (_terminated)
+                return;
+            _terminated = true;
             _messageRequests.Clear();
             _status = new MessageStatus[0][];
         }
 
         public void MessageReceived(int from, ConsensusMessage msg)
         {
+            if (_terminated)
+                return;
             var type = GetRequestTypeForMessageType(msg);
             if (type != _type)
                 throw new Exception($"message type {type} routed to message handler {_type}");
@@ -146,7 +152,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         public List<(ConsensusMessage, int)> GetRequests(IProtocolIdentifier protocolId, int requestCount)
         {
             var requests = new List<(ConsensusMessage, int)>();
-            if (IsProtocolComplete()) return requests;
+            if (IsProtocolComplete() || _terminated) return requests;
 
             if (requestCount > _remainingMsges)
                 requestCount = _remainingMsges;
