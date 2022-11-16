@@ -6,7 +6,7 @@ namespace Lachain.Core.Consensus
     public interface IConsensusManager
     {
         void Dispatch(ConsensusMessage message, ECDSAPublicKey publicKey);
-        void Start(ulong startingEra);
+        void Start(ulong startingEra, bool restoreState);
         void Terminate();
         EraBroadcaster? GetEraBroadcaster();
     }

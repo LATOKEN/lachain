@@ -183,7 +183,7 @@ namespace Lachain.Console
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             Logger.LogInformation("Block synchronization finished, starting consensus...");
-            consensusManager.Start(blockManager.GetHeight() + 1);
+            consensusManager.Start(blockManager.GetHeight() + 1, options.RestoreState);
             validatorStatusManager.Start(false);
 
             System.Console.CancelKeyPress += (sender, e) =>

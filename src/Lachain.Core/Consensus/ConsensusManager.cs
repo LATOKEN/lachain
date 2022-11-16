@@ -157,10 +157,10 @@ namespace Lachain.Core.Consensus
             return false;
         }
 
-        public void Start(ulong startingEra)
+        public void Start(ulong startingEra, bool restoreState)
         {
             _networkManager.AdvanceEra(startingEra);
-            new Thread(() => Run(startingEra)).Start();
+            new Thread(() => Run(startingEra, restoreState)).Start();
         }
 
         private void FinishEra()
@@ -192,7 +192,7 @@ namespace Lachain.Core.Consensus
             }
         }
 
-        private void Run(ulong startingEra)
+        private void Run(ulong startingEra, bool restoreState)
         {
             Logger.LogTrace($"Starting, startingEra {startingEra}");
             CurrentEra = (long) startingEra;
@@ -232,7 +232,8 @@ namespace Lachain.Core.Consensus
                     {
                         broadcaster = _eras[CurrentEra];
                         broadcaster.SetValidatorKeySet(validators);
-                        broadcaster.RestoreState();
+                        if (restoreState)
+                            broadcaster.RestoreState();
                     }
 
                     bool weAreValidator;
