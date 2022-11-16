@@ -7,5 +7,6 @@ namespace Lachain.Consensus.RequestProtocols
         void Terminate();
         void SetValidators(int validatorsCount);
         void RegisterProtocol(IProtocolIdentifier protocolId);
+        void HandleRequest(int from, ConsensusMessage request);
     }
 }
