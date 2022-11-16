@@ -35,5 +35,12 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
                 }
             };
         }
+
+        public static CoinId CreateProtocolId(RequestConsensusMessage msg, long era)
+        {
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestAux)
+                throw new Exception($"{msg.PayloadCase} routed to Aux Request");
+            return new CoinId(era, msg.RequestCoin.Agreement, msg.RequestCoin.Epoch);
+        }
     }
 }

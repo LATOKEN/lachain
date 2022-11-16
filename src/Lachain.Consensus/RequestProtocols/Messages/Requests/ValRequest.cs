@@ -34,5 +34,12 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
                 }
             };
         }
+
+        public static ReliableBroadcastId CreateProtocolId(RequestConsensusMessage msg, long era)
+        {
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestVal)
+                throw new Exception($"{msg.PayloadCase} routed to Val Request");
+            return new ReliableBroadcastId(msg.RequestVal.SenderId, (int) era);
+        }
     }
 }
