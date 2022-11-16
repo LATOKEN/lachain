@@ -49,13 +49,13 @@ namespace Lachain.Consensus.RequestProtocols.Messages
             HandleReceivedMessage(from, msg);
         }
 
-        public void MessageReceived(int validatorId, int msgId, ConsensusMessage msg)
+        protected void MessageReceived(int validatorId, int msgId, ConsensusMessage msg)
         {
             if (!(_sentMessages[validatorId][msgId] is null))
                 throw new Exception($"Sending duplicate message {msg.ToString()} to validator {validatorId}");
             _sentMessages[validatorId][msgId] = msg;
         }
 
-        public abstract void HandleReceivedMessage(int from, ConsensusMessage msg);
+        protected abstract void HandleReceivedMessage(int from, ConsensusMessage msg);
     }
 }
