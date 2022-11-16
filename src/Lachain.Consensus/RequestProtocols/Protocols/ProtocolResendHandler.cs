@@ -1,12 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Lachain.Consensus.BinaryAgreement;
-using Lachain.Consensus.CommonCoin;
-using Lachain.Consensus.HoneyBadger;
-using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RequestProtocols.Messages;
-using Lachain.Consensus.RootProtocol;
+using Lachain.Consensus.RequestProtocols.Messages.Resends;
 using Lachain.Logger;
 using Lachain.Proto;
 
@@ -18,20 +15,24 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         private readonly IProtocolIdentifier _protocolId;
         private readonly int _validatorsCount;
         private readonly ProtocolType _type;
-        private readonly List<IMessageResendHandler> _messageHandlers;
+        private readonly IDictionary<byte, IMessageResendHandler> _messageHandlers;
         private bool _terminated = false;
         public ProtocolResendHandler(IProtocolIdentifier id, int validators)
         {
             _protocolId = id;
             _validatorsCount = validators;
             _type = ProtocolUtils.GetProtocolType(id);
-            _messageHandlers = new List<IMessageResendHandler>();
+            _messageHandlers = new ConcurrentDictionary<byte, IMessageResendHandler>();
             var requestTypes = Enum.GetValues(typeof(RequestType)).Cast<RequestType>().ToArray();
-            foreach (var type in requestTypes)
+            foreach (var requestType in requestTypes)
             {
-                if (ProtocolUtils.GetProtocolTypeForRequestType(type) == _type)
+                if (ProtocolUtils.GetProtocolTypeForRequestType(requestType) == _type)
                 {
-                    _messageHandlers.Add(RegisterMessageHandler(type));
+                    if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
+                    {
+                        throw new Exception($"{requestType} already registered with handler {handler.Type} and trying to register again");
+                    }
+                    _messageHandlers[(byte) requestType] = RegisterMessageHandler(requestType);
                 }
             }
         }
@@ -41,7 +42,7 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             if (_terminated)
                 return;
             _terminated = true;
-            foreach (var handler in _messageHandlers)
+            foreach (var (_, handler) in _messageHandlers)
             {
                 handler.Terminate();
             }
@@ -54,63 +55,38 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             if (_terminated)
                 return;
             var type = MessageUtils.GetRequestTypeForMessageType(msg);
-            foreach (var handler in _messageHandlers)
+            if (_messageHandlers.TryGetValue((byte) type, out var handler))
             {
-                if (type == handler.Type)
-                {
-                    handler.MessageReceived(from, msg, type);
-                    return;
-                }
+                handler.MessageReceived(from, msg, type);
             }
-            throw new Exception($"Message type {type} routed to ProtocolResendHandler {_type}");
+            else throw new Exception($"MessageResendHandler {type} not registered");
         }
 
         private IMessageResendHandler RegisterMessageHandler(RequestType type)
         {
-            int validators, msgPerValidator;
             switch (type)
             {
                 case RequestType.Aux:
-                    validators = _validatorsCount;
-                    msgPerValidator = 1;
-                    break;
+                    return new AuxResend(type, _validatorsCount, 1);
                 case RequestType.Bval:
-                    validators = _validatorsCount;
-                    msgPerValidator = 2;
-                    break;
+                    return new BValResend(type, _validatorsCount, 2);
                 case RequestType.Coin:
-                    validators = _validatorsCount;
-                    msgPerValidator = 1;
-                    break;
+                    return new CoinResend(type, _validatorsCount, 1);
                 case RequestType.Conf:
-                    validators = _validatorsCount;
-                    msgPerValidator = 1;
-                    break;
+                    return new ConfResend(type, _validatorsCount, 1);
                 case RequestType.Decrypted:
-                    validators = _validatorsCount;
-                    msgPerValidator = _validatorsCount;
-                    break;
+                    return new DecryptedResend(type, _validatorsCount, _validatorsCount);
                 case RequestType.Echo:
-                    validators = _validatorsCount;
-                    msgPerValidator = 1;
-                    break;
+                    return new EchoResend(type, _validatorsCount, 1);
                 case RequestType.Val:
-                    validators = 1;
-                    msgPerValidator = 1;
-                    break;
+                    return new ValResend(type, _validatorsCount, 1);
                 case RequestType.Ready:
-                    validators = _validatorsCount;
-                    msgPerValidator = 1;
-                    break;
+                    return new ReadyResend(type, _validatorsCount, 1);
                 case RequestType.SignedHeader:
-                    validators = _validatorsCount;
-                    msgPerValidator = 1;
-                    break;
+                    return new SignedHeaderResend(type, _validatorsCount, 1);
                 default:
                     throw new Exception($"RegisterMessageHandler Not implemented for request type {type}");
             }
-
-            return new MessageResendHandler(type, validators, msgPerValidator);
         }
     }
 }
