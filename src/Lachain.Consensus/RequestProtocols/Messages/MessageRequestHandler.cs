@@ -58,7 +58,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
             HandleReceivedMessage(from, msg);
         }
 
-        public void MessageReceived(int validatorId, int msgId)
+        protected void MessageReceived(int validatorId, int msgId)
         {
             if (_status[validatorId][msgId] != MessageStatus.Received)
                 _remainingMsges--;
@@ -108,7 +108,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
             return requests;
         }
 
-        public abstract ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int msgId);
-        public abstract void HandleReceivedMessage(int from, ConsensusMessage msg);
+        protected abstract ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int msgId);
+        protected abstract void HandleReceivedMessage(int from, ConsensusMessage msg);
     }
 }

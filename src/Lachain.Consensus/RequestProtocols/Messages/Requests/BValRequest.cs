@@ -12,14 +12,14 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
 
         }
 
-        public override void HandleReceivedMessage(int from, ConsensusMessage msg)
+        protected override void HandleReceivedMessage(int from, ConsensusMessage msg)
         {
             if (msg.PayloadCase != ConsensusMessage.PayloadOneofCase.Bval)
                 throw new Exception($"{msg.PayloadCase} message routed to Bval request");
             MessageReceived(from, msg.Bval.Value ? 1 : 0);
         }
 
-        public override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
+        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as BinaryBroadcastId ?? throw new Exception($"wrong protcolId {protocolId} for Bval request");
             var bvalRequest = new RequestBValMessage
