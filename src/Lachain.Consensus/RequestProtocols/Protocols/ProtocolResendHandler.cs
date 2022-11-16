@@ -62,6 +62,22 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             else throw new Exception($"MessageResendHandler {type} not registered");
         }
 
+        public List<ConsensusMessage> HandleRequest(int from, RequestConsensusMessage request, RequestType requestType)
+        {
+            if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
+            {
+                var response = handler.HandleRequest(from, request, requestType);
+                var validResponse = new List<ConsensusMessage>();
+                foreach (var msg in response)
+                {
+                    if (!(msg is null))
+                        validResponse.Add(msg);
+                }
+                return validResponse;
+            }
+            throw new Exception($"MessageResendHandler {requestType} not registered");
+        }
+
         private IMessageResendHandler RegisterMessageHandler(RequestType type)
         {
             switch (type)
