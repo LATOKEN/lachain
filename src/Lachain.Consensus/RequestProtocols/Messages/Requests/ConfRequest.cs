@@ -12,14 +12,14 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
 
         }
 
-        public override void HandleReceivedMessage(int from, ConsensusMessage msg)
+        protected override void HandleReceivedMessage(int from, ConsensusMessage msg)
         {
             if (msg.PayloadCase != ConsensusMessage.PayloadOneofCase.Conf)
                 throw new Exception($"{msg.PayloadCase} message routed to Conf request");
             MessageReceived(from, 0);
         }
 
-        public override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
+        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as BinaryBroadcastId ?? throw new Exception($"wrong protcolId {protocolId} for Conf request");
             var confRequest = new RequestConfMessage

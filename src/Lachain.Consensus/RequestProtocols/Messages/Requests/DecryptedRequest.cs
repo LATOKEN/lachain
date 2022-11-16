@@ -12,14 +12,14 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
 
         }
 
-        public override void HandleReceivedMessage(int from, ConsensusMessage msg)
+        protected override void HandleReceivedMessage(int from, ConsensusMessage msg)
         {
             if (msg.PayloadCase != ConsensusMessage.PayloadOneofCase.Decrypted)
                 throw new Exception($"{msg.PayloadCase} message routed to Decrypted request");
             MessageReceived(from, msg.Decrypted.ShareId);
         }
 
-        public override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int msgId)
+        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int msgId)
         {
             var id = protocolId as HoneyBadgerId ?? throw new Exception($"wrong protcolId {protocolId} for Decrypted request");
             var decryptedRequest = new RequestTPKEPartiallyDecryptedShareMessage
