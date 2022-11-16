@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Proto;
@@ -55,6 +56,32 @@ namespace Lachain.Consensus.RequestProtocols.Messages
                 throw new Exception($"Sending duplicate message {msg.ToString()} to validator {validatorId}");
             _sentMessages[validatorId][msgId] = msg;
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public List<ConsensusMessage?> HandleRequest(int from, RequestConsensusMessage request, RequestType type)
+        {
+            if (_terminated)
+                return new List<ConsensusMessage?>();
+
+            if (type != _type)
+                throw new Exception($"Request message {type} routed to MessageResendHandler {_type}");
+
+            if (from >= _validators)
+                throw new Exception($"Got request from validator {from}. But we have total {_validators} validators");
+
+            return HandleRequestMessage(from, request);
+        }
+
+        protected ConsensusMessage? GetMessage(int from, int msgId)
+        {
+            if (from >= _validators)
+                throw new Exception($"Got request from validator {from}. But we have total {_validators} validators");
+            if (msgId >= _msgPerValidator)
+                throw new Exception($"Got request for msgId {msgId}. But we have total {_msgPerValidator} messages per validator");
+            return _sentMessages[from][msgId];
+        }
+
+        protected abstract List<ConsensusMessage?> HandleRequestMessage(int from, RequestConsensusMessage msg);
 
         protected abstract void HandleSentMessage(int validator, ConsensusMessage msg);
     }
