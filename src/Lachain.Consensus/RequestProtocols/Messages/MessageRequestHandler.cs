@@ -18,7 +18,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         private int _remainingMsges;
         private readonly Queue<(int,int)> _messageRequests;
         public RequestType Type => _type;
-        public MessageRequestHandler(RequestType type, int validatorCount, int msgPerValidator)
+        protected MessageRequestHandler(RequestType type, int validatorCount, int msgPerValidator)
         {
             _type = type;
             _validators = validatorCount;
