@@ -95,7 +95,7 @@ namespace Lachain.Core.Consensus
             {
                 _registry[protocol.Id] = protocol;
                 protocol._receivedExternalMessage += PersistExternalMessae;
-                _requestManager.RegisterProtocol(protocol.Id);
+                _requestManager.RegisterProtocol(protocol.Id, protocol);
             }
         }
 
