@@ -17,7 +17,8 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         private readonly int _validatorsCount;
         private readonly IDictionary<byte, IMessageRequestHandler> _messageHandlers;
         private bool _terminated = false;
-        public ProtocolRequestHandler(IProtocolIdentifier id, int validatorsCount)
+        private bool _subscribed = false;
+        public ProtocolRequestHandler(IProtocolIdentifier id, IConsensusProtocol protocol, int validatorsCount)
         {
             _validatorsCount = validatorsCount;
             _protocolId = id;
@@ -35,6 +36,7 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
                     _messageHandlers[(byte) requestType] = RegisterMessageHandler(requestType);
                 }
             }
+            protocol._receivedExternalMessage += MessageReceived;
         }
 
         public void Terminate()
@@ -48,10 +50,11 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             Logger.LogTrace($"Protocol handler for protocol {_protocolId} terminated");
         }
 
-        public void MessageReceived(int from, ConsensusMessage msg)
+        private void MessageReceived(object? sender, (int from, ConsensusMessage msg) @event)
         {
             if (_terminated)
                 return;
+            var (from, msg) = @event;
             var type = MessageUtils.GetRequestTypeForMessageType(msg);
             if (_messageHandlers.TryGetValue((byte) type, out var handler))
             {
