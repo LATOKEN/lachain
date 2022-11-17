@@ -126,6 +126,7 @@ namespace Lachain.Consensus.CommonCoin
                         CheckResult();
                         var msg = CreateCoinMessage(signatureShare);
                         Broadcaster.Broadcast(msg);
+                        InvokeMessageBroadcasted(msg);
                         break;
                     case ProtocolResult<CoinId, CoinResult> _:
                         _lastMessage = "ProtocolResult";

@@ -115,8 +115,10 @@ namespace Lachain.Consensus.ReliableBroadcast
             AugmentInput(input);
             foreach (var (valMessage, i) in ConstructValMessages(input).WithIndex())
             {
-                Broadcaster.SendToValidator(new ConsensusMessage {ValMessage = valMessage}, i);
+                var msg = new ConsensusMessage {ValMessage = valMessage};
+                Broadcaster.SendToValidator(msg, i);
                 Logger.LogTrace($"Protocol {Id} sent VAL to validator {i} ({Wallet.EcdsaPublicKeySet[i].ToHex()})");
+                InvokeMessageSent(i, msg);
             }
 
             CheckResult();
@@ -148,7 +150,9 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (validator == val.SenderId)
             {
                 InvokeReceivedExternalMessage(validator, new ConsensusMessage { ValMessage = val });
-                Broadcaster.Broadcast(CreateEchoMessage(val));
+                var msg = CreateEchoMessage(val);
+                Broadcaster.Broadcast(msg);
+                InvokeMessageBroadcasted(msg);
             }
             else
             {
@@ -231,9 +235,11 @@ namespace Lachain.Consensus.ReliableBroadcast
                 return;
             }
 
-            Broadcaster.Broadcast(CreateReadyMessage(bestRoot));
+            var msg = CreateReadyMessage(bestRoot);
+            Broadcaster.Broadcast(msg);
             _readySent = true;
             Logger.LogTrace($"Protocol {Id} got enough ECHOs and broadcasted READY message");
+            InvokeMessageBroadcasted(msg);
         }
 
         private void TrySendReadyMessageFromReady()
@@ -246,9 +252,11 @@ namespace Lachain.Consensus.ReliableBroadcast
                 .First();
             if (bestRootCnt != F + 1) return;
             if (_readySent) return;
-            Broadcaster.Broadcast(CreateReadyMessage(bestRoot));
+            var msg = CreateReadyMessage(bestRoot);
+            Broadcaster.Broadcast(msg);
             _readySent = true;
             Logger.LogTrace($"Protocol {Id} got enough READYs and broadcasted READY message");
+            InvokeMessageBroadcasted(msg);
         }
 
         private void CheckResult()

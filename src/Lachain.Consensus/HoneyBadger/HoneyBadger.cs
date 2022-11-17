@@ -161,7 +161,9 @@ namespace Lachain.Consensus.HoneyBadger
 
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
-                Broadcaster.Broadcast(CreateDecryptedMessage(dec));
+                var msg = CreateDecryptedMessage(dec);
+                Broadcaster.Broadcast(msg);
+                InvokeMessageBroadcasted(msg);
             }
 
             _takenSet = true;
