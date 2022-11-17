@@ -183,9 +183,9 @@ namespace Lachain.Console
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             Logger.LogInformation("Block synchronization finished, starting consensus...");
-            if (options.RestoreState)   Logger.LogInformation("RestoreState Option is set. Will attempt to Restore State");
+            if (options.NoRestoreState)   Logger.LogInformation("NoRestoreState Option is set. Will not attempt to Restore State");
             
-            consensusManager.Start(blockManager.GetHeight() + 1, options.RestoreState);
+            consensusManager.Start(blockManager.GetHeight() + 1, !options.NoRestoreState);
             validatorStatusManager.Start(false);
 
             System.Console.CancelKeyPress += (sender, e) =>
