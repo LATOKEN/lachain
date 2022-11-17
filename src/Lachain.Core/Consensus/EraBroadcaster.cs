@@ -457,10 +457,14 @@ namespace Lachain.Core.Consensus
         // Protocol will also be created only once, after achieving result, Protocol terminate and no longer process any
         // messages. 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id)
+        private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id, bool start = true)
         {
             ValidateId(id);
-            if (_registry.TryGetValue(id, out var existingProtocol)) return existingProtocol;
+            if (_registry.TryGetValue(id, out var existingProtocol))
+            {
+                
+                return existingProtocol;
+            }
             if (_terminated)
             {
                 Logger.LogTrace($"Protocol {id} not created since broadcaster is terminated");

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus.Messages;
@@ -36,6 +37,7 @@ namespace Lachain.Consensus
         protected string _lastMessage = "";
         private ulong _startTime = 0;
         private const ulong _alertTime = 60 * 1000;
+        public bool Started { get; private set; } = false;
 
         protected AbstractProtocol(
             IPublicConsensusKeySet wallet,
@@ -44,10 +46,16 @@ namespace Lachain.Consensus
         )
         {
             _thread = new Thread(Start) {IsBackground = true};
-            _thread.Start();
             Broadcaster = broadcaster;
             Id = id;
             Wallet = wallet;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void StartThread()
+        {
+            _thread.Start();
+            Started = true;
         }
 
         public int GetMyId()
