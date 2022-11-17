@@ -11,11 +11,11 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Resends
 
         }
 
-        protected override void HandleReceivedMessage(int from, ConsensusMessage msg)
+        protected override void HandleSentMessage(int validator, ConsensusMessage msg)
         {
             if (msg.PayloadCase != ConsensusMessage.PayloadOneofCase.Bval)
                 throw new Exception($"{msg.PayloadCase} message routed to Bval Resend");
-            MessageReceived(from, msg.Bval.Value ? 1 : 0, msg);
+            SaveMessage(validator, msg.Bval.Value ? 1 : 0, msg);
         }
     }
 }
