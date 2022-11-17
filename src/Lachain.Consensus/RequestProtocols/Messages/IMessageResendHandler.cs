@@ -6,6 +6,6 @@ namespace Lachain.Consensus.RequestProtocols.Messages
     {
         RequestType Type { get; }
         void Terminate();
-        void MessageReceived(int from, ConsensusMessage msg, RequestType type);
+        void MessageSent(int validator, ConsensusMessage msg, RequestType type);
     }
 }

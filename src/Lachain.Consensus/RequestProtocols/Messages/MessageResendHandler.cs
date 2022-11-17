@@ -40,22 +40,22 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void MessageReceived(int from, ConsensusMessage msg, RequestType type)
+        public void MessageSent(int validator, ConsensusMessage msg, RequestType type)
         {
             if (_terminated)
                 return;
             if (type != _type)
                 throw new Exception($"message type {type} routed to MessageResendHandler {_type}");
-            HandleReceivedMessage(from, msg);
+            HandleSentMessage(validator, msg);
         }
 
-        protected void MessageReceived(int validatorId, int msgId, ConsensusMessage msg)
+        protected void SaveMessage(int validatorId, int msgId, ConsensusMessage msg)
         {
             if (!(_sentMessages[validatorId][msgId] is null))
                 throw new Exception($"Sending duplicate message {msg.ToString()} to validator {validatorId}");
             _sentMessages[validatorId][msgId] = msg;
         }
 
-        protected abstract void HandleReceivedMessage(int from, ConsensusMessage msg);
+        protected abstract void HandleSentMessage(int validator, ConsensusMessage msg);
     }
 }
