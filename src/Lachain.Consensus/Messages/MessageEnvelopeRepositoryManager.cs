@@ -28,8 +28,13 @@ namespace Lachain.Consensus.Messages
             return _messageEnvelopeList.Era;
         }
 
-        public void StartEra(long era)
+        public void StartEra(long era, bool canBeSame = false)
         {
+            if (!canBeSame && IsPresent && _messageEnvelopeList.Era == era)
+            {
+                throw new ArgumentException($"Start Era called with same era number {era}");
+            }
+     
             _messageEnvelopeList = new MessageEnvelopeList(era);
             SaveToDb(_messageEnvelopeList);
         }
