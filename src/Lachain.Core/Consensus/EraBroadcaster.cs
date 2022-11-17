@@ -462,7 +462,8 @@ namespace Lachain.Core.Consensus
             ValidateId(id);
             if (_registry.TryGetValue(id, out var existingProtocol))
             {
-                
+                if (!existingProtocol.HasThreadStarted())
+                    existingProtocol.StartThread();
                 return existingProtocol;
             }
             if (_terminated)
@@ -474,6 +475,9 @@ namespace Lachain.Core.Consensus
             var protocol = CreateProtocol(id);
             if (!(protocol is null))
                 Logger.LogTrace($"Created protocol {id} on demand");
+            
+            if (!(protocol is null) && !protocol.HasThreadStarted())
+                protocol.StartThread();
             return protocol;
         }
 

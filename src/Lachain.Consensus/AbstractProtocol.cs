@@ -54,9 +54,20 @@ namespace Lachain.Consensus
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void StartThread()
         {
+            if (Started)
+            {
+                throw new InvalidOperationException("StartThread() already called previously");
+            }
+
             _thread.Start();
             Started = true;
         }
+
+        public bool HasThreadStarted()
+        {
+            return Started;
+        }
+
 
         public int GetMyId()
         {

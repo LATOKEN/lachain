@@ -9,8 +9,9 @@ namespace Lachain.Consensus
         void ReceiveMessage(MessageEnvelope message);
 
         void Start();
-
+        
         void StartThread();
+        bool HasThreadStarted();
         void WaitFinish();
         bool WaitFinish(TimeSpan timeout);
         void WaitResult();
