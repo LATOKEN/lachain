@@ -50,14 +50,14 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             Logger.LogTrace($"ProtocolResendHandler for protocol {_protocolId} terminated");
         }
 
-        public void MessageReceived(int from, ConsensusMessage msg)
+        public void MessageSent(int validator, ConsensusMessage msg)
         {
             if (_terminated)
                 return;
             var type = MessageUtils.GetRequestTypeForMessageType(msg);
             if (_messageHandlers.TryGetValue((byte) type, out var handler))
             {
-                handler.MessageReceived(from, msg, type);
+                handler.MessageSent(validator, msg, type);
             }
             else throw new Exception($"MessageResendHandler {type} not registered");
         }
