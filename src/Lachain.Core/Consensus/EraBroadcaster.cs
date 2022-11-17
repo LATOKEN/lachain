@@ -143,26 +143,26 @@ namespace Lachain.Core.Consensus
                         switch (messageEnvelope.InternalMessage)
                         {
                             case ProtocolRequest<BinaryAgreementId, bool> request:
-                                InternalRequest(request);
+                                InternalRequest(request, true);
                                 break;
                             case ProtocolRequest<BinaryBroadcastId, bool> request:
-                                InternalRequest(request);
+                                InternalRequest(request, true);
                                 break;
                             case ProtocolRequest<CoinId, object?> request:
-                                InternalRequest(request);
+                                InternalRequest(request, true);
                                 break;
                             case ProtocolRequest<CommonSubsetId, EncryptedShare> request:
-                                InternalRequest(request);
+                                InternalRequest(request, true);
                                 break;
                             case ProtocolRequest<HoneyBadgerId, IRawShare> request:
-                                InternalRequest(request);
+                                InternalRequest(request, true);
                                 break;
                             case ProtocolRequest<ReliableBroadcastId, EncryptedShare?> request:
-                                InternalRequest(request);
+                                InternalRequest(request, true);
                                 break;
                             case ProtocolRequest<RootProtocolId, IBlockProducer> request:
                                 request.Input = _blockProducer;
-                                InternalRequest(request);
+                                InternalRequest(request, true);
                                 break;
                             default:
                                 throw new InvalidOperationException(
@@ -293,6 +293,7 @@ namespace Lachain.Core.Consensus
             HandleExternalMessage(protocolId, messageEnvelope);
         }
 
+     
         private void HandleExternalMessage(IProtocolIdentifier protocolId, MessageEnvelope message)
         {
             // For external message we don't create new protocols. each protocol is requested for some result
@@ -326,9 +327,13 @@ namespace Lachain.Core.Consensus
                 Logger.LogWarning($"Invalid protocol id {protocolId} from validator {GetPublicKeyById(from)!.ToHex()} ({from})");
             }
         }
+        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request) where TId : IProtocolIdentifier
+        {
+            InternalRequest<TId, TInputType>(request, false);
+        }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request)
+        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request, bool restorationPhase)
             where TId : IProtocolIdentifier
         {
             if (_terminated)
@@ -358,7 +363,15 @@ namespace Lachain.Core.Consensus
             }
 
             Logger.LogTrace($"Protocol {request.From} requested result from protocol {request.To}");
-            EnsureProtocol(request.To);
+            if (restorationPhase)
+            {
+                EnsureProtocol(request.To, false);
+            }
+            else
+            {
+                EnsureProtocol(request.To, true);
+            }
+            
 
 
             var messageEnvelope = new MessageEnvelope(request, GetMyId());
@@ -457,12 +470,12 @@ namespace Lachain.Core.Consensus
         // Protocol will also be created only once, after achieving result, Protocol terminate and no longer process any
         // messages. 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id, bool start = true)
+        private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id, bool start)
         {
             ValidateId(id);
             if (_registry.TryGetValue(id, out var existingProtocol))
             {
-                if (!existingProtocol.HasThreadStarted())
+                if (start && !existingProtocol.HasThreadStarted())
                     existingProtocol.StartThread();
                 return existingProtocol;
             }
@@ -476,7 +489,7 @@ namespace Lachain.Core.Consensus
             if (!(protocol is null))
                 Logger.LogTrace($"Created protocol {id} on demand");
             
-            if (!(protocol is null) && !protocol.HasThreadStarted())
+            if (!(protocol is null) && start && !protocol.HasThreadStarted())
                 protocol.StartThread();
             return protocol;
         }
@@ -658,7 +671,7 @@ namespace Lachain.Core.Consensus
 
         public bool WaitFinish(TimeSpan timeout)
         {
-            return EnsureProtocol(new RootProtocolId(_era))?.WaitFinish(timeout) ?? true;
+            return EnsureProtocol(new RootProtocolId(_era), true)?.WaitFinish(timeout) ?? true;
         }
 
         public IDictionary<IProtocolIdentifier, IConsensusProtocol> GetRegistry()
