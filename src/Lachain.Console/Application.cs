@@ -183,6 +183,8 @@ namespace Lachain.Console
                     .Where(key => !key.Equals(wallet.EcdsaKeyPair.PublicKey))
             );
             Logger.LogInformation("Block synchronization finished, starting consensus...");
+            if (options.RestoreState)   Logger.LogInformation("RestoreState Option is set. Will attempt to Restore State");
+            
             consensusManager.Start(blockManager.GetHeight() + 1, options.RestoreState);
             validatorStatusManager.Start(false);
 

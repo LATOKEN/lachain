@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Lachain.Utility.Serialization;
 using Nethereum.RLP;
 
@@ -19,7 +20,8 @@ namespace Lachain.Consensus.Messages
             this.MessageList = new List<MessageEnvelope>();
             this.MessageSet = new HashSet<MessageEnvelope>();
         }
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddMessage(MessageEnvelope messageEnvelope)
         {
             if (MessageSet.Contains(messageEnvelope))
