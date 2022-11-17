@@ -21,6 +21,9 @@ namespace Lachain.Consensus
 
         bool Terminated { get; }
 
+        event EventHandler<IProtocolIdentifier>? _protocolWaitingTooLong;
         event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
+        event EventHandler<ConsensusMessage>? _messageBroadcasted;
+        event EventHandler<(int validator, ConsensusMessage msg)>? _messageSent;
     }
 }
