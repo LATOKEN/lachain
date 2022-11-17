@@ -30,11 +30,6 @@ namespace Lachain.Consensus.Messages
 
         public void StartEra(long era)
         {
-            if (IsPresent && _messageEnvelopeList.Era == era)
-            {
-                throw new ArgumentException($"Start Era called with same era number {era}");
-            }
-     
             _messageEnvelopeList = new MessageEnvelopeList(era);
             SaveToDb(_messageEnvelopeList);
         }

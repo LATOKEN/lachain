@@ -115,9 +115,9 @@ namespace Lachain.Core.Consensus
             }
         }
 
-        public void RestoreState()
+        public void RestoreState(bool restore)
         {
-            if (!_messageEnvelopeRepositoryManager.IsPresent || _messageEnvelopeRepositoryManager.GetEra() != _era)
+            if (!restore || !_messageEnvelopeRepositoryManager.IsPresent || _messageEnvelopeRepositoryManager.GetEra() != _era)
             {
                 Logger.LogInformation($"No outstanding messages from era {_era} found. Starting new era.");
                 _messageEnvelopeRepositoryManager.StartEra(_era);
