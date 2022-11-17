@@ -86,7 +86,7 @@ namespace Lachain.Core.Consensus
             foreach (var protocol in protocols)
             {
                 _registry[protocol.Id] = protocol;
-                _requestManager.RegisterProtocol(protocol.Id);
+                _requestManager.RegisterProtocol(protocol.Id, protocol);
             }
         }
 
