@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Consensus.RequestProtocols.Messages;
 using Lachain.Consensus.RequestProtocols.Messages.Requests;
@@ -61,7 +62,8 @@ namespace Lachain.Consensus.RequestProtocols
             _validators = validatorsCount;
         }
 
-        public void RegisterProtocol(IProtocolIdentifier protocolId)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void RegisterProtocol(IProtocolIdentifier protocolId, IConsensusProtocol protocol)
         {
             if (_terminated)
                 return;
@@ -72,14 +74,15 @@ namespace Lachain.Consensus.RequestProtocols
                 throw new Exception($"Protocol handler for protocolId {protocolId} already registered");
             }
 
-            _protocolRequestHandler[protocolId] = new ProtocolRequestHandler(protocolId, _validators);
+            _protocolRequestHandler[protocolId] = new ProtocolRequestHandler(protocolId, protocol, _validators);
 
             if (_protocolResendHandler.TryGetValue(protocolId, out var _))
             {
                 throw new Exception($"Protocol handler for protocolId {protocolId} already registered");
             }
 
-            _protocolResendHandler[protocolId] = new ProtocolResendHandler(protocolId, _validators);
+            _protocolResendHandler[protocolId] = new ProtocolResendHandler(protocolId, protocol, _validators);
+            protocol._protocolWaitingTooLong += MakeRequest;
         }
 
         public void HandleRequest(int from, ConsensusMessage request)
@@ -192,6 +195,26 @@ namespace Lachain.Consensus.RequestProtocols
                 }
             }
             else Logger.LogTrace($"{protocolId} not registered yet, discarding request {type}");
+        }
+
+        private void MakeRequest(object? sender, IProtocolIdentifier protocolId)
+        {
+            // lets not send too many requests
+            int maxRequestCount = 10;
+            if (_protocolRequestHandler.TryGetValue(protocolId, out var handler))
+            {
+                var requests = handler.GetRequests(maxRequestCount);
+                foreach (var (msg, validator) in requests)
+                {
+                    _broadcaster.SendToValidator(msg, validator);
+                }
+            }
+            else throw new Exception($"{protocolId} not registered");
+        }
+
+        public void Dispose()
+        {
+            Terminate();
         }
     }
 }
