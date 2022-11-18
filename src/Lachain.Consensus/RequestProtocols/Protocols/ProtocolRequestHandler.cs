@@ -16,6 +16,7 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         private readonly ProtocolType _type;
         private readonly int _validatorsCount;
         private readonly IDictionary<byte, IMessageRequestHandler> _messageHandlers;
+        private readonly List<RequestType> _orderedRequestTypes;
         private bool _terminated = false;
         private bool _subscribed = false;
         public ProtocolRequestHandler(IProtocolIdentifier id, IConsensusProtocol protocol, int validatorsCount)
@@ -25,6 +26,7 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             _type = ProtocolUtils.GetProtocolType(id);
             _messageHandlers = new ConcurrentDictionary<byte, IMessageRequestHandler>();
             var requestTypes = Enum.GetValues(typeof(RequestType)).Cast<RequestType>().ToArray();
+            _orderedRequestTypes = new List<RequestType>();
             foreach (var requestType in requestTypes)
             {
                 if (ProtocolUtils.GetProtocolTypeForRequestType(requestType) == _type)
@@ -34,8 +36,10 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
                         throw new Exception($"{requestType} already registered with handler {handler.Type} and trying to register again");
                     }
                     _messageHandlers[(byte) requestType] = RegisterMessageHandler(requestType);
+                    _orderedRequestTypes.Add(requestType);
                 }
             }
+            _orderedRequestTypes = _orderedRequestTypes.OrderBy(type => type).ToList();
             protocol._receivedExternalMessage += MessageReceived;
         }
 
@@ -68,11 +72,29 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             var allRequests = new List<(ConsensusMessage, int)>();
             if (_terminated)
                 return allRequests;
-            foreach (var (_, handler) in _messageHandlers)
+            
+            // first do new requests
+            foreach (var requestType in _orderedRequestTypes)
             {
-                var requests = handler.GetRequests(_protocolId, requestCount);
-                requestCount -= requests.Count;
-                allRequests.AddRange(requests);
+                if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
+                {
+                    var requests = handler.GetNewRequests(_protocolId, requestCount);
+                    requestCount -= requests.Count;
+                    allRequests.AddRange(requests);
+                }
+                else throw new Exception($"MessageRequestHandler {requestType} not registered");
+            }
+
+            // then do repeated requests
+            foreach (var requestType in _orderedRequestTypes)
+            {
+                if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
+                {
+                    var requests = handler.GetRequests(_protocolId, requestCount);
+                    requestCount -= requests.Count;
+                    allRequests.AddRange(requests);
+                }
+                else throw new Exception($"MessageRequestHandler {requestType} not registered");
             }
             return allRequests;
         }
