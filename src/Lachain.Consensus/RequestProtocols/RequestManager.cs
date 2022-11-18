@@ -23,6 +23,7 @@ namespace Lachain.Consensus.RequestProtocols
         private readonly object _queueLock = new object();
         private readonly Queue<(int, ConsensusMessage)> _queue;
         private bool _terminated = false;
+        private int _myId = -1;
         public RequestManager(IConsensusBroadcaster broadcaster, long era)
         {
             _broadcaster = broadcaster;
@@ -60,6 +61,7 @@ namespace Lachain.Consensus.RequestProtocols
         public void SetValidators(int validatorsCount)
         {
             _validators = validatorsCount;
+            _myId = _broadcaster.GetMyId();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -200,13 +202,19 @@ namespace Lachain.Consensus.RequestProtocols
         private void MakeRequest(object? sender, IProtocolIdentifier protocolId)
         {
             // lets not send too many requests
+            // TODO: Caluclate request size
             int maxRequestCount = 10;
             if (_protocolRequestHandler.TryGetValue(protocolId, out var handler))
             {
                 var requests = handler.GetRequests(maxRequestCount);
                 foreach (var (msg, validator) in requests)
                 {
+                    if (validator == _myId) continue;
                     _broadcaster.SendToValidator(msg, validator);
+                    var publicKey = _broadcaster.GetPublicKeyById(validator);
+                    Logger.LogTrace(
+                        $"Sending request for consensus message {msg.RequestConsensus.PayloadCase} to validator {publicKey} ({validator})"
+                    );
                 }
             }
             else throw new Exception($"{protocolId} not registered");
