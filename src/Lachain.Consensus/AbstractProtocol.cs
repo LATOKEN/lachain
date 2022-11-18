@@ -39,7 +39,7 @@ namespace Lachain.Consensus
         private const ulong _alertTime = 60 * 1000;
         
         // waiting for 10 block time
-        // NOTE: calculate _requestTime properly
+        // TODO: calculate _requestTime properly
         private const ulong _requestTime = 10 * 4 * 1000;
 
         protected AbstractProtocol(
