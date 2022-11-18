@@ -255,6 +255,18 @@ namespace Lachain.StorageTest
             InsertRandomPrefixKeyValue(noOfPrefix, noOfTest, out var prefixKeyValues, out var keyValues);
             prefixKeyValues = prefixKeyValues.OrderBy(item => item.Item1, new ByteKeyComparer()).ToList();
             var existNextPrefix = GetNextValue(prefixKeyValues.Last().Item1, out var prefix);
+            if (!existNextPrefix)
+            {
+                var lastPrefix = prefixKeyValues.Last().Item1;
+                foreach (var (pref, (key, value)) in prefixKeyValues)
+                {
+                    if (pref.SequenceEqual(lastPrefix))
+                    {
+                        _dbContext.Delete(BuildPrefix(pref, key));
+                    }
+                }
+                existNextPrefix = GetNextValue(prefixKeyValues.Last().Item1, out prefix);
+            }
             Assert.That(existNextPrefix);
             var iterator = _dbContext.GetIteratorForValidKeys(prefix);
             if (iterator is null)
