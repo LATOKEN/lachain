@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Lachain.Consensus;
+using Lachain.Consensus.CommonSubset;
 using Lachain.Core.CLI;
 using Lachain.Core.Config;
 using Lachain.Core.DI;
@@ -93,6 +94,32 @@ namespace Lachain.ConsensusTest
             Assert.AreEqual(manager.GetMessages().Count, 0);
         }
         
+        [Test]
+        [Repeat(2)]
+        public void TestRootProtocolEquality()
+        {
+            var commonSubsetId1 = new CommonSubsetId(123);
+            var commonSubsetId2 = new RootProtocolId(123);
+            Assert.AreEqual(commonSubsetId1, commonSubsetId2);
+            
+            var rootProtocolId1 = new RootProtocolId(123);
+            var rootProtocolId2 = new RootProtocolId(123);
+            Assert.AreEqual(rootProtocolId1, rootProtocolId2);
+
+            var request1 = new ProtocolRequest<RootProtocolId, IBlockProducer> 
+                (commonSubsetId1, rootProtocolId1, _blockProducer);
+            
+            var request2 = new ProtocolRequest<RootProtocolId, IBlockProducer> 
+                (commonSubsetId2, rootProtocolId2, null);
+
+            Assert.AreEqual(request1, request2);
+            Assert.AreEqual(request1.GetHashCode(), request2.GetHashCode());
+
+            var e1 = new MessageEnvelope(request1, 909);
+            var e2 = new MessageEnvelope(request2, 909);
+            Assert.AreEqual(e1, e2);
+            Assert.AreEqual(e1.GetHashCode(), e2.GetHashCode());
+        }
         
         [Test]
         [Repeat(10)]
