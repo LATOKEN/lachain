@@ -9,6 +9,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         void Terminate();
         void MessageReceived(int from, ConsensusMessage msg, RequestType type);
         bool IsProtocolComplete();
+        List<(ConsensusMessage, int)> GetNewRequests(IProtocolIdentifier protocolId, int requestCount);
         List<(ConsensusMessage, int)> GetRequests(IProtocolIdentifier protocolId, int requestCount);
     }
 }

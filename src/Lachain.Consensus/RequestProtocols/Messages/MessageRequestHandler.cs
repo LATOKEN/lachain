@@ -71,7 +71,18 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public List<(ConsensusMessage, int)> GetNewRequests(IProtocolIdentifier protocolId, int requestCount)
+        {
+            return GetRequests(protocolId, requestCount, true);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public List<(ConsensusMessage, int)> GetRequests(IProtocolIdentifier protocolId, int requestCount)
+        {
+            return GetRequests(protocolId, requestCount, false);
+        }
+
+        private List<(ConsensusMessage, int)> GetRequests(IProtocolIdentifier protocolId, int requestCount, bool excludeRequested)
         {
             var requests = new List<(ConsensusMessage, int)>();
             if (IsProtocolComplete() || _terminated) return requests;
@@ -81,9 +92,15 @@ namespace Lachain.Consensus.RequestProtocols.Messages
             
             while (requestCount > 0)
             {
-                var (validtorId, msgId) = _messageRequests.Dequeue();
+                var (validtorId, msgId) = _messageRequests.Peek();
                 if (_status[validtorId][msgId] == MessageStatus.Received)
+                {
+                    _messageRequests.Dequeue();
                     continue;
+                }
+
+                if (_status[validtorId][msgId] == MessageStatus.Requested && excludeRequested)
+                    break;
                 requestCount--;
                 if (_status[validtorId][msgId] == MessageStatus.Requested)
                 {
@@ -97,11 +114,10 @@ namespace Lachain.Consensus.RequestProtocols.Messages
                     Logger.LogWarning($"Requesting consensus msg {_type} with id {msgId} to validator {validtorId}.");
                 }
                 var msg = CreateConsensusMessage(protocolId, msgId);
-                if (_type == RequestType.Val)
-                    requests.Add((msg, msg.ValMessage.SenderId));
-                else
-                    requests.Add((msg, validtorId));
+                var requestingTo = _type == RequestType.Val ? msg.ValMessage.SenderId : validtorId;
+                requests.Add((msg, requestingTo));
 
+                _messageRequests.Dequeue();
                 // put this back so we can request it again
                 _messageRequests.Enqueue((validtorId, msgId));
             }
