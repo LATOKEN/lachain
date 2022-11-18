@@ -89,6 +89,16 @@ namespace Lachain.ConsensusTest
         {
         }
 
+        public void StartThread()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool HasThreadStarted()
+        {
+            throw new NotImplementedException();
+        }
+
         public void WaitFinish()
         {
         }
