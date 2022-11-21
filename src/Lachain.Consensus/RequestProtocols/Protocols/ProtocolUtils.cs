@@ -1,6 +1,7 @@
 using System;
 using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
+using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RequestProtocols.Messages;
@@ -18,8 +19,12 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
                     return ProtocolType.Root;
                 case HoneyBadgerId _:
                     return ProtocolType.HoneyBadger;
+                case CommonSubsetId _:
+                    return ProtocolType.CommonSubset;
                 case ReliableBroadcastId _:
                     return ProtocolType.ReliableBroadcast;
+                case BinaryAgreementId _:
+                    return ProtocolType.BinaryAgreement;
                 case BinaryBroadcastId _:
                     return ProtocolType.BinaryBroadcast;
                 case CoinId _:

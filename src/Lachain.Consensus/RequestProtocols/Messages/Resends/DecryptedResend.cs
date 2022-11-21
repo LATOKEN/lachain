@@ -15,7 +15,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Resends
         protected override void HandleSentMessage(int validator, ConsensusMessage msg)
         {
             if (msg.PayloadCase != ConsensusMessage.PayloadOneofCase.Decrypted)
-                throw new Exception($"{msg.PayloadCase} message routed to Decrypted request");
+                throw new Exception($"{msg.PayloadCase} message routed to Decrypted Resend");
             SaveMessage(validator, msg.Decrypted.ShareId, msg);
         }
 
