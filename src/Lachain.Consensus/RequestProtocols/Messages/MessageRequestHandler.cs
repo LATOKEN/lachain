@@ -16,8 +16,9 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         private readonly int _msgPerValidator;
         private bool _terminated = false;
         private int _remainingMsges;
-        private readonly Queue<(int,int)> _messageRequests;
+        private readonly Queue<(int validatorId, int msgId)> _messageRequests;
         public RequestType Type => _type;
+        public int RemainingMsgCount => _remainingMsges;
         protected MessageRequestHandler(RequestType type, int validatorCount, int msgPerValidator)
         {
             _type = type;
@@ -67,7 +68,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
 
         public bool IsProtocolComplete()
         {
-            return _remainingMsges == _msgCount;
+            return _remainingMsges == 0;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -113,8 +114,8 @@ namespace Lachain.Consensus.RequestProtocols.Messages
                     _status[validtorId][msgId] = MessageStatus.Requested;
                     Logger.LogWarning($"Requesting consensus msg {_type} with id {msgId} to validator {validtorId}.");
                 }
-                var msg = CreateConsensusMessage(protocolId, msgId);
-                var requestingTo = _type == RequestType.Val ? msg.ValMessage.SenderId : validtorId;
+                var msg = CreateConsensusRequestMessage(protocolId, msgId);
+                var requestingTo = _type == RequestType.Val ? msg.RequestConsensus.RequestVal.SenderId : validtorId;
                 requests.Add((msg, requestingTo));
 
                 _messageRequests.Dequeue();
@@ -124,7 +125,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
             return requests;
         }
 
-        protected abstract ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int msgId);
+        protected abstract ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int msgId);
         protected abstract void HandleReceivedMessage(int from, ConsensusMessage msg);
     }
 }

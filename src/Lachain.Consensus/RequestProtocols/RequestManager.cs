@@ -8,6 +8,7 @@ using Lachain.Consensus.RequestProtocols.Messages.Requests;
 using Lachain.Consensus.RequestProtocols.Protocols;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.RequestProtocols
 {
@@ -185,6 +186,8 @@ namespace Lachain.Consensus.RequestProtocols
             {
                 try
                 {
+                    var pubKey = _broadcaster.GetPublicKeyById(from);
+                    Logger.LogTrace($"Got consensus request {type} for {protocolId} from {pubKey!.ToHex()} ({from})");
                     var response = handler.HandleRequest(from, request, type);
                     foreach (var msg in response)
                     {
@@ -207,13 +210,14 @@ namespace Lachain.Consensus.RequestProtocols
             if (_protocolRequestHandler.TryGetValue(protocolId, out var handler))
             {
                 var requests = handler.GetRequests(maxRequestCount);
+                Logger.LogTrace($"{protocolId} is making {requests.Count} consensus requests");
                 foreach (var (msg, validator) in requests)
                 {
                     if (validator == _myId) continue;
                     _broadcaster.SendToValidator(msg, validator);
                     var publicKey = _broadcaster.GetPublicKeyById(validator);
                     Logger.LogTrace(
-                        $"Sending request for consensus message {msg.RequestConsensus.PayloadCase} to validator {publicKey} ({validator})"
+                        $"Sending request for consensus message {msg.RequestConsensus.PayloadCase} to validator {publicKey!.ToHex()} ({validator})"
                     );
                 }
             }

@@ -7,5 +7,7 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         ReliableBroadcast = 2,
         BinaryBroadcast = 3,
         CommonCoin = 4,
+        CommonSubset = 5,
+        BinaryAgreement = 6,
     }
 }
