@@ -99,7 +99,7 @@ namespace Lachain.ConsensusTest
         public void TestRootProtocolEquality()
         {
             var commonSubsetId1 = new CommonSubsetId(123);
-            var commonSubsetId2 = new RootProtocolId(123);
+            var commonSubsetId2 = new CommonSubsetId(123);
             Assert.AreEqual(commonSubsetId1, commonSubsetId2);
             
             var rootProtocolId1 = new RootProtocolId(123);

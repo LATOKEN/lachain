@@ -22,12 +22,12 @@ namespace Lachain.ConsensusTest
 
         public void StartThread()
         {
-            throw new NotImplementedException();
+            
         }
 
         public bool HasThreadStarted()
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         public void WaitFinish()
