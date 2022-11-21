@@ -40,7 +40,7 @@ namespace Lachain.Consensus
         
         // waiting for 10 block time
         // TODO: calculate _requestTime properly
-        private const ulong _requestTime = 10 * 4 * 1000;
+        private const ulong _requestTime = 5 * 4 * 1000;
 
         protected AbstractProtocol(
             IPublicConsensusKeySet wallet,

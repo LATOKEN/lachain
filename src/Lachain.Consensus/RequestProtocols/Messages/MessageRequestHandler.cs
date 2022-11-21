@@ -103,20 +103,20 @@ namespace Lachain.Consensus.RequestProtocols.Messages
                 if (_status[validtorId][msgId] == MessageStatus.Requested && excludeRequested)
                     break;
                 requestCount--;
+                var msg = CreateConsensusRequestMessage(protocolId, msgId);
+                var requestingTo = _type == RequestType.Val ? msg.RequestConsensus.RequestVal.SenderId : validtorId;
+                requests.Add((msg, requestingTo));
                 if (_status[validtorId][msgId] == MessageStatus.Requested)
                 {
                     Logger.LogWarning(
-                        $"Requesting consensus msg {_type} with id {msgId} to validator {validtorId} again. Validator not replying."
+                        $"Requesting consensus msg {_type} with id {msgId} to validator {requestingTo} again. Validator not replying."
                     );
                 }
                 else
                 {
                     _status[validtorId][msgId] = MessageStatus.Requested;
-                    Logger.LogWarning($"Requesting consensus msg {_type} with id {msgId} to validator {validtorId}.");
+                    Logger.LogWarning($"Requesting consensus msg {_type} with id {msgId} to validator {requestingTo}.");
                 }
-                var msg = CreateConsensusRequestMessage(protocolId, msgId);
-                var requestingTo = _type == RequestType.Val ? msg.RequestConsensus.RequestVal.SenderId : validtorId;
-                requests.Add((msg, requestingTo));
 
                 _messageRequests.Dequeue();
                 // put this back so we can request it again
