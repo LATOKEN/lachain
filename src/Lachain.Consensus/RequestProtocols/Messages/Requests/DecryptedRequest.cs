@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(from, msg.Decrypted.ShareId);
         }
 
-        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int msgId)
+        protected override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int msgId)
         {
             var id = protocolId as HoneyBadgerId ?? throw new Exception($"wrong protcolId {protocolId} for Decrypted request");
             var decryptedRequest = new RequestTPKEPartiallyDecryptedShareMessage
@@ -37,8 +37,8 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
 
         public static HoneyBadgerId CreateProtocolId(RequestConsensusMessage msg, long era)
         {
-            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestAux)
-                throw new Exception($"{msg.PayloadCase} routed to Aux Request");
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestDecrypted)
+                throw new Exception($"{msg.PayloadCase} routed to Decrypted Request");
             return new HoneyBadgerId(era);
         }
     }

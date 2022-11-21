@@ -6,6 +6,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
     public interface IMessageRequestHandler
     {
         RequestType Type { get; }
+        int RemainingMsgCount { get; }
         void Terminate();
         void MessageReceived(int from, ConsensusMessage msg, RequestType type);
         bool IsProtocolComplete();

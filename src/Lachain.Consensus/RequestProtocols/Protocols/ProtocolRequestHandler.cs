@@ -72,25 +72,32 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             var allRequests = new List<(ConsensusMessage, int)>();
             if (_terminated)
                 return allRequests;
+
+            var remainingMsgCount = new List<(RequestType type, int count)>();
             
             // first do new requests
             foreach (var requestType in _orderedRequestTypes)
             {
                 if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
                 {
+                    var count = handler.RemainingMsgCount;
                     var requests = handler.GetNewRequests(_protocolId, requestCount);
                     requestCount -= requests.Count;
                     allRequests.AddRange(requests);
+                    remainingMsgCount.Add((requestType, count - requests.Count));
                 }
                 else throw new Exception($"MessageRequestHandler {requestType} not registered");
             }
 
             // then do repeated requests
-            foreach (var requestType in _orderedRequestTypes)
+            foreach (var (requestType, count) in remainingMsgCount)
             {
                 if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
                 {
-                    var requests = handler.GetRequests(_protocolId, requestCount);
+                    var msgToFetch = count;
+                    if (count > requestCount)
+                        msgToFetch = requestCount;
+                    var requests = handler.GetRequests(_protocolId, msgToFetch);
                     requestCount -= requests.Count;
                     allRequests.AddRange(requests);
                 }
