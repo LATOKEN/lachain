@@ -68,6 +68,12 @@ namespace Lachain.Networking
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
             var worker = GetClientWorker(publicKey);
+            if (worker is null)
+            {
+                Logger.LogWarning($"No worker found for public key {publicKey.ToHex()}. Ignoring.");
+                return;
+            }
+
             var requestIdentifier = GetNewRequestIdentifier(worker);
             message.RequestId = requestIdentifier.RequestId;
             
@@ -191,6 +197,10 @@ namespace Lachain.Networking
                 {
                     // we should never reply with priority, requests can be spammed
                     peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
+                }
+                else
+                {
+                    Logger.LogWarning($"Found reply from peer {peer.PeerPublicKey.ToHex()} with requestId {requestId}. But no such request found.");
                 }
         };
         }
