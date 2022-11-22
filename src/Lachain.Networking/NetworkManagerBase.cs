@@ -65,6 +65,7 @@ namespace Lachain.Networking
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
+            message.RequestId = Crypto.GenerateRandomBytes(1)[0];
             GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
         }
 
@@ -151,17 +152,17 @@ namespace Lachain.Networking
             }
         }
 
-        private Action<IMessage> SendTo(ClientWorker peer)
+        private Action<IMessage> SendTo(ClientWorker peer, ulong requestId)
         {
             return x =>
             {
                 Logger.LogTrace($"Sending {x.GetType()} to {peer.PeerPublicKey.ToHex()}");
                 NetworkMessage msg = x switch
                 {
-                    PingReply pingReply => new NetworkMessage {PingReply = pingReply},
-                    SyncBlocksReply syncBlockReply => new NetworkMessage {SyncBlocksReply = syncBlockReply},
-                    SyncPoolReply syncPoolReply => new NetworkMessage {SyncPoolReply = syncPoolReply},
-                    GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
+                    PingReply pingReply => new NetworkMessage {RequestId = requestId, PingReply = pingReply},
+                    SyncBlocksReply syncBlockReply => new NetworkMessage {RequestId = requestId, SyncBlocksReply = syncBlockReply},
+                    SyncPoolReply syncPoolReply => new NetworkMessage {RequestId = requestId, SyncPoolReply = syncPoolReply},
+                    GetPeersReply getPeersReply => new NetworkMessage {RequestId = requestId, GetPeersReply = getPeersReply},
                     _ => throw new InvalidOperationException()
                 };
                 // we should never reply with priority, requests can be spammed
@@ -179,13 +180,13 @@ namespace Lachain.Networking
                     OnPingReply?.Invoke(this, (message.PingReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
-                    OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer)));
+                    OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer, message.RequestId)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksReply:
                     OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolRequest:
-                    OnSyncPoolRequest?.Invoke(this, (message.SyncPoolRequest, SendTo(envelope.RemotePeer)));
+                    OnSyncPoolRequest?.Invoke(this, (message.SyncPoolRequest, SendTo(envelope.RemotePeer, message.RequestId)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolReply:
                     OnSyncPoolReply?.Invoke(this, (message.SyncPoolReply, envelope.PublicKey));

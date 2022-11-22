@@ -51,6 +51,7 @@ message SyncPoolReply {
 }
 
 message NetworkMessage {
+    uint64 request_id = 1;
     oneof message {
         PingReply ping_reply = 13;
         ConsensusMessage consensus_message = 21;
