@@ -32,7 +32,7 @@ namespace Lachain.Networking
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
         
-        private ISet<Tuple<ulong, ECDSAPublicKey>> _requestIdSet = new HashSet<Tuple<ulong, ECDSAPublicKey>>();
+        private ISet<RequestIdentifier> _requestIdSet = new HashSet<RequestIdentifier>();
 
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
@@ -67,9 +67,10 @@ namespace Lachain.Networking
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
+            var worker = GetClientWorker(publicKey);
             message.RequestId = Crypto.GenerateRandomBytes(1)[0];
-            _requestIdSet.Add(new Tuple<ulong, ECDSAPublicKey>(message.RequestId, publicKey));
-            GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
+            _requestIdSet.Add(new RequestIdentifier(message.RequestId, worker.PeerPublicKey));
+            worker.AddMsgToQueue(message, priority);
         }
 
         public void Start()
@@ -172,7 +173,7 @@ namespace Lachain.Networking
                     _ => throw new InvalidOperationException()
                 };
 
-                if (_requestIdSet.Contains(requestId))
+                if (_requestIdSet.Contains(new RequestIdentifier(requestId, peer.PeerPublicKey)))
                 {
                     // we should never reply with priority, requests can be spammed
                     peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
