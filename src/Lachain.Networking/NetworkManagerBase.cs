@@ -32,6 +32,8 @@ namespace Lachain.Networking
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
 
+        private ISet<ulong> _requestIdSet = new HashSet<ulong>();
+
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
         {
@@ -66,6 +68,7 @@ namespace Lachain.Networking
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
             message.RequestId = Crypto.GenerateRandomBytes(1)[0];
+            _requestIdSet.Add(message.RequestId);
             GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
         }
 
@@ -159,15 +162,22 @@ namespace Lachain.Networking
                 Logger.LogTrace($"Sending {x.GetType()} to {peer.PeerPublicKey.ToHex()}");
                 NetworkMessage msg = x switch
                 {
-                    PingReply pingReply => new NetworkMessage {RequestId = requestId, PingReply = pingReply},
-                    SyncBlocksReply syncBlockReply => new NetworkMessage {RequestId = requestId, SyncBlocksReply = syncBlockReply},
-                    SyncPoolReply syncPoolReply => new NetworkMessage {RequestId = requestId, SyncPoolReply = syncPoolReply},
-                    GetPeersReply getPeersReply => new NetworkMessage {RequestId = requestId, GetPeersReply = getPeersReply},
+                    PingReply pingReply => new NetworkMessage { RequestId = requestId, PingReply = pingReply },
+                    SyncBlocksReply syncBlockReply => new NetworkMessage
+                        { RequestId = requestId, SyncBlocksReply = syncBlockReply },
+                    SyncPoolReply syncPoolReply => new NetworkMessage
+                        { RequestId = requestId, SyncPoolReply = syncPoolReply },
+                    GetPeersReply getPeersReply => new NetworkMessage
+                        { RequestId = requestId, GetPeersReply = getPeersReply },
                     _ => throw new InvalidOperationException()
                 };
-                // we should never reply with priority, requests can be spammed
-                peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
-            };
+
+                if (_requestIdSet.Contains(requestId))
+                {
+                    // we should never reply with priority, requests can be spammed
+                    peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
+                }
+        };
         }
 
         private void HandleMessageUnsafe(NetworkMessage message, MessageEnvelope envelope)
