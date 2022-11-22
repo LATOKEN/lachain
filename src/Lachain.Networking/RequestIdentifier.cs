@@ -5,8 +5,8 @@ namespace Lachain.Networking
 {
     public class RequestIdentifier
     {
-        private ulong RequestId { get; }
-        private byte[] PeerPublicKey { get; }
+        public ulong RequestId { get; }
+        public byte[] PeerPublicKey { get; }
 
         public RequestIdentifier(ulong requestId, byte[] peerPublicKey)
         {
