@@ -16,7 +16,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         private readonly int _msgPerValidator;
         private bool _terminated = false;
         private int _remainingMsges;
-        private readonly Queue<(int validatorId, int msgId)> _messageRequests;
+        private readonly Queue<(int validatorId, int msgId, ulong requestTime)> _messageRequests;
         public RequestType Type => _type;
         public int RemainingMsgCount => _remainingMsges;
         protected MessageRequestHandler(RequestType type, int validatorCount, int msgPerValidator)
@@ -26,14 +26,14 @@ namespace Lachain.Consensus.RequestProtocols.Messages
             _msgCount = validatorCount * msgPerValidator;
             _msgPerValidator = msgPerValidator;
             _status = new MessageStatus[_validators][];
-            _messageRequests = new Queue<(int, int)>();
+            _messageRequests = new Queue<(int, int, ulong)>();
             for (int i = 0 ; i < _validators ; i++)
             {
                 _status[i] = new MessageStatus[msgPerValidator];
                 for (int j = 0; j < msgPerValidator; j++)
                 {
                     _status[i][j] = MessageStatus.NotReceived;
-                    _messageRequests.Enqueue((i,j));
+                    _messageRequests.Enqueue((i, j, 0));
                 }
             }
             _remainingMsges = _msgCount;
@@ -72,60 +72,42 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public List<(ConsensusMessage, int)> GetNewRequests(IProtocolIdentifier protocolId, int requestCount)
+        public Tuple<int, int, ulong, MessageStatus>? Peek()
         {
-            return GetRequests(protocolId, requestCount, true);
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public List<(ConsensusMessage, int)> GetRequests(IProtocolIdentifier protocolId, int requestCount)
-        {
-            return GetRequests(protocolId, requestCount, false);
-        }
-
-        private List<(ConsensusMessage, int)> GetRequests(IProtocolIdentifier protocolId, int requestCount, bool excludeRequested)
-        {
-            var requests = new List<(ConsensusMessage, int)>();
-            if (IsProtocolComplete() || _terminated) return requests;
-
-            if (requestCount > _remainingMsges)
-                requestCount = _remainingMsges;
-            
-            while (requestCount > 0)
+            while (_messageRequests.Count > 0)
             {
-                var (validtorId, msgId) = _messageRequests.Peek();
-                if (_status[validtorId][msgId] == MessageStatus.Received)
+                var (validatorId, msgId, requestTime) = _messageRequests.Peek();
+                if (_status[validatorId][msgId] == MessageStatus.Received)
                 {
                     _messageRequests.Dequeue();
-                    continue;
-                }
-
-                if (_status[validtorId][msgId] == MessageStatus.Requested && excludeRequested)
-                    break;
-                requestCount--;
-                var msg = CreateConsensusRequestMessage(protocolId, msgId);
-                var requestingTo = _type == RequestType.Val ? msg.RequestConsensus.RequestVal.SenderId : validtorId;
-                requests.Add((msg, requestingTo));
-                if (_status[validtorId][msgId] == MessageStatus.Requested)
-                {
-                    Logger.LogWarning(
-                        $"Requesting consensus msg {_type} with id {msgId} to validator {requestingTo} again. Validator not replying."
-                    );
                 }
                 else
                 {
-                    _status[validtorId][msgId] = MessageStatus.Requested;
-                    Logger.LogWarning($"Requesting consensus msg {_type} with id {msgId} to validator {requestingTo}.");
+                    return Tuple.Create(validatorId, msgId, requestTime, _status[validatorId][msgId]);
                 }
-
-                _messageRequests.Dequeue();
-                // put this back so we can request it again
-                _messageRequests.Enqueue((validtorId, msgId));
             }
-            return requests;
+            return null;
         }
 
-        protected abstract ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int msgId);
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Dequeue()
+        {
+            _messageRequests.Dequeue();
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Enqueue(int validatorId, int msgId, ulong requestTime)
+        {
+            _messageRequests.Enqueue((validatorId, msgId, requestTime));
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void MessageRequested(int validatorId, int msgId)
+        {
+            _status[validatorId][msgId] = MessageStatus.Requested;
+        }
+
+        public abstract ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int msgId);
         protected abstract void HandleReceivedMessage(int from, ConsensusMessage msg);
     }
 }

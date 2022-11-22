@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(from, 0);
         }
 
-        protected override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int _)
+        public override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as ReliableBroadcastId ?? throw new Exception($"wrong protcolId {protocolId} for Echo request");
             var echoRequest = new RequestECHOMessage

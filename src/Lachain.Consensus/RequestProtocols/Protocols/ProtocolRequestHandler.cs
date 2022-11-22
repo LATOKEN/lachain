@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Linq;
 using Lachain.Consensus.RequestProtocols.Messages;
 using Lachain.Consensus.RequestProtocols.Messages.Requests;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.RequestProtocols.Protocols
 {
@@ -60,50 +62,85 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
                 return;
             var (from, msg) = @event;
             var type = MessageUtils.GetRequestTypeForMessageType(msg);
-            if (_messageHandlers.TryGetValue((byte) type, out var handler))
-            {
-                handler.MessageReceived(from, msg, type);
-            }
-            else throw new Exception($"MessageRequestHandler {type} not registered");
+            var handler = GetMessageHandler(type);
+            handler.MessageReceived(from, msg, type);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public List<(ConsensusMessage, int)> GetRequests(int requestCount)
         {
             var allRequests = new List<(ConsensusMessage, int)>();
             if (_terminated)
                 return allRequests;
 
-            var remainingMsgCount = new List<(RequestType type, int count)>();
-            
-            // first do new requests
+            // Tuple<validatorId, msgId, requestType>
+            var processedRequest = new List<Tuple<int, int, RequestType>>();
+            // getting requests that are not requested yet
             foreach (var requestType in _orderedRequestTypes)
             {
-                if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
+                var handler = GetMessageHandler(requestType);
+                while (requestCount > 0)
                 {
-                    var count = handler.RemainingMsgCount;
-                    var requests = handler.GetNewRequests(_protocolId, requestCount);
-                    requestCount -= requests.Count;
-                    allRequests.AddRange(requests);
-                    remainingMsgCount.Add((requestType, count - requests.Count));
+                    var peekRequest = handler.Peek();
+                    if (peekRequest is null) break;
+                    var (validatorId, msgId, _, status) = peekRequest;
+                    if (status != MessageStatus.NotReceived) break;
+                    processedRequest.Add(Tuple.Create(validatorId, msgId, requestType));
+                    handler.Dequeue();
+                    requestCount--;
                 }
-                else throw new Exception($"MessageRequestHandler {requestType} not registered");
             }
 
-            // then do repeated requests
-            foreach (var (requestType, count) in remainingMsgCount)
+            // getting requests that were requested but did not get any reply
+            while (requestCount > 0)
             {
-                if (_messageHandlers.TryGetValue((byte) requestType, out var handler))
+                Tuple<int, int, ulong, MessageStatus>? request = null;
+                RequestType type = 0; // this is wrong, but for the sake of implementation
+                foreach (var requestType in _orderedRequestTypes)
                 {
-                    var msgToFetch = count;
-                    if (count > requestCount)
-                        msgToFetch = requestCount;
-                    var requests = handler.GetRequests(_protocolId, msgToFetch);
-                    requestCount -= requests.Count;
-                    allRequests.AddRange(requests);
+                    var handler = GetMessageHandler(requestType);
+                    var peekRequest = handler.Peek();
+                    if (!(peekRequest is null))
+                    {
+                        // taking request that was not requested recently
+                        if ((request is null) || request.Item3 > peekRequest.Item3)
+                        {
+                            request = peekRequest;
+                            type = requestType;
+                        }
+                    }
                 }
-                else throw new Exception($"MessageRequestHandler {requestType} not registered");
+                if (!(request is null))
+                {
+                    var (validatorId, msgId, _, _) = request;
+                    processedRequest.Add(Tuple.Create(validatorId, msgId, type));
+                    var handler = GetMessageHandler(type);
+                    handler.Dequeue();
+                    requestCount--;
+                }
+                else break;
+            }
+
+            var currentTime = TimeUtils.CurrentTimeMillis();
+            foreach (var (validatorId, msgId, type) in processedRequest)
+            {
+                var handler = GetMessageHandler(type);
+                // enqueueing them to request again
+                handler.Enqueue(validatorId, msgId, currentTime);
+                handler.MessageRequested(validatorId, msgId);
+                var msg = handler.CreateConsensusRequestMessage(_protocolId, msgId);
+                var requestingTo = type == RequestType.Val ? msg.RequestConsensus.RequestVal.SenderId : validatorId;
+                Logger.LogTrace($"Requesting consensus message {type} of id {msgId} for {_protocolId} to validator {requestingTo}");
+                allRequests.Add((msg, requestingTo));
             }
             return allRequests;
+        }
+
+        private IMessageRequestHandler GetMessageHandler(RequestType type)
+        {
+            if (!_messageHandlers.TryGetValue((byte) type, out var handler))
+                throw new Exception($"MessageRequestHandler {type} not registered");
+            return handler;
         }
 
         private IMessageRequestHandler RegisterMessageHandler(RequestType type)

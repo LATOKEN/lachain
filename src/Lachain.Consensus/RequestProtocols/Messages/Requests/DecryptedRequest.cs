@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(from, msg.Decrypted.ShareId);
         }
 
-        protected override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int msgId)
+        public override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int msgId)
         {
             var id = protocolId as HoneyBadgerId ?? throw new Exception($"wrong protcolId {protocolId} for Decrypted request");
             var decryptedRequest = new RequestTPKEPartiallyDecryptedShareMessage
