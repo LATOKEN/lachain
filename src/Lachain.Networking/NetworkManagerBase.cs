@@ -31,8 +31,8 @@ namespace Lachain.Networking
 
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
-
-        private ISet<ulong> _requestIdSet = new HashSet<ulong>();
+        
+        private ISet<Tuple<ulong, ECDSAPublicKey>> _requestIdSet = new HashSet<Tuple<ulong, ECDSAPublicKey>>();
 
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
@@ -68,7 +68,7 @@ namespace Lachain.Networking
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
             message.RequestId = Crypto.GenerateRandomBytes(1)[0];
-            _requestIdSet.Add(message.RequestId);
+            _requestIdSet.Add(new Tuple<ulong, ECDSAPublicKey>(message.RequestId, publicKey));
             GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
         }
 
