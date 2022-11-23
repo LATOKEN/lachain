@@ -121,15 +121,17 @@ namespace Lachain.Core.Consensus
             {
                 Logger.LogInformation($"Starting new era {_era}.");
                 _messageEnvelopeRepositoryManager.StartEra(_era, true);
+                return;
             }
-            else if (!_messageEnvelopeRepositoryManager.IsPresent || _messageEnvelopeRepositoryManager.GetEra() != _era)
+            
+            _messageEnvelopeRepositoryManager.LoadFromDb();
+            if (!_messageEnvelopeRepositoryManager.IsPresent || _messageEnvelopeRepositoryManager.GetEra() != _era)
             {
-                Logger.LogInformation($"No outstanding messages from era {_era} found. Starting new era.");
+                Logger.LogWarning($"No outstanding messages from era {_era} found. Starting new era.");
                 _messageEnvelopeRepositoryManager.StartEra(_era);
             }
             else
             {
-                _messageEnvelopeRepositoryManager.LoadFromDb();
                 var messages = _messageEnvelopeRepositoryManager.GetMessages().ToList();
                 Logger.LogInformation($"Restoring {messages.Count} Messages from era {_era}");
                 foreach (var messageEnvelope in messages)
