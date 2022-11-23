@@ -141,6 +141,9 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing SyncBlocksRequest");
         }
 
+        //To do: put this constant in a better place, and document block init rule
+        //To do: encode error in reply
+        private const ulong SyncRequestBlockLimit = 100;
         private void ValidateSyncBlocksRequest(SyncBlocksRequest request, IBlockSnapshot snapshot)
         {
             if (request.FromHeight == null)
@@ -166,7 +169,16 @@ namespace Lachain.Core.Network
                     $"Height range ({request.FromHeight}-{request.ToHeight}) " +
                     $"greater than current block height {snapshot.GetTotalBlockHeight()}");
             }
+
+            var count = request.ToHeight - request.FromHeight + 1;
+            if (count > SyncRequestBlockLimit)
+            {
+                throw new ArgumentException(
+                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
+                    $"Has too many blocks {count}.");
+            }
         }
+        
 
         private void OnSyncBlocksReply(object sender, (SyncBlocksReply reply, ECDSAPublicKey publicKey) @event)
         {
@@ -200,9 +212,24 @@ namespace Lachain.Core.Network
         private void OnSyncPoolRequest(object sender,
             (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
         {
+            
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncPoolRequest").NewTimer();
             var (request, callback) = @event;
             Logger.LogTrace($"Get request for {request.Hashes.Count} transactions");
+            
+            try
+            {
+                ValidateSyncPoolRequest(request);
+            }
+            catch (ArgumentException e)
+            {
+                Logger.LogWarning("Invalid sync pool request: " + e.Message);
+                var emptyReply = new SyncPoolReply() { Transactions={}};
+                callback(emptyReply);
+                return;
+            }
+
+            
             var txs = request.Hashes
                 .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
                                   _transactionPool.GetByHash(txHash))
@@ -212,6 +239,15 @@ namespace Lachain.Core.Network
             Logger.LogTrace($"Replying request with {txs.Count} transactions");
             if (txs.Count == 0) return;
             callback(new SyncPoolReply {Transactions = {txs}});
+        }
+
+        private void ValidateSyncPoolRequest(SyncPoolRequest request)
+        {
+            if (request.Hashes is null || request.Hashes.Count == 0)
+            {
+                throw new ArgumentException("No hashes provided in request");
+            }
+            
         }
 
         private void OnSyncPoolReply(object sender, (SyncPoolReply reply, ECDSAPublicKey publicKey) @event)
