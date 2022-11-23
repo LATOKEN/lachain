@@ -104,37 +104,68 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksRequest").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
-            if (request.ToHeight >= request.FromHeight)
+
+            try
             {
-                var reply = new SyncBlocksReply
-                {
-                    Blocks =
-                    {
-                        _stateManager.LastApprovedSnapshot.Blocks
-                            .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
-                            .Select(block => new BlockInfo
-                            {
-                                Block = block,
-                                Transactions =
-                                {
-                                    block.TransactionHashes
-                                        .Select(txHash =>
-                                            _stateManager.LastApprovedSnapshot.Transactions
-                                                .GetTransactionByHash(txHash)?? new TransactionReceipt())
-                                }
-                            })
-                    }
-                };
-                callback(reply);
+                ValidateSyncBlocksRequest(request,  _stateManager.LastApprovedSnapshot.Blocks);
             }
-            else
+            catch (ArgumentException e)
             {
-                Logger.LogWarning($"Invalid height range in SyncBlockRequest: {request.FromHeight}-{request.ToHeight}");
-                var reply = new SyncBlocksReply { Blocks={}};
-                callback(reply);
+                Logger.LogWarning("Invalid sync block request: " + e.Message);
+                var emptyReply = new SyncBlocksReply { Blocks={}};
+                callback(emptyReply);
+                return;
+            }
+            
+            var reply = new SyncBlocksReply
+            {
+                Blocks =
+                {
+                    _stateManager.LastApprovedSnapshot.Blocks
+                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
+                        .Select(block => new BlockInfo
+                        {
+                            Block = block,
+                            Transactions =
+                            {
+                                block.TransactionHashes
+                                    .Select(txHash =>
+                                        _stateManager.LastApprovedSnapshot.Transactions
+                                            .GetTransactionByHash(txHash)?? new TransactionReceipt())
+                            }
+                        })
+                }
+            };
+            callback(reply);
+            
+            Logger.LogTrace("Finished processing SyncBlocksRequest");
+        }
+
+        private void ValidateSyncBlocksRequest(SyncBlocksRequest request, IBlockSnapshot snapshot)
+        {
+            if (request.FromHeight == null)
+            {
+                throw new ArgumentException("From Height Cannot be null");
+            }
+            
+            if (request.ToHeight == null)
+            {
+                throw new ArgumentException("To Height Cannot be null");
             }
 
-            Logger.LogTrace("Finished processing SyncBlocksRequest");
+            if (request.FromHeight < 0 || request.ToHeight < 0 || request.FromHeight > request.ToHeight)
+            {
+                throw new ArgumentException(
+                    $"Invalid height range in SyncBlockRequest: {request.FromHeight}-{request.ToHeight}");
+            }
+
+            if (request.FromHeight > snapshot.GetTotalBlockHeight() ||
+                request.ToHeight > snapshot.GetTotalBlockHeight())
+            {
+                throw new ArgumentException(
+                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
+                    $"greater than current block height {snapshot.GetTotalBlockHeight()}");
+            }
         }
 
         private void OnSyncBlocksReply(object sender, (SyncBlocksReply reply, ECDSAPublicKey publicKey) @event)
