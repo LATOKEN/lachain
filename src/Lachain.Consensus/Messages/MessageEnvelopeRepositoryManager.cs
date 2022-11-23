@@ -15,15 +15,19 @@ namespace Lachain.Consensus.Messages
         public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository)
         {
             _repository = repository;
-            var bytes = repository.LoadMessages();
+        }
+
+        public void LoadFromDb()
+        {
+            var bytes = _repository.LoadMessages();
             _messageEnvelopeList = !(bytes is null) ? MessageEnvelopeList.FromByteArray(bytes) : null;
         }
-        
+
         public long GetEra()
         {
             if (!IsPresent)
             {
-                throw new InvalidOperationException("Could not find MessageEnvelopeList in db");
+                throw new InvalidOperationException("Could not find MessageEnvelopeList in repository");
             }
             return _messageEnvelopeList.Era;
         }
