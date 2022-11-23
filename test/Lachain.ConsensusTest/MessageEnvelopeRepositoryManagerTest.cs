@@ -60,6 +60,8 @@ namespace Lachain.ConsensusTest
         {
             var repo = new MessageEnvelopeRepository(_dbContext);
             var manager = new MessageEnvelopeRepositoryManager(repo);
+
+            manager.LoadFromDb();
             Assert.AreEqual(manager.IsPresent, false);
             
             manager.StartEra(23);
@@ -82,6 +84,7 @@ namespace Lachain.ConsensusTest
             var list = manager.GetMessages();
             
             manager = new MessageEnvelopeRepositoryManager(repo);
+            manager.LoadFromDb();
             Assert.AreEqual(manager.IsPresent, true);
             Assert.AreEqual(manager.GetEra(), era);
             CollectionAssert.AreEqual(manager.GetMessages(), list);
@@ -92,6 +95,37 @@ namespace Lachain.ConsensusTest
             Assert.AreEqual(manager.IsPresent, true);
             Assert.AreEqual(manager.GetEra(), 24);
             Assert.AreEqual(manager.GetMessages().Count, 0);
+        }
+
+        [Test]
+        public void Test_MessageEnvelopeRepositoryManagerReloading()
+        {
+            var repo = new MessageEnvelopeRepository(_dbContext);
+            var manager = new MessageEnvelopeRepositoryManager(repo);
+            
+            Assert.AreEqual(manager.IsPresent, false);
+            Assert.Throws<InvalidOperationException>(() => manager.GetEra());
+            Assert.Throws<InvalidOperationException>(
+                () => manager.AddMessage(new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 77)));
+
+            manager.StartEra(45);
+            Assert.AreEqual(manager.IsPresent, true);
+            Assert.AreEqual(manager.GetEra(), 45);
+            
+            manager.AddMessage(new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 23));
+            var list = manager.GetMessages();
+            var era = manager.GetEra();
+            
+            manager = new MessageEnvelopeRepositoryManager(repo);
+            Assert.AreEqual(manager.IsPresent, false);
+            Assert.Throws<InvalidOperationException>(() => manager.GetEra());
+            Assert.Throws<InvalidOperationException>(
+                () => manager.AddMessage(new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 77)));
+            
+            manager.LoadFromDb();
+            Assert.AreEqual(manager.IsPresent, true);
+            Assert.AreEqual(manager.GetEra(), era);
+            Assert.AreEqual(manager.GetMessages(), list);
         }
         
         [Test]
