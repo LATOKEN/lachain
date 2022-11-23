@@ -40,7 +40,7 @@ namespace Lachain.Consensus.CommonCoin
 
         public byte[] ToByteArray()
         {
-            return RawBytes;
+            return RawBytes.ToArray();
         }
 
         public static CoinResult FromByteArray(byte[] bytes)

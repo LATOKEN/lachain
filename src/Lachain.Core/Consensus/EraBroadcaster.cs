@@ -115,7 +115,7 @@ namespace Lachain.Core.Consensus
             }
         }
 
-        public void RestoreState(bool restore)
+        public void LoadState(bool restore)
         {
             if (!restore)
             {

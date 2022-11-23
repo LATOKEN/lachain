@@ -13,10 +13,10 @@ namespace Lachain.Storage.Repositories
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void SaveMessages(byte[] messages)
+        public void SaveMessages(byte[] messageEnvelopeListBytes)
         {
             var key = EntryPrefix.MessageEnvelope.BuildPrefix();
-            _rocksDbContext.Save(key, messages);
+            _rocksDbContext.Save(key, messageEnvelopeListBytes);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

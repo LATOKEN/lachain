@@ -232,7 +232,17 @@ namespace Lachain.Core.Consensus
                     {
                         broadcaster = _eras[CurrentEra];
                         broadcaster.SetValidatorKeySet(validators);
-                        broadcaster.RestoreState(restoreState);
+
+                        if ((long) startingEra == CurrentEra)
+                        {
+                            broadcaster.LoadState(restoreState);
+                        }
+                        else
+                        {
+                            broadcaster.LoadState(false);
+                        }
+                        
+
                     }
 
                     bool weAreValidator;

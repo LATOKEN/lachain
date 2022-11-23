@@ -121,7 +121,7 @@ namespace Lachain.Consensus.Messages
                 ProtocolType.HoneyBadger => GetSetOfIRawShareFromBytes(decoded),
                 ProtocolType.ReliableBroadcast => EncryptedShare.FromBytes(decoded[2].RLPData),
                 ProtocolType.RootProtocol => null,
-                _ => throw new ArgumentOutOfRangeException($"Unrecognized Type of From {toType.ToString()}")
+                _ => throw new ArgumentOutOfRangeException($"Unrecognized Type of To {toType.ToString()}")
             };
         }
 
