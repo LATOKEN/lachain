@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Consensus.RequestProtocols.Messages;
 using Lachain.Consensus.RequestProtocols.Messages.Requests;
 using Lachain.Consensus.RequestProtocols.Protocols;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.RequestProtocols
 {
@@ -22,6 +24,7 @@ namespace Lachain.Consensus.RequestProtocols
         private readonly object _queueLock = new object();
         private readonly Queue<(int, ConsensusMessage)> _queue;
         private bool _terminated = false;
+        private int _myId = -1;
         public RequestManager(IConsensusBroadcaster broadcaster, long era)
         {
             _broadcaster = broadcaster;
@@ -59,9 +62,11 @@ namespace Lachain.Consensus.RequestProtocols
         public void SetValidators(int validatorsCount)
         {
             _validators = validatorsCount;
+            _myId = _broadcaster.GetMyId();
         }
 
-        public void RegisterProtocol(IProtocolIdentifier protocolId)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void RegisterProtocol(IProtocolIdentifier protocolId, IConsensusProtocol protocol)
         {
             if (_terminated)
                 return;
@@ -72,14 +77,15 @@ namespace Lachain.Consensus.RequestProtocols
                 throw new Exception($"Protocol handler for protocolId {protocolId} already registered");
             }
 
-            _protocolRequestHandler[protocolId] = new ProtocolRequestHandler(protocolId, _validators);
+            _protocolRequestHandler[protocolId] = new ProtocolRequestHandler(protocolId, protocol, _validators);
 
             if (_protocolResendHandler.TryGetValue(protocolId, out var _))
             {
                 throw new Exception($"Protocol handler for protocolId {protocolId} already registered");
             }
 
-            _protocolResendHandler[protocolId] = new ProtocolResendHandler(protocolId, _validators);
+            _protocolResendHandler[protocolId] = new ProtocolResendHandler(protocolId, protocol, _validators);
+            protocol._protocolWaitingTooLong += MakeRequest;
         }
 
         public void HandleRequest(int from, ConsensusMessage request)
@@ -180,6 +186,8 @@ namespace Lachain.Consensus.RequestProtocols
             {
                 try
                 {
+                    var pubKey = _broadcaster.GetPublicKeyById(from);
+                    Logger.LogTrace($"Got consensus request {type} for {protocolId} from {pubKey!.ToHex()} ({from})");
                     var response = handler.HandleRequest(from, request, type);
                     foreach (var msg in response)
                     {
@@ -192,6 +200,33 @@ namespace Lachain.Consensus.RequestProtocols
                 }
             }
             else Logger.LogTrace($"{protocolId} not registered yet, discarding request {type}");
+        }
+
+        private void MakeRequest(object? sender, IProtocolIdentifier protocolId)
+        {
+            // lets not send too many requests
+            // TODO: Caluclate request size
+            int maxRequestCount = 10;
+            if (_protocolRequestHandler.TryGetValue(protocolId, out var handler))
+            {
+                var requests = handler.GetRequests(maxRequestCount);
+                Logger.LogTrace($"{protocolId} is making {requests.Count} consensus requests");
+                foreach (var (msg, validator) in requests)
+                {
+                    if (validator == _myId) continue;
+                    _broadcaster.SendToValidator(msg, validator);
+                    var publicKey = _broadcaster.GetPublicKeyById(validator);
+                    Logger.LogTrace(
+                        $"Sending request for consensus message {msg.RequestConsensus.PayloadCase} to validator {publicKey!.ToHex()} ({validator})"
+                    );
+                }
+            }
+            else throw new Exception($"{protocolId} not registered");
+        }
+
+        public void Dispose()
+        {
+            Terminate();
         }
     }
 }

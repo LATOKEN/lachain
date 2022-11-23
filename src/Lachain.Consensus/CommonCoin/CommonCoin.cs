@@ -72,6 +72,7 @@ namespace Lachain.Consensus.CommonCoin
 
                 // To create signature from the message, some requirements need to be fulfilled, otherwise it can 
                 // throw exception (for example maybe a fixed length of the input bytes or maybe valid array of bytes)
+                bool validMsg = false;
                 try
                 {
                     Logger.LogTrace($"Received share from {envelope.ValidatorIndex}");
@@ -85,22 +86,26 @@ namespace Lachain.Consensus.CommonCoin
                             $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share");
                         return; // potential fault evidence
                     }
+                    validMsg = true;
 
                     if (signature == null)
                     {
                         _lastMessage = "signature == null";
-                        return;
                     }
-
-                    _result = new CoinResult(signature.RawSignature.ToBytes());
+                    else
+                        _result = new CoinResult(signature.RawSignature.ToBytes());
                 }
                 catch (Exception exception)
                 {
+                    validMsg = false;
                     var pubKey = Broadcaster.GetPublicKeyById(envelope.ValidatorIndex)!.ToHex();
                     Logger.LogWarning(
                         $"Exception occured while handling message from validator {envelope.ValidatorIndex} " +
                         $"({pubKey}). Exception: {exception}");
                 }
+
+                if (validMsg)
+                    InvokeReceivedExternalMessage(envelope.ValidatorIndex, message);
 
                 CheckResult();
             }
@@ -121,6 +126,7 @@ namespace Lachain.Consensus.CommonCoin
                         CheckResult();
                         var msg = CreateCoinMessage(signatureShare);
                         Broadcaster.Broadcast(msg);
+                        InvokeMessageBroadcasted(msg);
                         break;
                     case ProtocolResult<CoinId, CoinResult> _:
                         _lastMessage = "ProtocolResult";

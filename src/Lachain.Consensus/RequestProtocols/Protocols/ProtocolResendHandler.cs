@@ -17,7 +17,7 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
         private readonly ProtocolType _type;
         private readonly IDictionary<byte, IMessageResendHandler> _messageHandlers;
         private bool _terminated = false;
-        public ProtocolResendHandler(IProtocolIdentifier id, int validators)
+        public ProtocolResendHandler(IProtocolIdentifier id, IConsensusProtocol protocol, int validators)
         {
             _protocolId = id;
             _validatorsCount = validators;
@@ -35,6 +35,8 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
                     _messageHandlers[(byte) requestType] = RegisterMessageHandler(requestType);
                 }
             }
+            protocol._messageBroadcasted += MessageBroadcasted;
+            protocol._messageSent += MessageSent;
         }
 
         public void Terminate()
@@ -50,10 +52,24 @@ namespace Lachain.Consensus.RequestProtocols.Protocols
             Logger.LogTrace($"ProtocolResendHandler for protocol {_protocolId} terminated");
         }
 
-        public void MessageSent(int validator, ConsensusMessage msg)
+        private void MessageBroadcasted(object? sender, ConsensusMessage msg)
         {
             if (_terminated)
                 return;
+            var type = MessageUtils.GetRequestTypeForMessageType(msg);
+            if (_messageHandlers.TryGetValue((byte) type, out var handler))
+            {
+                for (int validator = 0 ; validator < _validatorsCount; validator++)
+                    handler.MessageSent(validator, msg, type);
+            }
+            else throw new Exception($"MessageResendHandler {type} not registered");
+        }
+
+        private void MessageSent(object? sender, (int validator, ConsensusMessage msg) @event)
+        {
+            if (_terminated)
+                return;
+            var (validator, msg) = @event;
             var type = MessageUtils.GetRequestTypeForMessageType(msg);
             if (_messageHandlers.TryGetValue((byte) type, out var handler))
             {

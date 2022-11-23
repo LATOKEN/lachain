@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(from, 0);
         }
 
-        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
+        public override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as CoinId ?? throw new Exception($"wrong protcolId {protocolId} for Coin request");
             var coinRequest = new RequestCommonCoinMessage
@@ -38,8 +38,8 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
 
         public static CoinId CreateProtocolId(RequestConsensusMessage msg, long era)
         {
-            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestAux)
-                throw new Exception($"{msg.PayloadCase} routed to Aux Request");
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestCoin)
+                throw new Exception($"{msg.PayloadCase} routed to Coin Request");
             return new CoinId(era, msg.RequestCoin.Agreement, msg.RequestCoin.Epoch);
         }
     }

@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(from, msg.Bval.Value ? 1 : 0);
         }
 
-        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
+        public override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as BinaryBroadcastId ?? throw new Exception($"wrong protcolId {protocolId} for Bval request");
             var bvalRequest = new RequestBValMessage
@@ -38,8 +38,8 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
 
         public static BinaryBroadcastId CreateProtocolId(RequestConsensusMessage msg, long era)
         {
-            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestAux)
-                throw new Exception($"{msg.PayloadCase} routed to Aux Request");
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestBval)
+                throw new Exception($"{msg.PayloadCase} routed to Bval Request");
             return new BinaryBroadcastId(era, msg.RequestBval.Agreement, msg.RequestBval.Epoch);
         }
     }
