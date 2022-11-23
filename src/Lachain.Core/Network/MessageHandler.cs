@@ -208,7 +208,7 @@ namespace Lachain.Core.Network
             }, TaskCreationOptions.LongRunning);
             Logger.LogTrace("Finished processing SyncBlocksReply");
         }
-
+        
         private void OnSyncPoolRequest(object sender,
             (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
         {
@@ -240,12 +240,20 @@ namespace Lachain.Core.Network
             if (txs.Count == 0) return;
             callback(new SyncPoolReply {Transactions = {txs}});
         }
-
+        
+        //To do: put this constant in a better place, and document block init rule
+        //To do: encode error in reply
+        private const int PoolSyncRequestTransactionLimit = 1000;
         private void ValidateSyncPoolRequest(SyncPoolRequest request)
         {
             if (request.Hashes is null || request.Hashes.Count == 0)
             {
                 throw new ArgumentException("No hashes provided in request");
+            }
+
+            if (PoolSyncRequestTransactionLimit > 0 && request.Hashes.Count > PoolSyncRequestTransactionLimit)
+            {
+                throw new ArgumentException("Too many hashes in request");
             }
             
         }
