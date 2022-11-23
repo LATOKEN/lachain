@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(from, 0);
         }
 
-        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
+        public override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as BinaryBroadcastId ?? throw new Exception($"wrong protcolId {protocolId} for Aux request");
             var auxRequest = new RequestAuxMessage
@@ -34,6 +34,13 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
                     RequestAux = auxRequest
                 }
             };
+        }
+
+        public static BinaryBroadcastId CreateProtocolId(RequestConsensusMessage msg, long era)
+        {
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestAux)
+                throw new Exception($"{msg.PayloadCase} routed to Aux Request");
+            return new BinaryBroadcastId(era, msg.RequestAux.Agreement, msg.RequestAux.Epoch);
         }
     }
 }

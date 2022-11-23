@@ -120,7 +120,9 @@ namespace Lachain.Consensus.BinaryAgreement
         {
             var b = value ? 1 : 0;
             _wasBvalBroadcasted[b] = true;
-            Broadcaster.Broadcast(CreateBValMessage(b));
+            var msg = CreateBValMessage(b);
+            Broadcaster.Broadcast(msg);
+            InvokeMessageBroadcasted(msg);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -139,6 +141,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
             _receivedValues[sender].Add(b == 1);
             ++_receivedCount[b];
+            InvokeReceivedExternalMessage(sender, new ConsensusMessage { Bval = bval });
 
             if (!_wasBvalBroadcasted[b] && _receivedCount[b] >= F + 1)
             {
@@ -151,7 +154,9 @@ namespace Lachain.Consensus.BinaryAgreement
             _binValues = _binValues.Add(b == 1);
             if (_binValues.Count() == 1)
             {
-                Broadcaster.Broadcast(CreateAuxMessage(b));
+                var msg = CreateAuxMessage(b);
+                Broadcaster.Broadcast(msg);
+                InvokeMessageBroadcasted(msg);
             }
 
             RevisitAuxMessages();
@@ -173,6 +178,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
             _playerSentAux[sender] = true;
             _receivedAux[b]++;
+            InvokeReceivedExternalMessage(sender, new ConsensusMessage { Aux = aux });
             RevisitAuxMessages();
         }
 
@@ -191,6 +197,7 @@ namespace Lachain.Consensus.BinaryAgreement
             _validatorSentConf[sender] = true;
 
             _confReceived.Add(new BoolSet(conf.Values));
+            InvokeReceivedExternalMessage(sender, new ConsensusMessage { Conf = conf });
             RevisitConfMessages();
         }
 
@@ -233,7 +240,9 @@ namespace Lachain.Consensus.BinaryAgreement
             if (_confSent) return;
             if (_binValues.Values().Sum(b => _receivedAux[b ? 1 : 0]) < N - F) return;
             Logger.LogTrace($"{_broadcastId}: conf message sent with set {_binValues}");
-            Broadcaster.Broadcast(CreateConfMessage(_binValues));
+            var msg = CreateConfMessage(_binValues);
+            Broadcaster.Broadcast(msg);
+            InvokeMessageBroadcasted(msg);
             _confSent = true;
             RevisitConfMessages();
         }

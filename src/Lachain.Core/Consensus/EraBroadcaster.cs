@@ -86,7 +86,7 @@ namespace Lachain.Core.Consensus
             foreach (var protocol in protocols)
             {
                 _registry[protocol.Id] = protocol;
-                _requestManager.RegisterProtocol(protocol.Id);
+                _requestManager.RegisterProtocol(protocol.Id, protocol);
             }
         }
 
@@ -191,6 +191,9 @@ namespace Lachain.Core.Consensus
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     protocolId = new RootProtocolId(message.Validator.Era);
                     break;
+                case ConsensusMessage.PayloadOneofCase.RequestConsensus:
+                    _requestManager.HandleRequest(from, message);
+                    return;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message}");
             }
@@ -593,6 +596,11 @@ namespace Lachain.Core.Consensus
                     // Check fields of BlockHeader: UInt256 cannot be null
                     if (header.MerkleRoot is null || header.PrevBlockHash is null || header.StateHash is null)
                         return false;
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.RequestConsensus:
+                    // all request parameters have default value
+                    // request manager can verify and discard request if necessary
+                    // no additional check needed
                     return true;
                 default:
                     return false;

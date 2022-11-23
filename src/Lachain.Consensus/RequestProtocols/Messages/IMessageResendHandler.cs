@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Lachain.Proto;
 
 namespace Lachain.Consensus.RequestProtocols.Messages
@@ -7,5 +8,6 @@ namespace Lachain.Consensus.RequestProtocols.Messages
         RequestType Type { get; }
         void Terminate();
         void MessageSent(int validator, ConsensusMessage msg, RequestType type);
+        List<ConsensusMessage?> HandleRequest(int from, RequestConsensusMessage request, RequestType type);
     }
 }

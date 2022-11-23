@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(0, 0);
         }
 
-        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
+        public override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as ReliableBroadcastId ?? throw new Exception($"wrong protcolId {protocolId} for Val request");
             var valRequest = new RequestValMessage
@@ -33,6 +33,13 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
                     RequestVal = valRequest
                 }
             };
+        }
+
+        public static ReliableBroadcastId CreateProtocolId(RequestConsensusMessage msg, long era)
+        {
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestVal)
+                throw new Exception($"{msg.PayloadCase} routed to Val Request");
+            return new ReliableBroadcastId(msg.RequestVal.SenderId, (int) era);
         }
     }
 }

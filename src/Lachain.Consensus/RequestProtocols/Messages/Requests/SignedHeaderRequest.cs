@@ -19,7 +19,7 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
             MessageReceived(from, 0);
         }
 
-        protected override ConsensusMessage CreateConsensusMessage(IProtocolIdentifier protocolId, int _)
+        public override ConsensusMessage CreateConsensusRequestMessage(IProtocolIdentifier protocolId, int _)
         {
             var id = protocolId as RootProtocolId ?? throw new Exception($"wrong protcolId {protocolId} for Signed Header request");
             var headerRequest = new RequestSignedHeaderMessage();
@@ -30,6 +30,13 @@ namespace Lachain.Consensus.RequestProtocols.Messages.Requests
                     RequestSignedHeader = headerRequest
                 }
             };
+        }
+
+        public static RootProtocolId CreateProtocolId(RequestConsensusMessage msg, long era)
+        {
+            if (msg.PayloadCase != RequestConsensusMessage.PayloadOneofCase.RequestSignedHeader)
+                throw new Exception($"{msg.PayloadCase} routed to Signed Header Request");
+            return new RootProtocolId(era);
         }
     }
 }
