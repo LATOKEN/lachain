@@ -280,11 +280,36 @@ namespace Lachain.Core.Network
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncPoolReply").NewTimer();
             Logger.LogTrace("Start processing SyncPoolReply");
+            
+            
             var (reply, publicKey) = @event;
+            try
+            {
+                ValidateSyncPoolReply(reply);
+            }
+            catch (ArgumentException e)
+            {
+                Logger.LogWarning("Invalid sync pool reply: " + e.Message);
+                return;
+            }
+            
             _blockSynchronizer.HandleTransactionsFromPeer(
                 reply.Transactions ?? Enumerable.Empty<TransactionReceipt>(), publicKey
             );
             Logger.LogTrace("Finished processing SyncPoolReply");
+        }
+
+        private void ValidateSyncPoolReply(SyncPoolReply syncPoolReply)
+        {
+            if (syncPoolReply.Transactions is null)
+            {
+                throw new ArgumentException("Transaction list is null");
+            }
+
+            if (PoolSyncRequestTransactionLimit > 0 && syncPoolReply.Transactions.Count > PoolSyncRequestTransactionLimit)
+            {
+                throw new ArgumentException("Too many transactions in request");
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
