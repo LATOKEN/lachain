@@ -136,78 +136,84 @@ namespace Lachain.Core.Consensus
                 Logger.LogInformation($"Restoring {messages.Count} Messages from era {_era}");
                 foreach (var messageEnvelope in messages)
                 {
-                    Logger.LogTrace($"Restoring message from db, type = {messageEnvelope.TypeString()}, hashcode = {messageEnvelope.GetHashCode()}");
-                    if (messageEnvelope.External)
-                    {
-                        Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
-                    }
-                    else if (messageEnvelope.IsProtocolRequest)
-                    {
-                        switch (messageEnvelope.InternalMessage)
-                        {
-                            case ProtocolRequest<BinaryAgreementId, bool> request:
-                                InternalRequest(request, true);
-                                break;
-                            case ProtocolRequest<BinaryBroadcastId, bool> request:
-                                InternalRequest(request, true);
-                                break;
-                            case ProtocolRequest<CoinId, object?> request:
-                                InternalRequest(request, true);
-                                break;
-                            case ProtocolRequest<CommonSubsetId, EncryptedShare> request:
-                                InternalRequest(request, true);
-                                break;
-                            case ProtocolRequest<HoneyBadgerId, IRawShare> request:
-                                InternalRequest(request, true);
-                                break;
-                            case ProtocolRequest<ReliableBroadcastId, EncryptedShare?> request:
-                                InternalRequest(request, true);
-                                break;
-                            case ProtocolRequest<RootProtocolId, IBlockProducer> request:
-                                request.Input = _blockProducer;
-                                InternalRequest(request, true);
-                                break;
-                            default:
-                                throw new InvalidOperationException(
-                                    "Unexpected template parameters for ProtocolRequest");
-                        }
-                    }
-                    else if (messageEnvelope.IsProtocolResponse)
-                    {
-                        switch (messageEnvelope.InternalMessage)
-                        {
-                            case ProtocolResult<BinaryAgreementId, bool> result:
-                                InternalResponse(result);
-                                break;
-                            case ProtocolResult<BinaryBroadcastId, BoolSet> result:
-                                InternalResponse(result);
-                                break;
-                            case ProtocolResult<CoinId, CoinResult> result:
-                                InternalResponse(result);
-                                break;
-                            case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
-                                InternalResponse(result);
-                                break;
-                            case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
-                                InternalResponse(result);
-                                break;
-                            case ProtocolResult<ReliableBroadcastId, EncryptedShare> result:
-                                InternalResponse(result);
-                                break;
-                            case ProtocolResult<RootProtocolId, object?> result:
-                                InternalResponse(result);
-                                break;
-                            default:
-                                throw new InvalidOperationException(
-                                    "Unexpected template parameters for ProtocolResponse");
-                        }
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Unknown message type {messageEnvelope.TypeString()}");
-                    }
-                    StartProtocols();
+                    RestoreMessage(messageEnvelope);
                 }
+                StartProtocols();
+            }
+        }
+
+        private void RestoreMessage(MessageEnvelope messageEnvelope)
+        {
+            Logger.LogTrace(
+                $"Restoring message from db, type = {messageEnvelope.TypeString()}, hashcode = {messageEnvelope.GetHashCode()}");
+            if (messageEnvelope.External)
+            {
+                Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
+            }
+            else if (messageEnvelope.IsProtocolRequest)
+            {
+                switch (messageEnvelope.InternalMessage)
+                {
+                    case ProtocolRequest<BinaryAgreementId, bool> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<BinaryBroadcastId, bool> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<CoinId, object?> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<CommonSubsetId, EncryptedShare> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<HoneyBadgerId, IRawShare> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<ReliableBroadcastId, EncryptedShare?> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<RootProtocolId, IBlockProducer> request:
+                        request.Input = _blockProducer;
+                        InternalRequest(request, true);
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            "Unexpected template parameters for ProtocolRequest");
+                }
+            }
+            else if (messageEnvelope.IsProtocolResponse)
+            {
+                switch (messageEnvelope.InternalMessage)
+                {
+                    case ProtocolResult<BinaryAgreementId, bool> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<BinaryBroadcastId, BoolSet> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<CoinId, CoinResult> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<ReliableBroadcastId, EncryptedShare> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<RootProtocolId, object?> result:
+                        InternalResponse(result);
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            "Unexpected template parameters for ProtocolResponse");
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unknown message type {messageEnvelope.TypeString()}");
             }
         }
 
