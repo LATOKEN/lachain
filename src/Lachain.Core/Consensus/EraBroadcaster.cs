@@ -206,7 +206,17 @@ namespace Lachain.Core.Consensus
                     {
                         throw new InvalidOperationException($"Unknown message type {messageEnvelope.TypeString()}");
                     }
+                    StartProtocols();
                 }
+            }
+        }
+
+        private void StartProtocols()
+        {
+            foreach (var entry in _registry)
+            {
+                var protocol = entry.Value;
+                protocol.StartThread();
             }
         }
 
