@@ -74,6 +74,8 @@ namespace Lachain.Networking
             _hubConnector.Start();
         }
 
+        // returns existing worker or create a new one if worker does not exists
+        // not synchronized for the sake of performance
         private ClientWorker? GetClientWorker(ECDSAPublicKey publicKey)
         {
             if (_messageFactory.GetPublicKey().Equals(publicKey)) return null;
@@ -83,9 +85,13 @@ namespace Lachain.Networking
             return CreateMsgChannel(publicKey);
         }
 
+        // check if worker exists before creating and adding one
+        // synchronized to avoid exception of adding existing key to dictionary
         [MethodImpl(MethodImplOptions.Synchronized)]
         private ClientWorker? CreateMsgChannel(ECDSAPublicKey publicKey)
         {
+            if (_clientWorkers.TryGetValue(publicKey, out var existingWorker))
+                return existingWorker;
             Logger.LogTrace($"Connecting to peer {publicKey.ToHex()}");
             var worker = new ClientWorker(publicKey, _messageFactory, _hubConnector);
             _clientWorkers.Add(publicKey, worker);
