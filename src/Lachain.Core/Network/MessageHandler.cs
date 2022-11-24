@@ -101,6 +101,7 @@ namespace Lachain.Core.Network
             (SyncBlocksRequest request, Action<SyncBlocksReply> callback) @event
         )
         {
+            
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksRequest").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
@@ -230,12 +231,21 @@ namespace Lachain.Core.Network
             }
 
             
-            var txs = request.Hashes
-                .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
-                                  _transactionPool.GetByHash(txHash))
-                .Where(tx => tx != null)
-                .Select(tx => tx!)
-                .ToList();
+            List<TransactionReceipt> txs;
+            if (request.All)
+            {
+                txs = _transactionPool.Transactions.Values.ToList();
+            }
+            else
+            {
+                txs = request.Hashes
+                    .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
+                                      _transactionPool.GetByHash(txHash))
+                    .Where(tx => tx != null)
+                    .Select(tx => tx!)
+                    .ToList();
+            }
+
             Logger.LogTrace($"Replying request with {txs.Count} transactions");
             if (txs.Count == 0) return;
             callback(new SyncPoolReply {Transactions = {txs}});
@@ -246,6 +256,14 @@ namespace Lachain.Core.Network
         private const int PoolSyncRequestTransactionLimit = 1000;
         private void ValidateSyncPoolRequest(SyncPoolRequest request)
         {
+            if (request.All)
+            {
+                if (!(request.Hashes is null))
+                {
+                    throw new ArgumentException("Pool request has both all switch and list of txns.");
+                }
+            }
+
             if (request.Hashes is null || request.Hashes.Count == 0)
             {
                 throw new ArgumentException("No hashes provided in request");
