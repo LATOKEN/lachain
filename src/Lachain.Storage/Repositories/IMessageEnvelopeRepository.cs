@@ -9,7 +9,7 @@ namespace Lachain.Storage.Repositories
         void AddMessage(byte[] messageEnvelopeBytes);
         List<byte[]> LoadMessages();
 
-        ulong GetEra();
+        ulong? GetEra();
         void SetEra(ulong era);
     }
 }

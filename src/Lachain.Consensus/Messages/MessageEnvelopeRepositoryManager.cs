@@ -11,7 +11,6 @@ namespace Lachain.Consensus.Messages
         private readonly IMessageEnvelopeRepository _repository;
         private List<MessageEnvelope>? MessageEnvelopeList { get; set; }
         private ISet<MessageEnvelope>? MessageEnvelopeSet;
-        private long Era { get; set; }
         
         private static readonly ILogger<MessageEnvelopeRepositoryManager> Logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
 
@@ -24,10 +23,14 @@ namespace Lachain.Consensus.Messages
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void LoadFromDb()
         {
-            Era = (long) _repository.GetEra();
+            if (_repository.GetEra() is null)
+            {
+                return;
+            }
+            
             MessageEnvelopeList = new List<MessageEnvelope>();
             MessageEnvelopeSet = new HashSet<MessageEnvelope>();
-            
+
             foreach (var bytes in _repository.LoadMessages())
             {
                 var envelope = MessageEnvelope.FromByteArray(bytes);
@@ -48,19 +51,23 @@ namespace Lachain.Consensus.Messages
             {
                 throw new InvalidOperationException("Could not find MessageEnvelopeList in repository");
             }
-            return Era;
+
+            return (long) _repository.GetEra();
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void StartEra(long era, bool canBeSame = false)
         {
-            if (!canBeSame && IsPresent && Era == era)
+            if (!canBeSame && IsPresent && (long) _repository.GetEra() == era)
+            
             {
                 throw new ArgumentException($"Start Era called with same era number {era}");
             }
             
             _repository.ClearMessages();
             _repository.SetEra((ulong) era);
+            MessageEnvelopeList = new List<MessageEnvelope>();
+            MessageEnvelopeSet = new HashSet<MessageEnvelope>();
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -75,13 +82,13 @@ namespace Lachain.Consensus.Messages
                 MessageEnvelopeSet.Add(message);
                 MessageEnvelopeList.Add(message);
                 _repository.AddMessage(message.ToByteArray());
-                Logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {Era}), " +
+                Logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {_repository.GetEra()}), " +
                                 $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
             }
             else
             {
                 Logger.LogTrace($"Not saving duplicate {(message.External ? "external" : "internal")} " +
-                                $"message to db (era {Era}), " +
+                                $"message to db (era {_repository.GetEra()}), " +
                                 $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
             }
             
