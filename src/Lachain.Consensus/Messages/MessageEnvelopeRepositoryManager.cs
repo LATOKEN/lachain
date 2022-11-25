@@ -71,7 +71,7 @@ namespace Lachain.Consensus.Messages
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void AddMessage(MessageEnvelope message)
+        public bool AddMessage(MessageEnvelope message)
         {
             if (!IsPresent)
             {
@@ -84,12 +84,14 @@ namespace Lachain.Consensus.Messages
                 _repository.AddMessage(message.ToByteArray());
                 Logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {_repository.GetEra()}), " +
                                 $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
+                return true;
             }
             else
             {
                 Logger.LogTrace($"Not saving duplicate {(message.External ? "external" : "internal")} " +
                                 $"message to db (era {_repository.GetEra()}), " +
                                 $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
+                return false;
             }
             
         }

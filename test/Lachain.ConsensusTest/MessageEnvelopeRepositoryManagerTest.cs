@@ -73,7 +73,7 @@ namespace Lachain.ConsensusTest
             List<MessageEnvelope> messageEnvelopes = new List<MessageEnvelope>();
 
             var message = new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 77);
-            manager.AddMessage(message);
+            Assert.IsTrue(manager.AddMessage(message));
             messageEnvelopes.Add(message);
 
             message = new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 23);
@@ -86,8 +86,10 @@ namespace Lachain.ConsensusTest
                 TestUtils.GenerateEncryptedShare(_random, true));
             
             var requestMessage = new MessageEnvelope(request, 55);
-            manager.AddMessage(requestMessage);
+            Assert.IsTrue(manager.AddMessage(requestMessage));
             messageEnvelopes.Add(requestMessage);
+
+            Assert.IsFalse(manager.AddMessage(message));
 
             var era = manager.GetEra();
             var list = manager.GetMessages();
