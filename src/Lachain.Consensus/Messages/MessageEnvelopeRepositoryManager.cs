@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Storage.Repositories;
 
@@ -8,19 +9,37 @@ namespace Lachain.Consensus.Messages
     public class MessageEnvelopeRepositoryManager
     {
         private readonly IMessageEnvelopeRepository _repository;
-        private MessageEnvelopeList? _messageEnvelopeList;
-        private static readonly ILogger<MessageEnvelopeRepositoryManager> logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
+        private List<MessageEnvelope>? MessageEnvelopeList { get; set; }
+        private ISet<MessageEnvelope>? MessageEnvelopeSet;
+        private long Era { get; set; }
+        
+        private static readonly ILogger<MessageEnvelopeRepositoryManager> Logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
 
-        public bool IsPresent => !(_messageEnvelopeList is null);
+        public bool IsPresent => !(MessageEnvelopeList is null);
         public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository)
         {
             _repository = repository;
         }
-
+    
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void LoadFromDb()
         {
-            var bytes = _repository.LoadMessages();
-            _messageEnvelopeList = !(bytes is null) ? MessageEnvelopeList.FromByteArray(bytes) : null;
+            Era = (long) _repository.GetEra();
+            MessageEnvelopeList = new List<MessageEnvelope>();
+            MessageEnvelopeSet = new HashSet<MessageEnvelope>();
+            
+            foreach (var bytes in _repository.LoadMessages())
+            {
+                var envelope = MessageEnvelope.FromByteArray(bytes);
+
+                if (MessageEnvelopeSet.Contains(envelope))
+                {
+                    throw new InvalidOperationException("Duplicate message in repository" + envelope);
+                }
+
+                MessageEnvelopeSet.Add(envelope);
+                MessageEnvelopeList.Add(envelope);
+            }
         }
 
         public long GetEra()
@@ -29,38 +48,40 @@ namespace Lachain.Consensus.Messages
             {
                 throw new InvalidOperationException("Could not find MessageEnvelopeList in repository");
             }
-            return _messageEnvelopeList.Era;
+            return Era;
         }
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void StartEra(long era, bool canBeSame = false)
         {
-            if (!canBeSame && IsPresent && _messageEnvelopeList.Era == era)
+            if (!canBeSame && IsPresent && Era == era)
             {
                 throw new ArgumentException($"Start Era called with same era number {era}");
             }
-     
-            _messageEnvelopeList = new MessageEnvelopeList(era);
-            SaveToDb(_messageEnvelopeList);
+            
+            _repository.ClearMessages();
+            _repository.SetEra((ulong) era);
         }
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddMessage(MessageEnvelope message)
         {
             if (!IsPresent)
             {
                 throw new InvalidOperationException("Could not find MessageEnvelopeList in db");
             }
-
-            try
+            if (!MessageEnvelopeSet.Contains(message))
             {
-                _messageEnvelopeList.AddMessage(message);
-                SaveToDb(_messageEnvelopeList);
-                logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {_messageEnvelopeList.Era}), " +
+                MessageEnvelopeSet.Add(message);
+                MessageEnvelopeList.Add(message);
+                _repository.AddMessage(message.ToByteArray());
+                Logger.LogTrace($"Saved {(message.External ? "external" : "internal")} message to db (era {Era}), " +
                                 $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
             }
-            catch (ArgumentException e)
+            else
             {
-                logger.LogTrace($"Not saving duplicate {(message.External ? "external" : "internal")} " +
-                                $"message to db (era {_messageEnvelopeList.Era}), " +
+                Logger.LogTrace($"Not saving duplicate {(message.External ? "external" : "internal")} " +
+                                $"message to db (era {Era}), " +
                                 $"type = ({message.TypeString()}), hashcode = {message.GetHashCode()}");
             }
             
@@ -68,12 +89,7 @@ namespace Lachain.Consensus.Messages
 
         public ICollection<MessageEnvelope> GetMessages()
         {
-            return _messageEnvelopeList.MessageList;
-        }
-        
-        private void SaveToDb(MessageEnvelopeList messageEnvelopeList)
-        {
-            _repository.SaveMessages(messageEnvelopeList.ToByteArray());
+            return MessageEnvelopeList;
         }
     }
 }
