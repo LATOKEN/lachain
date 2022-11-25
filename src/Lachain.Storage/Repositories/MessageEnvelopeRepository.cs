@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Runtime.CompilerServices;
 using Lachain.Utility.Serialization;
 
@@ -37,9 +38,22 @@ namespace Lachain.Storage.Repositories
             SetCount(count+1);
         }
         
-        List<byte[]> IMessageEnvelopeRepository.LoadMessages()
+        public List<byte[]> LoadMessages()
         {
-            throw new NotImplementedException();
+            var count = GetCount();
+            var messages = new List<byte[]>(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                var key = EntryPrefix.MessageEnvelope.BuildPrefix((2+i).ToBytes());
+                var message = _rocksDbContext.Get(key);
+                if (message is null)
+                {
+                    throw new DataException("Cannot find $i$th message in repository");
+                }
+                messages.Add(message);
+            }
+            return messages;
         }
 
         public ulong GetEra()
