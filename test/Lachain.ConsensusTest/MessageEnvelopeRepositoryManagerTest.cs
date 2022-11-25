@@ -87,7 +87,7 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, 55);
             manager.AddMessage(requestMessage);
-            messageEnvelopes.Add(message);
+            messageEnvelopes.Add(requestMessage);
 
             var era = manager.GetEra();
             var list = manager.GetMessages();

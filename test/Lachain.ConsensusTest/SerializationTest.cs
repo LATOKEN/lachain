@@ -19,34 +19,30 @@ namespace Lachain.ConsensusTest
     public class SerializationTest
     {
         private IContainer _container;
-        private MessageEnvelopeList _messageList;
+        private List<MessageEnvelope> _messageList;
         private Random random;
         [SetUp]
         public void SetUp()
         {
             var seed = 123456;
             random = new Random(seed);
-            _messageList = new MessageEnvelopeList(random.Next());
+            _messageList = new List<MessageEnvelope>();
         }
 
         [Test]
         [Repeat(100)]
         public void Test_Serialization()
         {
-            TestSerializationAndAddToListBinaryAgreement(_messageList);
-            TestSerializationAndAddToListBinaryBroadcast(_messageList);
-            TestSerializationAndAddToListCommonCoin(_messageList);
-            TestSerializationAndAddToListCommonSubset(_messageList);
-            TestSerializationAndAddToListHoneyBadger(_messageList);
-            TestSerializationAndAddToListReliableBroadcast(_messageList);
-            TestSerializationAndAddToListRootProtocol(_messageList);
-
-            var recovered = MessageEnvelopeList.FromByteArray(_messageList.ToByteArray());
-            Assert.AreEqual(_messageList, recovered);
-            Assert.AreEqual(_messageList.ToByteArray(), recovered.ToByteArray());
+            TestSerializationAndAddToListBinaryAgreement();
+            TestSerializationAndAddToListBinaryBroadcast();
+            TestSerializationAndAddToListCommonCoin();
+            TestSerializationAndAddToListCommonSubset();
+            TestSerializationAndAddToListHoneyBadger();
+            TestSerializationAndAddToListReliableBroadcast();
+            TestSerializationAndAddToListRootProtocol();
         }
 
-        private void TestSerializationAndAddToListBinaryAgreement(MessageEnvelopeList messageList)
+        private void TestSerializationAndAddToListBinaryAgreement()
         {
             var binaryAgreementId = TestUtils.GenerateBinaryAgreementId(random);
             Assert.AreEqual(binaryAgreementId, BinaryAgreementId.FromByteArray(binaryAgreementId.ToByteArray()));
@@ -57,18 +53,18 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
             Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
-            messageList.AddMessage(requestMessage);
+            
             
             var result = new ProtocolResult<BinaryAgreementId, bool> (binaryAgreementId, true);
             Assert.AreEqual(result, ProtocolResult<BinaryAgreementId, bool>.FromByteArray(result.ToByteArray()));
             
             var resultMessage = new MessageEnvelope(result, random.Next(1, 100));
             Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
-            messageList.AddMessage(resultMessage);
+            
         }
         
         
-        private void TestSerializationAndAddToListBinaryBroadcast(MessageEnvelopeList messageList)
+        private void TestSerializationAndAddToListBinaryBroadcast()
         {
             var binaryBroadcastId = TestUtils.GenerateBinaryBroadcastId(random);
             Assert.AreEqual(binaryBroadcastId, BinaryBroadcastId.FromByteArray(binaryBroadcastId.ToByteArray()));
@@ -79,7 +75,7 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
             Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
-            messageList.AddMessage(requestMessage);
+            
 
             var bs = TestUtils.GenerateBoolSet(random);
             Assert.AreEqual(bs, BoolSet.FromByteArray(bs.ToByteArray()));
@@ -89,10 +85,10 @@ namespace Lachain.ConsensusTest
             
             var resultMessage = new MessageEnvelope(result, random.Next(1, 100));
             Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
-            messageList.AddMessage(resultMessage);
+            
         }
         
-        private void TestSerializationAndAddToListCommonCoin(MessageEnvelopeList messageList)
+        private void TestSerializationAndAddToListCommonCoin()
         {
             var coinId = TestUtils.GenerateCoinId(random);
             Assert.AreEqual(coinId, CoinId.FromByteArray(coinId.ToByteArray()));
@@ -103,7 +99,7 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
             Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
-            messageList.AddMessage(requestMessage);
+            
 
             var coinResult = TestUtils.GenerateCoinResult(random);
             Assert.AreEqual(coinResult, CoinResult.FromByteArray(coinResult.ToByteArray()));
@@ -113,9 +109,9 @@ namespace Lachain.ConsensusTest
             
             var resultMessage = new MessageEnvelope(result, random.Next(1, 100));
             Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
-            messageList.AddMessage(resultMessage);
+            
         }
-        private void TestSerializationAndAddToListCommonSubset(MessageEnvelopeList messageList)
+        private void TestSerializationAndAddToListCommonSubset()
         {
             var commonSubsetId = TestUtils.GenerateCommonSubsetId(random);
             Assert.AreEqual(commonSubsetId, CommonSubsetId.FromByteArray(commonSubsetId.ToByteArray()));
@@ -129,16 +125,16 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
             Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
-            messageList.AddMessage(requestMessage);
+            
 
             var result = new ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> (commonSubsetId, TestUtils.GenerateSetOfEncryptedShare(random));
             Assert.AreEqual(result, ProtocolResult<CommonSubsetId, ISet<EncryptedShare>>.FromByteArray(result.ToByteArray()));
             
             var resultMessage = new MessageEnvelope(result, random.Next(1, 100));
             Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
-            messageList.AddMessage(resultMessage);
+            
         }
-        private void TestSerializationAndAddToListHoneyBadger(MessageEnvelopeList messageList)
+        private void TestSerializationAndAddToListHoneyBadger()
         {
             var honeyBadgerId = TestUtils.GenerateHoneyBadgerId(random);
             Assert.AreEqual(honeyBadgerId, HoneyBadgerId.FromByteArray(honeyBadgerId.ToByteArray()));
@@ -149,16 +145,16 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
             Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
-            messageList.AddMessage(requestMessage);
+            
 
             var result = new ProtocolResult<HoneyBadgerId, ISet<IRawShare>> (honeyBadgerId, TestUtils.GenerateSetOfIRawShare(random));
             Assert.AreEqual(result, ProtocolResult<HoneyBadgerId, ISet<IRawShare>>.FromByteArray(result.ToByteArray()));
             
             var resultMessage = new MessageEnvelope(result, random.Next(1, 100));
             Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
-            messageList.AddMessage(resultMessage);
+            
         }
-        private void TestSerializationAndAddToListReliableBroadcast(MessageEnvelopeList messageList)
+        private void TestSerializationAndAddToListReliableBroadcast()
         {
             var reliableBroadcastId = TestUtils.GenerateReliableBroadcastId(random);
             Assert.AreEqual(reliableBroadcastId, ReliableBroadcastId.FromByteArray(reliableBroadcastId.ToByteArray()));
@@ -169,7 +165,7 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
             Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
-            messageList.AddMessage(requestMessage);
+            
 
             var result = new ProtocolResult<ReliableBroadcastId, EncryptedShare> 
                 (reliableBroadcastId, TestUtils.GenerateEncryptedShare(random, false)!);
@@ -177,9 +173,9 @@ namespace Lachain.ConsensusTest
             
             var resultMessage = new MessageEnvelope(result, random.Next(1, 100));
             Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
-            messageList.AddMessage(resultMessage);
+            
         }
-        private void TestSerializationAndAddToListRootProtocol(MessageEnvelopeList messageList)
+        private void TestSerializationAndAddToListRootProtocol()
         {
             // Only checking Result as IBlockProducer will not be same in Request
             var rootProtocolId = TestUtils.GenerateRootProtocolId(random);
@@ -191,14 +187,14 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, random.Next(1, 100));
             Assert.AreEqual(requestMessage, MessageEnvelope.FromByteArray(requestMessage.ToByteArray()));
-            messageList.AddMessage(requestMessage);
+            
 
             var result = new ProtocolResult<RootProtocolId, object?> (rootProtocolId, null);
             Assert.AreEqual(result, ProtocolResult<RootProtocolId, object?>.FromByteArray(result.ToByteArray()));
             
             var resultMessage = new MessageEnvelope(result, random.Next(1, 100));
             Assert.AreEqual(resultMessage, MessageEnvelope.FromByteArray(resultMessage.ToByteArray()));
-            messageList.AddMessage(resultMessage);
+            
         }
 
         
