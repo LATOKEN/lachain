@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Lachain.Consensus;
@@ -68,10 +69,17 @@ namespace Lachain.ConsensusTest
             Assert.AreEqual(manager.IsPresent, true);
             Assert.AreEqual(manager.GetEra(), 23);
             Assert.AreEqual(manager.GetMessages().Count, 0);
-            
-            manager.AddMessage(new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 77));
-            manager.AddMessage(new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 23));
-            
+
+            List<MessageEnvelope> messageEnvelopes = new List<MessageEnvelope>();
+
+            var message = new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 77);
+            manager.AddMessage(message);
+            messageEnvelopes.Add(message);
+
+            message = new MessageEnvelope(TestUtils.GenerateBinaryBroadcastConsensusMessage(), 23);
+            manager.AddMessage(message);
+            messageEnvelopes.Add(message);
+
             var request = new ProtocolRequest<ReliableBroadcastId, EncryptedShare?>(
                 TestUtils.GenerateCommonSubsetId(_random), 
                 TestUtils.GenerateReliableBroadcastId(_random), 
@@ -79,15 +87,18 @@ namespace Lachain.ConsensusTest
             
             var requestMessage = new MessageEnvelope(request, 55);
             manager.AddMessage(requestMessage);
+            messageEnvelopes.Add(message);
 
             var era = manager.GetEra();
             var list = manager.GetMessages();
+            CollectionAssert.AreEqual(list, messageEnvelopes);
             
             manager = new MessageEnvelopeRepositoryManager(repo);
             manager.LoadFromDb();
             Assert.AreEqual(manager.IsPresent, true);
             Assert.AreEqual(manager.GetEra(), era);
             CollectionAssert.AreEqual(manager.GetMessages(), list);
+            CollectionAssert.AreEqual(manager.GetMessages(), messageEnvelopes);
 
             Assert.Throws<ArgumentException>(() => manager.StartEra(23));
             

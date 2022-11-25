@@ -23,14 +23,20 @@ namespace Lachain.Storage.Repositories
         
         public void SaveMessages(List<byte[]> messageEnvelopeListBytes)
         {
-            throw new NotImplementedException();
+            foreach (var envelope in messageEnvelopeListBytes)
+            {
+                AddMessage(envelope);
+            }
         }
 
         public void AddMessage(byte[] messageEnvelopeBytes)
         {
-            throw new NotImplementedException();
+            var count = GetCount();
+            var key = EntryPrefix.MessageEnvelope.BuildPrefix((2+count).ToBytes());
+            _rocksDbContext.Save(key, messageEnvelopeBytes);
+            SetCount(count+1);
         }
-
+        
         List<byte[]> IMessageEnvelopeRepository.LoadMessages()
         {
             throw new NotImplementedException();
@@ -46,6 +52,19 @@ namespace Lachain.Storage.Repositories
         {
             var key = EntryPrefix.MessageEnvelope.BuildPrefix(0.ToBytes());
             _rocksDbContext.Save(key, era.ToBytes());
+        }
+        
+        
+        public int GetCount()
+        {
+            var key = EntryPrefix.MessageEnvelope.BuildPrefix(1.ToBytes());
+            return _rocksDbContext.Get(key).AsReadOnlySpan().ToInt32();
+        }
+
+        public void SetCount(int count)
+        {
+            var key = EntryPrefix.MessageEnvelope.BuildPrefix(1.ToBytes());
+            _rocksDbContext.Save(key, count.ToBytes());
         }
     }
 }
