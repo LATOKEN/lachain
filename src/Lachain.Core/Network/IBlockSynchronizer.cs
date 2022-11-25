@@ -15,6 +15,8 @@ namespace Lachain.Core.Network
         bool HandleBlockFromPeer(BlockInfo block, ECDSAPublicKey publicKey);
         
         ulong? GetHighestBlock();
+
+        ulong? GetMedianHeight();
         
         IDictionary<ECDSAPublicKey, ulong> GetConnectedPeers();
 

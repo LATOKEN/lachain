@@ -241,6 +241,18 @@ namespace Lachain.Core.Network
             return _peerHeights.Max(v => v.Value);
         }
 
+        public ulong? GetMedianHeight()
+        {
+            if (_peerHeights.Count == 0) return null;
+            List<ulong> heights = new List<ulong>();
+            foreach (var keyValuePair in _peerHeights)
+            {
+                heights.Add(keyValuePair.Value);
+            }
+            heights.Sort();
+            return heights[heights.Count / 2];
+        }
+
         public IDictionary<ECDSAPublicKey, ulong> GetConnectedPeers()
         {
             return _peerHeights;
