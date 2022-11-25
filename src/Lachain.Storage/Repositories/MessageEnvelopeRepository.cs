@@ -1,6 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Lachain.Utility.Serialization;
 
+/**
+ * Message Envelopes are kept in this repository
+ * Format:
+ *  prefix + "0":    era
+ *  prefix + "1":   count
+ * prefix + "2+i": ith message
+ */
 namespace Lachain.Storage.Repositories
 {
     public class MessageEnvelopeRepository : IMessageEnvelopeRepository
@@ -12,18 +21,31 @@ namespace Lachain.Storage.Repositories
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
         
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public void SaveMessages(byte[] messageEnvelopeListBytes)
+        public void SaveMessages(List<byte[]> messageEnvelopeListBytes)
         {
-            var key = EntryPrefix.MessageEnvelope.BuildPrefix();
-            _rocksDbContext.Save(key, messageEnvelopeListBytes);
+            throw new NotImplementedException();
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        public byte[]? LoadMessages()
-        {   
-            var key = EntryPrefix.MessageEnvelope.BuildPrefix();
-            return _rocksDbContext.Get(key);
+        public void AddMessage(byte[] messageEnvelopeBytes)
+        {
+            throw new NotImplementedException();
+        }
+
+        List<byte[]> IMessageEnvelopeRepository.LoadMessages()
+        {
+            throw new NotImplementedException();
+        }
+
+        public ulong GetEra()
+        {
+            var key = EntryPrefix.MessageEnvelope.BuildPrefix(0.ToBytes());
+            return _rocksDbContext.Get(key).AsReadOnlySpan().ToUInt64();
+        }
+
+        public void SetEra(ulong era)
+        {
+            var key = EntryPrefix.MessageEnvelope.BuildPrefix(0.ToBytes());
+            _rocksDbContext.Save(key, era.ToBytes());
         }
     }
 }
