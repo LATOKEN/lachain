@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Utility.Serialization;
 
-/**
+/*
  * Message Envelopes are kept in this repository
  * Format:
  *  prefix + "0":    era
  *  prefix + "1":   count
  * prefix + "2+i": ith message
  */
+
 namespace Lachain.Storage.Repositories
 {
     public class MessageEnvelopeRepository : IMessageEnvelopeRepository
@@ -29,15 +31,22 @@ namespace Lachain.Storage.Repositories
                 AddMessage(envelope);
             }
         }
-
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddMessage(byte[] messageEnvelopeBytes)
         {
+            var rocksDbAtomicWrite = new RocksDbAtomicWrite(_rocksDbContext);
+
             var count = GetCount();
             var key = EntryPrefix.MessageEnvelope.BuildPrefix((2+count).ToBytes());
-            _rocksDbContext.Save(key, messageEnvelopeBytes);
-            SetCount(count+1);
+            rocksDbAtomicWrite.Put(key, messageEnvelopeBytes);
+
+            var countKey = EntryPrefix.MessageEnvelope.BuildPrefix(1.ToBytes());
+            rocksDbAtomicWrite.Put(countKey, (count+1).ToBytes().ToArray());
+            rocksDbAtomicWrite.Commit();
         }
         
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public List<byte[]> LoadMessages()
         {
             var count = GetCount();
@@ -73,12 +82,6 @@ namespace Lachain.Storage.Repositories
         {
             var key = EntryPrefix.MessageEnvelope.BuildPrefix(1.ToBytes());
             return _rocksDbContext.Get(key).AsReadOnlySpan().ToInt32();
-        }
-
-        public void SetCount(int count)
-        {
-            var key = EntryPrefix.MessageEnvelope.BuildPrefix(1.ToBytes());
-            _rocksDbContext.Save(key, count.ToBytes());
         }
     }
 }
