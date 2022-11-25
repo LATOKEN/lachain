@@ -26,12 +26,31 @@ namespace Lachain.Storage.Repositories
         
         public void SaveMessages(List<byte[]> messageEnvelopeListBytes)
         {
+            
             foreach (var envelope in messageEnvelopeListBytes)
             {
                 AddMessage(envelope);
             }
         }
         
+        
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void ClearMessages()
+        {
+            var count = GetCount();
+            var rocksDbAtomicWrite = new RocksDbAtomicWrite(_rocksDbContext);
+
+            for (int i = 0; i < count; i++)
+            {
+                var key = EntryPrefix.MessageEnvelope.BuildPrefix((2+count).ToBytes());
+                rocksDbAtomicWrite.Delete(key);
+            }
+            
+            var countKey = EntryPrefix.MessageEnvelope.BuildPrefix(1.ToBytes());
+            rocksDbAtomicWrite.Put(countKey, 0.ToBytes().ToArray());
+            rocksDbAtomicWrite.Commit();
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void AddMessage(byte[] messageEnvelopeBytes)
         {
