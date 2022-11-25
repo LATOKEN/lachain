@@ -9,6 +9,7 @@ using Lachain.Consensus.BinaryAgreement;
 using Lachain.Consensus.CommonCoin;
 using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.HoneyBadger;
+using Lachain.Consensus.MaliciousProtocol;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
 using Lachain.Consensus.RequestProtocols;
@@ -45,6 +46,7 @@ namespace Lachain.Core.Consensus
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
         private IBlockProducer _blockProducer;
+        private readonly Spammer _spammer;
 
         public bool Ready => _validators != null;
 
@@ -80,6 +82,7 @@ namespace Lachain.Core.Consensus
             _messageEnvelopeRepositoryManager = messageEnvelopeRepositoryManager;
             _blockProducer = blockProducer;
             _requestManager = new RequestManager(this, _era);
+            _spammer = new Spammer(this, _era);
         }
 
         public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
@@ -87,6 +90,8 @@ namespace Lachain.Core.Consensus
             _validators = keySet;
             _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
             _requestManager.SetValidators(_validators.N);
+            _spammer.Initiate(_validators.N);
+            _spammer.StartSpam();
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
