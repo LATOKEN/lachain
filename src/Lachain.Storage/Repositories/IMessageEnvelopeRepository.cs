@@ -4,7 +4,7 @@ namespace Lachain.Storage.Repositories
 {
     public interface IMessageEnvelopeRepository
     {
-        void SaveMessages(List<byte[]> messageEnvelopeListBytes);
+        void AddMessages(List<byte[]> messageEnvelopeListBytes);
         void ClearMessages();
         void AddMessage(byte[] messageEnvelopeBytes);
         List<byte[]> LoadMessages();

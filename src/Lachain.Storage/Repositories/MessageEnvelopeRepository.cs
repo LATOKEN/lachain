@@ -8,7 +8,7 @@ using Lachain.Utility.Serialization;
 /*
  * Message Envelopes are kept in this repository
  * Format:
- *  prefix + "0":    era
+ *  prefix + "0":    era 
  *  prefix + "1":   count
  * prefix + "2+i": ith message
  */
@@ -24,7 +24,7 @@ namespace Lachain.Storage.Repositories
             _rocksDbContext = rocksDbContext ?? throw new ArgumentNullException(nameof(rocksDbContext));
         }
         
-        public void SaveMessages(List<byte[]> messageEnvelopeListBytes)
+        public void AddMessages(List<byte[]> messageEnvelopeListBytes)
         {
             
             foreach (var envelope in messageEnvelopeListBytes)
