@@ -146,7 +146,7 @@ namespace Lachain.Core.Network
         //To do: put this constant in a better place, and document block init rule
         //To do: encode error in reply
         private const ulong SyncRequestBlockLimit = 100;
-        private void ValidateSyncBlocksRequest(SyncBlocksRequest request, IBlockSnapshot snapshot)
+        public void ValidateSyncBlocksRequest(SyncBlocksRequest request, IBlockSnapshot snapshot)
         {
             if (request.FromHeight == null)
             {
