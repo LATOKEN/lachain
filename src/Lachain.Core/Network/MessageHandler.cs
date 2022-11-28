@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf.Collections;
 using Lachain.Logger;
@@ -192,7 +193,8 @@ namespace Lachain.Core.Network
                 .OrderBy(x => x.Block.Header.Index)
                 .ToArray();
             Logger.LogTrace($"Blocks received: {orderedBlocks.Length} ({len})");
-            Task.Factory.StartNew(() =>
+            ThreadPool.SetMaxThreads(5, 5);
+            var action = new Action(() =>
             {
                 try
                 {
@@ -206,7 +208,9 @@ namespace Lachain.Core.Network
                 {
                     Logger.LogError($"Error occured while handling blocks from peer: {e}");
                 }
-            }, TaskCreationOptions.LongRunning);
+            });
+            ThreadPool.QueueUserWorkItem(state => { action(); });
+            
             Logger.LogTrace("Finished processing SyncBlocksReply");
         }
         
@@ -245,7 +249,6 @@ namespace Lachain.Core.Network
                     .Select(tx => tx!)
                     .ToList();
             }
-
             Logger.LogTrace($"Replying request with {txs.Count} transactions");
             if (txs.Count == 0) return;
             callback(new SyncPoolReply {Transactions = {txs}});
