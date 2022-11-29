@@ -112,7 +112,6 @@ namespace Lachain.Consensus.ThresholdKeygen
         {
             if (_keyGenStates[message.Proposer].Acks[sender])
                 throw new ArgumentException("Already handled this value");
-            _keyGenStates[message.Proposer].Acks[sender] = true;
             var myValue = Fr.FromBytes(Crypto.Secp256K1Decrypt(
                 _keyPair.PrivateKey.Encode(), message.EncryptedValues[_myIdx]
             ));
@@ -122,6 +121,7 @@ namespace Lachain.Consensus.ThresholdKeygen
                 .Equals(G1.Generator * myValue)
             )
                 throw new ArgumentException("Decrypted value does not match commitment");
+            _keyGenStates[message.Proposer].Acks[sender] = true;
             _keyGenStates[message.Proposer].Values[sender] = myValue;
             if (_keyGenStates[message.Proposer].ValueCount() > 2 * Faulty && !_finished.Contains(message.Proposer))
             {
