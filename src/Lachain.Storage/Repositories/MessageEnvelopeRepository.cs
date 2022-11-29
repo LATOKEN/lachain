@@ -46,7 +46,7 @@ namespace Lachain.Storage.Repositories
 
             for (int i = 0; i < count; i++)
             {
-                var key = EntryPrefix.MessageEnvelope.BuildPrefix(((int)(2+count)).ToBytes());
+                var key = EntryPrefix.MessageEnvelope.BuildPrefix(((2+i)).ToBytes());
                 rocksDbAtomicWrite.Delete(key);
             }
             
