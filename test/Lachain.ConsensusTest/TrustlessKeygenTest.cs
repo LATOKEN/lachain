@@ -135,6 +135,138 @@ namespace Lachain.ConsensusTest
             return keys;
         }
 
+        private static ThresholdKeyring[] SimulateKeygenFaultyBehavior(int n, int f, DeliveryServiceMode mode)
+        {
+            var ecdsaKeys = Enumerable.Range(0, n)
+                .Select(_ => Crypto.GeneratePrivateKey())
+                .Select(x => x.ToPrivateKey())
+                .Select(x => new EcdsaKeyPair(x))
+                .ToArray();
+
+            var maliciousKeygens = Enumerable.Range(0, f)
+                .Select(i => new MaliciousKeygen(ecdsaKeys[i], ecdsaKeys.Select(x => x.PublicKey), f, 0))
+                .ToArray();
+
+            var validKeyGens = Enumerable.Range(f, n-f)
+                .Select(i => new TrustlessKeygen(ecdsaKeys[i], ecdsaKeys.Select(x => x.PublicKey), f, 0))
+                .ToArray();
+            Assert.AreEqual(validKeyGens.Length, n-f);
+
+            var messageLedger = new RandomSamplingQueue<QueueItem>();
+            messageLedger.Enqueue(new QueueItem(-1, null));
+
+            var curKeys = maliciousKeygens.Select(_ => (ThresholdKeyring?) null).ToArray();
+            curKeys = curKeys.Concat(validKeyGens.Select(_ => (ThresholdKeyring?) null)).ToArray();
+            while (messageLedger.Count > 0)
+            {
+                QueueItem? msg;
+                var success = mode switch
+                {
+                    DeliveryServiceMode.TAKE_FIRST => messageLedger.TryDequeue(out msg),
+                    DeliveryServiceMode.TAKE_LAST => messageLedger.TryTakeLast(out msg),
+                    DeliveryServiceMode.TAKE_RANDOM => messageLedger.TrySample(out msg),
+                    _ => throw new NotImplementedException($"Unknown mode {mode}")
+                };
+                
+                Assert.IsTrue(success);
+                try
+                {
+                    switch (msg?.payload)
+                    {
+                        case null:
+                            for (var i = 0; i < f; ++i)
+                                messageLedger.Enqueue(new QueueItem(i, maliciousKeygens[i].StartKeygen()));
+                            for (var i = 0; i < n-f; ++i)
+                                messageLedger.Enqueue(new QueueItem(i + f, validKeyGens[i].StartKeygen()));
+                            break;
+                        case CommitMessage commitMessage:
+                            for (var i = 0; i < f; ++i)
+                                messageLedger.Enqueue(new QueueItem(i, maliciousKeygens[i].HandleCommit(msg.sender, commitMessage)));
+                            for (var i = 0; i < n-f; ++i)
+                                messageLedger.Enqueue(new QueueItem(i + f, validKeyGens[i].HandleCommit(msg.sender, commitMessage)));
+                            break;
+                        case ValueMessage valueMessage:
+                            for (var i = 0; i < f; ++i)
+                                maliciousKeygens[i].HandleSendValue(msg.sender, valueMessage);
+                            for (var i = 0; i < n-f; ++i)
+                                validKeyGens[i].HandleSendValue(msg.sender, valueMessage);
+                            break;
+                        default:
+                            Assert.Fail($"Message of type {msg.GetType()} occurred");
+                            break;
+                    }
+                }
+                catch (Exception)
+                {
+                }
+
+                for (var i = 0; i < n; ++i)
+                {
+                    var curKey = (i < f) ? maliciousKeygens[i].TryGetKeys() : validKeyGens[i-f].TryGetKeys();
+                    if (curKey is null)
+                    {
+                        Assert.AreEqual(null, curKeys[i]);
+                        continue;
+                    }
+
+                    if (!curKeys[i].HasValue)
+                    {
+                        curKeys[i] = curKey;
+                        continue;
+                    }
+
+                    Assert.IsTrue(curKey.Value.TpkePrivateKey.ToBytes()
+                        .SequenceEqual(curKeys[i]!.Value.TpkePrivateKey.ToBytes()));
+                    Assert.AreEqual(curKey.Value.PublicPartHash(), curKeys[i]!.Value.PublicPartHash());
+                }
+
+                for (var i = 0; i < f; ++i)
+                {
+                    maliciousKeygens[i] = TestSerializationRoundTripMalicious(maliciousKeygens[i], ecdsaKeys[i]);
+                }
+                for (var i = 0; i < n-f; i++)
+                {
+                    validKeyGens[i] = TestSerializationRoundTrip(validKeyGens[i], ecdsaKeys[i+f]);
+                }
+            }
+
+            for (var i = 0 ; i < f; i++)
+            {
+                Assert.IsTrue(maliciousKeygens[i].Finished());
+            }
+            for (var i = 0 ; i < n-f; i++)
+            {
+                Assert.IsTrue(validKeyGens[i].Finished());
+            }
+
+            for (var i = 0; i < n; ++i)
+            {
+                Assert.AreNotEqual(curKeys[i], null);
+            }
+
+            var keys = maliciousKeygens
+                .Select(x => x.TryGetKeys() ?? throw new Exception())
+                .ToArray();
+            keys = keys.Concat(validKeyGens
+                .Select(x => x.TryGetKeys() ?? throw new Exception())).ToArray();
+
+            for (var i = 0; i < n; ++i)
+            {
+                Assert.AreEqual(keys[0].TpkePublicKey, keys[i].TpkePublicKey);
+                Assert.AreEqual(keys[0].ThresholdSignaturePublicKeySet, keys[i].ThresholdSignaturePublicKeySet);
+            }
+
+            return keys;
+        }
+
+        private static MaliciousKeygen TestSerializationRoundTripMalicious(MaliciousKeygen keyGen, EcdsaKeyPair keyPair)
+        {
+            var bytes = keyGen.ToBytes();
+            var restored = MaliciousKeygen.FromBytes(bytes, keyPair);
+            Assert.AreEqual(restored, keyGen);
+            return restored;
+        }
+
         private static TrustlessKeygen TestSerializationRoundTrip(TrustlessKeygen keyGen, EcdsaKeyPair keyPair)
         {
             var bytes = keyGen.ToBytes();
@@ -267,6 +399,13 @@ namespace Lachain.ConsensusTest
         public void RunAllHonest_3_0()
         {
             var keys = SimulateKeygen(3, 0, DeliveryServiceMode.TAKE_FIRST);
+            CheckKeys(keys);
+        }
+
+        [Test]
+        public void RunSomeMalicious_7_2()
+        {
+            var keys = SimulateKeygenFaultyBehavior(7, 2, DeliveryServiceMode.TAKE_FIRST);
             CheckKeys(keys);
         }
     }
