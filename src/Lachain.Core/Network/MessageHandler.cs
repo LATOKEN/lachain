@@ -257,14 +257,16 @@ namespace Lachain.Core.Network
         //To do: put this constant in a better place, and document block init rule
         //To do: encode error in reply
         private const int PoolSyncRequestTransactionLimit = 1000;
-        private void ValidateSyncPoolRequest(SyncPoolRequest request)
+        public void ValidateSyncPoolRequest(SyncPoolRequest request)
         {
             if (request.All)
             {
-                if (!(request.Hashes is null))
+                if (!(request.Hashes is null) && request.Hashes.Count > 0)
                 {
                     throw new ArgumentException("Pool request has both all switch and list of txns.");
                 }
+
+                return;
             }
 
             if (request.Hashes is null || request.Hashes.Count == 0)
@@ -302,7 +304,7 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Finished processing SyncPoolReply");
         }
 
-        private void ValidateSyncPoolReply(SyncPoolReply syncPoolReply)
+        public void ValidateSyncPoolReply(SyncPoolReply syncPoolReply)
         {
             if (syncPoolReply.Transactions is null)
             {
