@@ -45,7 +45,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             _confirmSent = false;
         }
 
-        private TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f, ulong cycle,
+        protected TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f, ulong cycle,
             State[] states, IList<int> finished, IDictionary<UInt256, int> confirmations, bool confirmSent)
         {
             _keyPair = keyPair;
@@ -87,7 +87,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             }
         }
 
-        public ValueMessage HandleCommit(int sender, CommitMessage message)
+        public virtual ValueMessage HandleCommit(int sender, CommitMessage message)
         {
             if (message.EncryptedRows.Length != Players) throw new ArgumentException();
             if (_keyGenStates[sender].Commitment != null)
@@ -185,7 +185,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             return Crypto.Secp256K1Encrypt(publicKey.EncodeCompressed(), serializedRow);
         }
 
-        private static IEnumerable<Fr> DecryptRow(byte[] encryptedRow, ECDSAPrivateKey privateKey)
+        protected static IEnumerable<Fr> DecryptRow(byte[] encryptedRow, ECDSAPrivateKey privateKey)
         {
             return Crypto.Secp256K1Decrypt(privateKey.Encode(), encryptedRow)
                 .Batch(Fr.ByteSize)
