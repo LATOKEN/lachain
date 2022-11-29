@@ -36,7 +36,7 @@ namespace Lachain.CoreTest.Network
         }
 
         [Test]
-        public void Test()
+        public void SyncBlockRequestTest()
         {
             var request = new SyncBlocksRequest();
             request.FromHeight = 0;
@@ -51,6 +51,27 @@ namespace Lachain.CoreTest.Network
             request.FromHeight = 0;
             request.ToHeight = 10;
             Assert.DoesNotThrow(() => _handler.ValidateSyncBlocksRequest(request, null));
+        }
+        
+        [Test]
+        public void SyncPoolRequestTest()
+        {
+            var request = new SyncPoolRequest();
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolRequest(request));
+
+            request.All = false;
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolRequest(request));
+
+            request.All = true;
+            Assert.DoesNotThrow(() => _handler.ValidateSyncPoolRequest(request));
+
+            request.All = false;
+            request.Hashes.Add(new UInt256());
+            Assert.DoesNotThrow(() => _handler.ValidateSyncPoolRequest(request));
+            
+            for (int i=0; i<10009; i++)
+                request.Hashes.Add(new UInt256());
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolRequest(request));
         }
         
         
