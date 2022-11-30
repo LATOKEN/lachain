@@ -2,24 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
-using Lachain.Proto;
 using Lachain.Storage.Repositories;
 
 namespace Lachain.Consensus.Messages
 {
-    public class MessageEnvelopeRepositoryManager
+    public class MessageEnvelopeRepositoryManager : IMessageEnvelopeRepositoryManager
     {
         private readonly IMessageEnvelopeRepository _repository;
         private List<MessageEnvelope>? MessageEnvelopeList { get; set; }
         private ISet<MessageEnvelope>? MessageEnvelopeSet;
-        private readonly long _era;
         
         private static readonly ILogger<MessageEnvelopeRepositoryManager> Logger = LoggerFactory.GetLoggerForClass<MessageEnvelopeRepositoryManager>();
 
         public bool IsPresent => !(MessageEnvelopeList is null);
-        public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository, long era)
+        public MessageEnvelopeRepositoryManager(IMessageEnvelopeRepository repository)
         {
-            _era = era;
             _repository = repository;
         }
     
@@ -34,7 +31,8 @@ namespace Lachain.Consensus.Messages
             MessageEnvelopeList = new List<MessageEnvelope>();
             MessageEnvelopeSet = new HashSet<MessageEnvelope>();
 
-            foreach (var bytes in _repository.LoadMessages())
+            var dbMsgs = _repository.LoadMessages();
+            foreach (var bytes in dbMsgs)
             {
                 var envelope = MessageEnvelope.FromByteArray(bytes);
 
@@ -61,7 +59,6 @@ namespace Lachain.Consensus.Messages
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void StartEra(long era, bool canBeSame = false)
         {
-            if (era != _era) throw new ArgumentException($"We are in era {_era}, but starting era {era}");
             if (!canBeSame && IsPresent && (long) _repository.GetEra() == era)
             {
                 throw new ArgumentException($"Start Era called with same era number {era}");
@@ -102,19 +99,6 @@ namespace Lachain.Consensus.Messages
         public ICollection<MessageEnvelope> GetMessages()
         {
             return MessageEnvelopeList;
-        }
-
-        private void HandleExternalMessage(object? sender, (int from, ConsensusMessage msg) @event)
-        {
-            var (from, msg) = @event;
-            msg.Validator = new Validator {Era = _era};
-            var messageEnvelope = new MessageEnvelope(msg, from);
-            AddMessage(messageEnvelope);
-        }
-
-        public void RegisterProtocol(IConsensusProtocol protocol)
-        {
-            protocol._receivedExternalMessage += HandleExternalMessage;
         }
     }
 }
