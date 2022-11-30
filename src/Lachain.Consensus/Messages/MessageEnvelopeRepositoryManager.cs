@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
+using Lachain.Proto;
 using Lachain.Storage.Repositories;
 
 namespace Lachain.Consensus.Messages
@@ -99,6 +100,18 @@ namespace Lachain.Consensus.Messages
         public ICollection<MessageEnvelope> GetMessages()
         {
             return MessageEnvelopeList;
+        }
+
+        private void HandleExternalMessage(object? sender, (int from, ConsensusMessage msg) @event)
+        {
+            var (from, msg) = @event;
+            var messageEnvelope = new MessageEnvelope(msg, from);
+            AddMessage(messageEnvelope);
+        }
+
+        public void RegisterProtocol(IConsensusProtocol protocol)
+        {
+            protocol._receivedExternalMessage += HandleExternalMessage;
         }
     }
 }
