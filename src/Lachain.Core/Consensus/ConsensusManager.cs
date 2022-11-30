@@ -38,6 +38,7 @@ namespace Lachain.Core.Consensus
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
         private readonly IKeyGenManager _keyGenManager;
+        private readonly IMessageEnvelopeRepositoryManager _messageRepoManager;
 
         private readonly IDictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>> _postponedMessages
             = new Dictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>>();
@@ -52,6 +53,7 @@ namespace Lachain.Core.Consensus
         private readonly ulong _targetBlockInterval;
 
         public ConsensusManager(
+            IMessageEnvelopeRepositoryManager messageRepoManager,
             IConsensusMessageDeliverer consensusMessageDeliverer,
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
@@ -65,6 +67,7 @@ namespace Lachain.Core.Consensus
             IKeyGenManager keyGenManager
         )
         {
+            _messageRepoManager = messageRepoManager;
             _consensusMessageDeliverer = consensusMessageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
@@ -184,7 +187,7 @@ namespace Lachain.Core.Consensus
                     
                     CurrentEra += 1;
                     _eras[CurrentEra] = new EraBroadcaster(
-                        CurrentEra, _consensusMessageDeliverer, _privateWallet, 
+                        _messageRepoManager, CurrentEra, _consensusMessageDeliverer, _privateWallet, 
                         _validatorAttendanceRepository, _messageEnvelopeRepository, _blockProducer
                     );
                     Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
@@ -200,7 +203,7 @@ namespace Lachain.Core.Consensus
             {
                 Logger.LogTrace("Create EraBroadcaster");
                 _eras[CurrentEra] = new EraBroadcaster(
-                    CurrentEra, _consensusMessageDeliverer, _privateWallet, 
+                    _messageRepoManager, CurrentEra, _consensusMessageDeliverer, _privateWallet, 
                     _validatorAttendanceRepository, _messageEnvelopeRepository, _blockProducer
                 );
             }

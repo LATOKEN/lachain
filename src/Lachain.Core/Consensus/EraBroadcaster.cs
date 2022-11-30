@@ -38,7 +38,7 @@ namespace Lachain.Core.Consensus
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
-        private readonly MessageEnvelopeRepositoryManager _messageEnvelopeRepositoryManager;
+        private readonly IMessageEnvelopeRepositoryManager _messageEnvelopeRepositoryManager;
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
@@ -62,6 +62,7 @@ namespace Lachain.Core.Consensus
             new ConcurrentDictionary<IProtocolIdentifier, List<MessageEnvelope>>();
 
         public EraBroadcaster(
+            IMessageEnvelopeRepositoryManager messageEnvelopeRepositoryManager,
             long era, IConsensusMessageDeliverer consensusMessageDeliverer,
             IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository,
             IMessageEnvelopeRepository messageEnvelopeRepository, IBlockProducer blockProducer
@@ -74,7 +75,7 @@ namespace Lachain.Core.Consensus
             _era = era;
             _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
-            _messageEnvelopeRepositoryManager = new MessageEnvelopeRepositoryManager(messageEnvelopeRepository, _era);
+            _messageEnvelopeRepositoryManager = messageEnvelopeRepositoryManager;
             _blockProducer = blockProducer;
         }
 
@@ -89,8 +90,21 @@ namespace Lachain.Core.Consensus
             foreach (var protocol in protocols)
             {
                 _registry[protocol.Id] = protocol;
-                _messageEnvelopeRepositoryManager.RegisterProtocol(protocol);
+                protocol._receivedExternalMessage += PersistExternalMessae;
             }
+        }
+
+        private void PersistExternalMessae(object? sender, (int from, ConsensusMessage msg) @event)
+        {
+            if (_terminated)
+            {
+                Logger.LogTrace($"Era {_era} is already finished, skipping persist");
+                return;
+            }
+            var (from, msg) = @event;
+            msg.Validator = new Validator {Era = _era};
+            var messageEnvelope = new MessageEnvelope(msg, from);
+            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
         }
 
         public void Broadcast(ConsensusMessage message)
