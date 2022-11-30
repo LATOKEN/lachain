@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus.Messages;
+using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Prometheus;
 
@@ -183,6 +184,14 @@ namespace Lachain.Consensus
             }
         }
 
+        protected void InvokeReceivedExternalMessage(int from, ConsensusMessage msg)
+        {
+            // received a valid msg from validator
+            _receivedExternalMessage?.Invoke(this, (from, msg));
+        }
+
         public abstract void ProcessMessage(MessageEnvelope envelope);
+
+        public event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
     }
 }
