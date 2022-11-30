@@ -1,6 +1,7 @@
 using System;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
+using Lachain.Proto;
 
 namespace Lachain.ConsensusTest
 {
@@ -50,5 +51,7 @@ namespace Lachain.ConsensusTest
         }
 
         public bool Terminated => true;
+
+        public event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
     }
 }

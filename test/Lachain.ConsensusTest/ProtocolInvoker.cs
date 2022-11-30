@@ -5,6 +5,7 @@ using System.Threading;
 using Lachain.Consensus;
 using Lachain.Consensus.Messages;
 using Lachain.Logger;
+using Lachain.Proto;
 
 namespace Lachain.ConsensusTest
 {
@@ -117,5 +118,7 @@ namespace Lachain.ConsensusTest
         {
             throw new NotImplementedException();
         }
+
+        public event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
     }
 }
