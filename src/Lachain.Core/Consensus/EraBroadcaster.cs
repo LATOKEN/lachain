@@ -11,6 +11,7 @@ using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
+using Lachain.Consensus.RequestProtocols;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -39,6 +40,7 @@ namespace Lachain.Core.Consensus
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
         private readonly IMessageEnvelopeRepositoryManager _messageEnvelopeRepositoryManager;
+        private readonly IRequestManager _requestManager;
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
@@ -77,12 +79,14 @@ namespace Lachain.Core.Consensus
             _validatorAttendanceRepository = validatorAttendanceRepository;
             _messageEnvelopeRepositoryManager = messageEnvelopeRepositoryManager;
             _blockProducer = blockProducer;
+            _requestManager = new RequestManager(this, _era);
         }
 
         public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
         {
             _validators = keySet;
             _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
+            _requestManager.SetValidators(_validators.N);
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
@@ -91,6 +95,7 @@ namespace Lachain.Core.Consensus
             {
                 _registry[protocol.Id] = protocol;
                 protocol._receivedExternalMessage += PersistExternalMessae;
+                _requestManager.RegisterProtocol(protocol.Id, protocol);
             }
         }
 
@@ -319,6 +324,9 @@ namespace Lachain.Core.Consensus
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     protocolId = new RootProtocolId(message.Validator.Era);
                     break;
+                case ConsensusMessage.PayloadOneofCase.RequestConsensus:
+                    _requestManager.HandleRequest(from, message);
+                    return;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message}");
             }
@@ -497,6 +505,8 @@ namespace Lachain.Core.Consensus
             {
                 _postponedMessages.Clear();
             }
+            
+            _requestManager.Terminate();
         }
 
         // Each ProtocolId is created only once to prevent spamming, Protocols are mapped against ProtocolId, so each
@@ -755,6 +765,11 @@ namespace Lachain.Core.Consensus
                     // Check fields of BlockHeader: UInt256 cannot be null
                     if (header.MerkleRoot is null || header.PrevBlockHash is null || header.StateHash is null)
                         return false;
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.RequestConsensus:
+                    // all request parameters have default value
+                    // request manager can verify and discard request if necessary
+                    // no additional check needed
                     return true;
                 default:
                     return false;

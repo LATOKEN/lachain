@@ -87,6 +87,62 @@ message ConsensusMessage {
         ECHOMessage echo_message = 14;
         ReadyMessage ready_message = 15;
         SignedHeaderMessage signed_header_message = 16;
+        RequestConsensusMessage request_consensus = 17;
     }
     reserved 7, 9 to 12;
+}
+
+// add request type for consensus messages
+
+message RequestBValMessage {
+    int32 agreement = 1;
+    int32 epoch = 2;
+}
+
+message RequestAuxMessage {
+    int32 agreement = 1;
+    int32 epoch = 2;
+}
+
+message RequestConfMessage {
+    int32 agreement = 1;
+    int32 epoch = 2;
+}
+
+message RequestCommonCoinMessage {
+    int32 agreement = 1;
+    int32 epoch = 2;
+}
+
+message RequestTPKEPartiallyDecryptedShareMessage {
+    int32 share_id = 1;
+}
+
+message RequestValMessage {
+    int32 senderId = 1;
+}
+
+message RequestECHOMessage {
+    int32 sender_id = 1;
+}
+
+message RequestReadyMessage {
+    int32 sender_id = 1;
+}
+
+message RequestSignedHeaderMessage {
+}
+
+message RequestConsensusMessage {
+    oneof payload {
+        RequestBValMessage request_bval = 1;
+        RequestAuxMessage request_aux = 2;
+        RequestConfMessage request_conf = 3;
+        RequestCommonCoinMessage request_coin = 4;
+        RequestTPKEPartiallyDecryptedShareMessage request_decrypted = 5;
+        RequestValMessage request_val = 6;
+        RequestECHOMessage request_echo = 7;
+        RequestReadyMessage request_ready = 8;
+        RequestSignedHeaderMessage request_signed_header = 9;
+    }
 }

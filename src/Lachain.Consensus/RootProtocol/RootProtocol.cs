@@ -259,7 +259,9 @@ namespace Lachain.Consensus.RootProtocol
             Logger.LogTrace(
                 $"Signed header {_header.Keccak().ToHex()} with pubKey {_keyPair.PublicKey.ToHex()}"
             );
-            Broadcaster.Broadcast(CreateSignedHeaderMessage(_header, signature));
+            var msg = CreateSignedHeaderMessage(_header, signature);
+            Broadcaster.Broadcast(msg);
+            InvokeMessageBroadcasted(msg);
         }
 
         private void CheckSignatures()
