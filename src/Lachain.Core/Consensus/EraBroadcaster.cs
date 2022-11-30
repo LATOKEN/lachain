@@ -499,6 +499,7 @@ namespace Lachain.Core.Consensus
         {
             if (_terminated) return;
             _terminated = true;
+            _spammer.Terminate();
             foreach (var protocol in _registry)
             {
                 protocol.Value.Terminate();
