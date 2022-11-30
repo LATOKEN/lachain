@@ -147,6 +147,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             // because the correct echo for each pair is received only once.
             if (validator == val.SenderId)
             {
+                InvokeReceivedExternalMessage(validator, new ConsensusMessage { ValMessage = val });
                 Broadcaster.Broadcast(CreateEchoMessage(val));
             }
             else
@@ -178,6 +179,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
             Logger.LogTrace($"Protocol {Id} got ECHO message from {validator} ({validatorPubKey})");
             _echoMessages[validator] = echo;
+            InvokeReceivedExternalMessage(validator, new ConsensusMessage { EchoMessage = echo });
             TrySendReadyMessageFromEchos();
             CheckResult();
         }
@@ -193,6 +195,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
             Logger.LogTrace($"Protocol {Id} got READY message from {validator} ({validatorPubKey})");
             _readyMessages[validator] = readyMessage;
+            InvokeReceivedExternalMessage(validator, new ConsensusMessage { ReadyMessage = readyMessage });
             TrySendReadyMessageFromReady();
             CheckResult();
             // Logger.LogDebug($"{Id}: got ready message from {validator}");

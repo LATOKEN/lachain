@@ -139,6 +139,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
             _receivedValues[sender].Add(b == 1);
             ++_receivedCount[b];
+            InvokeReceivedExternalMessage(sender, new ConsensusMessage { Bval = bval });
 
             if (!_wasBvalBroadcasted[b] && _receivedCount[b] >= F + 1)
             {
@@ -173,6 +174,7 @@ namespace Lachain.Consensus.BinaryAgreement
 
             _playerSentAux[sender] = true;
             _receivedAux[b]++;
+            InvokeReceivedExternalMessage(sender, new ConsensusMessage { Aux = aux });
             RevisitAuxMessages();
         }
 
@@ -191,6 +193,7 @@ namespace Lachain.Consensus.BinaryAgreement
             _validatorSentConf[sender] = true;
 
             _confReceived.Add(new BoolSet(conf.Values));
+            InvokeReceivedExternalMessage(sender, new ConsensusMessage { Conf = conf });
             RevisitConfMessages();
         }
 

@@ -134,6 +134,7 @@ namespace Lachain.Consensus.RootProtocol
                     var validatorAttendance = GetOrCreateValidatorAttendance(message.SignedHeaderMessage.Header.Index);
                     validatorAttendance!.IncrementAttendanceForCycle(Wallet.EcdsaPublicKeySet[idx].EncodeCompressed(),
                         message.SignedHeaderMessage.Header.Index / _cycleDuration);
+                    InvokeReceivedExternalMessage(idx, message);
                 }
                 else
                 {

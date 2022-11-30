@@ -224,7 +224,11 @@ namespace Lachain.Consensus.HoneyBadger
             }
 
             if (!(share is null))
+            {
                 CheckDecryptedShares(share.ShareId);
+                // received a valid message from senderId for the first time
+                InvokeReceivedExternalMessage(senderId, new ConsensusMessage { Decrypted = msg });
+            }
         }
 
         // There are several potential issues in Wallet.TpkePublicKey.FullDecrypt() that needs to be resolved.
