@@ -89,6 +89,7 @@ namespace Lachain.Core.Consensus
             foreach (var protocol in protocols)
             {
                 _registry[protocol.Id] = protocol;
+                _messageEnvelopeRepositoryManager.RegisterProtocol(protocol);
             }
         }
 
@@ -335,7 +336,6 @@ namespace Lachain.Core.Consensus
                                 .Add(message);
                         }
                     }
-                    _messageEnvelopeRepositoryManager.AddMessage(message);
                     if (!(protocol is null)) protocol.ReceiveMessage(message);
                 }
                 else Logger.LogWarning("Internal message should not be here");
