@@ -74,7 +74,7 @@ namespace Lachain.Core.Consensus
             _era = era;
             _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
-            _messageEnvelopeRepositoryManager = new MessageEnvelopeRepositoryManager(messageEnvelopeRepository);
+            _messageEnvelopeRepositoryManager = new MessageEnvelopeRepositoryManager(messageEnvelopeRepository, _era);
             _blockProducer = blockProducer;
         }
 
