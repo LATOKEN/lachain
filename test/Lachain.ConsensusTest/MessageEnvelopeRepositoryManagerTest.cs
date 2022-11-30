@@ -60,7 +60,7 @@ namespace Lachain.ConsensusTest
         public void Test_MessageEnvelopeRepositoryManager()
         {
             var repo = new MessageEnvelopeRepository(_dbContext);
-            var manager = new MessageEnvelopeRepositoryManager(repo);
+            var manager = new MessageEnvelopeRepositoryManager(repo, 23);
 
             manager.LoadFromDb();
             Assert.AreEqual(manager.IsPresent, false);
@@ -95,7 +95,7 @@ namespace Lachain.ConsensusTest
             var list = manager.GetMessages();
             CollectionAssert.AreEqual(list, messageEnvelopes);
             
-            manager = new MessageEnvelopeRepositoryManager(repo);
+            manager = new MessageEnvelopeRepositoryManager(repo, 24);
             manager.LoadFromDb();
             Assert.AreEqual(manager.IsPresent, true);
             Assert.AreEqual(manager.GetEra(), era);
@@ -114,7 +114,7 @@ namespace Lachain.ConsensusTest
         public void Test_MessageEnvelopeRepositoryManagerReloading()
         {
             var repo = new MessageEnvelopeRepository(_dbContext);
-            var manager = new MessageEnvelopeRepositoryManager(repo);
+            var manager = new MessageEnvelopeRepositoryManager(repo, 45);
             
             Assert.AreEqual(manager.IsPresent, false);
             Assert.Throws<InvalidOperationException>(() => manager.GetEra());
@@ -129,7 +129,7 @@ namespace Lachain.ConsensusTest
             var list = manager.GetMessages();
             var era = manager.GetEra();
             
-            manager = new MessageEnvelopeRepositoryManager(repo);
+            manager = new MessageEnvelopeRepositoryManager(repo, era);
             Assert.AreEqual(manager.IsPresent, false);
             Assert.Throws<InvalidOperationException>(() => manager.GetEra());
             Assert.Throws<InvalidOperationException>(
