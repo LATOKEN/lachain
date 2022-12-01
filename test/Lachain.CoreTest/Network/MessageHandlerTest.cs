@@ -8,6 +8,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Network;
 using Lachain.Proto;
+using Lachain.UtilityTest;
 using NUnit.Framework;
 
 namespace Lachain.CoreTest.Network
@@ -34,23 +35,41 @@ namespace Lachain.CoreTest.Network
             _container = containerBuilder.Build();
             _handler = (MessageHandler) _container.Resolve<IMessageHandler>();
         }
+        
+        
+        [TearDown]
+        public void Teardown()
+        {
+            _container?.Dispose();
+            TestUtils.DeleteTestChainData();
+        }
 
         [Test]
         public void SyncBlockRequestTest()
         {
+            var snap = new BlockSnapsotProxy();
+            for (int i = 0; i < 20; i++)  {
+                snap.AddBlock(new Block());
+            }
+
             var request = new SyncBlocksRequest();
             request.FromHeight = 0;
+            request.ToHeight = 10;
+            Assert.DoesNotThrow(() => _handler.ValidateSyncBlocksRequest(request, snap));
+            
+            request.FromHeight = 0;
+            request.ToHeight = 30;
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncBlocksRequest(request, snap));
+
+            
+            request.FromHeight = 0;
             request.ToHeight = 1000000;
-            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncBlocksRequest(request, null));
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncBlocksRequest(request, snap));
             
             request.FromHeight = 10;
             request.ToHeight = 0;
-            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncBlocksRequest(request, null));
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncBlocksRequest(request, snap));
             
-            
-            request.FromHeight = 0;
-            request.ToHeight = 10;
-            Assert.DoesNotThrow(() => _handler.ValidateSyncBlocksRequest(request, null));
         }
         
         [Test]
@@ -73,7 +92,21 @@ namespace Lachain.CoreTest.Network
                 request.Hashes.Add(new UInt256());
             Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolRequest(request));
         }
-        
-        
+
+        [Test]
+        public void SyncPoolReplyTest()
+        {
+            var reply = new SyncPoolReply();
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolReply(reply));
+            
+            reply.Transactions.Add(new TransactionReceipt());
+            Assert.DoesNotThrow(() => _handler.ValidateSyncPoolReply(reply));
+
+            for (int i = 0; i < 10000; i++)
+            {
+                reply.Transactions.Add(new TransactionReceipt());                
+            }
+            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolReply(reply));
+        }
     }
 }

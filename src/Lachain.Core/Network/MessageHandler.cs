@@ -164,20 +164,19 @@ namespace Lachain.Core.Network
                     $"Invalid height range in SyncBlockRequest: {request.FromHeight}-{request.ToHeight}");
             }
 
-            if (request.FromHeight > snapshot.GetTotalBlockHeight() ||
-                request.ToHeight > snapshot.GetTotalBlockHeight())
-            {
-                throw new ArgumentException(
-                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
-                    $"greater than current block height {snapshot.GetTotalBlockHeight()}");
-            }
-
             var count = request.ToHeight - request.FromHeight + 1;
             if (count > SyncRequestBlockLimit)
             {
                 throw new ArgumentException(
                     $"Height range ({request.FromHeight}-{request.ToHeight}) " +
                     $"Has too many blocks {count}.");
+            }
+            if (request.FromHeight > snapshot.GetTotalBlockHeight() ||
+                request.ToHeight > snapshot.GetTotalBlockHeight())
+            {
+                throw new ArgumentException(
+                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
+                    $"greater than current block height {snapshot.GetTotalBlockHeight()}");
             }
         }
         
@@ -306,7 +305,7 @@ namespace Lachain.Core.Network
 
         public void ValidateSyncPoolReply(SyncPoolReply syncPoolReply)
         {
-            if (syncPoolReply.Transactions is null)
+            if (syncPoolReply.Transactions is null || syncPoolReply.Transactions.Count == 0)
             {
                 throw new ArgumentException("Transaction list is null");
             }
