@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Lachain.Utility.Serialization;
+using Nethereum.RLP;
 
 namespace Lachain.Consensus.BinaryAgreement
 {
@@ -39,6 +43,24 @@ namespace Lachain.Consensus.BinaryAgreement
         public override string ToString()
         {
             return $"BA (E={Era}, A={AssociatedValidatorId})";
+        }
+
+        public byte[] ToByteArray()
+        {
+            var list = new List<byte[]>
+            {
+                Era.ToBytes().ToArray(),
+                AssociatedValidatorId.ToBytes().ToArray()
+            };
+            return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public static BinaryAgreementId FromByteArray(byte[] bytes)
+        {
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
+            var id = decoded[1].RLPData.AsReadOnlySpan().ToInt64();
+            return new BinaryAgreementId(era, id);
         }
     }
 }

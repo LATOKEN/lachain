@@ -115,8 +115,10 @@ namespace Lachain.Consensus.ReliableBroadcast
             AugmentInput(input);
             foreach (var (valMessage, i) in ConstructValMessages(input).WithIndex())
             {
-                Broadcaster.SendToValidator(new ConsensusMessage {ValMessage = valMessage}, i);
+                var msg = new ConsensusMessage {ValMessage = valMessage};
+                Broadcaster.SendToValidator(msg, i);
                 Logger.LogTrace($"Protocol {Id} sent VAL to validator {i} ({Wallet.EcdsaPublicKeySet[i].ToHex()})");
+                InvokeMessageSent(i, msg);
             }
 
             CheckResult();
@@ -147,7 +149,10 @@ namespace Lachain.Consensus.ReliableBroadcast
             // because the correct echo for each pair is received only once.
             if (validator == val.SenderId)
             {
-                Broadcaster.Broadcast(CreateEchoMessage(val));
+                InvokeReceivedExternalMessage(validator, new ConsensusMessage { ValMessage = val });
+                var msg = CreateEchoMessage(val);
+                Broadcaster.Broadcast(msg);
+                InvokeMessageBroadcasted(msg);
             }
             else
             {
@@ -178,6 +183,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
             Logger.LogTrace($"Protocol {Id} got ECHO message from {validator} ({validatorPubKey})");
             _echoMessages[validator] = echo;
+            InvokeReceivedExternalMessage(validator, new ConsensusMessage { EchoMessage = echo });
             TrySendReadyMessageFromEchos();
             CheckResult();
         }
@@ -193,6 +199,7 @@ namespace Lachain.Consensus.ReliableBroadcast
 
             Logger.LogTrace($"Protocol {Id} got READY message from {validator} ({validatorPubKey})");
             _readyMessages[validator] = readyMessage;
+            InvokeReceivedExternalMessage(validator, new ConsensusMessage { ReadyMessage = readyMessage });
             TrySendReadyMessageFromReady();
             CheckResult();
             // Logger.LogDebug($"{Id}: got ready message from {validator}");
@@ -228,9 +235,11 @@ namespace Lachain.Consensus.ReliableBroadcast
                 return;
             }
 
-            Broadcaster.Broadcast(CreateReadyMessage(bestRoot));
+            var msg = CreateReadyMessage(bestRoot);
+            Broadcaster.Broadcast(msg);
             _readySent = true;
             Logger.LogTrace($"Protocol {Id} got enough ECHOs and broadcasted READY message");
+            InvokeMessageBroadcasted(msg);
         }
 
         private void TrySendReadyMessageFromReady()
@@ -243,9 +252,11 @@ namespace Lachain.Consensus.ReliableBroadcast
                 .First();
             if (bestRootCnt != F + 1) return;
             if (_readySent) return;
-            Broadcaster.Broadcast(CreateReadyMessage(bestRoot));
+            var msg = CreateReadyMessage(bestRoot);
+            Broadcaster.Broadcast(msg);
             _readySent = true;
             Logger.LogTrace($"Protocol {Id} got enough READYs and broadcasted READY message");
+            InvokeMessageBroadcasted(msg);
         }
 
         private void CheckResult()

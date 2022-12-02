@@ -1,5 +1,6 @@
 ﻿using System;
 using Lachain.Consensus.Messages;
+using Lachain.Proto;
 
 namespace Lachain.Consensus
 {
@@ -9,6 +10,9 @@ namespace Lachain.Consensus
         void ReceiveMessage(MessageEnvelope message);
 
         void Start();
+        
+        void StartThread();
+        bool HasThreadStarted();
         void WaitFinish();
         bool WaitFinish(TimeSpan timeout);
         void WaitResult();
@@ -16,5 +20,10 @@ namespace Lachain.Consensus
         void Terminate();
 
         bool Terminated { get; }
+
+        event EventHandler<IProtocolIdentifier>? _protocolWaitingTooLong;
+        event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
+        event EventHandler<ConsensusMessage>? _messageBroadcasted;
+        event EventHandler<(int validator, ConsensusMessage msg)>? _messageSent;
     }
 }

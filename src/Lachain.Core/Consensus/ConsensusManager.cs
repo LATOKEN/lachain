@@ -31,12 +31,14 @@ namespace Lachain.Core.Consensus
         private readonly IConsensusMessageDeliverer _consensusMessageDeliverer;
         private readonly IValidatorManager _validatorManager;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IMessageEnvelopeRepository _messageEnvelopeRepository;
         private readonly INetworkManager _networkManager;
         private readonly IBlockProducer _blockProducer;
         private readonly IBlockManager _blockManager;
         private bool _terminated;
         private readonly IPrivateWallet _privateWallet;
         private readonly IKeyGenManager _keyGenManager;
+        private readonly IMessageEnvelopeRepositoryManager _messageRepoManager;
 
         private readonly IDictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>> _postponedMessages
             = new Dictionary<long, List<(ConsensusMessage message, ECDSAPublicKey from)>>();
@@ -51,6 +53,7 @@ namespace Lachain.Core.Consensus
         private readonly ulong _targetBlockInterval;
 
         public ConsensusManager(
+            IMessageEnvelopeRepositoryManager messageRepoManager,
             IConsensusMessageDeliverer consensusMessageDeliverer,
             IValidatorManager validatorManager,
             IBlockProducer blockProducer,
@@ -58,17 +61,20 @@ namespace Lachain.Core.Consensus
             IBlockSynchronizer blockSynchronizer,
             IPrivateWallet privateWallet,
             IValidatorAttendanceRepository validatorAttendanceRepository,
+            IMessageEnvelopeRepository messageEnvelopeRepository,
             IConfigManager configManager,
             INetworkManager networkManager,
             IKeyGenManager keyGenManager
         )
         {
+            _messageRepoManager = messageRepoManager;
             _consensusMessageDeliverer = consensusMessageDeliverer;
             _validatorManager = validatorManager;
             _blockProducer = blockProducer;
             _blockManager = blockManager;
             _privateWallet = privateWallet;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+            _messageEnvelopeRepository = messageEnvelopeRepository;
             _networkManager = networkManager;
             _keyGenManager = keyGenManager;
             _terminated = false;
@@ -154,10 +160,10 @@ namespace Lachain.Core.Consensus
             return false;
         }
 
-        public void Start(ulong startingEra)
+        public void Start(ulong startingEra, bool restoreState)
         {
             _networkManager.AdvanceEra(startingEra);
-            new Thread(() => Run(startingEra)).Start();
+            new Thread(() => Run(startingEra, restoreState)).Start();
         }
 
         private void FinishEra()
@@ -181,14 +187,15 @@ namespace Lachain.Core.Consensus
                     
                     CurrentEra += 1;
                     _eras[CurrentEra] = new EraBroadcaster(
-                        CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
+                        _messageRepoManager, CurrentEra, _consensusMessageDeliverer, _privateWallet, 
+                        _validatorAttendanceRepository, _messageEnvelopeRepository, _blockProducer
                     );
                     Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
                 }
             }
         }
 
-        private void Run(ulong startingEra)
+        private void Run(ulong startingEra, bool restoreState)
         {
             Logger.LogTrace($"Starting, startingEra {startingEra}");
             CurrentEra = (long) startingEra;
@@ -196,7 +203,8 @@ namespace Lachain.Core.Consensus
             {
                 Logger.LogTrace("Create EraBroadcaster");
                 _eras[CurrentEra] = new EraBroadcaster(
-                    CurrentEra, _consensusMessageDeliverer, _privateWallet, _validatorAttendanceRepository
+                    _messageRepoManager, CurrentEra, _consensusMessageDeliverer, _privateWallet, 
+                    _validatorAttendanceRepository, _messageEnvelopeRepository, _blockProducer
                 );
             }
 
@@ -227,6 +235,17 @@ namespace Lachain.Core.Consensus
                     {
                         broadcaster = _eras[CurrentEra];
                         broadcaster.SetValidatorKeySet(validators);
+
+                        if ((long) startingEra == CurrentEra)
+                        {
+                            broadcaster.LoadState(restoreState);
+                        }
+                        else
+                        {
+                            broadcaster.LoadState(false);
+                        }
+                        
+
                     }
 
                     bool weAreValidator;

@@ -69,6 +69,7 @@ namespace Lachain.ConsensusTest
             {
                 if (Registry.ContainsKey(protocol.Id))
                     throw new InvalidOperationException($"Protocol with id ({protocol.Id}) already registered");
+                if (! protocol.HasThreadStarted())  protocol.StartThread();
                 Registry[protocol.Id] = protocol;
             }
         }

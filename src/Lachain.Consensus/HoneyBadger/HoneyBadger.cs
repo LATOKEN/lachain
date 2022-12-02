@@ -161,7 +161,9 @@ namespace Lachain.Consensus.HoneyBadger
 
                 // todo think about async access to protocol method. This may pose threat to protocol internal invariants
                 CheckDecryptedShares(share.Id);
-                Broadcaster.Broadcast(CreateDecryptedMessage(dec));
+                var msg = CreateDecryptedMessage(dec);
+                Broadcaster.Broadcast(msg);
+                InvokeMessageBroadcasted(msg);
             }
 
             _takenSet = true;
@@ -224,7 +226,11 @@ namespace Lachain.Consensus.HoneyBadger
             }
 
             if (!(share is null))
+            {
                 CheckDecryptedShares(share.ShareId);
+                // received a valid message from senderId for the first time
+                InvokeReceivedExternalMessage(senderId, new ConsensusMessage { Decrypted = msg });
+            }
         }
 
         // There are several potential issues in Wallet.TpkePublicKey.FullDecrypt() that needs to be resolved.

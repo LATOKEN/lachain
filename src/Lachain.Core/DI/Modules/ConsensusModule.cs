@@ -1,4 +1,5 @@
 using Lachain.Consensus;
+using Lachain.Consensus.Messages;
 using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Config;
 using Lachain.Core.Consensus;
@@ -16,6 +17,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IValidatorManager, ValidatorManager>();
             containerBuilder.RegisterSingleton<IKeyGenManager, KeyGenManager>();
             containerBuilder.RegisterSingleton<IValidatorStatusManager, ValidatorStatusManager>();
+            containerBuilder.RegisterSingleton<IMessageEnvelopeRepositoryManager, MessageEnvelopeRepositoryManager>();
         }
     }
 }

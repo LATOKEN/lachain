@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Lachain.Utility.Serialization;
+using Nethereum.RLP;
 
 namespace Lachain.Consensus.CommonCoin
 {
@@ -49,6 +50,25 @@ namespace Lachain.Consensus.CommonCoin
         public override int GetHashCode()
         {
             return HashCode.Combine(Era, Agreement, Epoch);
+        }
+        public byte[] ToByteArray()
+        {
+            var list = new List<byte[]>
+            {
+                Era.ToBytes().ToArray(),
+                Agreement.ToBytes().ToArray(),
+                Epoch.ToBytes().ToArray()
+            };
+            return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public static CoinId FromByteArray(byte[] bytes)
+        {
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
+            var agreement = decoded[1].RLPData.AsReadOnlySpan().ToInt64();
+            var epoch = decoded[2].RLPData.AsReadOnlySpan().ToInt64();
+            return new CoinId(era, agreement, epoch);
         }
     }
 }

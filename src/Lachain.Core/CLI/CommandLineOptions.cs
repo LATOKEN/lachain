@@ -99,6 +99,9 @@ namespace Lachain.Core.CLI
 
         [Option('s', "fastsync", Required = false, Separator = ' ', HelpText = "Performs fast-sync to a specific block on start")]
         public IEnumerable<string> SetStateTo { get; set; } = Enumerable.Empty<string>();
+        
+        [Option('r', "norestorestate", Required = false, Separator = ' ', HelpText = "Restores node after event of crash")]
+        public bool NoRestoreState { get; set; } = false;
     }
     
     [Verb("db", HelpText = "cleanups in db")]

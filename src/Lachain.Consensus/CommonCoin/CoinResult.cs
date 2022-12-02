@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Consensus.CommonCoin
 {
-    public class CoinResult : IEquatable<CoinResult>
+    public class CoinResult : IEquatable<CoinResult>, IByteSerializable
     {
         public CoinResult(byte[] bytes)
         {
@@ -35,6 +36,16 @@ namespace Lachain.Consensus.CommonCoin
         public override int GetHashCode()
         {
             return RawBytes.Aggregate(0, (i, b) => i * 31 + b);
+        }
+
+        public byte[] ToByteArray()
+        {
+            return RawBytes.ToArray();
+        }
+
+        public static CoinResult FromByteArray(byte[] bytes)
+        {
+            return new CoinResult(bytes);
         }
     }
 }

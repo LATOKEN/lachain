@@ -6,7 +6,7 @@ using MCL.BLS12_381.Net;
 
 namespace Lachain.Crypto.TPKE
 {
-    public class EncryptedShare : IEquatable<EncryptedShare>
+    public class EncryptedShare : IEquatable<EncryptedShare>, IByteSerializable
     {
         
         public G1 U { get; }
@@ -50,7 +50,19 @@ namespace Lachain.Crypto.TPKE
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(U, V, W, Id);
+            // U.GetHashCode() and V.GetHashCode() is buggy
+            // The following bypasses these calls and also is an performance optimization.
+            return HashCode.Combine(U.ToBytes().Length, V.Length, W.ToBytes().Length, Id);
+        }
+
+        public byte[] ToByteArray()
+        {
+            return ToBytes().ToArray();
+        }
+        
+        public static EncryptedShare FromByteArray(byte[] bytes)
+        {
+            return FromBytes(bytes);
         }
     }
 }

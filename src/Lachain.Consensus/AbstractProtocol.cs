@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Lachain.Logger;
 using Lachain.Consensus.Messages;
+using Lachain.Proto;
 using Lachain.Utility.Utils;
 using Prometheus;
 
@@ -36,6 +38,11 @@ namespace Lachain.Consensus
         protected string _lastMessage = "";
         private ulong _startTime = 0;
         private const ulong _alertTime = 60 * 1000;
+        public bool Started { get; private set; } = false;
+        
+        // waiting for 10 block time
+        // TODO: calculate _requestTime properly
+        private const ulong _requestTime = 5 * 4 * 1000;
 
         protected AbstractProtocol(
             IPublicConsensusKeySet wallet,
@@ -44,11 +51,28 @@ namespace Lachain.Consensus
         )
         {
             _thread = new Thread(Start) {IsBackground = true};
-            _thread.Start();
             Broadcaster = broadcaster;
             Id = id;
             Wallet = wallet;
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void StartThread()
+        {
+            if (Started)
+            {
+                throw new InvalidOperationException("StartThread() already called previously");
+            }
+
+            _thread.Start();
+            Started = true;
+        }
+
+        public bool HasThreadStarted()
+        {
+            return Started;
+        }
+
 
         public int GetMyId()
         {
@@ -104,6 +128,7 @@ namespace Lachain.Consensus
         public void Start()
         {
             _startTime = TimeUtils.CurrentTimeMillis();
+            var lastRequestTime = _startTime;
             while (!Terminated)
             {
                 MessageEnvelope msg;
@@ -111,11 +136,16 @@ namespace Lachain.Consensus
                 {
                     while (_queue.IsEmpty && !Terminated)
                     {
-                        Monitor.Wait(_queueLock, 1000);
+                        var queueUsed = Monitor.Wait(_queueLock, 1000);
                         if (TimeUtils.CurrentTimeMillis() - _startTime > _alertTime)
                         {
                             Logger.LogWarning($"Protocol {Id} is waiting for _queueLock too long, last message" +
                                               $" is [{_lastMessage}]");
+                        }
+                        if (!queueUsed && TimeUtils.CurrentTimeMillis() - lastRequestTime > _requestTime)
+                        {
+                            _protocolWaitingTooLong?.Invoke(this, Id);
+                            lastRequestTime = TimeUtils.CurrentTimeMillis();
                         }
                     }
 
@@ -164,6 +194,29 @@ namespace Lachain.Consensus
             }
         }
 
+        protected void InvokeReceivedExternalMessage(int from, ConsensusMessage msg)
+        {
+            // received a valid msg from validator
+            _receivedExternalMessage?.Invoke(this, (from, msg));
+        }
+
+        protected void InvokeMessageBroadcasted(ConsensusMessage msg)
+        {
+            // an external message is broadcasted
+            _messageBroadcasted?.Invoke(this, msg);
+        }
+
+        protected void InvokeMessageSent(int validator, ConsensusMessage msg)
+        {
+            // an external message is sent to validator
+            _messageSent?.Invoke(this, (validator, msg));
+        }
+
         public abstract void ProcessMessage(MessageEnvelope envelope);
+
+        public event EventHandler<IProtocolIdentifier>? _protocolWaitingTooLong;
+        public event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
+        public event EventHandler<ConsensusMessage>? _messageBroadcasted;
+        public event EventHandler<(int validator, ConsensusMessage msg)>? _messageSent;
     }
 }

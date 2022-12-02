@@ -5,13 +5,13 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="NUnit" Version="3.12.0"/>
-        <PackageReference Include="NUnit3TestAdapter" Version="3.16.1"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0"/>
+        <PackageReference Include="NUnit" Version="3.12.0" />
+        <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Lachain.Core\Lachain.Core.csproj"/>
-        <ProjectReference Include="..\Lachain.UtilityTest\Lachain.UtilityTest.csproj"/>
+        <ProjectReference Include="..\..\src\Lachain.Core\Lachain.Core.csproj" />
+        <ProjectReference Include="..\Lachain.UtilityTest\Lachain.UtilityTest.csproj" />
     </ItemGroup>
     <ItemGroup>
         <ContentWithTargetPath Include="Resources\config.json">

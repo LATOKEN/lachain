@@ -1,4 +1,9 @@
-﻿namespace Lachain.Consensus.HoneyBadger
+﻿using System.Collections.Generic;
+using System.Linq;
+using Lachain.Utility.Serialization;
+using Nethereum.RLP;
+
+namespace Lachain.Consensus.HoneyBadger
 
 {
     public class HoneyBadgerId : IProtocolIdentifier
@@ -36,6 +41,22 @@
         public override string ToString()
         {
             return $"HB (Er={Era})";
+        }
+        
+        public byte[] ToByteArray()
+        {
+            var list = new List<byte[]>
+            {
+                Era.ToBytes().ToArray(),
+            };
+            return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public static HoneyBadgerId FromByteArray(byte[] bytes)
+        {
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
+            return new HoneyBadgerId(era);
         }
     }
 }

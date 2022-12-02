@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Logger;
 using Lachain.Consensus;
@@ -10,11 +11,13 @@ using Lachain.Consensus.CommonSubset;
 using Lachain.Consensus.HoneyBadger;
 using Lachain.Consensus.Messages;
 using Lachain.Consensus.ReliableBroadcast;
+using Lachain.Consensus.RequestProtocols;
 using Lachain.Consensus.RootProtocol;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts;
-using Lachain.Core.Blockchain.Validators;
 using Lachain.Core.Vault;
+using Lachain.Crypto;
+using Lachain.Crypto.TPKE;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
@@ -36,9 +39,12 @@ namespace Lachain.Core.Consensus
         private readonly IMessageFactory _messageFactory;
         private readonly IPrivateWallet _wallet;
         private readonly IValidatorAttendanceRepository _validatorAttendanceRepository;
+        private readonly IMessageEnvelopeRepositoryManager _messageEnvelopeRepositoryManager;
+        private readonly IRequestManager _requestManager;
         private bool _terminated;
         private int _myIdx;
         private IPublicConsensusKeySet? _validators;
+        private IBlockProducer _blockProducer;
 
         public bool Ready => _validators != null;
 
@@ -58,8 +64,10 @@ namespace Lachain.Core.Consensus
             new ConcurrentDictionary<IProtocolIdentifier, List<MessageEnvelope>>();
 
         public EraBroadcaster(
+            IMessageEnvelopeRepositoryManager messageEnvelopeRepositoryManager,
             long era, IConsensusMessageDeliverer consensusMessageDeliverer,
-            IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository
+            IPrivateWallet wallet, IValidatorAttendanceRepository validatorAttendanceRepository,
+            IMessageEnvelopeRepository messageEnvelopeRepository, IBlockProducer blockProducer
         )
         {
             _consensusMessageDeliverer = consensusMessageDeliverer;
@@ -69,12 +77,16 @@ namespace Lachain.Core.Consensus
             _era = era;
             _myIdx = -1;
             _validatorAttendanceRepository = validatorAttendanceRepository;
+            _messageEnvelopeRepositoryManager = messageEnvelopeRepositoryManager;
+            _blockProducer = blockProducer;
+            _requestManager = new RequestManager(this, _era);
         }
 
         public void SetValidatorKeySet(IPublicConsensusKeySet keySet)
         {
             _validators = keySet;
             _myIdx = _validators.GetValidatorIndex(_wallet.EcdsaKeyPair.PublicKey);
+            _requestManager.SetValidators(_validators.N);
         }
 
         public void RegisterProtocols(IEnumerable<IConsensusProtocol> protocols)
@@ -82,7 +94,22 @@ namespace Lachain.Core.Consensus
             foreach (var protocol in protocols)
             {
                 _registry[protocol.Id] = protocol;
+                protocol._receivedExternalMessage += PersistExternalMessae;
+                _requestManager.RegisterProtocol(protocol.Id, protocol);
             }
+        }
+
+        private void PersistExternalMessae(object? sender, (int from, ConsensusMessage msg) @event)
+        {
+            if (_terminated)
+            {
+                Logger.LogTrace($"Era {_era} is already finished, skipping persist");
+                return;
+            }
+            var (from, msg) = @event;
+            msg.Validator = new Validator {Era = _era};
+            var messageEnvelope = new MessageEnvelope(msg, from);
+            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
         }
 
         public void Broadcast(ConsensusMessage message)
@@ -105,6 +132,117 @@ namespace Lachain.Core.Consensus
                 {
                     _consensusMessageDeliverer.SendTo(publicKey, payload, NetworkMessagePriority.ConsensusMessage);
                 }
+            }
+        }
+
+        public void LoadState(bool restore)
+        {
+            if (!restore)
+            {
+                Logger.LogInformation($"Starting new era {_era}.");
+                _messageEnvelopeRepositoryManager.StartEra(_era, true);
+                return;
+            }
+            
+            _messageEnvelopeRepositoryManager.LoadFromDb();
+            if (!_messageEnvelopeRepositoryManager.IsPresent || _messageEnvelopeRepositoryManager.GetEra() != _era)
+            {
+                Logger.LogWarning($"No outstanding messages from era {_era} found. Starting new era.");
+                _messageEnvelopeRepositoryManager.StartEra(_era);
+            }
+            else
+            {
+                var messages = _messageEnvelopeRepositoryManager.GetMessages().ToList();
+                Logger.LogInformation($"Restoring {messages.Count} Messages from era {_era}");
+                foreach (var messageEnvelope in messages)
+                {
+                    RestoreMessage(messageEnvelope);
+                }
+                StartProtocols();
+            }
+        }
+
+        private void RestoreMessage(MessageEnvelope messageEnvelope)
+        {
+            Logger.LogTrace(
+                $"Restoring message from db, type = {messageEnvelope.TypeString()}, hashcode = {messageEnvelope.GetHashCode()}");
+            if (messageEnvelope.External)
+            {
+                Dispatch(messageEnvelope.ExternalMessage, messageEnvelope.ValidatorIndex);
+            }
+            else if (messageEnvelope.IsProtocolRequest)
+            {
+                switch (messageEnvelope.InternalMessage)
+                {
+                    case ProtocolRequest<BinaryAgreementId, bool> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<BinaryBroadcastId, bool> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<CoinId, object?> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<CommonSubsetId, EncryptedShare> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<HoneyBadgerId, IRawShare> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<ReliableBroadcastId, EncryptedShare?> request:
+                        InternalRequest(request, true);
+                        break;
+                    case ProtocolRequest<RootProtocolId, IBlockProducer> request:
+                        request.Input = _blockProducer;
+                        InternalRequest(request, true);
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            "Unexpected template parameters for ProtocolRequest");
+                }
+            }
+            else if (messageEnvelope.IsProtocolResponse)
+            {
+                switch (messageEnvelope.InternalMessage)
+                {
+                    case ProtocolResult<BinaryAgreementId, bool> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<BinaryBroadcastId, BoolSet> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<CoinId, CoinResult> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<CommonSubsetId, ISet<EncryptedShare>> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<HoneyBadgerId, ISet<IRawShare>> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<ReliableBroadcastId, EncryptedShare> result:
+                        InternalResponse(result);
+                        break;
+                    case ProtocolResult<RootProtocolId, object?> result:
+                        InternalResponse(result);
+                        break;
+                    default:
+                        throw new InvalidOperationException(
+                            "Unexpected template parameters for ProtocolResponse");
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unknown message type {messageEnvelope.TypeString()}");
+            }
+        }
+
+        private void StartProtocols()
+        {
+            foreach (var entry in _registry)
+            {
+                var protocol = entry.Value;
+                protocol.StartThread();
             }
         }
 
@@ -186,13 +324,18 @@ namespace Lachain.Core.Consensus
                 case ConsensusMessage.PayloadOneofCase.SignedHeaderMessage:
                     protocolId = new RootProtocolId(message.Validator.Era);
                     break;
+                case ConsensusMessage.PayloadOneofCase.RequestConsensus:
+                    _requestManager.HandleRequest(from, message);
+                    return;
                 default:
                     throw new InvalidOperationException($"Unknown message type {message}");
             }
 
-            HandleExternalMessage(protocolId, new MessageEnvelope(message, from));
+            var messageEnvelope = new MessageEnvelope(message, from);
+            HandleExternalMessage(protocolId, messageEnvelope);
         }
 
+     
         private void HandleExternalMessage(IProtocolIdentifier protocolId, MessageEnvelope message)
         {
             // For external message we don't create new protocols. each protocol is requested for some result
@@ -225,9 +368,13 @@ namespace Lachain.Core.Consensus
                 Logger.LogWarning($"Invalid protocol id {protocolId} from validator {GetPublicKeyById(from)!.ToHex()} ({from})");
             }
         }
+        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request) where TId : IProtocolIdentifier
+        {
+            InternalRequest<TId, TInputType>(request, false);
+        }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request)
+        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request, bool restorationPhase)
             where TId : IProtocolIdentifier
         {
             if (_terminated)
@@ -240,20 +387,39 @@ namespace Lachain.Core.Consensus
             {
                 if (_callback.TryGetValue(request.To, out var existingCallback))
                 {
-                    throw new InvalidOperationException(
-                        $"Cannot have two requests from different protocols ({request.From}, " +
+                    Logger.LogWarning(
+                        $"Two requests from different protocols ({request.From}, " +
                         $"{existingCallback}) to one protocol {request.To}"
                     );
+                    
+                    // throw new InvalidOperationException(
+                    //     $"Cannot have two requests from different protocols ({request.From}, " +
+                    //     $"{existingCallback}) to one protocol {request.To}"
+                    // );
+                    
+                    return;
                 }
 
                 _callback[request.To] = request.From;
             }
 
             Logger.LogTrace($"Protocol {request.From} requested result from protocol {request.To}");
-            EnsureProtocol(request.To);
+            if (restorationPhase)
+            {
+                EnsureProtocol(request.To, false);
+            }
+            else
+            {
+                EnsureProtocol(request.To, true);
+            }
+            
+
+
+            var messageEnvelope = new MessageEnvelope(request, GetMyId());
+            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
             
             if (_registry.TryGetValue(request.To, out var protocol))
-                protocol?.ReceiveMessage(new MessageEnvelope(request, GetMyId()));
+                protocol?.ReceiveMessage(messageEnvelope);
             
             if (!(protocol is null))
             {
@@ -296,8 +462,11 @@ namespace Lachain.Core.Consensus
 
             // message is also delivered to self
         //    Logger.LogTrace($"Result from protocol {result.From} delivered to itself");
+            var messageEnvelope = new MessageEnvelope(result, GetMyId());
+            _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
+
             if (_registry.TryGetValue(result.From, out var protocol))
-                protocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
+                protocol?.ReceiveMessage(messageEnvelope);
         }
 
         public int GetMyId()
@@ -336,16 +505,23 @@ namespace Lachain.Core.Consensus
             {
                 _postponedMessages.Clear();
             }
+            
+            _requestManager.Terminate();
         }
 
         // Each ProtocolId is created only once to prevent spamming, Protocols are mapped against ProtocolId, so each
         // Protocol will also be created only once, after achieving result, Protocol terminate and no longer process any
         // messages. 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id)
+        private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id, bool start)
         {
             ValidateId(id);
-            if (_registry.TryGetValue(id, out var existingProtocol)) return existingProtocol;
+            if (_registry.TryGetValue(id, out var existingProtocol))
+            {
+                if (start && !existingProtocol.HasThreadStarted())
+                    existingProtocol.StartThread();
+                return existingProtocol;
+            }
             if (_terminated)
             {
                 Logger.LogTrace($"Protocol {id} not created since broadcaster is terminated");
@@ -355,6 +531,9 @@ namespace Lachain.Core.Consensus
             var protocol = CreateProtocol(id);
             if (!(protocol is null))
                 Logger.LogTrace($"Created protocol {id} on demand");
+            
+            if (!(protocol is null) && start && !protocol.HasThreadStarted())
+                protocol.StartThread();
             return protocol;
         }
 
@@ -535,7 +714,7 @@ namespace Lachain.Core.Consensus
 
         public bool WaitFinish(TimeSpan timeout)
         {
-            return EnsureProtocol(new RootProtocolId(_era))?.WaitFinish(timeout) ?? true;
+            return EnsureProtocol(new RootProtocolId(_era), true)?.WaitFinish(timeout) ?? true;
         }
 
         public IDictionary<IProtocolIdentifier, IConsensusProtocol> GetRegistry()
@@ -586,6 +765,11 @@ namespace Lachain.Core.Consensus
                     // Check fields of BlockHeader: UInt256 cannot be null
                     if (header.MerkleRoot is null || header.PrevBlockHash is null || header.StateHash is null)
                         return false;
+                    return true;
+                case ConsensusMessage.PayloadOneofCase.RequestConsensus:
+                    // all request parameters have default value
+                    // request manager can verify and discard request if necessary
+                    // no additional check needed
                     return true;
                 default:
                     return false;

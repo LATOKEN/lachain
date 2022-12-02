@@ -55,6 +55,7 @@
         /* consensus */
         ConsensusState = 0x0b01,
         KeyGenState = 0x0b02,
+        MessageEnvelope = 0xb03,
 
         /* validator attendance */
         ValidatorAttendanceState = 0x0c01,

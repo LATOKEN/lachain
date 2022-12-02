@@ -1,4 +1,9 @@
-﻿namespace Lachain.Consensus.BinaryAgreement
+﻿using System.Collections.Generic;
+using System.Linq;
+using Lachain.Utility.Serialization;
+using Nethereum.RLP;
+
+namespace Lachain.Consensus.BinaryAgreement
 {
     public class BinaryBroadcastId : IProtocolIdentifier
     {
@@ -45,6 +50,25 @@
         public override string ToString()
         {
             return $"BB (Er={Era}, A={Agreement}, Ep={Epoch})";
+        }
+        public byte[] ToByteArray()
+        {
+            var list = new List<byte[]>
+            {
+                Era.ToBytes().ToArray(),
+                Agreement.ToBytes().ToArray(),
+                Epoch.ToBytes().ToArray()
+            };
+            return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public static BinaryBroadcastId FromByteArray(byte[] bytes)
+        {
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var era = decoded[0].RLPData.AsReadOnlySpan().ToInt64();
+            var agreement = decoded[1].RLPData.AsReadOnlySpan().ToInt64();
+            var epoch = decoded[2].RLPData.AsReadOnlySpan().ToInt64();
+            return new BinaryBroadcastId(era, agreement, epoch);
         }
     }
 }

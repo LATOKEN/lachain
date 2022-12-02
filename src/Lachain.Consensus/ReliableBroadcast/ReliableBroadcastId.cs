@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Lachain.Utility.Serialization;
+using Nethereum.RLP;
 
 namespace Lachain.Consensus.ReliableBroadcast
 {
@@ -40,6 +44,24 @@ namespace Lachain.Consensus.ReliableBroadcast
         public override string ToString()
         {
             return $"RBC (E={Era}, A={SenderId})";
+        }
+        
+        public byte[] ToByteArray()
+        {
+            var list = new List<byte[]>
+            {
+                SenderId.ToBytes().ToArray(),
+                Era.ToBytes().ToArray(),
+            };
+            return RLP.EncodeList(list.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public static ReliableBroadcastId FromByteArray(byte[] bytes)
+        {
+            var decoded = (RLPCollection) RLP.Decode(bytes.ToArray());
+            var senderId = decoded[0].RLPData.AsReadOnlySpan().ToInt32();
+            var era = decoded[1].RLPData.AsReadOnlySpan().ToInt64();
+            return new ReliableBroadcastId(senderId, (int) era);
         }
     }
 }
