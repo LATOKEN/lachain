@@ -315,6 +315,21 @@ namespace Lachain.Core.Blockchain.SystemContracts
             if (isNextValidator)
                 return ExecutionStatus.ExecutionHalted;
 
+            var blockNumber = _context.Receipt.Block;
+            if (HardforkHeights.IsHardfork_15Active(blockNumber) && GovernanceContract.IsKeygenBlock(blockNumber))
+            {
+                isNextValidatorExecutionResult = Hepler.CallSystemContract(frame,
+                    ContractRegisterer.GovernanceContract, ContractRegisterer.StakingContract,
+                    GovernanceInterface.MethodIsNextValidator, stakedPubKey);
+
+                if (isNextValidatorExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+
+                isNextValidator = !isNextValidatorExecutionResult.ReturnValue!.ToUInt256().IsZero();
+                if (isNextValidator)
+                    return ExecutionStatus.ExecutionHalted;
+            }
+
             // get the amount that was staked for this validator
             var getStakeExecutionResult = Hepler.CallSystemContract(frame,
                 ContractRegisterer.StakingContract, ContractRegisterer.StakingContract, StakingInterface.MethodGetStake,
@@ -900,6 +915,18 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.StakingGetTotalActiveStakeCost);
 
+            if (HardforkHeights.IsHardfork_15Active(_context.Receipt.Block))
+            {
+                return GetTotalActiveStakeV2(frame);
+            }
+            else
+            {
+                return GetTotalActiveStakeV1(frame);
+            }
+        }
+
+        private ExecutionStatus GetTotalActiveStakeV1(SystemContractExecutionFrame frame)
+        {
             Money stakeSum = UInt256Utils.Zero.ToMoney();
             var stakedPubKeys = _stakedPubKeys.Get();
             for (var startByte = CryptoUtils.PublicKeyLength;
@@ -927,6 +954,64 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 var getStartCycleExecutionResult = Hepler.CallSystemContract(frame,
                     ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
                     StakingInterface.MethodGetWithdrawRequestCycle, stakedAddress);
+
+                if (getStartCycleExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var startCycleBytes = getStartCycleExecutionResult.ReturnValue;
+                if (startCycleBytes is null)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var startCycle = startCycleBytes.Length > 0 ? BitConverter.ToInt32(startCycleBytes) : 0;
+
+                if (GetCurrentCycle() >= startCycle
+                    && (withdrawRequestCycle == 0
+                        || withdrawRequestCycle == GetCurrentCycle()))
+                {
+                    var getStakeExecutionResult = Hepler.CallSystemContract(frame,
+                        ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
+                        StakingInterface.MethodGetStake, stakedAddress);
+
+                    if (getStakeExecutionResult.Status != ExecutionStatus.Ok)
+                        return ExecutionStatus.ExecutionHalted;
+
+                    var stake = getStakeExecutionResult.ReturnValue?.ToUInt256().ToMoney();
+                    if (stake is null) return ExecutionStatus.ExecutionHalted;
+                    stakeSum += stake;
+                }
+            }
+
+            frame.ReturnValue = stakeSum.ToUInt256().ToBytes();
+            return ExecutionStatus.Ok;
+        }
+
+        private ExecutionStatus GetTotalActiveStakeV2(SystemContractExecutionFrame frame)
+        {
+            Money stakeSum = UInt256Utils.Zero.ToMoney();
+            var stakedPubKeys = _stakedPubKeys.Get();
+            for (var startByte = 0; startByte < stakedPubKeys.Length; startByte += CryptoUtils.PublicKeyLength)
+            {
+                var stakedPublicKey = stakedPubKeys.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
+                var stakedAddress = Hepler.PublicKeyToAddress(stakedPublicKey);
+
+                var getWithdrawRequestCycleExecutionResult = Hepler.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
+                    StakingInterface.MethodGetWithdrawRequestCycle, stakedAddress);
+
+                if (getWithdrawRequestCycleExecutionResult.Status != ExecutionStatus.Ok)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var withdrawRequestCycleBytes = getWithdrawRequestCycleExecutionResult.ReturnValue;
+                if (withdrawRequestCycleBytes is null)
+                    return ExecutionStatus.ExecutionHalted;
+
+                var withdrawRequestCycle = withdrawRequestCycleBytes.Length > 0
+                    ? BitConverter.ToInt32(withdrawRequestCycleBytes)
+                    : 0;
+
+                var getStartCycleExecutionResult = Hepler.CallSystemContract(frame,
+                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
+                    StakingInterface.MethodGetStartCycle, stakedAddress);
 
                 if (getStartCycleExecutionResult.Status != ExecutionStatus.Ok)
                     return ExecutionStatus.ExecutionHalted;
@@ -993,9 +1078,19 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     ? BitConverter.ToInt32(withdrawRequestCycleBytes)
                     : 0;
 
-                var getStartCycleExecutionResult = Hepler.CallSystemContract(frame,
-                    ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
-                    StakingInterface.MethodGetWithdrawRequestCycle, stakedAddress);
+                InvocationResult getStartCycleExecutionResult;
+                if (HardforkHeights.IsHardfork_15Active(_context.Receipt.Block))
+                {
+                    getStartCycleExecutionResult = Hepler.CallSystemContract(frame,
+                        ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
+                        StakingInterface.MethodGetStartCycle, stakedAddress);
+                }
+                else
+                {
+                    getStartCycleExecutionResult = Hepler.CallSystemContract(frame,
+                        ContractRegisterer.StakingContract, ContractRegisterer.StakingContract,
+                        StakingInterface.MethodGetWithdrawRequestCycle, stakedAddress);
+                }
 
                 if (getStartCycleExecutionResult.Status != ExecutionStatus.Ok)
                     return ExecutionStatus.ExecutionHalted;
@@ -1074,7 +1169,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         }
 
         [ContractMethod(StakingInterface.MethodGetStakerTotalStake)]
-        public ExecutionStatus  GetStakerTotalStake(UInt160 stakerAddress, SystemContractExecutionFrame frame)
+        public ExecutionStatus GetStakerTotalStake(UInt160 stakerAddress, SystemContractExecutionFrame frame)
         {
             frame.UseGas(GasMetering.StakingGetTotalActiveStakeCost);
 
