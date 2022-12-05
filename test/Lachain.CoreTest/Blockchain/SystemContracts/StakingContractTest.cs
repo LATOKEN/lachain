@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
+using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -25,7 +26,6 @@ using Lachain.UtilityTest;
 using NUnit.Framework;
 
 namespace Lachain.CoreTest.Blockchain.SystemContracts
-
 {
     public class StakingContractTest
     {
@@ -35,6 +35,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         private IStateManager _stateManager = null!;
         private IContractRegisterer _contractRegisterer = null!;
         private IConfigManager _configManager = null!;
+        private IBlockManager _blockManager = null!;
 
         [SetUp]
         public void Setup()
@@ -54,6 +55,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             _stateManager = _container.Resolve<IStateManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
+            _blockManager = _container.Resolve<IBlockManager>();
             _configManager = _container.Resolve<IConfigManager>();
             // set chainId from config
             if (TransactionUtils.ChainId(false) == 0)
@@ -76,6 +78,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         [Test]
         public void Test_OneNodeCycle()
         {
+            _blockManager.TryBuildGenesisBlock();
 
             var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
                 .HexToBytes().ToPrivateKey());
@@ -120,7 +123,35 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 Assert.AreEqual(ExecutionStatus.Ok, contract.IsAbleToBeValidator(sender, frame));
-                //Assert.AreEqual(1, BitConverter.ToInt32(frame.ReturnValue, 0));
+                Assert.AreEqual(1.ToUInt256(), frame.ReturnValue.ToUInt256());
+            }
+
+            var validatorsInfo = _configManager.GetConfig<GenesisConfig>("genesis")!.Validators;
+            var totalStake = Money.Parse("1000");
+
+            foreach (var info in validatorsInfo)
+            {
+                totalStake += Money.Parse(info.StakeAmount!);
+            }
+
+            // Get total active stake
+            {
+                var input = ContractEncoder.Encode(StakingInterface.MethodGetTotalActiveStake);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.GetTotalActiveStake(frame));
+                Assert.AreEqual(totalStake, frame.ReturnValue.ToUInt256().ToMoney());
+            }
+
+            // Get total stake for staker
+            {
+                var input = ContractEncoder.Encode(StakingInterface.MethodGetStakerTotalStake, sender);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.StakingContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.GetStakerTotalStake(sender, frame));
+                Assert.AreEqual(totalStake, frame.ReturnValue.ToUInt256().ToMoney());
             }
         }
     }
