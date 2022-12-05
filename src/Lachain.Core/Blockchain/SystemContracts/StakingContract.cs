@@ -989,7 +989,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             Money stakeSum = UInt256Utils.Zero.ToMoney();
             var stakedPubKeys = _stakedPubKeys.Get();
-            for (var startByte = 0; startByte < stakedPubKeys.Length; startByte += CryptoUtils.PublicKeyLength)
+            for (var startByte = CryptoUtils.PublicKeyLength; startByte < stakedPubKeys.Length; startByte += CryptoUtils.PublicKeyLength)
             {
                 var stakedPublicKey = stakedPubKeys.Skip(startByte).Take(CryptoUtils.PublicKeyLength).ToArray();
                 var stakedAddress = Hepler.PublicKeyToAddress(stakedPublicKey);
