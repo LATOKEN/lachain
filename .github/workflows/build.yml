@@ -1,6 +1,9 @@
 name: Build Lachain
 
 on:
+  create:
+    tags:
+      - v.*
   push:
     tags:
       - v.*
