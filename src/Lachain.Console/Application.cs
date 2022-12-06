@@ -67,7 +67,7 @@ namespace Lachain.Console
 
         public void Start(RunOptions options)
         {
-            System.Console.WriteLine("spamming block sync reply without wait and no req");
+            System.Console.WriteLine("spamming block sync reply");
             var configManager = _container.Resolve<IConfigManager>();
             var blockManager = _container.Resolve<IBlockManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();

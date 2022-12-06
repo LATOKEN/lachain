@@ -456,15 +456,11 @@ namespace Lachain.Core.Network
                         continue;
                     }
 
-                    const int maxPeersToAsk = 1;
                     const int maxBlocksToRequest = 10;
 
-                    var peers = _peerHeights
-                        .Where(entry => entry.Value > myHeight)
-                        .OrderBy(_ => rnd.Next())
-                        .Take(maxPeersToAsk)
-                        .ToArray();
+                    var peers = _peerHeights.ToArray();
 
+                    myHeight = 0;
                     var leftBound = myHeight + 1;
                     var blocksToAsk = Math.Min(maxBlocksToRequest, myHeight + 1);
                     var proof = new List<BlockInfo>();
@@ -497,17 +493,6 @@ namespace Lachain.Core.Network
                             peer.Key, request, NetworkMessagePriority.PeerSyncMessage
                         );
                     }
-
-                    var waitForBlockExecution = 4000;
-                    bool gotResponse = true;
-                    lock (_peerHasBlocks)
-                    {
-                        gotResponse = Monitor.Wait(_peerHasBlocks, TimeSpan.FromMilliseconds(1_000));
-                    }
-                    if (gotResponse)
-                    {
-                        Thread.Sleep(waitForBlockExecution);
-                    }
                 }
                 catch (Exception e)
                 {
@@ -520,7 +505,7 @@ namespace Lachain.Core.Network
         public void Start()
         {
             _running = true;
-            // _blockSyncThread.Start();
+            _blockSyncThread.Start();
             _pingThread.Start();
             _blockFromPeerThread.Start();
             _txFromPeerThread.Start();
@@ -548,8 +533,8 @@ namespace Lachain.Core.Network
         public void Dispose()
         {
             _running = false;
-            // if (_blockSyncThread.ThreadState == ThreadState.Running)
-            //     _blockSyncThread.Join();
+            if (_blockSyncThread.ThreadState == ThreadState.Running)
+                _blockSyncThread.Join();
             if (_pingThread.ThreadState == ThreadState.Running)
                 _pingThread.Join();
             TerminateBlockFromPeerWorker();
