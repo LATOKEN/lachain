@@ -367,7 +367,7 @@ namespace Lachain.Core.Network
 
         private void SpamBlockReply()
         {
-            if ( _blockManager.GetHeight() < 10)
+            if ( _blockManager.GetHeight() < 1)
             {
                 Logger.LogWarning("Not ready yet");
                 Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
@@ -387,7 +387,7 @@ namespace Lachain.Core.Network
                 Blocks =
                 {
                     _stateManager.LastApprovedSnapshot.Blocks
-                        .GetBlocksByHeightRange(1, 10)
+                        .GetBlocksByHeightRange(1, 1)
                         .Select(block => new BlockInfo
                         {
                             Block = block,
