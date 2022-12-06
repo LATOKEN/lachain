@@ -95,8 +95,8 @@ namespace Lachain.Networking
         {
             switch (message.MessageCase)
             {
-                case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
-                    return SaveRequest(publicKey);
+                // case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
+                //     return SaveRequest(publicKey);
                 default:
                     return 0;
             }
@@ -297,21 +297,20 @@ namespace Lachain.Networking
                     OnPingReply?.Invoke(this, (message.PingReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
-                    OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer, message.RequestId)));
+                    // OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer, message.RequestId)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksReply:
-                    if (IsRequested(message.RequestId, envelope.PublicKey))
-                    {
-                        OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
-                    }
-                    else
-                    {
-                        Logger.LogWarning(
-                            $"Got SyncBlocksReply from {envelope.PublicKey.ToHex()} with requestId {message.RequestId} "
-                            + "but we never requestd such reply"
-                        );
-                        throw new Exception("Got unwanted SyncBlocksReply");
-                    }
+                    // if (IsRequested(message.RequestId, envelope.PublicKey))
+                    // {
+                    //     OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    // }
+                    // else
+                    // {
+                    //     Logger.LogWarning(
+                    //         $"Got SyncBlocksReply from {envelope.PublicKey.ToHex()} with requestId {message.RequestId} "
+                    //         + "but we never requestd such reply"
+                    //     );
+                    // }
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolRequest:
                     throw new NotImplementedException("We do not support/need SyncPoolRequest yet");

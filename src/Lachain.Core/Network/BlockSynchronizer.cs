@@ -44,6 +44,7 @@ namespace Lachain.Core.Network
         private readonly Thread _pingThread;
         private readonly Thread _blockFromPeerThread;
         private readonly Thread _txFromPeerThread;
+        private readonly Thread _spamWorker;
 
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
@@ -72,6 +73,7 @@ namespace Lachain.Core.Network
             _pingThread = new Thread(PingWorker);
             _blockFromPeerThread = new Thread(BlockFromPeerWorker);
             _txFromPeerThread = new Thread(TransactionsFromPeerWorker);
+            _spamWorker = new Thread(BlockReplySpamWorker);
         }
 
         public event EventHandler<ulong>? OnSignedBlockReceived;
@@ -363,6 +365,70 @@ namespace Lachain.Core.Network
             }
         }
 
+        private void SpamBlockReply()
+        {
+            if ( _blockManager.GetHeight() < 10)
+            {
+                Logger.LogWarning("Not ready yet");
+                Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+                return;
+            }
+            if (_peerHeights.Count == 0)
+            {
+                Logger.LogWarning("Peer height map is empty, nobody responds to pings?");
+                Thread.Sleep(TimeSpan.FromMilliseconds(1_000));
+                return;
+            }
+
+            var peers = _peerHeights.ToArray();
+
+            var reply = new SyncBlocksReply
+            {
+                Blocks =
+                {
+                    _stateManager.LastApprovedSnapshot.Blocks
+                        .GetBlocksByHeightRange(1, 10)
+                        .Select(block => new BlockInfo
+                        {
+                            Block = block,
+                            Transactions =
+                            {
+                                block.TransactionHashes
+                                    .Select(txHash =>
+                                        _stateManager.LastApprovedSnapshot.Transactions
+                                            .GetTransactionByHash(txHash)?? new TransactionReceipt())
+                            }
+                        })
+                }
+            };
+
+            foreach (var peer in peers)
+            {
+                Logger.LogTrace($"Sending fake block reply to peer {peer.Key.ToHex()}");
+                _networkManager.SendTo(
+                    peer.Key, new NetworkMessage { SyncBlocksReply = reply },
+                    NetworkMessagePriority.PeerSyncMessage
+                );
+            }
+        }
+
+        private void BlockReplySpamWorker()
+        {
+            Logger.LogDebug("Starting BlockReplySpamWorker");
+            while (_running)
+            {
+                try
+                {
+                    SpamBlockReply();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError($"Error in block synchronizer: {e}");
+                    Thread.Sleep(1_000);
+                }
+            }
+        }
+
         private void BlockSyncWorker()
         {
             var rnd = new Random();
@@ -454,10 +520,11 @@ namespace Lachain.Core.Network
         public void Start()
         {
             _running = true;
-            _blockSyncThread.Start();
+            // _blockSyncThread.Start();
             _pingThread.Start();
             _blockFromPeerThread.Start();
             _txFromPeerThread.Start();
+            _spamWorker.Start();
         }
 
         private void TerminateBlockFromPeerWorker()
@@ -481,12 +548,14 @@ namespace Lachain.Core.Network
         public void Dispose()
         {
             _running = false;
-            if (_blockSyncThread.ThreadState == ThreadState.Running)
-                _blockSyncThread.Join();
+            // if (_blockSyncThread.ThreadState == ThreadState.Running)
+            //     _blockSyncThread.Join();
             if (_pingThread.ThreadState == ThreadState.Running)
                 _pingThread.Join();
             TerminateBlockFromPeerWorker();
             TerminateTxFromPeerWorker();
+            if (_spamWorker.ThreadState == ThreadState.Running)
+                _spamWorker.Join();
         }
     }
 }
