@@ -77,6 +77,7 @@ namespace Lachain.Networking
             var requestIdentifier = GetNewRequestIdentifier(worker);
             message.RequestId = requestIdentifier.RequestId;
             
+            // add requests only
             _requestIdentifierSet.Add(new RequestIdentifier(message.RequestId, worker.PeerPublicKey));
             worker.AddMsgToQueue(message, priority);
         }

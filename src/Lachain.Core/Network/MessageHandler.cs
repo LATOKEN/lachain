@@ -145,20 +145,10 @@ namespace Lachain.Core.Network
 
         //To do: put this constant in a better place, and document block init rule
         //To do: encode error in reply
-        private const ulong SyncRequestBlockLimit = 100;
+        private const ulong SyncRequestBlockLimit = 10;
         public void ValidateSyncBlocksRequest(SyncBlocksRequest request, IBlockSnapshot snapshot)
         {
-            if (request.FromHeight == null)
-            {
-                throw new ArgumentException("From Height Cannot be null");
-            }
-            
-            if (request.ToHeight == null)
-            {
-                throw new ArgumentException("To Height Cannot be null");
-            }
-
-            if (request.FromHeight < 0 || request.ToHeight < 0 || request.FromHeight > request.ToHeight)
+            if (request.FromHeight > request.ToHeight)
             {
                 throw new ArgumentException(
                     $"Invalid height range in SyncBlockRequest: {request.FromHeight}-{request.ToHeight}");
@@ -186,31 +176,26 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksReply").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
-            var len = reply.Blocks?.Count ?? 0;
-            var orderedBlocks = (reply.Blocks ?? Enumerable.Empty<BlockInfo>())
-                .Where(x => x.Block?.Header?.Index != null)
-                .OrderBy(x => x.Block.Header.Index)
-                .ToArray();
-            Logger.LogTrace($"Blocks received: {orderedBlocks.Length} ({len})");
-            ThreadPool.SetMaxThreads(5, 5);
-            var action = new Action(() =>
+            try
             {
-                try
-                {
-                    foreach (var block in orderedBlocks)
-                    {
-                        if (!_blockSynchronizer.HandleBlockFromPeer(block, publicKey))
-                            break;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError($"Error occured while handling blocks from peer: {e}");
-                }
-            });
-            ThreadPool.QueueUserWorkItem(state => { action(); });
+                ValidateSyncBlocksReply(reply);
+            }
+            catch (Exception exc)
+            {
+                Logger.LogWarning($"Invalid sync pool reply: {exc.Message}");
+                return;
+            }
+            _blockSynchronizer.BlockReceivedFromPeer(reply, publicKey);
             
             Logger.LogTrace("Finished processing SyncBlocksReply");
+        }
+
+        public void ValidateSyncBlocksReply(SyncBlocksReply reply)
+        {
+            if (reply.Blocks is null || reply.Blocks.Count > (int) SyncRequestBlockLimit)
+            {
+                throw new ArgumentException("Invalid SyncBlocksReply");
+            }
         }
         
         private void OnSyncPoolRequest(object sender,
@@ -235,19 +220,12 @@ namespace Lachain.Core.Network
 
             
             List<TransactionReceipt> txs;
-            if (request.All)
-            {
-                txs = _transactionPool.Transactions.Values.ToList();
-            }
-            else
-            {
-                txs = request.Hashes
-                    .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
-                                      _transactionPool.GetByHash(txHash))
-                    .Where(tx => tx != null)
-                    .Select(tx => tx!)
-                    .ToList();
-            }
+            txs = request.Hashes
+                .Select(txHash => _transactionPool.GetByHash(txHash) ??
+                    _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash))
+                .Where(tx => tx != null)
+                .Select(tx => tx!)
+                .ToList();
             Logger.LogTrace($"Replying request with {txs.Count} transactions");
             if (txs.Count == 0) return;
             callback(new SyncPoolReply {Transactions = {txs}});
@@ -258,16 +236,6 @@ namespace Lachain.Core.Network
         private const int PoolSyncRequestTransactionLimit = 1000;
         public void ValidateSyncPoolRequest(SyncPoolRequest request)
         {
-            if (request.All)
-            {
-                if (!(request.Hashes is null) && request.Hashes.Count > 0)
-                {
-                    throw new ArgumentException("Pool request has both all switch and list of txns.");
-                }
-
-                return;
-            }
-
             if (request.Hashes is null || request.Hashes.Count == 0)
             {
                 throw new ArgumentException("No hashes provided in request");
@@ -297,9 +265,7 @@ namespace Lachain.Core.Network
                 return;
             }
             
-            _blockSynchronizer.HandleTransactionsFromPeer(
-                reply.Transactions ?? Enumerable.Empty<TransactionReceipt>(), publicKey
-            );
+            _blockSynchronizer.TxReceivedFromPeer(reply, publicKey);
             Logger.LogTrace("Finished processing SyncPoolReply");
         }
 
