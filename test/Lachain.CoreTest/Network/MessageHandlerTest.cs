@@ -78,13 +78,6 @@ namespace Lachain.CoreTest.Network
             var request = new SyncPoolRequest();
             Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolRequest(request));
 
-            request.All = false;
-            Assert.Throws<ArgumentException>(() => _handler.ValidateSyncPoolRequest(request));
-
-            request.All = true;
-            Assert.DoesNotThrow(() => _handler.ValidateSyncPoolRequest(request));
-
-            request.All = false;
             request.Hashes.Add(new UInt256());
             Assert.DoesNotThrow(() => _handler.ValidateSyncPoolRequest(request));
             
