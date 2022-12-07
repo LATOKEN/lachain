@@ -36,12 +36,8 @@ namespace Lachain.Core.Network
         private readonly INetworkManager _networkManager;
         private readonly ITransactionPool _transactionPool;
         private readonly IStateManager _stateManager;
-
-        private readonly object _peerHasTransactions = new object();
         private readonly object _peerHasBlocks = new object();
         private readonly object _peerHeightUpdate = new object();
-        private readonly object _blocksLock = new object();
-        private readonly object _txLock = new object();
         private LogLevel _logLevelForSync = LogLevel.Trace;
         private bool _running;
         private readonly Thread _blockSyncThread;
@@ -53,6 +49,9 @@ namespace Lachain.Core.Network
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
         private readonly Queue<(SyncBlocksReply, ECDSAPublicKey)> _blockFromPeer
             = new Queue<(SyncBlocksReply, ECDSAPublicKey)>();
+
+        private readonly Queue<(SyncPoolReply, ECDSAPublicKey)> _txFromPeer
+            = new Queue<(SyncPoolReply, ECDSAPublicKey)>();
 
         public BlockSynchronizer(
             ITransactionManager transactionManager,
@@ -72,44 +71,71 @@ namespace Lachain.Core.Network
             _blockSyncThread = new Thread(BlockSyncWorker);
             _pingThread = new Thread(PingWorker);
             _blockFromPeerThread = new Thread(BlockFromPeerWorker);
+            _txFromPeerThread = new Thread(TransactionsFromPeerWorker);
         }
 
         public event EventHandler<ulong>? OnSignedBlockReceived;
-        public uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey)
+
+        public void TxReceivedFromPeer(SyncPoolReply reply, ECDSAPublicKey peer)
         {
-            lock (_txLock)
+            lock (_txFromPeer)
             {
-                var txs = transactions.ToArray();
-                Logger.LogTrace($"Received {txs.Length} transactions from peer {publicKey.ToHex()}");
-                var persisted = 0u;
-                foreach (var tx in txs)
+                _txFromPeer.Enqueue((reply, peer));
+                Monitor.PulseAll(_txFromPeer);
+            }
+        }
+
+        private void TransactionsFromPeerWorker()
+        {
+            Logger.LogDebug("Starting TransactionsFromPeerWorker");
+            while (_running)
+            {
+                ECDSAPublicKey? peer = null;
+                try
                 {
-                    if (tx.Signature.IsZero())
+                    SyncPoolReply reply;
+                    lock (_txFromPeer)
                     {
-                        Logger.LogTrace($"Received zero-signature transaction: {tx.Hash.ToHex()}");
-                        if (_transactionPool.Add(tx, false) == OperatingError.Ok)
+                        while (_txFromPeer.Count == 0)
+                        {
+                            Monitor.Wait(_txFromPeer);
+                            if (!_running)
+                                break;
+                        }
+                        (reply, peer) = _txFromPeer.Dequeue();
+                        var txs = (reply.Transactions ?? Enumerable.Empty<TransactionReceipt>())
+                            .OrderBy(tx => new ReceiptComparer()).ToArray();
+
+                        Logger.LogTrace($"Received {txs.Length} transactions from peer {peer.ToHex()}");
+                        var persisted = 0;
+                        foreach (var tx in txs)
+                        {
+                            if (!HandleTransactionsFromPeer(tx, peer))
+                                break;
                             persisted++;
-                        continue;
-                    }
+                        }
 
-                    var error = _transactionManager.Verify(tx, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
-                    if (error != OperatingError.Ok)
-                    {
-                        Logger.LogTrace($"Unable to verify transaction: {tx.Hash.ToHex()} ({error})");
-                        continue;
+                        Logger.LogTrace($"Persisted {persisted} transactions from peer {peer.ToHex()}");
                     }
-
-                    error = _transactionPool.Add(tx, false);
-                    if (error == OperatingError.Ok)
-                        persisted++;
-                    else
-                        Logger.LogTrace($"Transaction {tx.Hash.ToHex()} not persisted: {error}");
                 }
+                catch (Exception exc)
+                {
+                    Logger.LogWarning(
+                        $"Got exception trying to process transactions from peer {(peer is null ? "null" : peer.ToHex())}: {exc}"
+                    );
+                }
+            }
+        }
 
-                lock (_peerHasTransactions)
-                    Monitor.PulseAll(_peerHasTransactions);
-                Logger.LogTrace($"Persisted {persisted} transactions from peer {publicKey.ToHex()}");
-                return persisted;
+        private bool HandleTransactionsFromPeer(TransactionReceipt transaction, ECDSAPublicKey publicKey)
+        {
+            var error = _transactionPool.Add(transaction, false);
+            if (error == OperatingError.Ok)
+                return true;
+            else
+            {
+                Logger.LogTrace($"Transaction {transaction.Hash.ToHex()} not persisted from peer {publicKey.ToHex()}: {error}");
+                return false;
             }
         }
 
@@ -134,7 +160,11 @@ namespace Lachain.Core.Network
                     lock (_blockFromPeer)
                     {
                         while (_blockFromPeer.Count == 0)
+                        {
                             Monitor.Wait(_blockFromPeer);
+                            if (!_running)
+                                break;
+                        }
                         (reply, peer) = _blockFromPeer.Dequeue();
                     }
 
@@ -146,7 +176,7 @@ namespace Lachain.Core.Network
                     Logger.LogTrace($"Blocks received: {orderedBlocks.Length} ({len})");
                     foreach (var block in orderedBlocks)
                     {
-                        if (!ProcessBlock(block, peer))
+                        if (!HandleBlockFromPeer(block, peer))
                             break;
                     }
                 }
@@ -387,6 +417,7 @@ namespace Lachain.Core.Network
             _blockSyncThread.Start();
             _pingThread.Start();
             _blockFromPeerThread.Start();
+            _txFromPeerThread.Start();
         }
 
         private void TerminateBlockFromPeerWorker()
@@ -397,6 +428,15 @@ namespace Lachain.Core.Network
             if (_blockFromPeerThread.ThreadState == ThreadState.Running)
                 _blockFromPeerThread.Join();
         }
+
+        private void TerminateTxFromPeerWorker()
+        {
+            // in case TxFromPeerWorker is stuck for waiting new msg
+            lock (_txFromPeer)
+                Monitor.PulseAll(_txFromPeer);
+            if (_txFromPeerThread.ThreadState == ThreadState.Running)
+                _txFromPeerThread.Join();
+        }
         
         public void Dispose()
         {
@@ -406,6 +446,7 @@ namespace Lachain.Core.Network
             if (_pingThread.ThreadState == ThreadState.Running)
                 _pingThread.Join();
             TerminateBlockFromPeerWorker();
+            TerminateTxFromPeerWorker();
         }
     }
 }

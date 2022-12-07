@@ -8,11 +8,11 @@ namespace Lachain.Core.Network
     {
         event EventHandler<ulong> OnSignedBlockReceived;
         
-        uint HandleTransactionsFromPeer(IEnumerable<TransactionReceipt> transactions, ECDSAPublicKey publicKey);
+        void TxReceivedFromPeer(SyncPoolReply reply, ECDSAPublicKey peer);
         
         void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey);
 
-        bool HandleBlockFromPeer(BlockInfo block, ECDSAPublicKey publicKey);
+        void BlockReceivedFromPeer(SyncBlocksReply reply, ECDSAPublicKey peer);
         
         ulong? GetHighestBlock();
         
