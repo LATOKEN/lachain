@@ -46,9 +46,13 @@ namespace Lachain.Core.Network
         private bool _running;
         private readonly Thread _blockSyncThread;
         private readonly Thread _pingThread;
+        private readonly Thread _blockFromPeerThread;
+        private readonly Thread _txFromPeerThread;
 
         private readonly IDictionary<ECDSAPublicKey, ulong> _peerHeights
             = new ConcurrentDictionary<ECDSAPublicKey, ulong>();
+        private readonly Queue<(SyncBlocksReply, ECDSAPublicKey)> _blockFromPeer
+            = new Queue<(SyncBlocksReply, ECDSAPublicKey)>();
 
         public BlockSynchronizer(
             ITransactionManager transactionManager,
@@ -67,6 +71,7 @@ namespace Lachain.Core.Network
             _stateManager = stateManager;
             _blockSyncThread = new Thread(BlockSyncWorker);
             _pingThread = new Thread(PingWorker);
+            _blockFromPeerThread = new Thread(BlockFromPeerWorker);
         }
 
         public event EventHandler<ulong>? OnSignedBlockReceived;
@@ -108,77 +113,74 @@ namespace Lachain.Core.Network
             }
         }
 
-        public bool HandleBlockFromPeer(BlockInfo blockWithTransactions, ECDSAPublicKey publicKey)
+        private bool HandleBlockFromPeer(BlockInfo blockWithTransactions, ECDSAPublicKey publicKey)
         {
             Logger.LogTrace("HandleBlockFromPeer");
-            lock (_blocksLock)
+            var block = blockWithTransactions.Block;
+            var receipts = blockWithTransactions.Transactions;
+            Logger.LogDebug(
+                $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
+            var myHeight = _blockManager.GetHeight();
+            if (block.Header.Index != myHeight + 1)
             {
-                var block = blockWithTransactions.Block;
-                var receipts = blockWithTransactions.Transactions;
-                Logger.LogDebug(
-                    $"Got block {block.Header.Index} with hash {block.Hash.ToHex()} from peer {publicKey.ToHex()}");
-                var myHeight = _blockManager.GetHeight();
-                if (block.Header.Index != myHeight + 1)
-                {
-                    Logger.LogTrace(
-                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: our height is {myHeight}");
-                    return false;
-                }
-
-                if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
-                {
-                    try
-                    {
-                        var needHashes = string.Join(", ", block.TransactionHashes.Select(x => x.ToHex()));
-                        var gotHashes = string.Join(", ", receipts.Select(x => x.Hash.ToHex()));
-
-                        Logger.LogTrace(
-                            $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogWarning($"Failed to get transaction receipts for tx hash: {e}");
-                    }
-
-                    return false;
-                }
-
-                var error = _blockManager.VerifySignatures(block, true);
-                if (error != OperatingError.Ok)
-                {
-                    Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig with error: {error}");
-                    return false;
-                }
-                // let it know that we received a valid response
-                lock (_peerHasBlocks)
-                    Monitor.PulseAll(_peerHasBlocks);
-                // This is to tell consensus manager to terminate current era, since we trust given multisig
-                OnSignedBlockReceived?.Invoke(this, block.Header.Index);
-
-                error = _stateManager.SafeContext(() =>
-                {
-                    if (_blockManager.GetHeight() + 1 == block.Header.Index)
-                        return _blockManager.Execute(block, receipts, commit: true, checkStateHash: true);
-                    Logger.LogTrace(
-                        $"We have blockchain with height {_blockManager.GetHeight()} but got block {block.Header.Index}");
-                    return OperatingError.BlockAlreadyExists;
-                });
-                if (error == OperatingError.BlockAlreadyExists)
-                {
-                    Logger.LogTrace(
-                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: block already exists");
-                    return true;
-                }
-
-                if (error != OperatingError.Ok)
-                {
-                    Logger.LogWarning(
-                        $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
-                    return false;
-                }
-
-                return true;
+                Logger.LogTrace(
+                    $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: our height is {myHeight}");
+                return false;
             }
+
+            if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
+            {
+                try
+                {
+                    var needHashes = string.Join(", ", block.TransactionHashes.Select(x => x.ToHex()));
+                    var gotHashes = string.Join(", ", receipts.Select(x => x.Hash.ToHex()));
+
+                    Logger.LogTrace(
+                        $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: expected hashes [{needHashes}] got hashes [{gotHashes}]");
+                }
+                catch (Exception e)
+                {
+                    Logger.LogWarning($"Failed to get transaction receipts for tx hash: {e}");
+                }
+
+                return false;
+            }
+
+            var error = _blockManager.VerifySignatures(block, true);
+            if (error != OperatingError.Ok)
+            {
+                Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig with error: {error}");
+                return false;
+            }
+            // let it know that we received a valid response
+            lock (_peerHasBlocks)
+                Monitor.PulseAll(_peerHasBlocks);
+            // This is to tell consensus manager to terminate current era, since we trust given multisig
+            OnSignedBlockReceived?.Invoke(this, block.Header.Index);
+
+            error = _stateManager.SafeContext(() =>
+            {
+                if (_blockManager.GetHeight() + 1 == block.Header.Index)
+                    return _blockManager.Execute(block, receipts, commit: true, checkStateHash: true);
+                Logger.LogTrace(
+                    $"We have blockchain with height {_blockManager.GetHeight()} but got block {block.Header.Index}");
+                return OperatingError.BlockAlreadyExists;
+            });
+            if (error == OperatingError.BlockAlreadyExists)
+            {
+                Logger.LogTrace(
+                    $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: block already exists");
+                return false;
+            }
+
+            if (error != OperatingError.Ok)
+            {
+                Logger.LogWarning(
+                    $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
+                return false;
+            }
+
+            return true;
         }
 
         public void HandlePeerHasBlocks(ulong blockHeight, ECDSAPublicKey publicKey)
@@ -338,6 +340,16 @@ namespace Lachain.Core.Network
             _running = true;
             _blockSyncThread.Start();
             _pingThread.Start();
+            _blockFromPeerThread.Start();
+        }
+
+        private void TerminateBlockFromPeerWorker()
+        {
+            // in case BlockFromPeerWorker is stuck for waiting new msg
+            lock (_blockFromPeer)
+                Monitor.PulseAll(_blockFromPeer);
+            if (_blockFromPeerThread.ThreadState == ThreadState.Running)
+                _blockFromPeerThread.Join();
         }
         
         public void Dispose()
@@ -347,6 +359,7 @@ namespace Lachain.Core.Network
                 _blockSyncThread.Join();
             if (_pingThread.ThreadState == ThreadState.Running)
                 _pingThread.Join();
+            TerminateBlockFromPeerWorker();
         }
     }
 }
