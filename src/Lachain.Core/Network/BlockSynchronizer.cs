@@ -113,6 +113,52 @@ namespace Lachain.Core.Network
             }
         }
 
+        public void BlockReceivedFromPeer(SyncBlocksReply reply, ECDSAPublicKey peer)
+        {
+            lock (_blockFromPeer)
+            {
+                _blockFromPeer.Enqueue((reply, peer));
+                Monitor.PulseAll(_blockFromPeer);
+            }
+        }
+
+        private void BlockFromPeerWorker()
+        {
+            Logger.LogDebug("Starting BlockFromPeerWorker");
+            while (_running)
+            {
+                ECDSAPublicKey? peer = null;
+                try
+                {
+                    SyncBlocksReply reply;
+                    lock (_blockFromPeer)
+                    {
+                        while (_blockFromPeer.Count == 0)
+                            Monitor.Wait(_blockFromPeer);
+                        (reply, peer) = _blockFromPeer.Dequeue();
+                    }
+
+                    var len = reply.Blocks?.Count ?? 0;
+                    var orderedBlocks = (reply.Blocks ?? Enumerable.Empty<BlockInfo>())
+                        .Where(x => x.Block?.Header?.Index != null)
+                        .OrderBy(x => x.Block.Header.Index)
+                        .ToArray();
+                    Logger.LogTrace($"Blocks received: {orderedBlocks.Length} ({len})");
+                    foreach (var block in orderedBlocks)
+                    {
+                        if (!ProcessBlock(block, peer))
+                            break;
+                    }
+                }
+                catch (Exception exc)
+                {
+                    Logger.LogWarning(
+                        $"Got exception trying to process blocks from peer {(peer is null ? "null" : peer.ToHex())}: {exc}"
+                    );
+                }
+            }
+        }
+
         private bool HandleBlockFromPeer(BlockInfo blockWithTransactions, ECDSAPublicKey publicKey)
         {
             Logger.LogTrace("HandleBlockFromPeer");
