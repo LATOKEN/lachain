@@ -43,8 +43,6 @@ message SyncBlocksReply {
 
 message SyncPoolRequest {
     repeated UInt256 hashes = 1;
-    bool all = 2;
-    // TODO: switch to sync entire pool?
 }
 
 message SyncPoolReply {
