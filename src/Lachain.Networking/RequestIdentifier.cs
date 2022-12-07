@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Lachain.Networking
 {
-    public class RequestIdentifier
+    public class RequestIdentifier : IEquatable<RequestIdentifier>
     {
         public ulong RequestId { get; }
         public byte[] PeerPublicKey { get; }
@@ -14,9 +14,9 @@ namespace Lachain.Networking
             PeerPublicKey = peerPublicKey;
         }
 
-        protected bool Equals(RequestIdentifier other)
+        public bool Equals(RequestIdentifier? other)
         {
-            return RequestId == other.RequestId && PeerPublicKey.SequenceEqual(other.PeerPublicKey);
+            return !(other is null) && RequestId == other.RequestId && PeerPublicKey.SequenceEqual(other.PeerPublicKey);
         }
 
         public override bool Equals(object? obj)
@@ -24,7 +24,7 @@ namespace Lachain.Networking
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((RequestIdentifier)obj);
+            return Equals((RequestIdentifier) obj);
         }
 
         public override int GetHashCode()
