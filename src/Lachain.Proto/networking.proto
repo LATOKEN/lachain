@@ -30,6 +30,7 @@ message GetPeersReply {
 message SyncBlocksRequest {
     uint64 from_height = 1;
     uint64 to_height = 2;
+    repeated BlockInfo proof = 3;
 }
 
 message BlockInfo {
