@@ -32,7 +32,8 @@ namespace Lachain.Networking
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
         
-        private readonly ISet<RequestIdentifier> _requestIdentifierSet = new HashSet<RequestIdentifier>();
+        private readonly ConcurrentDictionary<ulong, ECDSAPublicKey> _requestIdentifier =
+            new ConcurrentDictionary<ulong, ECDSAPublicKey>();
 
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
@@ -73,25 +74,32 @@ namespace Lachain.Networking
                 Logger.LogWarning($"No worker found for public key {publicKey.ToHex()}. Ignoring.");
                 return;
             }
-
-            var requestIdentifier = GetNewRequestIdentifier(worker);
-            message.RequestId = requestIdentifier.RequestId;
             
-            // add requests only
-            _requestIdentifierSet.Add(new RequestIdentifier(message.RequestId, worker.PeerPublicKey));
+            var requestId = TrySaveRequest(publicKey, message);
+            message.RequestId = requestId;
             worker.AddMsgToQueue(message, priority);
         }
 
-        private RequestIdentifier GetNewRequestIdentifier(ClientWorker worker)
+        private ulong TrySaveRequest(ECDSAPublicKey publicKey, NetworkMessage message)
         {
-            RequestIdentifier requestIdentifier;
+            switch (message.MessageCase)
+            {
+                case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
+                    return SaveRequest(publicKey);
+                default:
+                    return 0;
+            }
+        }
+
+        private ulong SaveRequest(ECDSAPublicKey publicKey)
+        {
+            ulong requestId;
             do
             {
-                var requestId = UInt64Utils.FromBytes(Crypto.GenerateRandomBytes(8));
-                requestIdentifier = new RequestIdentifier(requestId, worker.PeerPublicKey);
-            } while (_requestIdentifierSet.Contains(requestIdentifier));
-
-            return requestIdentifier;
+                requestId = UInt64Utils.FromBytes(Crypto.GenerateRandomBytes(8));
+            } while (!_requestIdentifier.TryAdd(requestId, publicKey));
+            Logger.LogTrace($"Sent request with id {requestId} to peer {publicKey.ToHex()}");
+            return requestId;
         }
 
         public void Start()
@@ -193,17 +201,9 @@ namespace Lachain.Networking
                         { RequestId = requestId, GetPeersReply = getPeersReply },
                     _ => throw new InvalidOperationException()
                 };
-
-                if (_requestIdentifierSet.Contains(new RequestIdentifier(requestId, peer.PeerPublicKey)))
-                {
-                    // we should never reply with priority, requests can be spammed
-                    peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
-                }
-                else
-                {
-                    Logger.LogWarning($"Found reply from peer {peer.PeerPublicKey.ToHex()} with requestId {requestId}. But no such request found.");
-                }
-        };
+                // we should never reply with priority, requests can be spammed
+                peer.AddMsgToQueue(msg, NetworkMessagePriority.ReplyMessage);
+            };
         }
 
         private void HandleMessageUnsafe(NetworkMessage message, MessageEnvelope envelope)
@@ -219,11 +219,20 @@ namespace Lachain.Networking
                     OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer, message.RequestId)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksReply:
-                    OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    if (IsRequested(message.RequestId, envelope.PublicKey))
+                    {
+                        OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    }
+                    else
+                    {
+                        Logger.LogWarning(
+                            $"Got SyncBlocksReply from {envelope.PublicKey.ToHex()} with requestId {message.RequestId} "
+                            + "but we never requestd such reply"
+                        );
+                    }
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolRequest:
-                    OnSyncPoolRequest?.Invoke(this, (message.SyncPoolRequest, SendTo(envelope.RemotePeer, message.RequestId)));
-                    break;
+                    throw new NotImplementedException("We do not support/need SyncPoolRequest yet");
                 case NetworkMessage.MessageOneofCase.SyncPoolReply:
                     OnSyncPoolReply?.Invoke(this, (message.SyncPoolReply, envelope.PublicKey));
                     break;
@@ -236,6 +245,18 @@ namespace Lachain.Networking
                     throw new ArgumentOutOfRangeException(nameof(message),
                         "Unable to resolve message type (" + message.MessageCase + ") from protobuf structure");
             }
+        }
+
+        private bool IsRequested(ulong requestId, ECDSAPublicKey peer)
+        {
+            if (_requestIdentifier.TryGetValue(requestId, out var publicKey))
+            {
+                if (peer.Equals(publicKey))
+                {
+                    return _requestIdentifier.TryRemove(requestId, out var _);
+                }
+            }
+            return false;
         }
 
         public void BroadcastLocalTransaction(TransactionReceipt e)
@@ -271,7 +292,6 @@ namespace Lachain.Networking
             OnSyncBlocksRequest;
 
         public event EventHandler<(SyncBlocksReply message, ECDSAPublicKey address)>? OnSyncBlocksReply;
-        public event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         public event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
     }
