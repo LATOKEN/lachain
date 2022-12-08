@@ -505,11 +505,11 @@ namespace Lachain.Core.Network
         public void Start()
         {
             _running = true;
-            // _blockSyncThread.Start();
+            _blockSyncThread.Start();
             _pingThread.Start();
             _blockFromPeerThread.Start();
             _txFromPeerThread.Start();
-            _spamWorker.Start();
+            // _spamWorker.Start();
         }
 
         private void TerminateBlockFromPeerWorker()
