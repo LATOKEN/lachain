@@ -460,7 +460,7 @@ namespace Lachain.Core.Network
 
                     var peers = _peerHeights.ToArray();
 
-                    myHeight = 0;
+                    myHeight = maxBlocksToRequest;
                     var leftBound = myHeight + 1;
                     var blocksToAsk = Math.Min(maxBlocksToRequest, myHeight + 1);
                     var proof = new List<BlockInfo>();
@@ -505,7 +505,7 @@ namespace Lachain.Core.Network
         public void Start()
         {
             _running = true;
-            _blockSyncThread.Start();
+            // _blockSyncThread.Start();
             _pingThread.Start();
             _blockFromPeerThread.Start();
             _txFromPeerThread.Start();
