@@ -71,10 +71,10 @@ namespace Lachain.Networking
             return new NetworkMessage {SyncPoolReply = new SyncPoolReply {Transactions = {transactions}}};
         }
 
-        public NetworkMessage SyncBlocksRequest(ulong fromHeight, ulong toHeight)
+        public NetworkMessage SyncBlocksRequest(ulong fromHeight, ulong toHeight, BlockInfo[] proof)
         {
             return new NetworkMessage
-                {SyncBlocksRequest = new SyncBlocksRequest {FromHeight = fromHeight, ToHeight = toHeight}};
+                {SyncBlocksRequest = new SyncBlocksRequest {FromHeight = fromHeight, ToHeight = toHeight, Proof = {proof}}};
         }
 
         public MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages)

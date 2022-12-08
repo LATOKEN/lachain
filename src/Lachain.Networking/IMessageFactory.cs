@@ -14,7 +14,7 @@ namespace Lachain.Networking
         NetworkMessage GetPeersReply(Peer[] peers);
         NetworkMessage SyncPoolRequest(IEnumerable<UInt256> hashes);
         NetworkMessage SyncPoolReply(IEnumerable<TransactionReceipt> transactions);
-        NetworkMessage SyncBlocksRequest(ulong fromHeight, ulong toHeight);
+        NetworkMessage SyncBlocksRequest(ulong fromHeight, ulong toHeight, BlockInfo[] proof);
 
         MessageBatch MessagesBatch(IEnumerable<NetworkMessage> messages);
 
