@@ -382,13 +382,35 @@ namespace Lachain.Core.Network
                         .ToArray();
 
                     var leftBound = myHeight + 1;
+                    var blocksToAsk = Math.Min(maxBlocksToRequest, myHeight + 1);
+                    var proof = new List<BlockInfo>();
+                    for (ulong id = 0 ; id < blocksToAsk; id--)
+                    {
+                        var height = leftBound - 1 - id;
+                        var block = _blockManager.GetByHeight(height) ?? throw new Exception($"Block {height} not found");
+                        var blockInfo = new BlockInfo
+                        {
+                            Block = block,
+                            Transactions = 
+                            {
+                                block.TransactionHashes
+                                    .Select(txHash =>
+                                        _stateManager.LastApprovedSnapshot.Transactions
+                                            .GetTransactionByHash(txHash)?? throw new Exception($"tx {txHash.ToHex()} not found"))
+                            }
+                        };
+                        proof.Add(blockInfo);
+                    }
                     foreach (var peer in peers)
                     {
-                        var rightBound = Math.Min(peer.Value, myHeight + maxBlocksToRequest);
-                        Logger.LogTrace($"Sending query for blocks [{leftBound}; {rightBound}] to peer {peer.Key.ToHex()}");
+                        var rightBound = Math.Min(peer.Value, myHeight + blocksToAsk);
+                        Logger.LogTrace($"Sending query for blocks [{leftBound}; {rightBound}] to peer {peer.Key.ToHex()} with proof");
+                        var count = rightBound - leftBound + 1;
+                        var request = _networkManager.MessageFactory.SyncBlocksRequest(
+                            leftBound, rightBound, proof.Take((int) count).ToArray()
+                        );
                         _networkManager.SendTo(
-                            peer.Key, _networkManager.MessageFactory.SyncBlocksRequest(leftBound, rightBound),
-                            NetworkMessagePriority.PeerSyncMessage
+                            peer.Key, request, NetworkMessagePriority.PeerSyncMessage
                         );
                     }
 
