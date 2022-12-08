@@ -384,7 +384,7 @@ namespace Lachain.Core.Network
                     var leftBound = myHeight + 1;
                     var blocksToAsk = Math.Min(maxBlocksToRequest, myHeight + 1);
                     var proof = new List<BlockInfo>();
-                    for (ulong id = 0 ; id < blocksToAsk; id--)
+                    for (ulong id = 0 ; id < blocksToAsk; id++)
                     {
                         var height = leftBound - 1 - id;
                         var block = _blockManager.GetByHeight(height) ?? throw new Exception($"Block {height} not found");
