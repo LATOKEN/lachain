@@ -69,7 +69,6 @@ namespace Lachain.Core.Network
             _networkManager.OnPingReply += OnPingReply;
             _networkManager.OnSyncBlocksRequest += OnSyncBlocksRequest;
             _networkManager.OnSyncBlocksReply += OnSyncBlocksReply;
-            _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
             _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
         }
@@ -133,7 +132,7 @@ namespace Lachain.Core.Network
                                 block.TransactionHashes
                                     .Select(txHash =>
                                         _stateManager.LastApprovedSnapshot.Transactions
-                                            .GetTransactionByHash(txHash)?? new TransactionReceipt())
+                                            .GetTransactionByHash(txHash)?? throw new Exception($"tx {txHash.ToHex()} not found"))
                             }
                         })
                 }
@@ -168,6 +167,46 @@ namespace Lachain.Core.Network
                     $"Height range ({request.FromHeight}-{request.ToHeight}) " +
                     $"greater than current block height {snapshot.GetTotalBlockHeight()}");
             }
+
+            // check proof
+            var orderedBlocks = (request.Proof ?? Enumerable.Empty<BlockInfo>())
+                .Where(x => x.Block?.Header?.Index != null)
+                .OrderBy(x => x.Block.Header.Index)
+                .Reverse()
+                .ToArray();
+
+            if (orderedBlocks.Length != (int) count)
+            {
+                throw new ArgumentException(
+                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
+                    $"but proof count is {orderedBlocks.Length}");
+            }
+
+            var lastHeight = request.FromHeight;
+            foreach (var blockInfo in orderedBlocks)
+            {
+                var currentHeight = blockInfo.Block.Header.Index;
+                if (currentHeight + 1 != lastHeight)
+                {
+                    throw new Exception($"Invalid proof. Got block {currentHeight} after {lastHeight}");
+                }
+                var block = blockInfo.Block;
+                var receipts = blockInfo.Transactions ?? Enumerable.Empty<TransactionReceipt>();
+                if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
+                {
+                    throw new Exception($"Invalid proof. Receipt hash set mismatch for block {currentHeight}");
+                }
+                var validBlock = snapshot.GetBlockByHeight(currentHeight);
+                if (!block.Equals(validBlock))
+                {
+                    throw new Exception($"Invalid proof. our block {currentHeight} does not match with their block");
+                }
+                lastHeight = currentHeight;
+            }
+
+            Logger.LogTrace(
+                $"Got SyncBlocksRequest for ({request.FromHeight}-{request.ToHeight}) with proof of {orderedBlocks.Length} blocks"
+            );
         }
         
 
@@ -198,6 +237,9 @@ namespace Lachain.Core.Network
             }
         }
         
+        // TODO:
+        // We don't need/support SyncPoolRequest yet
+        // If needed implement mechanism to prevent spamming
         private void OnSyncPoolRequest(object sender,
             (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
         {
