@@ -10,6 +10,7 @@ using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
+using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -196,17 +197,59 @@ namespace Lachain.Core.Network
                 {
                     throw new Exception($"Invalid proof. Receipt hash set mismatch for block {currentHeight}");
                 }
-                var validBlock = snapshot.GetBlockByHeight(currentHeight);
-                if (!block.Equals(validBlock))
-                {
-                    throw new Exception($"Invalid proof. our block {currentHeight} does not match with their block");
-                }
+                var validBlock = snapshot.GetBlockByHeight(currentHeight) ?? throw new Exception($"we don't have {currentHeight} block");
+                IsSameBlock(validBlock, block);
                 lastHeight = currentHeight;
             }
 
             Logger.LogTrace(
                 $"Got SyncBlocksRequest for ({request.FromHeight}-{request.ToHeight}) with proof of {orderedBlocks.Length} blocks"
             );
+        }
+
+        private void IsSameBlock(Block validBlock, Block block)
+        {
+            var height = validBlock.Header.Index;
+            if (!block.Hash.Equals(validBlock.Hash))
+            {
+                throw new Exception(
+                    $"Invalid proof. Block hash for block {height} does not match"
+                );
+            }
+            if (!block.Header.Equals(validBlock.Header))
+            {
+                throw new Exception(
+                    $"Invalid proof. Block header for block {height} does not match"
+                );
+            }
+            if (!block.TransactionHashes.ToHashSet().SetEquals(validBlock.TransactionHashes.ToHashSet()))
+            {
+                throw new Exception(
+                    $"Invalid proof. Tx hashes for block {height} does not match"
+                );
+            }
+            var validators = block.Multisig.Validators.ToHashSet();
+            if (!validators.SetEquals(validBlock.Multisig.Validators.ToHashSet()))
+            {
+                throw new Exception(
+                    $"Invalid proof. Validators set for block {height} does not match"
+                );
+            }
+            if (block.Multisig.Signatures.Count < validBlock.Multisig.Quorum)
+            {
+                throw new Exception(
+                    $"Found {block.Multisig.Signatures.Count} signatures in their block, Quorum {validBlock.Multisig.Quorum}"
+                );
+            }
+            // verifying signature is heavy, so we don't verify signature here as it could give spammer scope to attack
+            foreach (var signByValidator in block.Multisig.Signatures)
+            {
+                if (!validators.Contains(signByValidator.Key) || 
+                    signByValidator.Value.Buffer.Length < DefaultCrypto.SignatureSize(false))
+                {
+                    throw new Exception($"Invalid signature for block {height}");
+                }
+            }
         }
         
 
