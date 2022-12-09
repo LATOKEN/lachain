@@ -63,7 +63,12 @@ namespace Lachain.CoreTest.Network
                     {
                         Index = i
                     },
-                    Hash = TestUtils.GetRandomBytes(32).ToUInt256()
+                    Hash = TestUtils.GetRandomBytes(32).ToUInt256(),
+                    Multisig = new MultiSig
+                    {
+                        Validators = {},
+                        Signatures = {}
+                    }
                 };
                 snap.AddBlock(block);
                 blocks.Add(block);
