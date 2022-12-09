@@ -509,7 +509,7 @@ namespace Lachain.Core.Network
             _pingThread.Start();
             _blockFromPeerThread.Start();
             _txFromPeerThread.Start();
-            // _spamWorker.Start();
+            _spamWorker.Start();
         }
 
         private void TerminateBlockFromPeerWorker()
