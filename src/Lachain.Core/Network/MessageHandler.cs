@@ -107,17 +107,8 @@ namespace Lachain.Core.Network
             Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
 
-            try
-            {
-                ValidateSyncBlocksRequest(request,  _stateManager.LastApprovedSnapshot.Blocks);
-            }
-            catch (ArgumentException e)
-            {
-                Logger.LogWarning("Invalid sync block request: " + e.Message);
-                var emptyReply = new SyncBlocksReply { Blocks={}};
-                callback(emptyReply);
-                return;
-            }
+            // validate SyncBlocksRequest
+            ValidateSyncBlocksRequest(request,  _stateManager.LastApprovedSnapshot.Blocks);
             
             var reply = new SyncBlocksReply
             {
@@ -258,15 +249,10 @@ namespace Lachain.Core.Network
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksReply").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
-            try
-            {
-                ValidateSyncBlocksReply(reply);
-            }
-            catch (Exception exc)
-            {
-                Logger.LogWarning($"Invalid sync pool reply: {exc.Message}");
-                return;
-            }
+
+            // validate SyncBlocksReply
+            ValidateSyncBlocksReply(reply);
+
             _blockSynchronizer.BlockReceivedFromPeer(reply, publicKey);
             
             Logger.LogTrace("Finished processing SyncBlocksReply");
@@ -291,18 +277,8 @@ namespace Lachain.Core.Network
             var (request, callback) = @event;
             Logger.LogTrace($"Get request for {request.Hashes.Count} transactions");
             
-            try
-            {
-                ValidateSyncPoolRequest(request);
-            }
-            catch (ArgumentException e)
-            {
-                Logger.LogWarning("Invalid sync pool request: " + e.Message);
-                var emptyReply = new SyncPoolReply() { Transactions={}};
-                callback(emptyReply);
-                return;
-            }
-
+            // validate SyncPoolRequest
+            ValidateSyncPoolRequest(request);
             
             List<TransactionReceipt> txs;
             txs = request.Hashes
@@ -340,15 +316,9 @@ namespace Lachain.Core.Network
             
             
             var (reply, publicKey) = @event;
-            try
-            {
-                ValidateSyncPoolReply(reply);
-            }
-            catch (ArgumentException e)
-            {
-                Logger.LogWarning("Invalid sync pool reply: " + e.Message);
-                return;
-            }
+
+            // validate SyncPoolReply
+            ValidateSyncPoolReply(reply);
             
             _blockSynchronizer.TxReceivedFromPeer(reply, publicKey);
             Logger.LogTrace("Finished processing SyncPoolReply");

@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Lachain.Consensus;
 using Lachain.Crypto;
 using Lachain.Logger;
+using Lachain.Networking.PeerFault;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -31,6 +32,7 @@ namespace Lachain.Networking.Hub
         public byte[] PeerPublicKey { get; }
         private readonly IMessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
+        public readonly PeerPenalty _penaltyHandler;
         private readonly Thread _worker;
         private bool _isConnected = false;
         private int _eraMsgCounter;
@@ -43,6 +45,7 @@ namespace Lachain.Networking.Hub
             _messageFactory = messageFactory;
             _hubConnector = hubConnector;
             PeerPublicKey = peerPublicKey.EncodeCompressed();
+            _penaltyHandler = new PeerPenalty(PeerPublicKey);
             _worker = new Thread(Worker);
         }
 
@@ -51,6 +54,7 @@ namespace Lachain.Networking.Hub
             _messageFactory = messageFactory;
             _hubConnector = hubConnector;
             PeerPublicKey = peerPublicKey;
+            _penaltyHandler = new PeerPenalty(PeerPublicKey);
             _worker = new Thread(Worker);
         }
 
@@ -156,11 +160,17 @@ namespace Lachain.Networking.Hub
 
         public int AdvanceEra(ulong era)
         {
+            _penaltyHandler.AdvanceEra(era);
             var sentBatches = _eraMsgCounter;
             _eraMsgCounter = 0;
             Logger.LogTrace($"Sent {sentBatches} msgBatches during era #{era - 1} for {PeerPublicKey.ToHex()}");
 
             return sentBatches;
+        }
+
+        public void IncPenalty()
+        {
+            _penaltyHandler.IncPenalty();
         }
     }
 }

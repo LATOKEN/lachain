@@ -180,6 +180,8 @@ namespace Lachain.Networking
                 }
                 catch (Exception e)
                 {
+                    // add penalty for peer
+                    envelope.RemotePeer.IncPenalty();
                     Logger.LogError($"Unexpected error occurred: {e}");
                 }
             }
@@ -229,6 +231,7 @@ namespace Lachain.Networking
                             $"Got SyncBlocksReply from {envelope.PublicKey.ToHex()} with requestId {message.RequestId} "
                             + "but we never requestd such reply"
                         );
+                        throw new Exception("Got unwanted SyncBlocksReply");
                     }
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolRequest:
@@ -237,7 +240,7 @@ namespace Lachain.Networking
                     OnSyncPoolReply?.Invoke(this, (message.SyncPoolReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.Ack:
-                    break;
+                    throw new NotImplementedException("We do not support/need Ack yet");
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
                     OnConsensusMessage?.Invoke(this, (message.ConsensusMessage, envelope.PublicKey));
                     break;
