@@ -41,6 +41,9 @@
         NodesDownloadedTillNow = 0x0606,
 
 
+        /* banned peers */
+        BannedPeerListByEra = 0x0701,
+
         /* contract */
         ContractByHash = 0x0801,
 
