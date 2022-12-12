@@ -25,7 +25,7 @@ namespace Lachain.Networking.PeerFault
             {
                 OnTooManyPenalty?.Invoke(this, (PeerPublicKey, PenaltyCount));
                 Logger.LogWarning($"Peer {PeerPublicKey.ToHex()} did {PenaltyCount} penalties");
-            } 
+            }
         }
 
         public ulong AdvanceEra(ulong era)
