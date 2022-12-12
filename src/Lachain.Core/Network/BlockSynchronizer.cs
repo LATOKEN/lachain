@@ -135,6 +135,13 @@ namespace Lachain.Core.Network
             else
             {
                 Logger.LogTrace($"Transaction {transaction.Hash.ToHex()} not persisted from peer {publicKey.ToHex()}: {error}");
+                if (error == OperatingError.InvalidSignature || error == OperatingError.HashMismatched || 
+                        error == OperatingError.InvalidGasLimit || error == OperatingError.ValueOverflow)
+                {
+                    // tx with this error should not be present in any node's pool and so should not be 
+                    // broadcasted by an honest peer
+                    _networkManager.IncPenalty(publicKey);
+                }
                 return false;
             }
         }
@@ -218,6 +225,8 @@ namespace Lachain.Core.Network
                 {
                     Logger.LogWarning($"Failed to get transaction receipts for tx hash: {e}");
                 }
+                // sending wrong set of txes malicious behavior
+                _networkManager.IncPenalty(publicKey);
 
                 return false;
             }
@@ -226,6 +235,8 @@ namespace Lachain.Core.Network
             if (error != OperatingError.Ok)
             {
                 Logger.LogTrace($"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: invalid multisig with error: {error}");
+                // got invalid block from peer
+                _networkManager.IncPenalty(publicKey);
                 return false;
             }
             // let it know that we received a valid response
@@ -245,14 +256,21 @@ namespace Lachain.Core.Network
             if (error == OperatingError.BlockAlreadyExists)
             {
                 Logger.LogTrace(
-                    $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: block already exists");
+                    $"Skipped block {block.Header.Index} from peer {publicKey.ToHex()}: block already exists"
+                );
                 return false;
             }
 
             if (error != OperatingError.Ok)
             {
                 Logger.LogWarning(
-                    $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer");
+                    $"Unable to persist block {block.Header.Index} (current height {_blockManager.GetHeight()}), got error {error}, dropping peer"
+                );
+                if (error != OperatingError.InvalidNonce)
+                {
+                    // malicious behavior from peer
+                    _networkManager.IncPenalty(publicKey);
+                }
                 return false;
             }
 
