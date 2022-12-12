@@ -191,6 +191,7 @@ namespace Lachain.Core.Consensus
                         _validatorAttendanceRepository, _messageEnvelopeRepository, _blockProducer
                     );
                     Logger.LogTrace($"Current Era is advanced. Current Era: {CurrentEra}");
+                    _networkManager.AdvanceEra((ulong) CurrentEra);
                 }
             }
         }

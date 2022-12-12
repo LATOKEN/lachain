@@ -133,6 +133,17 @@ namespace Lachain.Networking
             return worker;
         }
 
+        public void IncPenalty(ECDSAPublicKey publicKey)
+        {
+            var worker = GetClientWorker(publicKey);
+            if (worker is null)
+            {
+                Logger.LogWarning($"Got request to increase penalty for peer {publicKey.ToHex()} but worker is null");
+                return;
+            }
+            worker.IncPenalty();
+        }
+
         private void _HandleMessage(object sender, byte[] buffer)
         {
             MessageBatch? batch;

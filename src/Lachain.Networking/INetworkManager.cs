@@ -12,6 +12,7 @@ namespace Lachain.Networking
         void Start();
         void BroadcastLocalTransaction(TransactionReceipt receipt);
         void AdvanceEra(ulong era);
+        void IncPenalty(ECDSAPublicKey publicKey);
         Node LocalNode { get; }
 
         event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
