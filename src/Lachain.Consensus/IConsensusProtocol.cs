@@ -25,5 +25,6 @@ namespace Lachain.Consensus
         event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
         event EventHandler<ConsensusMessage>? _messageBroadcasted;
         event EventHandler<(int validator, ConsensusMessage msg)>? _messageSent;
+        event EventHandler<int>? _receivedInvalidMsg;
     }
 }

@@ -84,6 +84,7 @@ namespace Lachain.Consensus.CommonCoin
                             $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share";
                         Logger.LogWarning(
                             $"Faulty behaviour from player {envelope.ValidatorIndex}, {message.PrettyTypeString()}, {message.Coin.SignatureShare.ToByteArray().ToHex()}: bad signature share");
+                        InvokeReceivedInvalidMsg(envelope.ValidatorIndex);
                         return; // potential fault evidence
                     }
                     validMsg = true;
@@ -106,6 +107,8 @@ namespace Lachain.Consensus.CommonCoin
 
                 if (validMsg)
                     InvokeReceivedExternalMessage(envelope.ValidatorIndex, message);
+                else
+                    InvokeReceivedInvalidMsg(envelope.ValidatorIndex);
                     
                 CheckResult();
             }
