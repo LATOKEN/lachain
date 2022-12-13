@@ -42,7 +42,8 @@
 
 
         /* banned peers */
-        BannedPeerListByEra = 0x0701,
+        BannedPeerLowestCycle = 0x0701,
+        BannedPeerListByCycle = 0x0702,
 
         /* contract */
         ContractByHash = 0x0801,
