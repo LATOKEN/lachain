@@ -103,6 +103,7 @@ namespace Lachain.Consensus.RootProtocol
                 }
                 catch (Exception exception)
                 {
+                    verified = false;
                     var pubKey = Broadcaster.GetPublicKeyById(idx)!.ToHex();
                     Logger.LogWarning($"Faulty behaviour: exception occured trying to verify SignedHeaderMessage " +
                                       $"from {idx} ({pubKey}): {exception}");
@@ -115,6 +116,7 @@ namespace Lachain.Consensus.RootProtocol
                     Logger.LogWarning(
                         $"Incorrect signature of header {signedHeaderMessage.Header.Keccak().ToHex()} from validator {idx}"
                     );
+                    InvokeReceivedInvalidMsg(idx);
                 }
                 else if (!_receivedHeader[idx])
                 {
@@ -142,6 +144,7 @@ namespace Lachain.Consensus.RootProtocol
                     var pubKey = Broadcaster.GetPublicKeyById(idx)!.ToHex();
                     Logger.LogWarning($"Already received verified header from {idx} ({pubKey}). Validator {idx} " +
                                       $"({pubKey}) tried to send SignedHeaderMessage more than once");
+                    InvokeReceivedInvalidMsg(idx);
                 }
 
                 CheckSignatures();
