@@ -30,10 +30,16 @@ namespace Lachain.Networking.PeerFault
 
         public ulong AdvanceEra(ulong era)
         {
-            var donePenalty = PenaltyCount;
-            PenaltyCount = 0;
-            Logger.LogTrace($"Done {donePenalty} penalties during era {era - 1} by peer {PeerPublicKey.ToHex()}");
-            return donePenalty;
+            if (NetworkManagerBase.BlockInCycle(era) == 0)
+            {
+                var donePenalty = PenaltyCount;
+                PenaltyCount = 0;
+                Logger.LogTrace(
+                    $"Done {donePenalty} penalties during cycle {NetworkManagerBase.CycleNumber(era) - 1} by peer {PeerPublicKey.ToHex()}"
+                );
+                return donePenalty;
+            }
+            return 0;
         }
     }
 }

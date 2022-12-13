@@ -18,6 +18,7 @@ namespace Lachain.Networking
 {
     public abstract class NetworkManagerBase : INetworkManager, INetworkBroadcaster, IConsensusMessageDeliverer
     {
+        public static ulong CycleDuration = 20; // in blocks
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         private static readonly ILogger<NetworkManagerBase> Logger =
@@ -58,12 +59,16 @@ namespace Lachain.Networking
             _hubConnector.OnMessage += _HandleMessage;
 
             _broadcaster = new ClientWorker(new byte[33], _messageFactory, _hubConnector);
+            if(networkConfig.CycleDuration is null)
+                throw new Exception("Cycle Duration is not provided");
+            CycleDuration = (ulong) networkConfig.CycleDuration;
         }
 
         public void AdvanceEra(ulong era)
         {
             var totalBatchesCount = _clientWorkers.Values.Sum(clientWorker => clientWorker.AdvanceEra(era));
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");
+            OnAdvanceEra?.Invoke(this, era);
         }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
@@ -130,6 +135,7 @@ namespace Lachain.Networking
             var worker = new ClientWorker(publicKey, _messageFactory, _hubConnector);
             _clientWorkers.Add(publicKey, worker);
             worker.Start();
+            OnWorkerCreated?.Invoke(this, worker);
             return worker;
         }
 
@@ -142,6 +148,28 @@ namespace Lachain.Networking
                 return;
             }
             worker.IncPenalty();
+        }
+
+        public void BanPeer(byte[] publicKey)
+        {
+            var worker = GetClientWorker(CryptoUtils.ToPublicKey(publicKey));
+            if (worker is null)
+            {
+                Logger.LogWarning($"Got request to ban peer {publicKey.ToHex()} but worker is null");
+                return;
+            }
+            worker.BanPeer();
+        }
+
+        public void RemoveFromBanList(byte[] publicKey)
+        {
+            var worker = GetClientWorker(CryptoUtils.ToPublicKey(publicKey));
+            if (worker is null)
+            {
+                Logger.LogWarning($"Got request to unban peer {publicKey.ToHex()} but worker is null");
+                return;
+            }
+            worker.RemoveFromBanList();
         }
 
         private void _HandleMessage(object sender, byte[] buffer)
@@ -300,6 +328,16 @@ namespace Lachain.Networking
             _clientWorkers.Clear();
         }
 
+        public static ulong CycleNumber(ulong era)
+        {
+            return era / CycleDuration;
+        }
+
+        public static ulong BlockInCycle(ulong era)
+        {
+            return era % CycleDuration;
+        }
+
         public event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
 
         public event EventHandler<(SyncBlocksRequest message, Action<SyncBlocksReply> callback)>?
@@ -308,5 +346,7 @@ namespace Lachain.Networking
         public event EventHandler<(SyncBlocksReply message, ECDSAPublicKey address)>? OnSyncBlocksReply;
         public event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        public event EventHandler<ulong>? OnAdvanceEra;
+        public event EventHandler<ClientWorker>? OnWorkerCreated;
     }
 }
