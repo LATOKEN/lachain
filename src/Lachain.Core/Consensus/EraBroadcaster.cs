@@ -95,6 +95,7 @@ namespace Lachain.Core.Consensus
             {
                 _registry[protocol.Id] = protocol;
                 protocol._receivedExternalMessage += PersistExternalMessae;
+                protocol._receivedInvalidMsg += IncPenalty;
                 _requestManager.RegisterProtocol(protocol.Id, protocol);
             }
         }
@@ -110,6 +111,18 @@ namespace Lachain.Core.Consensus
             msg.Validator = new Validator {Era = _era};
             var messageEnvelope = new MessageEnvelope(msg, from);
             _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
+        }
+
+        private void IncPenalty(object? sender, int validator)
+        {
+            if (_terminated)
+            {
+                Logger.LogTrace($"Era {_era} is already finished, skipping IncPenalty");
+                return;
+            }
+            var publicKey = GetPublicKeyById(validator) ??
+                throw new Exception($"{validator} sent invalid msg but could not resolve its public key");
+            _consensusMessageDeliverer.IncPenalty(publicKey);
         }
 
         public void Broadcast(ConsensusMessage message)
