@@ -139,7 +139,7 @@ namespace Lachain.Consensus.BinaryAgreement
                 return;
             }
 
-            _receivedValues[sender].Add(b == 1);
+            _receivedValues[sender] = _receivedValues[sender].Add(b == 1);
             ++_receivedCount[b];
             InvokeReceivedExternalMessage(sender, new ConsensusMessage { Bval = bval });
 
