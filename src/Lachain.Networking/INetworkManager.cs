@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Utility;
 
@@ -13,6 +14,8 @@ namespace Lachain.Networking
         void BroadcastLocalTransaction(TransactionReceipt receipt);
         void AdvanceEra(ulong era);
         void IncPenalty(ECDSAPublicKey publicKey);
+        void BanPeer(byte[] publicKey);
+        void RemoveFromBanList(byte[] publicKey);
         Node LocalNode { get; }
 
         event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
@@ -20,5 +23,7 @@ namespace Lachain.Networking
         event EventHandler<(SyncBlocksReply message, ECDSAPublicKey address)>? OnSyncBlocksReply;
         event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        event EventHandler<ulong>? OnAdvanceEra;
+        event EventHandler<ClientWorker>? OnWorkerCreated;
     }
 }

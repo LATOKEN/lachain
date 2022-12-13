@@ -36,6 +36,7 @@ namespace Lachain.Networking.Hub
         private readonly Thread _worker;
         private bool _isConnected = false;
         private int _eraMsgCounter;
+        private bool _isBanned = false;
 
         private readonly C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)> _messageQueue 
             = new C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)>(new NetworkMessageComparer());
@@ -73,9 +74,29 @@ namespace Lachain.Networking.Hub
             _worker.Join();
         }
 
+        public void BanPeer()
+        {
+            if (_isBanned)
+                return;
+            _isBanned = true;
+            _hubConnector.BanPeer(PeerPublicKey);
+        }
+
+        public void RemoveFromBanList()
+        {
+            if (!_isBanned)
+                return;
+            _isBanned = false;
+            _hubConnector.RemoveFromBanList(PeerPublicKey);
+        }
 
         public void AddMsgToQueue(NetworkMessage message, NetworkMessagePriority priority)
         {
+            if (_isBanned)
+            {
+                Logger.LogWarning($"Peer {PeerPublicKey.ToHex()} is banned, not sending msg with priority {priority}");
+                return;
+            }
             lock (_messageQueue)
             {
                 _messageQueue.Add((priority, message));
