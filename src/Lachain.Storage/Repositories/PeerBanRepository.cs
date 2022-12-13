@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Lachain.Crypto;
+using Lachain.Utility.Serialization;
 
 namespace Lachain.Storage.Repositories
 {
@@ -14,13 +15,13 @@ namespace Lachain.Storage.Repositories
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void AddBannedPeer(ulong era, byte[] publicKey)
+        public void AddBannedPeer(ulong cycle, byte[] publicKey)
         {
             if (publicKey.Length != CryptoUtils.PublicKeyLength)
             {
                 throw new Exception($"Invalid public key length {publicKey.Length}");
             }
-            var peerList = GetBannedPeer(era);
+            var peerList = GetBannedPeers(cycle);
             for (int i = 0 ; i < peerList.Length; i += CryptoUtils.PublicKeyLength)
             {
                 if (peerList.Skip(i).Take(CryptoUtils.PublicKeyLength).SequenceEqual(publicKey))
@@ -29,34 +30,51 @@ namespace Lachain.Storage.Repositories
                 }
             }
             peerList = peerList.Concat(publicKey).ToArray();
-            var prefix = EntryPrefix.BannedPeerListByEra.BuildPrefix(era);
+            var prefix = EntryPrefix.BannedPeerListByCycle.BuildPrefix(cycle);
             _dbContext.Save(prefix, peerList);
         }
 
-        public byte[] GetBannedPeer(ulong era)
+        public byte[] GetBannedPeers(ulong cycle)
         {
-            var prefix = EntryPrefix.BannedPeerListByEra.BuildPrefix(era);
+            var prefix = EntryPrefix.BannedPeerListByCycle.BuildPrefix(cycle);
             return _dbContext.Get(prefix) ?? new byte[0];
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void RemoveAllBannedPeer(ulong era)
+        public void RemoveCycle(ulong cycle)
         {
-            var prefix = EntryPrefix.BannedPeerListByEra.BuildPrefix(era);
-            _dbContext.Delete(prefix);
+            var lowestCycle = GetLowestCycle();
+            var atomicWrite = new RocksDbAtomicWrite(_dbContext);
+            var prefix = EntryPrefix.BannedPeerListByCycle.BuildPrefix(cycle);
+            atomicWrite.Delete(prefix);
+            if (cycle >= lowestCycle)
+            {
+                prefix = EntryPrefix.BannedPeerLowestCycle.BuildPrefix();
+                atomicWrite.Put(prefix, (cycle + 1).ToBytes().ToArray());
+            }
+            atomicWrite.Commit();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void RemoveBannedPeer(ulong era, byte[] publicKey)
+        public ulong GetLowestCycle()
         {
-            var peerList = GetBannedPeer(era);
+            var prefix = EntryPrefix.BannedPeerLowestCycle.BuildPrefix();
+            var rawBytes = _dbContext.Get(prefix);
+            if (rawBytes is null || rawBytes.Length == 0) return 0;
+            return BitConverter.ToUInt64(rawBytes);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void RemoveBannedPeer(ulong cycle, byte[] publicKey)
+        {
+            var peerList = GetBannedPeers(cycle);
             for (int i = 0 ; i < peerList.Length; i += CryptoUtils.PublicKeyLength)
             {
                 if (peerList.Skip(i).Take(CryptoUtils.PublicKeyLength).SequenceEqual(publicKey))
                 {
                     var remainingPeer = peerList.Skip(i + CryptoUtils.PublicKeyLength).ToArray();
                     peerList = peerList.Take(i).Concat(remainingPeer).ToArray();
-                    var prefix = EntryPrefix.BannedPeerListByEra.BuildPrefix(era);
+                    var prefix = EntryPrefix.BannedPeerListByCycle.BuildPrefix(cycle);
                     _dbContext.Save(prefix, peerList);
                     return;
                 }
