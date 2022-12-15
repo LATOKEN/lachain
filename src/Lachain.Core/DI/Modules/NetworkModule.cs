@@ -13,6 +13,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<IBlockSynchronizer, BlockSynchronizer>();
             containerBuilder.RegisterSingleton<IMessageHandler, MessageHandler>();
             containerBuilder.RegisterSingleton<IPeerBanManager, PeerBanManager>();
+            containerBuilder.RegisterSingleton<IBannedPeerTracker, BannedPeerTracker>();
         }
     }
 }
