@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking.Hub;
@@ -23,6 +24,7 @@ namespace Lachain.Networking.PeerFault
         private readonly INetworkManager _networkManager;
         private readonly ConcurrentDictionary<ECDSAPublicKey, (ulong fromCycle, ulong toCycle)> _bannedPeers
             = new ConcurrentDictionary<ECDSAPublicKey, (ulong, ulong)>();
+        public event EventHandler<(byte[] publicKey, ulong penalties)>? OnPeerBanned;
         public PeerBanManager(IPeerBanRepository repository, INetworkManager networkManager)
         {
             _networkManager = networkManager;
@@ -113,11 +115,16 @@ namespace Lachain.Networking.PeerFault
             _bannedPeers[ecdsaPubKey] = (_cycle, _cycle + 2);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void BanPeerForPenalty(object? sender, (byte[] publicKey, ulong penalties) @event)
         {
-            var (publicKey, penalties) = @event;
-            BanPeer(publicKey);
-            Logger.LogTrace($"Banned peer {publicKey.ToHex()} for {penalties} penalties during cycle {_cycle}");
+            Task.Factory.StartNew(() =>
+            {
+                var (publicKey, penalties) = @event;
+                BanPeer(publicKey);
+                Logger.LogTrace($"Banned peer {publicKey.ToHex()} for {penalties} penalties during cycle {_cycle}");
+                OnPeerBanned?.Invoke(this, (publicKey, penalties));
+            }, TaskCreationOptions.LongRunning);
         }
     }
 }
