@@ -15,6 +15,10 @@ namespace Lachain.Networking.PeerFault
     {
         private static readonly ILogger<PeerBanManager> Logger = LoggerFactory.GetLoggerForClass<PeerBanManager>();
         private ulong _cycle = 0;
+        // ban this peer for 3 cycles: this _cycle, _cycle + 1 and _cycle + 2
+        // this way even if he can become validator, will not get any attendance
+        // from me for 2 cycles, thus increasing chances of getting penalty
+        public const ulong MaxCycleCountToBan = 3;
         private readonly IPeerBanRepository _repository;
         private readonly INetworkManager _networkManager;
         private readonly ConcurrentDictionary<ECDSAPublicKey, (ulong fromCycle, ulong toCycle)> _bannedPeers
@@ -32,7 +36,7 @@ namespace Lachain.Networking.PeerFault
         private void RestoreBannedPeers()
         {
             _cycle = _repository.GetLowestCycle();
-            for (var cycle = _cycle; cycle <= _cycle + 2; cycle++)
+            for (var cycle = _cycle; cycle < _cycle + MaxCycleCountToBan; cycle++)
             {
                 var peerList = _repository.GetBannedPeers(cycle);
                 for (int i = 0 ; i < peerList.Length; i += CryptoUtils.PublicKeyLength)
@@ -91,9 +95,6 @@ namespace Lachain.Networking.PeerFault
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void BanPeer(byte[] publicKey)
         {
-            // ban this peer for this _cycle, _cycle + 1 and _cycle + 2
-            // this way even if he can become validator, will not get any attendance
-            // from me for 2 cycles, thus increasing chances of getting penalty
             ulong start = _cycle;
             var ecdsaPubKey = CryptoUtils.ToPublicKey(publicKey);
             if (_bannedPeers.TryGetValue(ecdsaPubKey, out var value))
@@ -104,7 +105,7 @@ namespace Lachain.Networking.PeerFault
             {
                 _networkManager.BanPeer(publicKey);
             }
-            for (var cycle = start; cycle <= _cycle + 2; cycle++)
+            for (var cycle = start; cycle < _cycle + MaxCycleCountToBan; cycle++)
             {
                 _repository.AddBannedPeer(cycle, publicKey);
                 Logger.LogTrace($"Banned peer {publicKey.ToHex()} for cycle {cycle}");

@@ -8,6 +8,7 @@ namespace Lachain.Networking.PeerFault
     {
         private static readonly ILogger<PeerPenalty> Logger = LoggerFactory.GetLoggerForClass<PeerPenalty>();
         public ulong PenaltyCount { get; private set; }
+        public const ulong MaxPenaltyTolerance = 100000;
         public byte[] PeerPublicKey { get; private set; }
         public event EventHandler<(byte[] peerPublicKey, ulong penaltyCount)>? OnTooManyPenalty;
         public PeerPenalty(byte[] publicKey)
@@ -21,10 +22,12 @@ namespace Lachain.Networking.PeerFault
             PenaltyCount++;
             // TODO: determine penalty tolerance threshold for an era
             // can be cycle duration dependent
-            if (PenaltyCount >= 10000)
+            if (PenaltyCount > MaxPenaltyTolerance)
             {
                 OnTooManyPenalty?.Invoke(this, (PeerPublicKey, PenaltyCount));
-                Logger.LogWarning($"Peer {PeerPublicKey.ToHex()} did {PenaltyCount} penalties");
+                Logger.LogWarning(
+                    $"Peer {PeerPublicKey.ToHex()} did {PenaltyCount} penalties, max tolerance threshold {MaxPenaltyTolerance}"
+                );
             }
         }
 
