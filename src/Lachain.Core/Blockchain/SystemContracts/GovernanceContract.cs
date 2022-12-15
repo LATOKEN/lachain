@@ -138,6 +138,17 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return a % StakingContract.CycleDuration;
         }
 
+        [ContractMethod(GovernanceInterface.MethodBanPeerRequestFrom)]
+        public ExecutionStatus BanPeerRequestFrom(UInt256 penaltyCount, byte[] peerToBan, byte[] requestFrom, SystemContractExecutionFrame frame)
+        {
+            if (!IsPublicKeyOwner(requestFrom, MsgSender()))
+            {
+                return ExecutionStatus.ExecutionHalted;
+            }
+            Emit(GovernanceInterface.EventBanPeerRequestFrom, penaltyCount, peerToBan, requestFrom);
+            return ExecutionStatus.Ok;
+        }
+
         [ContractMethod(GovernanceInterface.MethodDistributeCycleRewardsAndPenalties)]
         public ExecutionStatus DistributeCycleRewardsAndPenalties(UInt256 cycle, SystemContractExecutionFrame frame)
         {
@@ -610,6 +621,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
             frame.ReturnValue = (result ? 1 : 0).ToUInt256().ToBytes();
 
             return ExecutionStatus.Ok;
+        }
+
+        private bool IsPublicKeyOwner(byte[] publicKey, UInt160 expectedOwner)
+        {
+            var address = Hepler.PublicKeyToAddress(publicKey);
+            return expectedOwner.Equals(address);
         }
 
         public byte[][] GetNextValidators()

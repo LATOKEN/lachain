@@ -12,6 +12,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string MethodFinishCycle = "finishCycle(uint256)";
         public const string MethodIsNextValidator = "isNextValidator(bytes)";
         public const string MethodDistributeCycleRewardsAndPenalties = "distibuteCycleRewardsAndPenalties(uint256)";
+        public const string MethodBanPeerRequestFrom = "banPeerRequestFrom(uint256,bytes,bytes)";
 
         public const string EventChangeValidators = "ChangeValidators(bytes[])";
         public const string EventKeygenCommit = "KeygenCommit(bytes,bytes[])";
@@ -20,10 +21,12 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
         public const string EventKeygenConfirmWithVerificationKeys = "KeygenConfirmWithVerificationKeys(bytes,bytes[])";
         public const string EventFinishCycle = "FinishCycle()";
         public const string EventDistributeCycleRewardsAndPenalties = "DistibuteCycleRewardsAndPenalties(uint256)";
+        public const string EventBanPeerRequestFrom = "BanPeerRequestFrom(uint256,bytes,bytes)";
 
 
         public string[] Methods { get; } =
         {
+            MethodBanPeerRequestFrom,
             MethodChangeValidators,
             MethodKeygenCommit,
             MethodKeygenSendValue,
@@ -39,6 +42,7 @@ namespace Lachain.Core.Blockchain.SystemContracts.Interface
 
         public string[] Events { get; } =
         {
+            EventBanPeerRequestFrom,
             EventChangeValidators,
             EventKeygenCommit,
             EventKeygenSendValue,
