@@ -1,6 +1,7 @@
 using Lachain.Core.Config;
 using Lachain.Core.Network;
 using Lachain.Networking;
+using Lachain.Networking.PeerFault;
 
 namespace Lachain.Core.DI.Modules
 {
@@ -11,6 +12,7 @@ namespace Lachain.Core.DI.Modules
             containerBuilder.RegisterSingleton<INetworkManager, NetworkManager>();
             containerBuilder.RegisterSingleton<IBlockSynchronizer, BlockSynchronizer>();
             containerBuilder.RegisterSingleton<IMessageHandler, MessageHandler>();
+            containerBuilder.RegisterSingleton<IPeerBanManager, PeerBanManager>();
         }
     }
 }
