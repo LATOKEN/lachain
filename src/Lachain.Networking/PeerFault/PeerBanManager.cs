@@ -29,13 +29,12 @@ namespace Lachain.Networking.PeerFault
         {
             _networkManager = networkManager;
             _repository = repository;
-            RestoreBannedPeers();
             _networkManager.OnAdvanceEra += AdvanceEra;
             _networkManager.OnWorkerCreated += RegisterPeer;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void RestoreBannedPeers()
+        public void RestoreState()
         {
             _cycle = _repository.GetLowestCycle();
             for (var cycle = _cycle; cycle < _cycle + MaxCycleCountToBan; cycle++)
