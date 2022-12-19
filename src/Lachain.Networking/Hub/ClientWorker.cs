@@ -71,6 +71,13 @@ namespace Lachain.Networking.Hub
                 return;
                 
             _isConnected = false;
+            lock (_messageQueue)
+            {
+                while (_messageQueue.Count > 0)
+                    _messageQueue.DeleteMin();
+
+                Monitor.PulseAll(_messageQueue);
+            }
             _worker.Join();
         }
 
@@ -79,6 +86,7 @@ namespace Lachain.Networking.Hub
             if (_isBanned)
                 return;
             _isBanned = true;
+            Logger.LogTrace($"Peer {PeerPublicKey.ToHex()} is banned");
             _hubConnector.BanPeer(PeerPublicKey);
         }
 
@@ -87,6 +95,7 @@ namespace Lachain.Networking.Hub
             if (!_isBanned)
                 return;
             _isBanned = false;
+            Logger.LogTrace($"Peer {PeerPublicKey.ToHex()} is unbanned");
             _hubConnector.RemoveFromBanList(PeerPublicKey);
         }
 
@@ -119,7 +128,7 @@ namespace Lachain.Networking.Hub
 
                     lock (_messageQueue)
                     {
-                        while (_messageQueue.Count == 0)
+                        while (_messageQueue.Count == 0 && _isConnected)
                             Monitor.Wait(_messageQueue);
 
                         while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
@@ -169,13 +178,6 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
-            lock (_messageQueue)
-            {
-                while (_messageQueue.Count > 0)
-                    _messageQueue.DeleteMin();
-
-                Monitor.PulseAll(_messageQueue);
-            }
             Stop();
         }
 
