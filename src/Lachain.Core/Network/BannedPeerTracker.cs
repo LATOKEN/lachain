@@ -97,7 +97,8 @@ namespace Lachain.Core.Network
         {
             if (_running)
                 return;
-            _validators = _blockManager.GetByHeight(_blockManager.GetHeight())!.Multisig.Validators.ToHashSet();
+            if (_blockManager.GetHeight() > 0)
+                _validators = _blockManager.GetByHeight(_blockManager.GetHeight())!.Multisig.Validators.ToHashSet();
             RestoreState();
             _running = true;
             _banRequestWorker.Start();
@@ -238,7 +239,7 @@ namespace Lachain.Core.Network
             return true;
         }
 
-        private TransactionReceipt MakeBanRequestTransaction(ulong penalties, byte[] publicKey)
+        public TransactionReceipt MakeBanRequestTransaction(ulong penalties, byte[] publicKey)
         {
             Logger.LogTrace("MakeBanRequestTransaction");
             var tx = _transactionBuilder.InvokeTransactionWithGasPrice(
@@ -252,6 +253,20 @@ namespace Lachain.Core.Network
                 _privateWallet.EcdsaKeyPair.PublicKey.EncodeCompressed()
             );
             return _transactionSigner.Sign(tx, _privateWallet.EcdsaKeyPair, HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1));
+        }
+
+        public void Stop()
+        {
+            if (!_running)
+                return;
+            _running = false;
+            lock (_banPeerRequestTx)
+                Monitor.PulseAll(_banPeerRequestTx);
+        }
+
+        public void Dispose()
+        {
+            Stop();
         }
     }
 }
