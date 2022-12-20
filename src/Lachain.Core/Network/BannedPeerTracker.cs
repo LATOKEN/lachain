@@ -262,6 +262,7 @@ namespace Lachain.Core.Network
             _running = false;
             lock (_banPeerRequestTx)
                 Monitor.PulseAll(_banPeerRequestTx);
+            _banRequestWorker.Join();
         }
 
         public void Dispose()
