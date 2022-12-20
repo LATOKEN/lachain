@@ -125,30 +125,40 @@ namespace Lachain.CoreTest.IntegrationTests
                 Assert.AreEqual(OperatingError.Ok, exc);
             }
             var randomPrivateKey = Crypto.GeneratePrivateKey().ToPrivateKey();
-            var tries = 2;
-            for (int iter = 0 ; iter < tries; iter++)
-            {
-                var tx = _banTracker.MakeBanRequestTransaction(
-                    PeerPenalty.MaxPenaltyTolerance + 1, randomPrivateKey.GetPublicKey().EncodeCompressed()
-                );
-                var error = _transactionPool.Add(tx);
-                Assert.AreEqual(OperatingError.Ok, error);
-                var takenTxes = _transactionPool.Peek(1000, 1000, _blockManager.GetHeight() + 1);
-                var block = BuildNextBlock(takenTxes.ToArray());
-                var result = ExecuteBlock(block, takenTxes.ToArray());
-                Assert.AreEqual(result, OperatingError.Ok);
-            }
-            CheckBan(1, true, randomPrivateKey.GetPublicKey().EncodeCompressed());
-            while (NetworkManagerBase.CycleNumber(_blockManager.GetHeight()) < 10)
+            VotePeer(randomPrivateKey.GetPublicKey().EncodeCompressed());
+            CheckBan(1, true, true, randomPrivateKey.GetPublicKey().EncodeCompressed());
+            while (NetworkManagerBase.CycleNumber(_blockManager.GetHeight()) < 3)
             {
                 var emptyBlock = BuildNextBlock();
                 var exc = ExecuteBlock(emptyBlock);
                 Assert.AreEqual(OperatingError.Ok, exc);
             }
-            CheckBan(10, false, new byte[0]);
+            CheckBan(3, true, false, randomPrivateKey.GetPublicKey().EncodeCompressed());
+            while (NetworkManagerBase.CycleNumber(_blockManager.GetHeight()) < 4)
+            {
+                var emptyBlock = BuildNextBlock();
+                var exc = ExecuteBlock(emptyBlock);
+                Assert.AreEqual(OperatingError.Ok, exc);
+            }
+            CheckBan(4, false, false, new byte[0]);
         }
 
-        private void CheckBan(ulong currentCycle, bool banned, byte[] bannedPeer)
+        private void VotePeer(byte[] peer)
+        {
+            var tries = 2;
+            for (int iter = 0 ; iter < tries; iter++)
+            {
+                var tx = _banTracker.MakeBanRequestTransaction(PeerPenalty.MaxPenaltyTolerance + 1, peer);
+                var error = _transactionPool.Add(tx);
+                Assert.AreEqual(OperatingError.Ok, error);
+            }
+            var takenTxes = _transactionPool.Peek(1000, 1000, _blockManager.GetHeight() + 1);
+            var block = BuildNextBlock(takenTxes.ToArray());
+            var result = ExecuteBlock(block, takenTxes.ToArray());
+            Assert.AreEqual(result, OperatingError.Ok);
+        }
+
+        private void CheckBan(ulong currentCycle, bool banned, bool voted, byte[] bannedPeer)
         {
             var bannedPeers = _banRepo.GetBannedPeers(currentCycle);
             var length = banned ? CryptoUtils.PublicKeyLength : 0;
@@ -158,11 +168,11 @@ namespace Lachain.CoreTest.IntegrationTests
             Assert.AreEqual(currentCycle, cycle);
             cycle = _banRepo.GetLowestCycleForVote();
             Assert.AreEqual(currentCycle, cycle);
-            var voted = _banRepo.GetVotedPeers(currentCycle);
-            Assert.AreEqual(bannedPeers, voted);
-            if (voted.Length > 0)
+            var votedPeer = _banRepo.GetVotedPeers(currentCycle);
+            if (voted)
             {
-                var voters = _banRepo.GetVotersForBannedPeer(currentCycle, voted);
+                Assert.AreEqual(bannedPeers, votedPeer);
+                var voters = _banRepo.GetVotersForBannedPeer(currentCycle, votedPeer);
                 Assert.AreEqual(CryptoUtils.PublicKeyLength, voters.Length);
                 Assert.AreEqual(_wallet.EcdsaKeyPair.PublicKey, voters.ToPublicKey());
             }
