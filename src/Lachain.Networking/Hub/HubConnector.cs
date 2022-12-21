@@ -98,6 +98,11 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray());
         }
 
+        public void SetPeerPublicKey(byte[] publicKey, int peerId)
+        {
+            CommunicationHub.Net.Hub.SetPeerPublicKey(publicKey, peerId);
+        }
+
         public void BanPeer(byte[] publicKey)
         {
             CommunicationHub.Net.Hub.BanPeer(publicKey);

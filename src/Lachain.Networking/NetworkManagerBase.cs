@@ -11,6 +11,7 @@ using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
 
@@ -172,12 +173,30 @@ namespace Lachain.Networking
             worker.RemoveFromBanList();
         }
 
+        private MessageBatch? ParseMessageBatch(byte[] buffer, out uint peerId)
+        {
+            // buffer could be MessageBatch or it could have a peerId followed by MessageBatch
+            peerId = 0;
+            try
+            {
+                var batch = MessageBatch.Parser.ParseFrom(buffer);
+                return batch;
+            }
+            catch (Exception)
+            {
+                peerId = buffer.AsReadOnlySpan().Slice(0, 4).ToUInt32();
+                var batch = MessageBatch.Parser.ParseFrom(buffer.Skip(4).ToArray());
+                return batch;
+            }
+        }
+
         private void _HandleMessage(object sender, byte[] buffer)
         {
             MessageBatch? batch;
+            uint peerId = 0;
             try
             {
-                batch = MessageBatch.Parser.ParseFrom(buffer);
+                batch = ParseMessageBatch(buffer, out peerId);
             }
             catch (Exception e)
             {
@@ -205,6 +224,11 @@ namespace Lachain.Networking
             {
                 Logger.LogWarning($"Got batch from {batch.Sender.ToHex()} but cannot connect to him, skipping");
                 return;
+            }
+
+            if (peerId != 0)
+            {
+                _hubConnector.SetPeerPublicKey(batch.Sender.EncodeCompressed(), (int) peerId);
             }
 
             var envelope = new MessageEnvelope(batch.Sender, worker);
