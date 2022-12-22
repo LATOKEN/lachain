@@ -468,7 +468,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         }
 
         [Test]
-        [Repeat(2)]
+        [Repeat(1)]
         // changed from private to public: GetLogs()
         public void Test_GetLogs()
         {
@@ -502,7 +502,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var emptyLogs = _apiService.GetLogs(input);
             Assert.AreEqual(0, emptyLogs.Count);
             var block = _blockManager.GetByHeight(10);
-            CheckLogs(emptyLogs, block!, new List<TransactionReceipt>());
+            CheckLogs(emptyLogs, block, new List<TransactionReceipt>());
 
             input = new JObject();
             input["fromBlock"] = input["toBlock"] = "pending";
@@ -510,7 +510,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             Assert.AreEqual(0, newEmptyLogs.Count);
             Assert.AreEqual(newEmptyLogs, emptyLogs);
 
-            input = LogInputByBlockNo(0, 2);
+            input = LogInputByBlockNo(0, _blockManager.GetHeight());
             var allLogs = _apiService.GetLogs(input);
 
             input = new JObject();
@@ -521,14 +521,14 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
 
 
-            input = LogInputByBlockNo(1, 1);
+            input = LogInputByBlockNo(2, 2);
             var logsForBlock1 = _apiService.GetLogs(input);
-            block = _blockManager.GetByHeight(1);
+            block = _blockManager.GetByHeight(2);
             CheckLogs(logsForBlock1, block!,topUpTx);
 
-            input = LogInputByBlockNo(2, 2);
+            input = LogInputByBlockNo(3, 3);
             var logsForBlock2 = _apiService.GetLogs(input);
-            block = _blockManager.GetByHeight(2);
+            block = _blockManager.GetByHeight(3);
             CheckLogs(logsForBlock2, block!, randomTx);
             Assert.AreEqual(defaultLogs, logsForBlock2);
             if(logsForBlock1.Count > 0 ||  logsForBlock2.Count > 0)
@@ -595,7 +595,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
         }
 
-        public void CheckLogs(JArray logs, Block block, List<TransactionReceipt> txList)
+        public void CheckLogs(JArray logs, Block? block, List<TransactionReceipt> txList)
         {
             foreach (var token in logs)
             {
@@ -949,11 +949,12 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
                 lock (this)
                 {
                     var txes = GetCurrentPoolTxes(era);
-                    era++;
                     var block = BuildNextBlock(txes);
                     var result = ExecuteBlock(block, txes);
                     Assert.AreEqual(OperatingError.Ok, result);
-                    
+                    var actualBlock = _blockManager.GetByHeight(era);
+                    Assert.AreEqual(txes.Length, actualBlock!.TransactionHashes.Count);
+                    era++;
                 }
                 
             }
