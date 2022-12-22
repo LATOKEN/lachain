@@ -185,7 +185,7 @@ namespace Lachain.Core.BlockchainFilter
                         if (txEvent is null)
                             continue;
                         
-                        if(!addresses.Any(a => txEvent.Contract.Equals(a))) continue;
+                        if(addresses.Count > 0 && !addresses.Any(a => txEvent.Contract.Equals(a))) continue;
 
                         var txTopics = new List<UInt256>();
                         txTopics.Add(txEvent.SignatureHash);
