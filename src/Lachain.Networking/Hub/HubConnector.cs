@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using Lachain.Logger;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 
 namespace Lachain.Networking.Hub
@@ -18,7 +19,7 @@ namespace Lachain.Networking.Hub
         private Thread? _readWorker;
         private readonly Thread _hubThread;
 
-        public event EventHandler<byte[]>? OnMessage;
+        public event EventHandler<(byte[] buffer, int peerId)>? OnMessage;
 
         public HubConnector(string hubBootstrapAddresses, byte[] hubPrivateKey, string networkName, int version,  int minPeerVersion, int chainId, int hubMetricsPort, IMessageFactory messageFactory, string? logLevel)
         {
@@ -77,7 +78,8 @@ namespace Lachain.Networking.Hub
                     {
                         try
                         {
-                            OnMessage?.Invoke(this, CompressUtils.DeflateDecompress(message).ToArray());
+                            var peerId = message.AsReadOnlySpan().Slice(0, 4).ToInt32();
+                            OnMessage?.Invoke(this, (CompressUtils.DeflateDecompress(message.Skip(4).ToArray()).ToArray(), peerId));
                         }
                         catch (Exception e)
                         {
@@ -98,9 +100,9 @@ namespace Lachain.Networking.Hub
             CommunicationHub.Net.Hub.Send(publicKey, CompressUtils.DeflateCompress(message).ToArray(), isConsensus ? 1 : 0);
         }
 
-        public void SetPeerPublicKey(byte[] publicKey, int peerId)
+        public bool SetPeerPublicKey(byte[] publicKey, int peerId)
         {
-            CommunicationHub.Net.Hub.SetPeerPublicKey(publicKey, peerId);
+            return CommunicationHub.Net.Hub.SetPeerPublicKey(publicKey, peerId);
         }
 
         public void BanPeer(byte[] publicKey)
