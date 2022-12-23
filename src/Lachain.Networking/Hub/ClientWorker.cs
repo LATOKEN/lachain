@@ -125,6 +125,7 @@ namespace Lachain.Networking.Hub
                 {
                     var now = TimeUtils.CurrentTimeMillis();
                     MessageBatchContent toSend = new MessageBatchContent();
+                    bool isConsensus = false;
 
                     lock (_messageQueue)
                     {
@@ -133,8 +134,9 @@ namespace Lachain.Networking.Hub
 
                         while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                         {
-                            var message = _messageQueue.DeleteMin().Item2;
+                            var (type, message) = _messageQueue.DeleteMin();
                             toSend.Messages.Add(message);
+                            isConsensus |= type == NetworkMessagePriority.ConsensusMessage;
                         }
                     }
 
@@ -162,7 +164,7 @@ namespace Lachain.Networking.Hub
                                 .Inc(message.CalculateSize());
                         }
 
-                        _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                        _hubConnector.Send(PeerPublicKey, megaBatchBytes, isConsensus);
                         _eraMsgCounter += 1;
                     }
                     
