@@ -123,5 +123,6 @@ namespace Lachain.ConsensusTest
         public event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
         public event EventHandler<ConsensusMessage>? _messageBroadcasted;
         public event EventHandler<(int validator, ConsensusMessage msg)>? _messageSent;
+        public event EventHandler<int>? _receivedInvalidMsg;
     }
 }
