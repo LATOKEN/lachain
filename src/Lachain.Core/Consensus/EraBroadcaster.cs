@@ -148,6 +148,7 @@ namespace Lachain.Core.Consensus
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void LoadState(bool restore)
         {
             if (!restore)
@@ -381,13 +382,15 @@ namespace Lachain.Core.Consensus
                 Logger.LogWarning($"Invalid protocol id {protocolId} from validator {GetPublicKeyById(from)!.ToHex()} ({from})");
             }
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request) where TId : IProtocolIdentifier
         {
             InternalRequest<TId, TInputType>(request, false);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request, bool restorationPhase)
+        private void InternalRequest<TId, TInputType>(ProtocolRequest<TId, TInputType> request, bool restorationPhase)
             where TId : IProtocolIdentifier
         {
             if (_terminated)
