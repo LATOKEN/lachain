@@ -219,6 +219,11 @@ namespace Lachain.Core.Network
                     $"Invalid proof. Tx hashes for block {height} does not match"
                 );
             }
+            if (height == 0)
+            {
+                // genesis block does not have multisig
+                return;
+            }
             var validators = block.Multisig.Validators.ToHashSet();
             if (!validators.SetEquals(validBlock.Multisig.Validators.ToHashSet()))
             {
