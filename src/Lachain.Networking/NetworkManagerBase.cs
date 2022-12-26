@@ -211,7 +211,7 @@ namespace Lachain.Networking
                 return;
             }
 
-            if (peerId != -1)
+            if (peerId >= 0)
             {
                 if (!TrySetPeerPublicKey(batch.Sender, peerId))
                 {
