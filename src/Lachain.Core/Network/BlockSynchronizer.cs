@@ -380,7 +380,8 @@ namespace Lachain.Core.Network
                 return;
             }
 
-            var peers = _peerHeights.ToArray();
+            var F = (_peerHeights.Count - 1) / 3;
+            var peers = _peerHeights.Take(F + 1).ToArray();
 
             var reply = new SyncBlocksReply
             {
@@ -505,7 +506,7 @@ namespace Lachain.Core.Network
         public void Start()
         {
             _running = true;
-            _blockSyncThread.Start();
+            // _blockSyncThread.Start();
             _pingThread.Start();
             _blockFromPeerThread.Start();
             _txFromPeerThread.Start();
