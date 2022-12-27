@@ -11,6 +11,7 @@ using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
 
@@ -19,6 +20,9 @@ namespace Lachain.Networking
     public abstract class NetworkManagerBase : INetworkManager, INetworkBroadcaster, IConsensusMessageDeliverer
     {
         public static ulong CycleDuration = 20; // in blocks
+        // MaxPenaltyTolerance should be cycle dependent
+        // lets say 100 per block
+        public static ulong MaxPenaltyTolerance => 100 * CycleDuration;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         private static readonly ILogger<NetworkManagerBase> Logger =
@@ -35,6 +39,8 @@ namespace Lachain.Networking
         
         private readonly ConcurrentDictionary<ulong, ECDSAPublicKey> _requestIdentifier =
             new ConcurrentDictionary<ulong, ECDSAPublicKey>();
+        private readonly ConcurrentDictionary<int, ECDSAPublicKey> _peerPubKeys = 
+            new ConcurrentDictionary<int, ECDSAPublicKey>();
 
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
@@ -172,9 +178,10 @@ namespace Lachain.Networking
             worker.RemoveFromBanList();
         }
 
-        private void _HandleMessage(object sender, byte[] buffer)
+        private void _HandleMessage(object? sender, (byte[] buffer, int peerId) @event)
         {
             MessageBatch? batch;
+            var (buffer, peerId) = @event;
             try
             {
                 batch = MessageBatch.Parser.ParseFrom(buffer);
@@ -207,6 +214,15 @@ namespace Lachain.Networking
                 return;
             }
 
+            if (peerId >= 0)
+            {
+                if (!TrySetPeerPublicKey(batch.Sender, peerId))
+                {
+                    Logger.LogWarning($"Peer sent msg with wrong public key");
+                    return;
+                }
+            }
+
             var envelope = new MessageEnvelope(batch.Sender, worker);
             var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
             // if (content.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
@@ -224,6 +240,30 @@ namespace Lachain.Networking
                     Logger.LogError($"Unexpected error occurred: {e}");
                 }
             }
+        }
+
+        private bool TrySetPeerPublicKey(ECDSAPublicKey publicKey, int peerId)
+        {
+            if (_peerPubKeys.TryGetValue(peerId, out var actualPublicKey))
+            {
+                if (!publicKey.Equals(actualPublicKey))
+                {
+                    // this indicates malicious behavior
+                    // we will try to set publicKey for peer again,
+                    // it should be invalid and reset inbound stream
+                    Logger.LogWarning(
+                        $"Peer sent msg with public key {actualPublicKey.ToHex()} before, now sent msg with public key {publicKey.ToHex()}"
+                    );
+                    return _hubConnector.SetPeerPublicKey(publicKey.EncodeCompressed(), peerId);
+                }
+                return true;
+            }
+            var publicKeySet = _hubConnector.SetPeerPublicKey(publicKey.EncodeCompressed(), peerId);
+            if (publicKeySet)
+            {
+                _peerPubKeys.TryAdd(peerId, publicKey);
+            }
+            return publicKeySet;
         }
 
         private Action<IMessage> SendTo(ClientWorker peer, ulong requestId)

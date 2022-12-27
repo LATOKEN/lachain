@@ -61,7 +61,8 @@ namespace Lachain.Consensus
         {
             if (Started)
             {
-                throw new InvalidOperationException("StartThread() already called previously");
+                Logger.LogDebug($"StartThread() already called previously for protocol {Id}");
+                return;
             }
 
             _thread.Start();

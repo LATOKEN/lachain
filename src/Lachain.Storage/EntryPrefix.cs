@@ -44,6 +44,9 @@
         /* banned peers */
         BannedPeerLowestCycle = 0x0701,
         BannedPeerListByCycle = 0x0702,
+        BannedPeerVoteLowestCycle = 0x0703,
+        BannedPeerVotersByCycle = 0x0704,
+        VotedPeerListByCycle = 0x0705,
 
         /* contract */
         ContractByHash = 0x0801,

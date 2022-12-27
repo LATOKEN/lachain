@@ -9,12 +9,26 @@ using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility.Utils;
+using Prometheus;
 
 namespace Lachain.Networking.PeerFault
 {
     public class PeerBanManager : IPeerBanManager
     {
         private static readonly ILogger<PeerBanManager> Logger = LoggerFactory.GetLoggerForClass<PeerBanManager>();
+        private static readonly Counter BanForPenaltyCounter = Metrics.CreateCounter(
+            "lachain_peer_banned_for_penalty_count",
+            "Number of times a peer was banned for penalty",
+            "peer"
+        );
+        private static readonly Gauge BanByPenaltyCycle = Metrics.CreateGauge(
+            "lachain_peer_banned_cycle",
+            "Latest cycle where a peer was banned for penalty",
+            new GaugeConfiguration
+            {
+                LabelNames = new[] {"peer", "penalties"}
+            }
+        );
         private ulong _cycle = 0;
         // ban this peer for 3 cycles: this _cycle, _cycle + 1 and _cycle + 2
         // this way even if he can become validator, will not get any attendance
@@ -29,13 +43,12 @@ namespace Lachain.Networking.PeerFault
         {
             _networkManager = networkManager;
             _repository = repository;
-            RestoreBannedPeers();
             _networkManager.OnAdvanceEra += AdvanceEra;
             _networkManager.OnWorkerCreated += RegisterPeer;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        private void RestoreBannedPeers()
+        public void RestoreState()
         {
             _cycle = _repository.GetLowestCycle();
             for (var cycle = _cycle; cycle < _cycle + MaxCycleCountToBan; cycle++)
@@ -121,6 +134,8 @@ namespace Lachain.Networking.PeerFault
             Task.Factory.StartNew(() =>
             {
                 var (publicKey, penalties) = @event;
+                BanForPenaltyCounter.WithLabels(publicKey.ToHex()).Inc();
+                BanByPenaltyCycle.WithLabels(publicKey.ToHex(), penalties.ToString()).Set(_cycle);
                 BanPeer(publicKey);
                 Logger.LogTrace($"Banned peer {publicKey.ToHex()} for {penalties} penalties during cycle {_cycle}");
                 OnPeerBanned?.Invoke(this, (publicKey, penalties));
