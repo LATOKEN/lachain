@@ -365,7 +365,7 @@ namespace Lachain.Core.Network
             }
         }
 
-        private void SpamBlockReply()
+        private void SpamBlockReply(KeyValuePair<ECDSAPublicKey, ulong>[] lastSpammed)
         {
             if ( _blockManager.GetHeight() < 1)
             {
@@ -381,7 +381,9 @@ namespace Lachain.Core.Network
             }
 
             var F = (_peerHeights.Count - 1) / 3;
-            var peers = _peerHeights.Take(F + 1).ToArray();
+            if (F > lastSpammed.Length)
+                lastSpammed = _peerHeights.Take(F + 1).ToArray();
+            var peers = lastSpammed;
 
             var reply = new SyncBlocksReply
             {
@@ -416,11 +418,12 @@ namespace Lachain.Core.Network
         private void BlockReplySpamWorker()
         {
             Logger.LogDebug("Starting BlockReplySpamWorker");
+            var lastSpammed = new KeyValuePair<ECDSAPublicKey, ulong>[0];
             while (_running)
             {
                 try
                 {
-                    SpamBlockReply();
+                    SpamBlockReply(lastSpammed);
                 }
                 catch (Exception e)
                 {
