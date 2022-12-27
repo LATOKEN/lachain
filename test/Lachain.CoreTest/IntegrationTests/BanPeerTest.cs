@@ -148,7 +148,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var tries = 2;
             for (int iter = 0 ; iter < tries; iter++)
             {
-                var tx = _banTracker.MakeBanRequestTransaction(PeerPenalty.MaxPenaltyTolerance + 1, peer);
+                var tx = _banTracker.MakeBanRequestTransaction(NetworkManagerBase.MaxPenaltyTolerance + 1, peer);
                 var error = _transactionPool.Add(tx);
                 Assert.AreEqual(OperatingError.Ok, error);
             }

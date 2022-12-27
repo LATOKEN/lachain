@@ -20,6 +20,9 @@ namespace Lachain.Networking
     public abstract class NetworkManagerBase : INetworkManager, INetworkBroadcaster, IConsensusMessageDeliverer
     {
         public static ulong CycleDuration = 20; // in blocks
+        // MaxPenaltyTolerance should be cycle dependent
+        // lets say 100 per block
+        public static ulong MaxPenaltyTolerance => 100 * CycleDuration;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         private static readonly ILogger<NetworkManagerBase> Logger =

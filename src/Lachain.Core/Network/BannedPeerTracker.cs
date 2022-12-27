@@ -186,7 +186,7 @@ namespace Lachain.Core.Network
             var penalties = args[0] as UInt256 ?? throw new Exception("Failed to get penalties");
             var peerToBan = args[1] as byte[] ?? throw new Exception("Failed to get public key of banned peer");
             var sender = args[2] as byte[] ?? throw new Exception("Failed to get sender of ban request");
-            if (penalties.ToBigInteger() < PeerPenalty.MaxPenaltyTolerance)
+            if (penalties.ToBigInteger() < NetworkManagerBase.MaxPenaltyTolerance)
             {
                 Logger.LogWarning(
                     $"{sender.ToHex()} requested to ban peer {peerToBan.ToHex()} for {penalties.ToBigInteger()} penalties"
