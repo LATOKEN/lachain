@@ -29,6 +29,12 @@ namespace Lachain.Networking.Hub
             "peer", "message_type"
         );
 
+        private static readonly Counter PenaltyCounter = Metrics.CreateCounter(
+            "lachain_peer_penalty_count",
+            "Number of penalties done by peer",
+            "peer"
+        );
+
         public byte[] PeerPublicKey { get; }
         private readonly IMessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
@@ -195,6 +201,7 @@ namespace Lachain.Networking.Hub
 
         public void IncPenalty()
         {
+            PenaltyCounter.WithLabels(PeerPublicKey.ToHex()).Inc();
             _penaltyHandler.IncPenalty();
         }
     }
