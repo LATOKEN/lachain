@@ -23,6 +23,7 @@ using Lachain.Proto;
 using Lachain.Storage.Repositories;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
+using Prometheus;
 
 namespace Lachain.Core.Network
 {
@@ -31,6 +32,19 @@ namespace Lachain.Core.Network
         // Scans for banned peer in system contract tx
         // If a peer is banned locally, then sends a system contract tx to broadcast
         private static readonly ILogger<BannedPeerTracker> Logger = LoggerFactory.GetLoggerForClass<BannedPeerTracker>();
+        private static readonly Counter BanVotesCounter = Metrics.CreateCounter(
+            "lachain_peer_ban_vote_count",
+            "Number of times a peer was voted by validators to be banned",
+            "peer"
+        );
+        private static readonly Gauge BannedByVotesCycle = Metrics.CreateGauge(
+            "lachain_peer_banned_by_vote_cycle",
+            "Latest cycle where a peer was banned for having enough votes from validators",
+            new GaugeConfiguration
+            {
+                LabelNames = new[] {"peer", "votes"}
+            }
+        );
         private readonly IPeerBanManager _banManager;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionSigner _transactionSigner;
@@ -201,9 +215,14 @@ namespace Lachain.Core.Network
             }
             var votes = _repostiroy.AddVoteForBannedPeer(cycle, peerToBan, sender);
             _banPeerVotes[peerToBan.ToPublicKey()] = votes;
+            BanVotesCounter.WithLabels(peerToBan.ToHex()).Inc();
             if (votes > ThresholdForBan)
             {
                 // ban peer as more ThresholdForBan validators voted for this peer
+                Logger.LogTrace(
+                    $"Peer {peerToBan.ToHex()} is banned on request of {votes} validators (Threshold {ThresholdForBan}) in cycle {cycle}"
+                );
+                BannedByVotesCycle.WithLabels(peerToBan.ToHex(), votes.ToString()).Set(cycle);
                 _banManager.BanPeer(peerToBan);
             }
         }
