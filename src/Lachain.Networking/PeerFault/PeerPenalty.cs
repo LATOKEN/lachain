@@ -8,13 +8,14 @@ namespace Lachain.Networking.PeerFault
     {
         private static readonly ILogger<PeerPenalty> Logger = LoggerFactory.GetLoggerForClass<PeerPenalty>();
         public ulong PenaltyCount { get; private set; }
-        public const ulong MaxPenaltyTolerance = 100000;
+        public ulong MaxPenaltyTolerance { get; private set; }
         public byte[] PeerPublicKey { get; private set; }
         public event EventHandler<(byte[] peerPublicKey, ulong penaltyCount)>? OnTooManyPenalty;
         public PeerPenalty(byte[] publicKey)
         {
             PeerPublicKey = publicKey;
             PenaltyCount = 0;
+            MaxPenaltyTolerance = NetworkManagerBase.MaxPenaltyTolerance;
         }
 
         public void IncPenalty()
