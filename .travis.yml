@@ -31,7 +31,7 @@ before_deploy:
 
 deploy:
   provider: releases
-  api_key: "$GITHUB_TOKEN"
+  api_key: "$travis_github"
   file_glob: true
   file: build/*
   cleanup: true
