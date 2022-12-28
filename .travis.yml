@@ -34,7 +34,7 @@ deploy:
   api_key: "$GITHUB_TOKEN"
   file_glob: true
   file: build/*
-  skip_cleanup: true
+  cleanup: true
   draft: true
   on:
     tags: true
