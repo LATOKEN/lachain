@@ -51,7 +51,7 @@ namespace Lachain.Core.Config
         private void _UpdateConfigVersion()
         {
             ulong version = 1;
-            version = GetConfig<VersionConfig>("versionInfo")?.Version ?? 1;
+            version = GetConfig<VersionConfig>("version")?.Version ?? 1;
             if (version > _CurrentVersion)
                 throw new ApplicationException("Unknown config version");
             if (version == _CurrentVersion)
@@ -90,7 +90,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV17();
             if (version < 18)
                 _UpdateConfigToV18();
-            version = GetConfig<VersionConfig>("versionInfo")?.Version ??
+            System.Console.WriteLine(_CurrentVersion);
+            version = GetConfig<VersionConfig>("version")?.Version ??
                 throw new ApplicationException("No version section in config");
             if (version != _CurrentVersion)
                 throw new ApplicationException("Version not updated properly");
