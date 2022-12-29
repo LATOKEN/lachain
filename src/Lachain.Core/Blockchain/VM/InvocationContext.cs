@@ -8,7 +8,7 @@ namespace Lachain.Core.Blockchain.VM
 {
     public class InvocationContext
     {
-        public UInt160 Sender { get; set;  }
+        public readonly UInt160 Sender;
 
         public UInt256 Value => Receipt.Transaction.Value;
 

@@ -622,8 +622,10 @@ namespace Lachain.Core.Blockchain.Operations
                 return OperatingError.InsufficientBalance;
             }
 
-            return !snapshot.Balances.TransferBalance(transaction.Transaction.From,
-                ContractRegisterer.GovernanceContract, fee)
+            return !snapshot.Balances.TransferBalance(
+                transaction.Transaction.From, ContractRegisterer.GovernanceContract, fee, transaction,
+                HardforkHeights.IsHardfork_15Active(transaction.Block), HardforkHeights.IsHardfork_9Active(transaction.Block)
+                )
                 ? OperatingError.InsufficientBalance
                 : OperatingError.Ok;
         }
@@ -839,7 +841,7 @@ namespace Lachain.Core.Blockchain.Operations
 
                 // add balance to staking contract
                 var stakeAmount = Money.Parse(validator.StakeAmount);
-                snapshot.Balances.AddBalance(ContractRegisterer.StakingContract, stakeAmount, true);
+                snapshot.Balances.MintLaToken(ContractRegisterer.StakingContract, stakeAmount);
                 // set stake value 
                 _userToStake.SetValue(validatorAddress, stakeAmount.ToUInt256().ToBytes());
                 // update stakers list

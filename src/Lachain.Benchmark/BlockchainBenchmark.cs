@@ -295,8 +295,10 @@ namespace Lachain.Benchmark
             const int txPerBlock = 1000;
             
             Logger.LogInformation($"Setting initial balance for the 'From' address");
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
-                Money.Parse("200000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(
+                keyPair.PublicKey.GetAddress(),
+                Money.Parse("200000")
+            );
 
             var txReceipts = new List<TransactionReceipt>();
             
@@ -352,8 +354,10 @@ namespace Lachain.Benchmark
             const int txPerBlock = 1000;
 
             Logger.LogInformation($"Setting initial balance for the 'From' address");
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
-                Money.Parse("200000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(
+                keyPair.PublicKey.GetAddress(),
+                Money.Parse("200000")
+            );
 
             var txReceipts = new List<TransactionReceipt>();
             
@@ -414,8 +418,10 @@ namespace Lachain.Benchmark
             const int txPerBlock = 1000;
 
             Logger.LogInformation($"Setting initial balance for the 'From' address");
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
-                Money.Parse("200000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(
+                keyPair.PublicKey.GetAddress(),
+                Money.Parse("200000")
+            );
             
             var txReceipts = new List<TransactionReceipt>();
             for (int i = 0; i < txGenerate; i++)
@@ -463,8 +469,10 @@ namespace Lachain.Benchmark
             const int txPerBlock = 10;
 
             Logger.LogInformation($"Setting initial balance for the 'From' address");
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(),
-                Money.Parse("2000000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(
+                keyPair.PublicKey.GetAddress(),
+                Money.Parse("2000000")
+            );
 
             for (var k = 0; k < txGenerate / txPerBlock; k++)
             {

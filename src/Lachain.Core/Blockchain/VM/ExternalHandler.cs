@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Google.Protobuf;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.SystemContracts.Interface;
 using Lachain.Core.Blockchain.SystemContracts.Utils;
@@ -12,11 +13,11 @@ using Lachain.Core.Blockchain.VM.ExecutionFrame;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Storage.State;
 using Lachain.Utility;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using WebAssembly.Runtime;
-using Lachain.Core.Blockchain.Hardfork;
 using Nethereum.ABI.Util;
 
 namespace Lachain.Core.Blockchain.VM
@@ -169,11 +170,12 @@ namespace Lachain.Core.Blockchain.VM
                 }
 
                 frame.UseGas(GasMetering.TransferFundsGasCost);
-                var result = snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
+                var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
+                var result = TransferBalance(transferFrom, address, value, frame);
                 if (!result)
                     throw new InsufficientFundsException();
                 
-                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
+                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, address, value);
             }
 
             if (snapshot.Contracts.GetContractByHash(address) is null) {
@@ -370,10 +372,11 @@ namespace Lachain.Core.Blockchain.VM
             if (value > Money.Zero)
             {
                 frame.UseGas(GasMetering.TransferFundsGasCost);
-                var result = snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
+                var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
+                var result = TransferBalance(transferFrom, address, value, frame);
                 if (!result)
                     throw new InsufficientFundsException();
-                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
+                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, address, value);
             }
 
             return 0;
@@ -460,8 +463,9 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
+            TransferBalance(transferFrom, hash, value, frame);
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
             
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -566,8 +570,9 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
+            TransferBalance(transferFrom, hash, value, frame);
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -655,8 +660,9 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
+            TransferBalance(transferFrom, hash, value, frame);
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -760,8 +766,9 @@ namespace Lachain.Core.Blockchain.VM
 
             // transfer funds
             frame.UseGas(GasMetering.TransferFundsGasCost);
-            snapshot.Balances.TransferBalance(GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), hash, value);
+            var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
+            TransferBalance(transferFrom, hash, value, frame);
+            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -1471,6 +1478,43 @@ namespace Lachain.Core.Blockchain.VM
             var result = SafeCopyToMemory(frame.Memory, chainId.ToBytes().ToArray(), dataOffset);
             if (!result)
                 throw new InvalidContractException("Bad call to (get_chain_id)");
+        }
+
+        private static bool TransferBalance(
+            UInt160 from, UInt160 to, Money value, IExecutionFrame frame
+        )
+        {
+            var receipt = frame.InvocationContext.Receipt;
+            var snapshot = frame.InvocationContext.Snapshot;
+            var height = snapshot.Blocks.GetTotalBlockHeight();
+            if (HardforkHeights.IsHardfork_15Active(height))
+            {
+                var contract = snapshot.Contracts.GetContractByHash(from);
+                if (contract is null)
+                {
+                    // balance transfer from plain address
+                    return snapshot.Balances.TransferBalance(
+                        from, to, value, receipt,
+                        HardforkHeights.IsHardfork_15Active(height), HardforkHeights.IsHardfork_9Active(height)
+                    );
+                }
+                else
+                {
+                    // balance transfer from contract address
+                    // the sender of the current invocation should be equal to from
+                    var sender = frame.InvocationContext.Sender;
+                    if (!(sender is null) && sender.Equals(from))
+                        return snapshot.Balances.TransferContractBalance(from, to, value);
+                    else return false;
+                }
+            }
+            else
+            {
+                return snapshot.Balances.TransferBalance(
+                    from, to, value, receipt,
+                    HardforkHeights.IsHardfork_15Active(height), HardforkHeights.IsHardfork_9Active(height)
+                );
+            }
         }
 
         private static FunctionImport CreateImport(string methodName)

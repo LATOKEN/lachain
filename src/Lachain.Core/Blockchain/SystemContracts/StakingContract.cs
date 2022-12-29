@@ -704,8 +704,8 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 var rewardToMint = SubPenalty(validatorAddress, validatorReward);
                 if (rewardToMint > Money.Zero)
                 {
-                    var newBalance = _context.Snapshot.Balances.AddBalance(
-                        validatorAddress, rewardToMint, true
+                    var newBalance = _context.Snapshot.Balances.MintLaToken(
+                        validatorAddress, rewardToMint
                     );
                     Logger.LogDebug($"Minted reward: {rewardToMint} LA for {validatorAddress.ToHex()}");
                     Logger.LogDebug($"New balance: {newBalance} LA of {validatorAddress.ToHex()}");
