@@ -14,7 +14,27 @@ namespace Lachain.Storage.State
         void SetAllowedSupply(Money value);
         UInt160 GetMinter();
         void SetMinter(UInt160 minter);
+        /// <summary>
+        /// Mints LaToken by increasing balance of <c>address</c>.
+        /// Total supply is also increased.
+        /// Should not be called unless token is supposed to be minted.
+        /// </summary>
+        /// <returns>updated balance of <c>address</c></returns>
         Money MintLaToken(UInt160 address, Money value);
+        Money RemoveCollectedFees(Money fee, TransactionReceipt receipt);
+        /// <summary>
+        /// Transfers balance from a contract to an address.
+        /// Plain address balance transfer should not call this method
+        /// </summary>
+        /// <returns><c>true</c> if transferred successfully, <c>false</c> otherwise</returns>
+        bool TransferContractBalance(UInt160 from, UInt160 to, Money value);
+        /// <summary>
+        /// Transfers balance from a system contract to an address.
+        /// Plain address balance transfer should not call this method.
+        /// This methods should only be used in System contracts
+        /// </summary>
+        /// <returns><c>true</c> if transferred successfully, <c>false</c> otherwise</returns>
+        bool TransferSystemContractBalance(UInt160 from, UInt160 to, Money value, TransactionReceipt receipt, bool checkVerification);
 
     }
 }

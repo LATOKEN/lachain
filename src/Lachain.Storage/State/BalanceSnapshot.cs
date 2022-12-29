@@ -112,28 +112,18 @@ namespace Lachain.Storage.State
                 return false;
             if (checkSignature)
             {
-                if (UInt160Utils.IsZero(from))
+                try
                 {
-                    if (!UInt160Utils.IsZero(receipt.Transaction.From))
+                    var owner = receipt.RecoverPublicKey(useNewChainId).GetAddress();
+                    if (!owner.Equals(from))
                     {
                         return false;
                     }
                 }
-                else
+                catch (Exception exc)
                 {
-                    try
-                    {
-                        var owner = receipt.RecoverPublicKey(useNewChainId).GetAddress();
-                        if (!owner.Equals(from))
-                        {
-                            return false;
-                        }
-                    }
-                    catch (Exception exc)
-                    {
-                        Logger.LogWarning($"Could not recover public key for receipt {receipt.Hash.ToHex()}: {exc}");
-                        return false;
-                    }
+                    Logger.LogWarning($"Could not recover public key for receipt {receipt.Hash.ToHex()}: {exc}");
+                    return false;
                 }
             }
             SubBalance(from, value);
@@ -181,6 +171,51 @@ namespace Lachain.Storage.State
         {
             var key = EntryPrefix.MinterAddress.BuildPrefix();
             _state.AddOrUpdate(key, value.ToBytes());
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public Money RemoveCollectedFees(Money fee, TransactionReceipt receipt)
+        {
+            if (!receipt.Transaction.From.Equals(UInt160Utils.Zero))
+                throw new Exception($"Non system contract transaction {receipt.Hash.ToHex()} requests RemoveCollectedFees");
+            return SubBalance(SystemContractAddresses.GovernanceContract, fee);
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TransferContractBalance(UInt160 from, UInt160 to, Money value)
+        {
+            var availableBalance = GetBalance(from);
+            if (availableBalance.CompareTo(value) < 0)
+                return false;
+            SubBalance(from, value);
+            AddBalance(to, value);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TransferSystemContractBalance(
+            UInt160 from, UInt160 to, Money value, TransactionReceipt receipt, bool checkVerification
+        )
+        {
+            if (checkVerification)
+            {
+                if (!SystemContractAddresses.IsSystemContract(from))
+                    return false;
+                // for balance transfer of system contract, either the transaction is a system contract transaion
+                // or the sender sent a transaction to a system contract (like withdraw stake) and that contract did this transfer
+                // external contract should not request system contract balance transfer
+                if (!receipt.Transaction.From.Equals(UInt160Utils.Zero)
+                    && !SystemContractAddresses.IsSystemContract(receipt.Transaction.To))
+                {
+                    return false;
+                }
+            }
+            var availableBalance = GetBalance(from);
+            if (availableBalance.CompareTo(value) < 0)
+                return false;
+            SubBalance(from, value);
+            AddBalance(to, value);
+            return true;
         }
 
         public void Commit(RocksDbAtomicWrite batch)
