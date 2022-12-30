@@ -1487,6 +1487,10 @@ namespace Lachain.Core.Blockchain.VM
             var receipt = frame.InvocationContext.Receipt;
             var snapshot = frame.InvocationContext.Snapshot;
             var height = snapshot.Blocks.GetTotalBlockHeight();
+            var balance = snapshot.Balances.GetBalance(from);
+            Logger.LogTrace(
+                $"TransferBalance: from: {from.ToHex()}, to: {to.ToHex()}, value: {value.ToString()}, balance: {balance.ToString()}"
+            );
             if (HardforkHeights.IsHardfork_15Active(height))
             {
                 var contract = snapshot.Contracts.GetContractByHash(from);

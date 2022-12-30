@@ -120,6 +120,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenTransferCost);
             var from = _context.Sender ?? throw new InvalidOperationException();
+            var balance = _context.Snapshot.Balances.GetBalance(from);
+            Logger.LogTrace(
+                $"Transfer: from: {from.ToHex()} to: {recipient.ToHex()}, value: {value.ToMoney().ToString()}, balance: {balance.ToString()}"
+            );
             bool result;
             if (HardforkHeights.IsHardfork_15Active(_context.Receipt.Block))
             {
@@ -177,73 +181,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
         )
         {
             frame.UseGas(GasMetering.NativeTokenTransferFromCost);
+            var allowance = GetAllowance(from, Sender()).ToMoney();
+            var balance = _context.Snapshot.Balances.GetBalance(from);
+            Logger.LogTrace(
+                $"TransferFrom: from: {from.ToHex()} to: {recipient.ToHex()}, value: {value.ToMoney().ToString()}, "
+                + $"balance: {balance.ToString()}, allowance: {allowance.ToString()}"
+            );
             if (!SubAllowance(from, Sender(), value, frame))
                 return ExecutionStatus.ExecutionHalted;
-            bool result;
-            if (HardforkHeights.IsHardfork_15Active(_context.Receipt.Block))
-            {
-                var contract = _context.Snapshot.Contracts.GetContractByHash(from);
-                var isSystemContract = SystemContractAddresses.IsSystemContract(from);
-                if ((contract is null) && !isSystemContract)
-                {
-                    // balance transfer from plain address
-                    result = _context.Snapshot.Balances.TransferBalance(
-                        from,
-                        recipient,
-                        value.ToMoney(),
-                        _context.Receipt,
-                        HardforkHeights.IsHardfork_15Active(_context.Receipt.Block),
-                        HardforkHeights.IsHardfork_9Active(_context.Receipt.Block)
-                    );
-                }
-                else if (isSystemContract)
-                {
-                    // balance transfer from system contract address
-                    // for system contract balance transfer, the sender of this invocation has to be a system contract
-                    var sender = _context.Sender;
-                    isSystemContract = SystemContractAddresses.IsSystemContract(sender);
-                    if (isSystemContract)
-                    {
-                        result = _context.Snapshot.Balances.TransferSystemContractBalance(
-                            from, recipient, value.ToMoney(), _context.Receipt,
-                            HardforkHeights.IsHardfork_15Active(_context.Receipt.Block)
-                        );
-                    }
-                    else
-                    {
-                        // will not transfer balance of system contract
-                        result = false;
-                    }
-                    
-                }
-                else
-                {
-                    // balance transfer from contract address
-                    // for this case the sender of the current invocation has to be a contract address
-                    // and should be equal to from address
-                    var sender = _context.Sender;
-                    if (!(sender is null) && sender.Equals(from))
-                    {
-                        result = _context.Snapshot.Balances.TransferContractBalance(from, recipient, value.ToMoney());
-                    }
-                    else
-                    {
-                        // will not transfer balance of contract
-                        result = false;
-                    }
-                }
-            }
-            else
-            {
-                result = _context.Snapshot.Balances.TransferBalance(
-                    from,
-                    recipient,
-                    value.ToMoney(),
-                    _context.Receipt,
-                    HardforkHeights.IsHardfork_15Active(_context.Receipt.Block),
-                    HardforkHeights.IsHardfork_9Active(_context.Receipt.Block)
-                );
-            }
+            var result = _context.Snapshot.Balances.TransferAllowance(from, recipient, value.ToMoney(), allowance);
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
             if (HardforkHeights.IsHardfork_13Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))

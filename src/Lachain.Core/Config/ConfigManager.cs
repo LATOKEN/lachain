@@ -90,7 +90,6 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV17();
             if (version < 18)
                 _UpdateConfigToV18();
-            System.Console.WriteLine(_CurrentVersion);
             version = GetConfig<VersionConfig>("version")?.Version ??
                 throw new ApplicationException("No version section in config");
             if (version != _CurrentVersion)
