@@ -77,16 +77,16 @@ namespace Lachain.Core.Vault
         private void BlockManagerOnSystemContractInvoked(object _, InvocationContext context)
         {
             if (context.Receipt is null) return;
-            var highestBlock = _blockSynchronizer.GetHighestBlock();
+            var medianHeight = _blockSynchronizer.GetMedianHeight();
             var willParticipate =
-                !highestBlock.HasValue ||
+                !medianHeight.HasValue ||
                 GovernanceContract.IsKeygenBlock(context.Receipt.Block) &&
-                GovernanceContract.SameCycle(highestBlock.Value, context.Receipt.Block);
+                GovernanceContract.SameCycle(medianHeight.Value, context.Receipt.Block);
             if (!willParticipate)
             {
                 Logger.LogInformation(
-                    highestBlock != null
-                        ? $"Will not participate in keygen: highest block is {highestBlock.Value}, call block is {context.Receipt.Block}"
+                    medianHeight != null
+                        ? $"Will not participate in keygen: highest block is {medianHeight.Value}, call block is {context.Receipt.Block}"
                         : $"Will not participate in keygen: highest block is null, call block is {context.Receipt.Block}"
                 );
             }
@@ -169,8 +169,9 @@ namespace Lachain.Core.Vault
                 var keygen = GetCurrentKeyGen();
                 if (keygen is null)
                 {
-                    Logger.LogWarning($"Skipping call since there is no keygen running, block is {highestBlock}, " +
-                                      $"stack trace is {new System.Diagnostics.StackTrace()}");
+                    Logger.LogWarning(
+                        $"Skipping call since there is no keygen running, current block is {context.Receipt.Block}, median height " +
+                        $"{medianHeight}, stack trace is {new System.Diagnostics.StackTrace()}");
                     return;
                 }
 
