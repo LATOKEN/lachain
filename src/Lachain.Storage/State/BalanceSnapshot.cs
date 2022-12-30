@@ -132,6 +132,19 @@ namespace Lachain.Storage.State
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
+        public bool TransferAllowance(UInt160 from, UInt160 to, Money value, Money allowance)
+        {
+            if (allowance.CompareTo(value) < 0) // not enough allowance
+                return false;
+            var availableBalance = GetBalance(from);
+            if (availableBalance.CompareTo(value) < 0)
+                return false;
+            SubBalance(from, value);
+            AddBalance(to, value);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public Money MintLaToken(UInt160 address, Money value)
         {
             return AddBalance(address, value, true);

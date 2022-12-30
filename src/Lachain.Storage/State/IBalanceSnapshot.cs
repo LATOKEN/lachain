@@ -9,6 +9,13 @@ namespace Lachain.Storage.State
         Money GetSupply();
         
         bool TransferBalance(UInt160 from, UInt160 to, Money value, TransactionReceipt receipt, bool checkSignature, bool useNewChainId);
+        /// <summary>
+        /// Transfers <c>value</c> where <c>allowance</c> was approved from sender.
+        /// Plain address balance transfer should not use this method.
+        /// Check if <c>allowance</c> was approved from sender before using this method.
+        /// </summary>
+        /// <returns><c>true</c> if transferred, <c>false</c> otherwise</returns>
+        bool TransferAllowance(UInt160 from, UInt160 to, Money value, Money allowance);
         
         Money GetAllowedSupply();
         void SetAllowedSupply(Money value);
