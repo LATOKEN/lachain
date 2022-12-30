@@ -93,7 +93,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
             // set the wallet to mint the tokens
             {
-                context.Snapshot.Balances.SetBalance(address, Money.Parse("1000"));
+                context.Snapshot.Balances.MintLaToken(address, Money.Parse("1000"));
                 
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodBalanceOf, address);
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
@@ -143,7 +143,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             // mint tokens to address
             {
-                context.Sender = context.Snapshot.Balances.GetMinter();
+                context = context.NextContext(context.Snapshot.Balances.GetMinter());
                 
                 var input = ContractEncoder.Encode(Lrc20Interface.MethodMint, address, Money.Parse("100"));
                 var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);

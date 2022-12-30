@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Numerics;
 using System.Reflection;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -15,6 +16,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -32,6 +34,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         
         private IStateManager _stateManager = null!;
         private IContractRegisterer _contractRegisterer = null!;
+        private IConfigManager _configManager = null!;
 
         [SetUp]
         public void Setup()
@@ -51,6 +54,16 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             
             _stateManager = _container.Resolve<IStateManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
+            _configManager = _container.Resolve<IConfigManager>();
+            // set chainId from config
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
+            }
         }
 
         [TearDown]
@@ -63,10 +76,10 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         [Test]
         public void Test_OneNodeCycle()
         {
-            var tx = new TransactionReceipt();
 
             var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
                 .HexToBytes().ToPrivateKey());
+            var tx = TestUtils.GetRandomTransactionFromAddress(keyPair, 0, HardforkHeights.IsHardfork_9Active(0));
             byte[] publicKey = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
             var sender = keyPair.PublicKey.GetAddress();
             
@@ -77,7 +90,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
             // Set balance for the staker
             {
-                context.Snapshot.Balances.SetBalance(sender, Money.Parse("1000"));
+                context.Snapshot.Balances.MintLaToken(sender, Money.Parse("1000"));
                 Assert.AreEqual(Money.Parse("1000"),context.Snapshot.Balances.GetBalance(sender));
             }
             

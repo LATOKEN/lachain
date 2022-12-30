@@ -201,7 +201,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
              _blockManager.TryBuildGenesisBlock();
             var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
             GenerateBlocks(1, 1);
@@ -217,7 +217,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
             var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
             GenerateBlocks(1, 1);
@@ -236,7 +236,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
             var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
             GenerateBlocks(1, 1);
@@ -260,7 +260,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             _blockManager.TryBuildGenesisBlock();
             var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
             GenerateBlocks(1, 1);
@@ -404,7 +404,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var sender = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
             // Updating balance of sender's Wallet
-            _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
+            // _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
 
             GenerateBlocks(1, 1);
 
