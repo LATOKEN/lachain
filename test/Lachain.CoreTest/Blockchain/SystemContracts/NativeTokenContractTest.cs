@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -14,6 +15,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility;
@@ -28,6 +30,8 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         private IContainer? _container;
 
         private IStateManager _stateManager = null!;
+        private IBlockManager _blockManager = null!;
+        private IConfigManager _configManager = null!;
         private IContractRegisterer _contractRegisterer = null!;
 
         private EcdsaKeyPair _minterKeyPair = null!;
@@ -57,6 +61,8 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
             _stateManager = _container.Resolve<IStateManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
+            _blockManager = _container.Resolve<IBlockManager>();
+            _configManager = _container.Resolve<IConfigManager>();
 
             _minterKeyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
                 .HexToBytes().ToPrivateKey());
@@ -67,6 +73,15 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 .ToPrivateKey());
             _mintCntrlPubKey = CryptoUtils.EncodeCompressed(_mintCntrlKeyPair.PublicKey);
             _mintCntrlAdd = _mintCntrlKeyPair.PublicKey.GetAddress();
+            // set chainId from config
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
+            }
         }
 
         [TearDown]
@@ -350,6 +365,52 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
                 Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.SetMinter(_minterAdd, frame));
+            }
+        }
+
+        [Test]
+        public void Test_TokenTransfer()
+        {
+            _blockManager.TryBuildGenesisBlock();
+            var useNewChainId = HardforkHeights.IsHardfork_9Active(0);
+            var tx = TestUtils.GetRandomTransactionFromAddress(_minterKeyPair, 0, useNewChainId);
+            
+            // token transfer
+            {
+                var res = _stateManager.LastApprovedSnapshot.Balances.TransferBalance(
+                    tx.Transaction.From, tx.Transaction.To, tx.Transaction.Value.ToMoney(), tx, true, useNewChainId
+                );
+                Assert.That(res);
+            }
+
+            // invalid token transfer
+            {
+                var res = _stateManager.LastApprovedSnapshot.Balances.TransferBalance(
+                    TestUtils.GetRandomBytes(20).ToUInt160(), tx.Transaction.To, tx.Transaction.Value.ToMoney(), tx, true, useNewChainId
+                );
+                Assert.IsFalse(res);
+            }
+
+            // token transfer method
+            {
+                var context = new InvocationContext(tx.Transaction.From, _stateManager.LastApprovedSnapshot, tx);
+                var contract = new NativeTokenContract(context);
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodTransfer, tx.Transaction.To, tx.Transaction.Value);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.Ok, contract.Transfer(tx.Transaction.To, tx.Transaction.Value, frame));
+            }
+
+            // invalid token transfer method
+            {
+                var context = new InvocationContext(TestUtils.GetRandomBytes(20).ToUInt160(), _stateManager.LastApprovedSnapshot, tx);
+                var contract = new NativeTokenContract(context);
+                var input = ContractEncoder.Encode(Lrc20Interface.MethodTransfer, tx.Transaction.To, tx.Transaction.Value);
+                var call = _contractRegisterer.DecodeContract(context, ContractRegisterer.NativeTokenContract, input);
+                Assert.IsNotNull(call);
+                var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
+                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.Transfer(tx.Transaction.To, tx.Transaction.Value, frame));
             }
         }
     }
