@@ -132,5 +132,22 @@ namespace Lachain.Storage.Trie
             newNode.UpdateHash(newHashes, GetChildrenLabels(newNode.ChildrenMask));
             return newNode;
         }
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((IHashTrieNode) obj);
+        }
+
+        public bool Equals(IHashTrieNode? other)
+        {
+            return !(other is null) && Hash.SequenceEqual(other.Hash);
+        }
+
+        public override int GetHashCode()
+        {
+            return Hash.Length;
+        }
     }
 }

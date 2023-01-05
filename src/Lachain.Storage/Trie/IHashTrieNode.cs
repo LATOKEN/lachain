@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Lachain.Storage.Trie
 {
-    public interface IHashTrieNode
+    public interface IHashTrieNode : IEquatable<IHashTrieNode>
     {
         NodeType Type { get; }
 

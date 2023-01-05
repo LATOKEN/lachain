@@ -27,5 +27,22 @@ namespace Lachain.Storage.Trie
         }
 
         public IEnumerable<ulong> Children { get; } = Enumerable.Empty<ulong>();
+
+        public override bool Equals(object? obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            return obj.GetType() == GetType() && Equals((IHashTrieNode) obj);
+        }
+
+        public bool Equals(IHashTrieNode? other)
+        {
+            return !(other is null) && Hash.SequenceEqual(other.Hash);
+        }
+
+        public override int GetHashCode()
+        {
+            return Hash.Length;
+        }
     }
 }
