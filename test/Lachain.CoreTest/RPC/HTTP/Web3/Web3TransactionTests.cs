@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using AustinHarris.JsonRpc;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Blockchain.SystemContracts;
@@ -19,19 +21,18 @@ using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.Misc;
+using Lachain.Networking;
 using Lachain.Proto;
+using Lachain.Storage;
 using Lachain.Storage.State;
+using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using Lachain.UtilityTest;
 using Nethereum.Signer;
-using NUnit.Framework;
-using Lachain.Crypto.Misc;
-using Lachain.Utility;
-using System.Collections.Generic;
-using Lachain.Core.Blockchain.Hardfork;
-using Lachain.Networking;
 using Newtonsoft.Json.Linq;
-using Lachain.Utility.Serialization;
+using NUnit.Framework;
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
 {
@@ -46,6 +47,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private IContractRegisterer _contractRegisterer = null!;
         private IPrivateWallet _privateWallet = null!;
         private IConfigManager _configManager = null!;
+        private IStorageManager _storageManager = null!;
 
         private TransactionServiceWeb3 _apiService = null!;
 
@@ -83,6 +85,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _container = containerBuilder.Build();
 
             _stateManager = _container.Resolve<IStateManager>();
+            _storageManager = _container.Resolve<IStorageManager>();
             _transactionManager = _container.Resolve<ITransactionManager>();
             _transactionBuilder = _container.Resolve<ITransactionBuilder>();
             _transactionSigner = _container.Resolve<ITransactionSigner>();
@@ -102,7 +105,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             }
             ServiceBinder.BindService<GenericParameterAttributes>();
 
-            _apiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
+            _apiService = new TransactionServiceWeb3(_storageManager, _stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet, _blockManager);
             
 

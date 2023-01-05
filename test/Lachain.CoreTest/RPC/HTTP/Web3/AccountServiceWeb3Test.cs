@@ -1,36 +1,37 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using Lachain.Core.RPC.HTTP.Web3;
-using Lachain.UtilityTest;
-using NUnit.Framework;
-using Lachain.Core.DI;
-using Lachain.Storage.State;
-using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.SystemContracts;
-using Lachain.Core.Vault;
-using Lachain.Core.DI.Modules;
-using Lachain.Core.DI.SimpleInjector;
-using Lachain.Core.CLI;
-using System.IO;
-using Lachain.Core.Config;
 using AustinHarris.JsonRpc;
-using Lachain.Storage.Repositories;
-using Lachain.Utility;
-using Lachain.Utility.Utils;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Hardfork;
-using Lachain.Crypto;
-using Lachain.Proto;
-using Lachain.Crypto.Misc;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Networking;
-using Nethereum.Signer;
-using Lachain.Utility.Serialization;
-using Transaction = Lachain.Proto.Transaction;
+using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.DI;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.CLI;
+using Lachain.Core.Config;
+using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Core.Vault;
+using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.Misc;
+using Lachain.Networking;
+using Lachain.Proto;
+using Lachain.Storage;
+using Lachain.Storage.Repositories;
+using Lachain.Storage.State;
+using Lachain.Utility;
+using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
+using Nethereum.Signer;
+using NUnit.Framework;
+using Transaction = Lachain.Proto.Transaction;
 
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
@@ -41,6 +42,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private IConfigManager _configManager = null!;
         private IContainer? _container;
         private IStateManager _stateManager = null!;
+        private IStorageManager _storageManaer = null!;
         private ISnapshotIndexRepository _snapshotIndexer = null!;
         private IContractRegisterer _contractRegisterer = null!;
         private IPrivateWallet _privateWallet = null!;
@@ -76,6 +78,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             _configManager = _container.Resolve<IConfigManager>();
             _stateManager = _container.Resolve<IStateManager>();
+            _storageManaer = _container.Resolve<IStorageManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
             _privateWallet = _container.Resolve<IPrivateWallet>();
             _snapshotIndexer = _container.Resolve<ISnapshotIndexRepository>();
@@ -100,7 +103,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool);
 
-            _transactionApiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
+            _transactionApiService = new TransactionServiceWeb3(_storageManaer, _stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet, _blockManager);
             
             _blockManager.TryBuildGenesisBlock();
