@@ -18,6 +18,7 @@ using Lachain.Core.Vault;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Proto;
+using Lachain.Storage;
 using Lachain.Storage.State;
 using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
@@ -37,6 +38,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             LoggerFactory.GetLoggerForClass<TransactionServiceWeb3>();
 
         private readonly IStateManager _stateManager;
+        private readonly IStorageManager _storageManager;
         private readonly ITransactionManager _transactionManager;
         private readonly ITransactionBuilder _transactionBuilder;
         private readonly ITransactionSigner _transactionSigner;
@@ -47,6 +49,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
 
 
         public TransactionServiceWeb3(
+            IStorageManager storageManager,
             IStateManager stateManager,
             ITransactionManager transactionManager,
             ITransactionBuilder transactionBuilder,
@@ -64,6 +67,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
             _contractRegisterer = contractRegisterer;
             _privateWallet = privateWallet;
             _blockManager = blockManager;
+            _storageManager = storageManager;
         }
 
         public Transaction MakeTransaction(LegacyTransactionChainId ethTx)
@@ -404,6 +408,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
         public string? EstimateGas(JObject opts)
         {
             Logger.LogInformation($"eth_estimateGas({opts})");
+            IStateManager stateSimulator = new StateSimulator(_storageManager);
             var gasUsed = GasMetering.DefaultTxCost;
             var from = opts["from"];
             var to = opts["to"];
@@ -422,11 +427,11 @@ namespace Lachain.Core.RPC.HTTP.Web3
             if (to is null) // deploy contract
             {
                 if (!VirtualMachine.VerifyContract(invocation,
-                        HardforkHeights.IsHardfork_2Active(_stateManager.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
+                        HardforkHeights.IsHardfork_2Active(stateSimulator.LastApprovedSnapshot.Blocks.GetTotalBlockHeight()))) 
                     throw new ArgumentException("Unable to validate smart-contract code");
-                InvocationResult invRes = _stateManager.SafeContext(() =>
+                InvocationResult invRes = stateSimulator.SafeContext(() =>
                 {
-                    var snapshot = _stateManager.NewSnapshot();
+                    var snapshot = stateSimulator.NewSnapshot();
                     var context = new InvocationContext(source, snapshot, new TransactionReceipt
                     {
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
@@ -442,7 +447,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         invocation,
                         GasMetering.DefaultBlockGasLimit
                     );
-                    _stateManager.Rollback();
+                    stateSimulator.Rollback();
                     return res;
                 });
                 if (invRes.Status == ExecutionStatus.Ok)
@@ -459,14 +464,14 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new RpcException(RpcErrorCode.Warning,$"Error in systen contract call: {invRes.Status.ToString()}");
             }
             
-            var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
+            var contract = stateSimulator.LastApprovedSnapshot.Contracts.GetContractByHash(destination);
             var systemContract = _contractRegisterer.GetContractByAddress(destination);
         
             if (contract is null && systemContract is null)
             {
-                InvocationResult transferInvRes = _stateManager.SafeContext(() =>
+                InvocationResult transferInvRes = stateSimulator.SafeContext(() =>
                 {
-                    var snapshot = _stateManager.NewSnapshot();
+                    var snapshot = stateSimulator.NewSnapshot();
                     var systemContractContext = new InvocationContext(source, snapshot, new TransactionReceipt
                     {
                         Block = snapshot.Blocks.GetTotalBlockHeight(),
@@ -476,7 +481,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                     var localInvocation = ContractEncoder.Encode("transfer(address,uint256)", source, 0.ToUInt256());
                     var invocationResult =
                         ContractInvoker.Invoke(ContractRegisterer.LatokenContract, systemContractContext, localInvocation, GasMetering.DefaultBlockGasLimit);
-                    _stateManager.Rollback();
+                    stateSimulator.Rollback();
         
                     return invocationResult;
                 });
@@ -488,9 +493,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
         
             if (!(contract is null))
             {
-                InvocationResult invRes = _stateManager.SafeContext(() =>
+                InvocationResult invRes = stateSimulator.SafeContext(() =>
                 {
-                    var snapshot = _stateManager.NewSnapshot();
+                    var snapshot = stateSimulator.NewSnapshot();
 					if (!tx.Value.IsZero())
 					{
                         var transferContext = new InvocationContext(source, snapshot, new TransactionReceipt
@@ -516,7 +521,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                         invocation,
                         GasMetering.DefaultBlockGasLimit
                     );
-                    _stateManager.Rollback();
+                    stateSimulator.Rollback();
                     return res;
                 });
                 if (invRes.Status == ExecutionStatus.Ok)
@@ -533,9 +538,9 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 throw new RpcException(RpcErrorCode.Warning,$"Error in contract call {invRes.Status.ToString()}");
             }
         
-            InvocationResult systemContractInvRes = _stateManager.SafeContext(() =>
+            InvocationResult systemContractInvRes = stateSimulator.SafeContext(() =>
             {
-                var snapshot = _stateManager.NewSnapshot();
+                var snapshot = stateSimulator.NewSnapshot();
                 if (!tx.Value.IsZero())
                 {
                     var transferContext = new InvocationContext(source, snapshot, new TransactionReceipt
@@ -559,7 +564,7 @@ namespace Lachain.Core.RPC.HTTP.Web3
                 
                 var invocationResult =
                     ContractInvoker.Invoke(destination, systemContractContext, invocation, GasMetering.DefaultBlockGasLimit);
-                _stateManager.Rollback();
+                stateSimulator.Rollback();
         
                 return invocationResult;
             });
