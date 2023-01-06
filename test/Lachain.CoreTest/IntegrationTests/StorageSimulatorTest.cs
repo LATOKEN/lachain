@@ -224,7 +224,9 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 if (!address.Equals(masterAddress))
                 {
-                    snapshot.Balances.TransferBalance(masterAddress, address, balanceUpdate, new TransactionReceipt(), true, true);
+                    Assert.That(snapshot.Balances.TransferBalance(
+                        masterAddress, address, balanceUpdate, new TransactionReceipt(), true, true
+                    ));
                     oldBalance -= balanceUpdate;
                 }
             }
