@@ -120,10 +120,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenTransferCost);
             var from = _context.Sender ?? throw new InvalidOperationException();
-            var balance = _context.Snapshot.Balances.GetBalance(from);
-            Logger.LogTrace(
-                $"Transfer: from: {from.ToHex()} to: {recipient.ToHex()}, value: {value.ToMoney().ToString()}, balance: {balance.ToString()}"
-            );
             bool result;
             if (HardforkHeights.IsHardfork_15Active(_context.Receipt.Block))
             {
@@ -182,11 +178,6 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenTransferFromCost);
             var allowance = GetAllowance(from, Sender()).ToMoney();
-            var balance = _context.Snapshot.Balances.GetBalance(from);
-            Logger.LogTrace(
-                $"TransferFrom: from: {from.ToHex()} to: {recipient.ToHex()}, value: {value.ToMoney().ToString()}, "
-                + $"balance: {balance.ToString()}, allowance: {allowance.ToString()}"
-            );
             if (!SubAllowance(from, Sender(), value, frame))
                 return ExecutionStatus.ExecutionHalted;
             var result = _context.Snapshot.Balances.TransferAllowance(from, recipient, value.ToMoney(), allowance);
