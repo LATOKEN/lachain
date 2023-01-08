@@ -1551,6 +1551,19 @@ namespace Lachain.Core.Blockchain.VM
                 );
             }
         }
+        
+        private static void UseGas(IExecutionFrame frame, ulong newGasPrice, ulong oldGasPrice)
+        {
+            var height = frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight();
+            if (HardforkHeights.IsHardfork_15Active(height))
+            {
+                frame.UseGas(newGasPrice);
+            }
+            else
+            {
+                frame.UseGas(oldGasPrice);
+            }
+        }
 
         private static FunctionImport CreateImport(string methodName)
         {
