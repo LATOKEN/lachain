@@ -45,7 +45,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             _confirmSent = false;
         }
 
-        private TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f, ulong cycle,
+        protected TrustlessKeygen(EcdsaKeyPair keyPair, IEnumerable<ECDSAPublicKey> publicKeys, int f, ulong cycle,
             State[] states, IList<int> finished, IDictionary<UInt256, int> confirmations, bool confirmSent)
         {
             _keyPair = keyPair;
@@ -87,7 +87,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             }
         }
 
-        public ValueMessage HandleCommit(int sender, CommitMessage message)
+        public virtual ValueMessage HandleCommit(int sender, CommitMessage message)
         {
             if (message.EncryptedRows.Length != Players) throw new ArgumentException();
             if (_keyGenStates[sender].Commitment != null)
@@ -112,7 +112,6 @@ namespace Lachain.Consensus.ThresholdKeygen
         {
             if (_keyGenStates[message.Proposer].Acks[sender])
                 throw new ArgumentException("Already handled this value");
-            _keyGenStates[message.Proposer].Acks[sender] = true;
             var myValue = Fr.FromBytes(Crypto.Secp256K1Decrypt(
                 _keyPair.PrivateKey.Encode(), message.EncryptedValues[_myIdx]
             ));
@@ -122,6 +121,7 @@ namespace Lachain.Consensus.ThresholdKeygen
                 .Equals(G1.Generator * myValue)
             )
                 throw new ArgumentException("Decrypted value does not match commitment");
+            _keyGenStates[message.Proposer].Acks[sender] = true;
             _keyGenStates[message.Proposer].Values[sender] = myValue;
             if (_keyGenStates[message.Proposer].ValueCount() > 2 * Faulty && !_finished.Contains(message.Proposer))
             {
@@ -185,7 +185,7 @@ namespace Lachain.Consensus.ThresholdKeygen
             return Crypto.Secp256K1Encrypt(publicKey.EncodeCompressed(), serializedRow);
         }
 
-        private static IEnumerable<Fr> DecryptRow(byte[] encryptedRow, ECDSAPrivateKey privateKey)
+        protected static IEnumerable<Fr> DecryptRow(byte[] encryptedRow, ECDSAPrivateKey privateKey)
         {
             return Crypto.Secp256K1Decrypt(privateKey.Encode(), encryptedRow)
                 .Batch(Fr.ByteSize)
