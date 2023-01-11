@@ -119,6 +119,11 @@ namespace Lachain.Consensus.BinaryAgreement
         private void BroadcastBVal(bool value)
         {
             var b = value ? 1 : 0;
+            if (_wasBvalBroadcasted[b])
+            {
+                // broadcast one message only once
+                return;
+            }
             _wasBvalBroadcasted[b] = true;
             var msg = CreateBValMessage(b);
             Broadcaster.Broadcast(msg);

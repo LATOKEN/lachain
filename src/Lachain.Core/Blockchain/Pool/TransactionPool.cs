@@ -72,6 +72,8 @@ namespace Lachain.Core.Blockchain.Pool
             _transactionsQueue = new HashSet<TransactionReceipt>();
 
             _blockManager.OnBlockPersisted += OnBlockPersisted;
+            // set the block height at the beginning
+            _lastSanitized = _blockManager.GetHeight();
         }
         
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -102,8 +104,6 @@ namespace Lachain.Core.Blockchain.Pool
             // transactionsToRemove stores all the transactions that was not added to 
             // the in-memory pool from persistent storage
             List<UInt256> transactionsToRemove = new List<UInt256>();
-            // set the block height before adding tx to pool
-            _lastSanitized = _blockManager.GetHeight();
             foreach (var txHash in txHashes)
             {
                 Logger.LogTrace($"Tx from pool: {txHash.ToHex()}");
