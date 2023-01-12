@@ -81,7 +81,7 @@ namespace Lachain.Core.Blockchain.Pool
         {
             lock (_toDeleteRepo)
             {
-                SanitizeMemPool(block.Header.Index);
+                SanitizeMemPool(block.Header.Index, block);
                 // TODO: we should make this removal async for better performance
                 _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
                 _toDeleteRepo.Clear();
@@ -288,8 +288,10 @@ namespace Lachain.Core.Blockchain.Pool
         // that means it's possible that peek is executed before onBlockPersisted and vice versa
         // We keep track of the lastSanitized era and do the sanitization only once per era
 
-        private void SanitizeMemPool(ulong era)
+        private void SanitizeMemPool(ulong era, Block? block)
         {
+            if (block is null)
+                throw new Exception($"Block {era} is not persisted yet");
             if(era <= _lastSanitized) return;
             if(_lastSanitized != 0 && _lastSanitized + 1 != era) {
                 Logger.LogError($"_lastSanitized: {_lastSanitized}, trying to sanitize: {era}");
@@ -301,12 +303,25 @@ namespace Lachain.Core.Blockchain.Pool
             // this makes sure that the transactions that failed during
             // emulation is removed from _nonceCalculator
 
+            var blockTxes = block.TransactionHashes.ToHashSet();
+
             if(_proposed.TryGetValue(era, out var lastProposed))
             {
                 foreach(var receipt in lastProposed)
                 {
-                    _nonceCalculator.TryRemove(receipt);
-                    _toDeleteRepo.Add(receipt);
+                    if (blockTxes.Contains(receipt.Hash))
+                    {
+                        _nonceCalculator.TryRemove(receipt);
+                        _toDeleteRepo.Add(receipt);
+                    }
+                    else
+                    {
+                        Logger.LogTrace(
+                            $"Tx {receipt.Hash.ToHex()} was proposed but did not go to block {era}, putting them back to pool"
+                        );
+                        _transactions[receipt.Hash] = receipt;
+                        _transactionsQueue.Add(receipt);
+                    }
                 }
                 _proposed.Remove(era, out var _);
             }
@@ -320,6 +335,7 @@ namespace Lachain.Core.Blockchain.Pool
             var nextNonce = new Dictionary<UInt160, ulong>();
 
             // order the transactions 
+            Logger.LogTrace("Dropping txes with bad nonce or not enough balance from pool");
             var orderedTransactions = _transactionsQueue.OrderBy(x => x, new ReceiptComparer());
 
             foreach(var receipt in orderedTransactions)
@@ -328,8 +344,19 @@ namespace Lachain.Core.Blockchain.Pool
                 if(!nextNonce.ContainsKey(receipt.Transaction.From))
                     nextNonce.Add(address, _transactionManager.CalcNextTxNonce(address));
 
-                if(receipt.Transaction.Nonce != nextNonce[address] || !IsBalanceValid(receipt))
+                var enoughBalance = IsBalanceValid(receipt);
+                if(receipt.Transaction.Nonce != nextNonce[address] || !enoughBalance)
+                {
                     toErase.Add(receipt);
+                    if (receipt.Transaction.Nonce > nextNonce[address])
+                    {
+                        // such tx should not be present in the pool anyway
+                        Logger.LogTrace(
+                            $"Tx {receipt.Hash.ToHex()} from {address.ToHex()} with nonce {receipt.Transaction.Nonce} dropped, "
+                            + $"enough balance? {enoughBalance}. Correct next nonce of the address {nextNonce[address]}"
+                        );
+                    }
+                }
                 else
                     nextNonce[address]++;
             }
@@ -384,6 +411,7 @@ namespace Lachain.Core.Blockchain.Pool
                     bool canErase = _transactions.TryRemove(tx.Hash, out var _);
                     if (canErase is false)
                         throw new Exception("Transaction does not exist in _transaction");
+                    Logger.LogTrace($"tx {tx.Hash.ToHex()} is proposed for block {era}");
                 }
 
                 if (_transactions.Count != _transactionsQueue.Count)
@@ -405,7 +433,7 @@ namespace Lachain.Core.Blockchain.Pool
             // try sanitizing mempool ...
             lock (_toDeleteRepo)
             {
-                SanitizeMemPool(era - 1);
+                SanitizeMemPool(era - 1, _blockManager.GetByHeight(era - 1));
             }
 
             // it's possible that block for this era is already persisted, 
