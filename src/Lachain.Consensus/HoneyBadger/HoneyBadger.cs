@@ -174,6 +174,11 @@ namespace Lachain.Consensus.HoneyBadger
             }
 
             CheckResult();
+
+            for (var shareId = 0; shareId < N; shareId++)
+            {
+                Logger.LogTrace($"Encrypted share {shareId} Recovered? {_taken[shareId]}");
+            }
         }
 
         protected virtual ConsensusMessage CreateDecryptedMessage(PartiallyDecryptedShare share)

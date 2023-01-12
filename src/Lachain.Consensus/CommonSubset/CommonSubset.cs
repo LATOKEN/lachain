@@ -145,6 +145,7 @@ namespace Lachain.Consensus.CommonSubset
                 {
                     if (_binaryAgreementInput[i] == null)
                     {
+                        Logger.LogDebug($"Sending 0 to BA {i}");
                         _binaryAgreementInput[i] = false;
                         SendInputToBinaryAgreement(i);
                     }
