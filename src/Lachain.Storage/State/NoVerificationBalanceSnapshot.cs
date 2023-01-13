@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Lachain.Crypto;
@@ -15,13 +15,14 @@ namespace Lachain.Storage.State
         Balance Snapshot is basically a HMAT (trie) and it stores the balance of all the address. 
         You can think of it as a key-value storage of (address -> balance).
     */
-    public class BalanceSnapshot : IBalanceSnapshot
+    public class NoVerificationBalanceSnapshot : IBalanceSnapshot
     {
-        private static readonly ILogger<BalanceSnapshot> Logger = LoggerFactory.GetLoggerForClass<BalanceSnapshot>();
+        private static readonly ILogger<NoVerificationBalanceSnapshot> Logger
+            = LoggerFactory.GetLoggerForClass<NoVerificationBalanceSnapshot>();
         private readonly IStorageState _state;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
-        public BalanceSnapshot(IStorageState state)
+        public NoVerificationBalanceSnapshot(IStorageState state)
         {
             _state = state;
         }
@@ -112,19 +113,7 @@ namespace Lachain.Storage.State
                 return false;
             if (checkSignature)
             {
-                try
-                {
-                    var owner = receipt.RecoverPublicKey(useNewChainId).GetAddress();
-                    if (!owner.Equals(from))
-                    {
-                        return false;
-                    }
-                }
-                catch (Exception exc)
-                {
-                    Logger.LogWarning($"Could not recover public key for receipt {receipt.Hash.ToHex()}: {exc}");
-                    return false;
-                }
+                // never check signature because this snapshot bypasses verification
             }
             SubBalance(from, value);
             AddBalance(to, value);
@@ -212,16 +201,7 @@ namespace Lachain.Storage.State
         {
             if (checkVerification)
             {
-                if (!SystemContractAddresses.IsSystemContract(from))
-                    return false;
-                // for balance transfer of system contract, either the transaction is a system contract transaion
-                // or the sender sent a transaction to a system contract (like withdraw stake) and that contract did this transfer
-                // external contract should not request system contract balance transfer
-                if (!receipt.Transaction.From.Equals(UInt160Utils.Zero)
-                    && !SystemContractAddresses.IsSystemContract(receipt.Transaction.To))
-                {
-                    return false;
-                }
+                // never check signature because this snapshot bypasses verification
             }
             var availableBalance = GetBalance(from);
             if (availableBalance.CompareTo(value) < 0)
@@ -233,7 +213,9 @@ namespace Lachain.Storage.State
 
         public void Commit(RocksDbAtomicWrite batch)
         {
-            _state.Commit(batch);
+            throw new NotImplementedException(
+                "NoVerificationBalanceSnapshot cannot commit to state because we bypass verification, so we cannot change state"
+            );
         }
         public void SetCurrentVersion(ulong root)
         {

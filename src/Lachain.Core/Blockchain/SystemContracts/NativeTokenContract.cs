@@ -120,11 +120,50 @@ namespace Lachain.Core.Blockchain.SystemContracts
         {
             frame.UseGas(GasMetering.NativeTokenTransferCost);
             var from = _context.Sender ?? throw new InvalidOperationException();
-            var result = _context.Snapshot.Balances.TransferBalance(
-                from,
-                recipient,
-                value.ToMoney()
-            );
+            bool result;
+            if (HardforkHeights.IsHardfork_15Active(_context.Receipt.Block))
+            {
+                var contract = _context.Snapshot.Contracts.GetContractByHash(from);
+                var isSystemContract = SystemContractAddresses.IsSystemContract(from);
+                if ((contract is null) && !isSystemContract)
+                {
+                    // balance transfer from plain address
+                    result = _context.Snapshot.Balances.TransferBalance(
+                        from,
+                        recipient,
+                        value.ToMoney(),
+                        _context.Receipt,
+                        HardforkHeights.IsHardfork_15Active(_context.Receipt.Block),
+                        HardforkHeights.IsHardfork_9Active(_context.Receipt.Block)
+                    );
+                }
+                else if (isSystemContract)
+                {
+                    // balance transfer from system contract address
+                    // system contract balance transfer can happen here because the sender is the sender of the current context
+                    // which means it is not possible to overwrite the sender address or pass via input data of transaction
+                    result = _context.Snapshot.Balances.TransferSystemContractBalance(
+                        from, recipient, value.ToMoney(), _context.Receipt,
+                        HardforkHeights.IsHardfork_15Active(_context.Receipt.Block)
+                    );
+                }
+                else
+                {
+                    // balance transfer from contract address
+                    result = _context.Snapshot.Balances.TransferContractBalance(from, recipient, value.ToMoney());
+                }
+            }
+            else
+            {
+                result = _context.Snapshot.Balances.TransferBalance(
+                    from,
+                    recipient,
+                    value.ToMoney(),
+                    _context.Receipt,
+                    HardforkHeights.IsHardfork_15Active(_context.Receipt.Block),
+                    HardforkHeights.IsHardfork_9Active(_context.Receipt.Block)
+                );
+            }
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
             if (HardforkHeights.IsHardfork_13Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
@@ -138,9 +177,10 @@ namespace Lachain.Core.Blockchain.SystemContracts
         )
         {
             frame.UseGas(GasMetering.NativeTokenTransferFromCost);
+            var allowance = GetAllowance(from, Sender()).ToMoney();
             if (!SubAllowance(from, Sender(), value, frame))
                 return ExecutionStatus.ExecutionHalted;
-            var result = _context.Snapshot.Balances.TransferBalance(from, recipient, value.ToMoney());
+            var result = _context.Snapshot.Balances.TransferAllowance(from, recipient, value.ToMoney(), allowance);
             Emit(Lrc20Interface.EventTransfer, from, recipient, value);
             frame.ReturnValue = ContractEncoder.Encode(null, (result ? 1 : 0).ToUInt256());
             if (HardforkHeights.IsHardfork_13Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
@@ -200,7 +240,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
                 totalSupply + amountMoney > _context.Snapshot.Balances.GetAllowedSupply())
                 return ExecutionStatus.ExecutionHalted;
 
-            var newBalance = _context.Snapshot?.Balances.AddBalance(address, amountMoney,  true);
+            var newBalance = _context.Snapshot?.Balances.MintLaToken(address, amountMoney);
             if (newBalance is null) 
                 return ExecutionStatus.ExecutionHalted;
             Emit(Lrc20Interface.EventMinted, address, amount);

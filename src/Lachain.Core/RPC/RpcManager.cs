@@ -11,6 +11,7 @@ using Lachain.Core.RPC.HTTP.Web3;
 using Lachain.Core.ValidatorStatus;
 using Lachain.Core.Vault;
 using Lachain.Networking;
+using Lachain.Storage;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
@@ -24,6 +25,7 @@ namespace Lachain.Core.RPC
         private readonly IBlockManager _blockManager;
         private readonly IConfigManager _configManager;
         private readonly IStateManager _stateManager;
+        private readonly IStorageManager _storageManager;
         private readonly ISnapshotIndexRepository _snapshotIndexer;
         private readonly IPrivateWallet _privateWallet;
         private readonly ITransactionSigner _transactionSigner;
@@ -40,6 +42,7 @@ namespace Lachain.Core.RPC
 
 
         public RpcManager(
+            IStorageManager storageManager,
             ITransactionManager transactionManager,
             IBlockManager blockManager,
             IConfigManager configManager,
@@ -61,6 +64,7 @@ namespace Lachain.Core.RPC
             IConsensusManager consensusManager
         )
         {
+            _storageManager = storageManager;
             _transactionManager = transactionManager;
             _blockManager = blockManager;
             _configManager = configManager;
@@ -95,7 +99,7 @@ namespace Lachain.Core.RPC
                 new BlockchainServiceWeb3(_transactionManager, _blockManager, _transactionPool, _stateManager, _snapshotIndexer, _networkManager, _nodeRetrieval, _systemContractReader, _consensusManager),
                 new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool),
                 new ValidatorServiceWeb3(_validatorStatusManager, _privateWallet, _transactionBuilder),
-                new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner, 
+                new TransactionServiceWeb3(_storageManager, _stateManager, _transactionManager, _transactionBuilder, _transactionSigner, 
                     _transactionPool, _contractRegisterer, _privateWallet, _blockManager),
                 new FrontEndService(_stateManager, _transactionPool, _transactionSigner, _systemContractReader,
                     _localTransactionRepository, _validatorStatusManager, _privateWallet, _transactionManager),

@@ -159,14 +159,12 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             if (txFeesAmount > Money.Zero)
             {
-                _context.Snapshot.Balances.SubBalance(
-                    ContractRegisterer.GovernanceContract, txFeesAmount
-                );
+                _context.Snapshot.Balances.RemoveCollectedFees(txFeesAmount, _context.Receipt);
             }
 
             var totalReward = GetBlockReward().ToMoney() * (int) StakingContract.CycleDuration + txFeesAmount;
-            _context.Sender = ContractRegisterer.GovernanceContract;
-            var staking = new StakingContract(_context);
+            var nextContext = _context.NextContext(ContractRegisterer.GovernanceContract);
+            var staking = new StakingContract(nextContext);
             staking.DistributeRewardsAndPenalties(totalReward.ToUInt256(), frame);
             Emit(GovernanceInterface.EventDistributeCycleRewardsAndPenalties, totalReward.ToUInt256());
             return ExecutionStatus.Ok;

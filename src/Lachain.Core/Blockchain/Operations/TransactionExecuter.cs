@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Lachain.Core.Blockchain.Error;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
 using Lachain.Core.Blockchain.VM;
@@ -56,7 +57,7 @@ namespace Lachain.Core.Blockchain.Operations
             {
                 if (!receipt.Transaction.From.Equals(UInt160Utils.Zero)) return OperatingError.InvalidTransaction;
                 if (!receipt.Transaction.Invocation.IsEmpty) return OperatingError.InvalidTransaction;
-                snapshot.Balances.AddBalance(receipt.Transaction.To, transaction.Value.ToMoney(), true);
+                snapshot.Balances.MintLaToken(receipt.Transaction.To, transaction.Value.ToMoney());
                 return OperatingError.Ok;
             }
 
@@ -85,7 +86,10 @@ namespace Lachain.Core.Blockchain.Operations
 
             /* try to transfer funds from sender to recipient */
             if (new Money(transaction.Value) > Money.Zero)
-                if (!snapshot.Balances.TransferBalance(transaction.From, transaction.To, new Money(transaction.Value)))
+                if (!snapshot.Balances.TransferBalance(
+                    transaction.From, transaction.To, new Money(transaction.Value), receipt,
+                    HardforkHeights.IsHardfork_15Active(receipt.Block), HardforkHeights.IsHardfork_9Active(receipt.Block)
+                ))
                     return OperatingError.InsufficientBalance;
             /* invoke required function or fallback */
             return _InvokeContract(

@@ -1,36 +1,37 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
-using Lachain.Core.RPC.HTTP.Web3;
-using Lachain.UtilityTest;
-using NUnit.Framework;
-using Lachain.Core.DI;
-using Lachain.Storage.State;
-using Lachain.Core.Blockchain.Interface;
-using Lachain.Core.Blockchain.SystemContracts;
-using Lachain.Core.Vault;
-using Lachain.Core.DI.Modules;
-using Lachain.Core.DI.SimpleInjector;
-using Lachain.Core.CLI;
-using System.IO;
-using Lachain.Core.Config;
 using AustinHarris.JsonRpc;
-using Lachain.Storage.Repositories;
-using Lachain.Utility;
-using Lachain.Utility.Utils;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Genesis;
 using Lachain.Core.Blockchain.Hardfork;
-using Lachain.Crypto;
-using Lachain.Proto;
-using Lachain.Crypto.Misc;
+using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
-using Lachain.Networking;
-using Nethereum.Signer;
-using Lachain.Utility.Serialization;
-using Transaction = Lachain.Proto.Transaction;
+using Lachain.Core.Blockchain.SystemContracts;
+using Lachain.Core.DI;
+using Lachain.Core.DI.Modules;
+using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.CLI;
+using Lachain.Core.Config;
+using Lachain.Core.RPC.HTTP.Web3;
+using Lachain.Core.Vault;
+using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Crypto.Misc;
+using Lachain.Networking;
+using Lachain.Proto;
+using Lachain.Storage;
+using Lachain.Storage.Repositories;
+using Lachain.Storage.State;
+using Lachain.Utility;
+using Lachain.Utility.Serialization;
+using Lachain.Utility.Utils;
+using Lachain.UtilityTest;
+using Nethereum.Signer;
+using NUnit.Framework;
+using Transaction = Lachain.Proto.Transaction;
 
 
 namespace Lachain.CoreTest.RPC.HTTP.Web3
@@ -41,6 +42,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         private IConfigManager _configManager = null!;
         private IContainer? _container;
         private IStateManager _stateManager = null!;
+        private IStorageManager _storageManaer = null!;
         private ISnapshotIndexRepository _snapshotIndexer = null!;
         private IContractRegisterer _contractRegisterer = null!;
         private IPrivateWallet _privateWallet = null!;
@@ -76,6 +78,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             _configManager = _container.Resolve<IConfigManager>();
             _stateManager = _container.Resolve<IStateManager>();
+            _storageManaer = _container.Resolve<IStorageManager>();
             _contractRegisterer = _container.Resolve<IContractRegisterer>();
             _privateWallet = _container.Resolve<IPrivateWallet>();
             _snapshotIndexer = _container.Resolve<ISnapshotIndexRepository>();
@@ -100,7 +103,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
 
             _apiService = new AccountServiceWeb3(_stateManager, _snapshotIndexer, _contractRegisterer, _systemContractReader, _transactionPool);
 
-            _transactionApiService = new TransactionServiceWeb3(_stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
+            _transactionApiService = new TransactionServiceWeb3(_storageManaer, _stateManager, _transactionManager, _transactionBuilder, _transactionSigner,
                 _transactionPool, _contractRegisterer, _privateWallet, _blockManager);
             
             _blockManager.TryBuildGenesisBlock();
@@ -123,13 +126,18 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             var address = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195";
             var bal = _apiService.GetBalance(address, "latest");
-            Assert.AreEqual(bal, "0x84595161401484a000000");
+            var prevBalance = "0x84595161401484a000000";
+            Assert.AreEqual(bal, prevBalance);
 
             //updating balance
-            _stateManager.LastApprovedSnapshot.Balances.SetBalance(address.HexToBytes().ToUInt160(), Money.Parse("90000000000000000"));
+            var balanceAdded = Money.Parse("90000000000000000");
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(address.HexToBytes().ToUInt160(), balanceAdded);
+            var formatedBalance = FormatHex(prevBalance);
+            System.Console.WriteLine(formatedBalance);
+            var totalBalance = balanceAdded + new Money(formatedBalance.HexToUInt256(true));
             var balNew = _apiService.GetBalance(address, "latest");
 
-            Assert.AreEqual(balNew, "0x115557b419c5c1f3fa018400000000");
+            Assert.AreEqual(balNew, Web3DataFormatUtils.Web3Number(totalBalance.ToUInt256()));
         }
 
         [Test]
@@ -138,7 +146,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
 
             var tx = TestUtils.GetRandomTransaction(false);
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(tx.Transaction.From, Money.Parse("1000"));
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
 
@@ -171,7 +179,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager.TryBuildGenesisBlock();
             var tx = TestUtils.GetRandomTransaction(HardforkHeights.IsHardfork_9Active(1));
             // adding balance so that it's transaction is added to the pool
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(tx.Transaction.From, Money.Parse("1000"));
 
 
 
@@ -345,13 +353,23 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var sender = ethTx.Key.GetPublicAddress().HexToBytes().ToUInt160();
 
             // Updating balance of sender's Wallet
-            _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
+            // _stateManager.LastApprovedSnapshot.Balances.SetBalance(sender, Money.Parse("90000000000000000"));
 
             if (generateblock)
             {
                 GenerateBlocks(1);
             }
 
+        }
+
+        private string FormatHex(string hexString)
+        {
+            if (hexString.Length % 2 == 0) return hexString;
+            if (hexString.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return "0x0" + hexString.Substring(2);
+            }
+            else return "0" + hexString;
         }
 
         private void GenerateBlocks(ulong blockNum)

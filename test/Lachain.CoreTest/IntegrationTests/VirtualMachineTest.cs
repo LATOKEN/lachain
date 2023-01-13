@@ -109,7 +109,7 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 var currentTime = TimeUtils.CurrentTimeMillis();
                 var currentSnapshot = stateManager.NewSnapshot();
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
                 transactionReceipt.Transaction.Value = 0.ToUInt256();
@@ -315,7 +315,7 @@ namespace Lachain.CoreTest.IntegrationTests
             {
                 var currentTime = TimeUtils.CurrentTimeMillis();
                 var currentSnapshot = stateManager.NewSnapshot();
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
                 transactionReceipt.Transaction.Value = 0.ToUInt256();
@@ -682,7 +682,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 var sender = UInt160Utils.Zero;
 
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
 
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
@@ -753,7 +753,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 var sender = "0x6bc32575acb8754886dc283c2c8ac54b1bd93195".HexToBytes().ToUInt160();
 
-                currentSnapshot.Balances.AddBalance(sender, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(sender, 100.ToUInt256().ToMoney());
 
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
@@ -987,7 +987,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 var sender = UInt160Utils.Zero;
 
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
 
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
@@ -1114,8 +1114,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 var sender = UInt160Utils.Zero;
 
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
-                currentSnapshot.Balances.AddBalance(aAddress, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(aAddress, 100.ToUInt256().ToMoney());
 
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
@@ -1204,8 +1204,8 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 var sender = UInt160Utils.Zero;
 
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
-                currentSnapshot.Balances.AddBalance(aAddress, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(aAddress, 100.ToUInt256().ToMoney());
 
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
@@ -1291,7 +1291,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 var sender = UInt160Utils.Zero;
 
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
 
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
@@ -1424,7 +1424,7 @@ namespace Lachain.CoreTest.IntegrationTests
 
                 var sender = UInt160Utils.Zero;
 
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
 
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
@@ -1925,7 +1925,7 @@ namespace Lachain.CoreTest.IntegrationTests
                 var currentTime = TimeUtils.CurrentTimeMillis();
                 var currentSnapshot = stateManager.NewSnapshot();
                 var sender = UInt160Utils.Zero;
-                currentSnapshot.Balances.AddBalance(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
+                currentSnapshot.Balances.MintLaToken(UInt160Utils.Zero, 100.ToUInt256().ToMoney());
                 var transactionReceipt = new TransactionReceipt();
                 transactionReceipt.Transaction = new Transaction();
                 transactionReceipt.Transaction.Value = 0.ToUInt256();

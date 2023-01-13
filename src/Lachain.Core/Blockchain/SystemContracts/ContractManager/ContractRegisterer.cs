@@ -25,11 +25,11 @@ namespace Lachain.Core.Blockchain.SystemContracts.ContractManager
         private readonly IDictionary<UInt160, Dictionary<uint, (string methodName, MethodInfo methodInfo)>> _signatures
             = new Dictionary<UInt160, Dictionary<uint, (string methodName, MethodInfo methodInfo)>>();
 
-        public static readonly UInt160 DeployContract = new BigInteger(0).ToUInt160();
-        public static readonly UInt160 LatokenContract = new BigInteger(1).ToUInt160();
-        public static readonly UInt160 GovernanceContract = new BigInteger(2).ToUInt160();
-        public static readonly UInt160 StakingContract = new BigInteger(3).ToUInt160();
-        public static readonly UInt160 NativeTokenContract = new BigInteger(4).ToUInt160();
+        public static UInt160 DeployContract => SystemContractAddresses.DeployContract;
+        public static UInt160 LatokenContract => SystemContractAddresses.LatokenContract;
+        public static UInt160 GovernanceContract => SystemContractAddresses.GovernanceContract;
+        public static UInt160 StakingContract => SystemContractAddresses.StakingContract;
+        public static UInt160 NativeTokenContract => SystemContractAddresses.NativeTokenContract;
 
         public ContractRegisterer()
         {

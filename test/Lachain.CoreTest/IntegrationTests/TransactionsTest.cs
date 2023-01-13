@@ -207,7 +207,7 @@ namespace Lachain.CoreTest.IntegrationTests
             bool useNewChainId = HardforkHeights.IsHardfork_9Active(_blockManager.GetHeight() + 1);
             var txCount = 100;
             txes = new List<TransactionReceipt>();
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(keyPair.PublicKey.GetAddress(), Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(keyPair.PublicKey.GetAddress(), Money.Parse("1000"));
             for (var i = 0; i < txCount; i++)
             {
                 var tx = TestUtils.GetRandomTransactionFromAddress(keyPair, (ulong)i, useNewChainId);
@@ -224,7 +224,7 @@ namespace Lachain.CoreTest.IntegrationTests
             var result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.InsufficientBalance, result);
 
-            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx.Transaction.From, Money.Parse("1000"));
+            _stateManager.LastApprovedSnapshot.Balances.MintLaToken(tx.Transaction.From, Money.Parse("1000"));
             result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.Ok, result);
 
