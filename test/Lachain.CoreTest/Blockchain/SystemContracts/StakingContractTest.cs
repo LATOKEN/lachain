@@ -93,8 +93,9 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
 
             // Set balance for the staker
             {
+                var balance = context.Snapshot.Balances.GetBalance(sender);
                 context.Snapshot.Balances.MintLaToken(sender, Money.Parse("1000"));
-                Assert.AreEqual(Money.Parse("1000"),context.Snapshot.Balances.GetBalance(sender));
+                Assert.AreEqual(Money.Parse("1000") + balance, context.Snapshot.Balances.GetBalance(sender));
             }
             
             // Become staker
