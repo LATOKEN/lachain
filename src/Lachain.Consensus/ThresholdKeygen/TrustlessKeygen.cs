@@ -134,11 +134,17 @@ namespace Lachain.Consensus.ThresholdKeygen
             return true;
         }
 
-        public bool HandleConfirm(PublicKey tpkeKey, PublicKeySet tsKeys)
+        public bool HandleConfirm(int sender, PublicKey tpkeKey, PublicKeySet tsKeys)
         {
+            if (_keyGenStates[sender].Confirmation)
+            {
+                Logger.LogDebug($"Received confirmation from {sender} more than once");
+                throw new ArgumentException("Already handled this value");
+            }
             var keyringHash = tpkeKey.ToBytes().Concat(tsKeys.ToBytes()).Keccak();
             _confirmations.PutIfAbsent(keyringHash, 0);
             _confirmations[keyringHash] += 1;
+            _keyGenStates[sender].Confirmation = true;
             return _confirmations[keyringHash] == Players - Faulty;
         }
 

@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Reflection;
 using Lachain.Consensus.ThresholdKeygen;
 using Lachain.Consensus.ThresholdKeygen.Data;
+using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.SystemContracts;
 using Lachain.Core.Blockchain.SystemContracts.ContractManager;
@@ -20,6 +21,7 @@ using Lachain.Core.DI.Modules;
 using Lachain.Core.DI.SimpleInjector;
 using Lachain.Crypto;
 using Lachain.Crypto.ECDSA;
+using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
 using Lachain.Utility.Containers;
@@ -34,6 +36,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
     public class GovernanceContractTest
     {
         private IContainer? _container;
+        private IConfigManager? _configManager;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         [SetUp]
@@ -51,6 +54,18 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
             containerBuilder.RegisterModule<StorageModule>();
 
             _container = containerBuilder.Build();
+
+            _configManager = _container.Resolve<IConfigManager>();
+
+            // set chainId from config
+            if (TransactionUtils.ChainId(false) == 0)
+            {
+                var chainId = _configManager.GetConfig<NetworkConfig>("network")?.ChainId;
+                var newChainId = _configManager.GetConfig<NetworkConfig>("network")?.NewChainId;
+                TransactionUtils.SetChainId((int)chainId!, (int)newChainId!);
+                HardforkHeights.SetHardforkHeights(_configManager.GetConfig<HardforkConfig>("hardfork") ?? throw new InvalidOperationException());
+                StakingContract.Initialize(_configManager.GetConfig<NetworkConfig>("network")!);
+            }  
         }
 
         [TearDown]
@@ -64,14 +79,15 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         [Test]
         public void Test_OneNodeCycle()
         {
+            
             var stateManager = _container?.Resolve<IStateManager>();
             var contractRegisterer = _container?.Resolve<IContractRegisterer>();
-            var tx = new TransactionReceipt();
+            var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
+                .HexToBytes().ToPrivateKey());
+            var tx = TestUtils.GetCustomTransactionFromAddress(keyPair, "10", "0.0000000001", 0, false);
             var sender = new BigInteger(0).ToUInt160();
             var context = new InvocationContext(sender, stateManager!.LastApprovedSnapshot, tx);
             var contract = new GovernanceContract(context);
-            var keyPair = new EcdsaKeyPair("0xD95D6DB65F3E2223703C5D8E205D98E3E6B470F067B0F94F6C6BF73D4301CE48"
-                .HexToBytes().ToPrivateKey());
             byte[] pubKey = CryptoUtils.EncodeCompressed(keyPair.PublicKey);
             ECDSAPublicKey[] allKeys = {keyPair.PublicKey};
             var keygen = new TrustlessKeygen(keyPair, allKeys, 0, 0);
@@ -146,7 +162,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, keyring!.Value.TpkePublicKey.ToBytes(),
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray(), frame));
                 // set keygen state
-                Assert.IsTrue(keygen.HandleConfirm(keyring!.Value.TpkePublicKey,  
+                Assert.IsTrue(keygen.HandleConfirm(0, keyring!.Value.TpkePublicKey,  
                     keyring!.Value.ThresholdSignaturePublicKeySet));
             }
             // check no validators in storage
@@ -174,7 +190,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
         {
             var stateManager = _container?.Resolve<IStateManager>();
             var contractRegisterer = _container?.Resolve<IContractRegisterer>();
-            var tx = new TransactionReceipt();
+            var tx = TestUtils.GetRandomTransaction(false);
             var sender = new BigInteger(0).ToUInt160();
             var context = new InvocationContext(sender, stateManager!.LastApprovedSnapshot, tx);
             var contract = new GovernanceContract(context);
@@ -232,10 +248,10 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 var call = contractRegisterer.DecodeContract(context, ContractRegisterer.GovernanceContract, input);
                 Assert.IsNotNull(call);
                 var frame = new SystemContractExecutionFrame(call!, context, input, 100_000_000);
-                Assert.AreEqual(ExecutionStatus.Ok, contract.KeyGenConfirm(cycle, keyring!.Value.TpkePublicKey.ToBytes(), 
+                Assert.AreEqual(ExecutionStatus.ExecutionHalted, contract.KeyGenConfirm(cycle, keyring!.Value.TpkePublicKey.ToBytes(), 
                     keyring!.Value.ThresholdSignaturePublicKeySet.Keys.Select(key => key.ToBytes()).ToArray(), frame));
                 // set keygen state
-                Assert.IsTrue(keygen.HandleConfirm(keyring!.Value.TpkePublicKey,  
+                Assert.IsTrue(keygen.HandleConfirm(0, keyring!.Value.TpkePublicKey,  
                     keyring!.Value.ThresholdSignaturePublicKeySet));
             }
             
@@ -253,8 +269,7 @@ namespace Lachain.CoreTest.Blockchain.SystemContracts
                 Assert.AreEqual(ExecutionStatus.Ok, contract.FinishCycle(cycle, frame));
             }
             
-            // check no validators in storage again
-            Assert.IsEmpty(context.Snapshot.Validators.GetValidatorsPublicKeys());
+            Assert.Throws<ConsensusStateNotPresentException>(()=>context.Snapshot.Validators.GetValidatorsPublicKeys());
         }
 
         private class QueueItem

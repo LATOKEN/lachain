@@ -50,6 +50,7 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
         private readonly StorageVariable _nextValidators;
         private readonly StorageMapping _confirmations;
+        private readonly StorageMapping? _confirmationsReceived;
         private readonly StorageVariable _blockReward;
         private readonly StorageVariable _playersCount;
         private readonly StorageVariable _tsKeys;
@@ -108,6 +109,14 @@ namespace Lachain.Core.Blockchain.SystemContracts
                     ContractRegisterer.GovernanceContract,
                     context.Snapshot.Storage,
                     new BigInteger(9).ToUInt256()
+                );
+            }
+            if (HardforkHeights.IsHardfork_15Active(context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                _confirmationsReceived = new StorageMapping(
+                    ContractRegisterer.GovernanceContract,
+                    context.Snapshot.Storage,
+                    new BigInteger(10).ToUInt256()
                 );
             }
         }
@@ -292,6 +301,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenConfirmCost);
+
+            if (HardforkHeights.IsHardfork_15Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                var senderPubKey = _context.Receipt.RecoverPublicKey(
+                    HardforkHeights.IsHardfork_9Active(_context.Snapshot.Blocks.GetTotalBlockHeight())
+                );
+                var nextValidators = _nextValidators.Get()
+                    .Batch(CryptoUtils.PublicKeyLength)
+                    .Select(x => x.ToArray().ToPublicKey())
+                    .ToArray();
+                if (!nextValidators.Contains(senderPubKey))
+                {
+                    Logger.LogDebug($"non validator (public key: {senderPubKey.ToHex()}) sent MethodKeygenConfirm tx");
+                    return ExecutionStatus.ExecutionHalted;
+                }
+            }
+
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
 
@@ -318,6 +344,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             var gen = GetConsensusGeneration(frame);
+            var sender = MsgSender();
+            if (ConfirmationFromPlayer(sender, gen))
+            {
+                Logger.LogError($"GovernanceContract is halted in KeyGenConfirm: sender {sender.ToHex()} sent confirmation more than once");
+                return ExecutionStatus.ExecutionHalted;
+            }
+            ConfirmationReceivedFromPlayer(sender, gen);
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
@@ -347,6 +380,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
 
             frame.ReturnValue = new byte[] { };
             frame.UseGas(GasMetering.KeygenConfirmCost);
+
+            if (HardforkHeights.IsHardfork_15Active(_context.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                var senderPubKey = _context.Receipt.RecoverPublicKey(
+                    HardforkHeights.IsHardfork_9Active(_context.Snapshot.Blocks.GetTotalBlockHeight())
+                );
+                var nextValidators = _nextValidators.Get()
+                    .Batch(CryptoUtils.PublicKeyLength)
+                    .Select(x => x.ToArray().ToPublicKey())
+                    .ToArray();
+                if (!nextValidators.Contains(senderPubKey))
+                {
+                    Logger.LogDebug($"non validator (public key: {senderPubKey.ToHex()}) sent MethodKeygenConfirmWithVerification tx");
+                    return ExecutionStatus.ExecutionHalted;
+                }
+            }
+
             var players = thresholdSignaturePublicKeys.Length;
             var faulty = (players - 1) / 3;
 
@@ -397,6 +447,15 @@ namespace Lachain.Core.Blockchain.SystemContracts
             }
 
             var gen = GetConsensusGeneration(frame);
+            var sender = MsgSender();
+            if (ConfirmationFromPlayer(sender, gen))
+            {
+                Logger.LogError(
+                    $"GovernanceContract is halted in KeyGenConfirmWithVerification: sender {sender.ToHex()} sent confirmation more than once"
+                );
+                return ExecutionStatus.ExecutionHalted;
+            }
+            ConfirmationReceivedFromPlayer(sender, gen);
             var votes = GetConfirmations(keyringHash.ToBytes(), gen);
             SetConfirmations(keyringHash.ToBytes(), gen, votes + 1);
 
@@ -416,6 +475,13 @@ namespace Lachain.Core.Blockchain.SystemContracts
         public ExecutionStatus FinishCycle(UInt256 cycle, SystemContractExecutionFrame frame)
         {
             Logger.LogDebug("FinishCycle()");
+
+            if (!MsgSender().IsZero())
+            {
+                Logger.LogError("!MsgSender().IsZero(): governance function FinishCycle() called by non-zero address");
+                return ExecutionStatus.ExecutionHalted;
+            }
+            
             var currentBlock = frame.InvocationContext.Receipt.Block;
             if (GetBlockNumberInCycle(currentBlock) != 0)
             {
@@ -574,6 +640,23 @@ namespace Lachain.Core.Blockchain.SystemContracts
             return decoded
                 .Select(x => x.RLPData)
                 .Select(x => PublicKey.FromBytes(x)).ToList();
+        }
+
+        private bool ConfirmationFromPlayer(UInt160 sender, ulong cycle)
+        {
+            if (_confirmationsReceived is null)
+                return false;
+            var value = _confirmationsReceived.GetValue(sender.ToBytes());
+            if (value.Length == 0 || value.AsReadOnlySpan().ToUInt64() != cycle)
+                return false;
+            return value.AsReadOnlySpan().Slice(8)[0] == 1;
+        }
+
+        private void ConfirmationReceivedFromPlayer(UInt160 sender, ulong cycle)
+        {
+            if (_confirmationsReceived is null)
+                return;
+            _confirmations.SetValue(sender.ToBytes(), cycle.ToBytes().Concat(new byte[1] {1}).ToArray());
         }
 
         private int GetConfirmations(IEnumerable<byte> key, ulong gen)
