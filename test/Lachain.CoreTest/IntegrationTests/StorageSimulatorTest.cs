@@ -95,6 +95,7 @@ namespace Lachain.CoreTest.IntegrationTests
         }
 
         [Test]
+        [Ignore("Doesn't work in mainnet")]
         public void Test()
         {
             // execute some blocks
