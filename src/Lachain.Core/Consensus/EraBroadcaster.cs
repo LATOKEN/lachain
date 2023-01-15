@@ -51,8 +51,8 @@ namespace Lachain.Core.Consensus
         /**
          * Registered callbacks, identifying that one protocol requires result from another
          */
-        private readonly IDictionary<IProtocolIdentifier, IProtocolIdentifier> _callback =
-            new ConcurrentDictionary<IProtocolIdentifier, IProtocolIdentifier>();
+        private readonly IDictionary<IProtocolIdentifier, (IProtocolIdentifier parentProtocol, bool resultDelivered)> _callback =
+            new ConcurrentDictionary<IProtocolIdentifier, (IProtocolIdentifier, bool)>();
 
         /**
          * Registry of all protocols for this era
@@ -389,7 +389,7 @@ namespace Lachain.Core.Consensus
                 {
                     Logger.LogWarning(
                         $"Two requests from different protocols ({request.From}, " +
-                        $"{existingCallback}) to one protocol {request.To}"
+                        $"{existingCallback.parentProtocol}) to one protocol {request.To}"
                     );
                     
                     // throw new InvalidOperationException(
@@ -400,7 +400,7 @@ namespace Lachain.Core.Consensus
                     return;
                 }
 
-                _callback[request.To] = request.From;
+                _callback[request.To] = (request.From, false);
             }
 
             Logger.LogTrace($"Protocol {request.From} requested result from protocol {request.To}");
@@ -437,9 +437,15 @@ namespace Lachain.Core.Consensus
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void InternalResponse<TId, TResultType>(ProtocolResult<TId, TResultType> result)
             where TId : IProtocolIdentifier
         {
+            if (_terminated)
+            {
+                Logger.LogTrace($"Era {_era} is already finished, skipping InternalResponse");
+                return;
+            }
             Logger.LogTrace($"Protocol {result.From} returned result");
             if (_terminated)
             {
@@ -447,26 +453,38 @@ namespace Lachain.Core.Consensus
                 return;
             }
 
-            if (_callback.TryGetValue(result.From, out var senderId))
+            IConsensusProtocol? cbProtocol;
+            if (_callback.TryGetValue(result.From, out var callback))
             {
-                if (!_registry.TryGetValue(senderId, out var cbProtocol))
+                if (!_registry.TryGetValue(callback.parentProtocol, out cbProtocol))
                 {
-                    Logger.LogWarning($"There is no protocol registered to get result from {senderId}");
-                }
-                else
-                {
-                    cbProtocol?.ReceiveMessage(new MessageEnvelope(result, GetMyId()));
-                    Logger.LogTrace($"Result from protocol {result.From} delivered to {senderId}");
+                    throw new Exception($"There is no protocol registered to get result from {callback.parentProtocol}");
                 }
             }
+            else throw new Exception($"{result.From} delivered result but no protocol requested result from it");
 
             // message is also delivered to self
         //    Logger.LogTrace($"Result from protocol {result.From} delivered to itself");
             var messageEnvelope = new MessageEnvelope(result, GetMyId());
             _messageEnvelopeRepositoryManager.AddMessage(messageEnvelope);
 
-            if (_registry.TryGetValue(result.From, out var protocol))
-                protocol?.ReceiveMessage(messageEnvelope);
+            if (!callback.resultDelivered)
+            {
+                cbProtocol?.ReceiveMessage(messageEnvelope);
+                Logger.LogTrace($"Result from protocol {result.From} delivered to {callback.parentProtocol}");
+                if (_registry.TryGetValue(result.From, out var protocol))
+                    protocol?.ReceiveMessage(messageEnvelope);
+                else throw new Exception($"Protocol {result.From} returned result but not registered");
+
+                _callback[result.From] = (callback.parentProtocol, true);
+                _callback.TryGetValue(result.From, out var check);
+                if (!check.resultDelivered)
+                    throw new Exception($"could not set result for callback of {result.From}");
+            }
+            else
+            {
+                Logger.LogWarning($"Protocol {result.From} returned result twice, ignoring");
+            }
         }
 
         public int GetMyId()
@@ -490,6 +508,7 @@ namespace Lachain.Core.Consensus
             return _registry.TryGetValue(id, out var value) ? value : null;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Terminate()
         {
             if (_terminated) return;
