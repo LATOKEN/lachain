@@ -319,8 +319,11 @@ namespace Lachain.Core.Blockchain.Pool
                         Logger.LogTrace(
                             $"Tx {receipt.Hash.ToHex()} was proposed but did not go to block {era}, putting them back to pool"
                         );
-                        _transactions[receipt.Hash] = receipt;
-                        _transactionsQueue.Add(receipt);
+                        if (!_transactions.TryAdd(receipt.Hash, receipt) || !_transactionsQueue.Add(receipt))
+                        {
+                            throw new Exception($"Cannot add tx {receipt.Hash.ToHex()} back to pool");
+                        }
+                        
                     }
                 }
                 _proposed.Remove(era, out var _);
