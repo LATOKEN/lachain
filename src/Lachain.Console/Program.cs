@@ -1,19 +1,19 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using CommandLine;
 using Lachain.Core.CLI;
-using Lachain.Crypto;
-using System.Linq;
-using Lachain.Storage;
-using Lachain.Storage.State;
-using Lachain.Core.DI;
-using Lachain.Core.DI.SimpleInjector;
 using Lachain.Core.Config;
-using System.Reflection;
+using Lachain.Core.DI;
 using Lachain.Core.DI.Modules;
-using  Lachain.Storage.Repositories;
+using Lachain.Core.DI.SimpleInjector;
+using Lachain.Core.Vault;
+using Lachain.Crypto;
+using Lachain.Storage;
 using Lachain.Storage.DbCompact;
+using Lachain.Storage.State;
+using Newtonsoft.Json;
 using NLog;
 
 namespace Lachain.Console
@@ -78,7 +78,10 @@ namespace Lachain.Console
             var crypto = CryptoProvider.GetCrypto();
             var decryptedContent =
                 Encoding.UTF8.GetString(crypto.AesGcmDecrypt(key, encryptedContent));
-            System.Console.WriteLine(decryptedContent);
+            var wallet = JsonConvert.DeserializeObject<JsonWallet>(decryptedContent);
+            if (options.DestinationPath is null)
+                throw new ArgumentException("Destination path must be given to write keys");
+            File.WriteAllText(options.DestinationPath, JsonConvert.SerializeObject(wallet, Formatting.Indented));
         }
 
         private static void RunNode(RunOptions options)

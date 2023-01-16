@@ -12,6 +12,9 @@ namespace Lachain.Core.CLI
 
         [Option('p', "password", Required = true, HelpText = "Password")]
         public string WalletPassword { get; set; } = null!;
+
+        [Option('d', "destination", Required = true, HelpText = "Destination path to write private key")]
+        public string? DestinationPath { get; set; }
     }
     
     [Verb("encrypt", HelpText = "Encrypt wallet")]
