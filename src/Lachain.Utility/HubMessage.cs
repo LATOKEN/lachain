@@ -28,7 +28,7 @@ namespace Lachain.Utility
             if (other is null) return 1;
             if (Priority == other.Priority)
                 return CreationTime.CompareTo(other.CreationTime);
-            return Priority.CompareTo(other.Priority);
+            return ((byte) Priority).CompareTo((byte) other.Priority);
         }
     }
 }
