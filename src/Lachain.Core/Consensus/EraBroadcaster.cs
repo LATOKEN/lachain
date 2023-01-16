@@ -531,7 +531,6 @@ namespace Lachain.Core.Consensus
         // Each ProtocolId is created only once to prevent spamming, Protocols are mapped against ProtocolId, so each
         // Protocol will also be created only once, after achieving result, Protocol terminate and no longer process any
         // messages. 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         private IConsensusProtocol? EnsureProtocol(IProtocolIdentifier id, bool start)
         {
             ValidateId(id);
@@ -556,8 +555,11 @@ namespace Lachain.Core.Consensus
             return protocol;
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private IConsensusProtocol? CreateProtocol(IProtocolIdentifier id)
         {
+            if (_registry.TryGetValue(id, out var existingProtocol))
+                return existingProtocol;
             if (!ValidateProtocolId(id)) return null;
             switch (id)
             {
