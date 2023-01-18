@@ -44,6 +44,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             Logger.LogInformation($"DoInternalCall({caller.ToHex()}, {address.ToHex()}, {input.ToHex()}, {gasLimit})");
             var currentFrame = VirtualMachine.ExecutionFrames.Peek();
+            UseGas(currentFrame, GasMetering.InvokeContractGasCost, null);
             var context = currentFrame.InvocationContext.NextContext(caller);
             context.Message = message;
             return ContractInvoker.Invoke(address, context, input, gasLimit);
@@ -109,7 +110,7 @@ namespace Lachain.Core.Blockchain.VM
                 return null;
             if (offset + length > memory.Size) 
                 return null;
-            frame.UseGas(GasMetering.CopyFromMemoryGasPerByte * (ulong) length);
+            UseGas(frame, GasMetering.NewCopyFromMemoryGasPerByte * (ulong) length, GasMetering.CopyFromMemoryGasPerByte * (ulong) length);
             var buffer = new byte[length];
             try
             {
@@ -130,7 +131,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek();
             if (offset < 0 || offset + data.Length > memory.Size)
                 return false;
-            frame.UseGas(GasMetering.CopyToMemoryGasPerByte * (ulong) data.Length);
+            UseGas(frame, GasMetering.NewCopyToMemoryGasPerByte * (ulong) data.Length, GasMetering.CopyToMemoryGasPerByte * (ulong) data.Length);
             try
             {
                 Marshal.Copy(data, 0, IntPtr.Add(memory.Start, offset), data.Length);
@@ -149,6 +150,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"InvokeContract({callSignatureOffset}, {inputLength}, {inputOffset}, {valueOffset}, {gasOffset}, {invocationType})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call InvokeContract outside wasm frame");
+            UseGas(frame, GasMetering.InvokeContractGasCost, null);
             var snapshot = frame.InvocationContext.Snapshot;
             var addressBuffer = SafeCopyFromMemory(frame.Memory, callSignatureOffset, 20);
             var inputBuffer = SafeCopyFromMemory(frame.Memory, inputOffset, inputLength);
@@ -175,9 +177,10 @@ namespace Lachain.Core.Blockchain.VM
                 if (!result)
                     throw new InsufficientFundsException();
                 
-                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, address, value);
+                Emit(frame, Lrc20Interface.EventTransfer, transferFrom, address, value);
             }
 
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             if (snapshot.Contracts.GetContractByHash(address) is null) {
                 frame.LastChildReturnValue = Array.Empty<byte>();
                 return 0;
@@ -329,6 +332,8 @@ namespace Lachain.Core.Blockchain.VM
                 topics
             );
             frame.UseGas(GasMetering.WriteEventPerByteGas * ((ulong)data.Length + 1000UL));
+            var topcisDataLength = topics is null ? 0 : topics.Count * 32;
+            UseGas(frame, GasMetering.WriteEventPerByteGas * (ulong) topcisDataLength, null);
             frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
         }
 
@@ -378,7 +383,7 @@ namespace Lachain.Core.Blockchain.VM
                 var result = TransferBalance(transferFrom, address, value, frame);
                 if (!result)
                     throw new InsufficientFundsException();
-                Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, address, value);
+                Emit(frame, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
             }
 
             return 0;
@@ -394,6 +399,7 @@ namespace Lachain.Core.Blockchain.VM
                 Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
                 Type = InvocationType.Regular,
             };
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var deployHeight = GetDeployHeight(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight(), 
                 frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit,
                 invocationMessage);
@@ -419,6 +425,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create function");
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
@@ -443,6 +450,7 @@ namespace Lachain.Core.Blockchain.VM
                 Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
                 Type = InvocationType.Regular,
             };
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var deployHeight = GetDeployHeight(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight(),
                 frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit, invocationMessage);
             
@@ -454,6 +462,7 @@ namespace Lachain.Core.Blockchain.VM
 
             try
             {
+                UseGas(frame, GasMetering.SaveStorageGasCost, null);
                 snapshot.Contracts.AddContract(context.Sender, contract);
                 SetDeployHeight(hash, deployHeight, frame.GasLimit, invocationMessage);
             }
@@ -467,7 +476,7 @@ namespace Lachain.Core.Blockchain.VM
             frame.UseGas(GasMetering.TransferFundsGasCost);
             var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
             TransferBalance(transferFrom, hash, value, frame);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
+            Emit(frame, Lrc20Interface.EventTransfer, transferFrom, hash, value);
             
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -492,6 +501,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create function");
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
@@ -519,6 +529,7 @@ namespace Lachain.Core.Blockchain.VM
 
             try
             {
+                UseGas(frame, GasMetering.SaveStorageGasCost, null);
                 snapshot.Contracts.AddContract(context.Sender, deploymentContract);
             }
             catch (OutOfGasException e)
@@ -556,11 +567,13 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException("Failed to verify runtime contract");
             }
 
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var deployHeight = GetDeployHeight(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight(),
                 context.Sender, context.Sender, frame.GasLimit, invocationMessage);
 
             try
             {
+                UseGas(frame, GasMetering.SaveStorageGasCost, null);
                 snapshot.Contracts.AddContract(context.Sender, runtimeContract);
                 SetDeployHeight(hash,  deployHeight, frame.GasLimit, invocationMessage);
             }
@@ -574,7 +587,7 @@ namespace Lachain.Core.Blockchain.VM
             frame.UseGas(GasMetering.TransferFundsGasCost);
             var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
             TransferBalance(transferFrom, hash, value, frame);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
+            Emit(frame, Lrc20Interface.EventTransfer, transferFrom, hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -592,6 +605,7 @@ namespace Lachain.Core.Blockchain.VM
                 Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
                 Type = InvocationType.Regular,
             };
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var deployHeight = GetDeployHeight(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight(),
                 frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit, invocationMessage);
 
@@ -618,6 +632,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create2 function");
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
@@ -640,6 +655,7 @@ namespace Lachain.Core.Blockchain.VM
                 Value = frame.InvocationContext.Message?.Value ?? UInt256Utils.Zero,
                 Type = InvocationType.Regular,
             };
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var deployHeight = GetDeployHeight(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight(),
                 frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit, invocationMessage);
             
@@ -651,6 +667,7 @@ namespace Lachain.Core.Blockchain.VM
 
             try
             {
+                UseGas(frame, GasMetering.SaveStorageGasCost, null);
                 snapshot.Contracts.AddContract(context.Sender, contract);
                 SetDeployHeight(hash, deployHeight,  frame.GasLimit, invocationMessage);
             }
@@ -664,7 +681,7 @@ namespace Lachain.Core.Blockchain.VM
             frame.UseGas(GasMetering.TransferFundsGasCost);
             var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
             TransferBalance(transferFrom, hash, value, frame);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
+            Emit(frame, Lrc20Interface.EventTransfer, transferFrom, hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -690,6 +707,7 @@ namespace Lachain.Core.Blockchain.VM
 
             if (value is null)
                 throw new InvalidContractException("Bad call to Create2 function");
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             if (snapshot.Balances.GetBalance(GetHardfork_5CurrentAddressOrDelegate(frame)) < value)
             {
                 throw new InsufficientFundsException();
@@ -715,6 +733,7 @@ namespace Lachain.Core.Blockchain.VM
 
             try
             {
+                UseGas(frame, GasMetering.SaveStorageGasCost, null);
                 snapshot.Contracts.AddContract(context.Sender, deploymentContract);
             }
             catch (OutOfGasException e)
@@ -747,6 +766,7 @@ namespace Lachain.Core.Blockchain.VM
             // runtime code
             var runtimeContract = new Contract(hash, status.ReturnValue);
 
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var deployHeight = GetDeployHeight(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight(),
                 frame.CurrentAddress, frame.CurrentAddress, frame.GasLimit, invocationMessage);
 
@@ -757,6 +777,7 @@ namespace Lachain.Core.Blockchain.VM
 
             try
             {
+                UseGas(frame, GasMetering.SaveStorageGasCost, null);
                 snapshot.Contracts.AddContract(context.Sender, runtimeContract);
                 SetDeployHeight(hash, deployHeight, frame.GasLimit, invocationMessage);
             }
@@ -770,7 +791,7 @@ namespace Lachain.Core.Blockchain.VM
             frame.UseGas(GasMetering.TransferFundsGasCost);
             var transferFrom = GetHardfork_5CurrentAddressOrDelegate(frame);
             TransferBalance(transferFrom, hash, value, frame);
-            Emit(frame.InvocationContext, Lrc20Interface.EventTransfer, transferFrom, hash, value);
+            Emit(frame, Lrc20Interface.EventTransfer, transferFrom, hash, value);
 
             SafeCopyToMemory(frame.Memory, hash.ToBytes(), resultOffset);
 
@@ -805,6 +826,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetCodeSize outside wasm frame");
             frame.UseGas(GasMetering.GetCodeSizeGasCost);
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var byteCode = frame.InvocationContext.Snapshot.Contracts.GetContractByHash(frame.CurrentAddress)?.ByteCode ?? Array.Empty<byte>();
             return byteCode.Length;
         }
@@ -815,6 +837,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call CopyCodeValue outside wasm frame");
             frame.UseGas(GasMetering.CopyCodeValueGasCost);
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var byteCode = frame.InvocationContext.Snapshot.Contracts.GetContractByHash(frame.CurrentAddress)?.ByteCode ?? Array.Empty<byte>();
             if (dataOffset < 0 || length < 0 || dataOffset + length > byteCode.Length)
                 throw new InvalidContractException("Bad CopyCodeValue call");
@@ -1034,6 +1057,7 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETSTORAGESTRINGSIZE outside wasm frame");
             frame.UseGas(GasMetering.GetReturnSizeGasCost);
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             
             var key = SafeCopyFromMemory(frame.Memory, keyOffset, 32);
             if (key is null)
@@ -1060,7 +1084,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_SetReturn({offset}, {length})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call SETRETURN outside wasm frame");
-            frame.UseGas(GasMetering.SetReturnGasCost);
+            UseGas(frame, GasMetering.SetReturnGasCost, null);
             var ret = SafeCopyFromMemory(frame.Memory, offset, length);
             Logger.LogInformation($"ret: {ret.ToHex()}");
             if (ret is null)
@@ -1075,7 +1099,6 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call GETSENDER outside wasm frame");
             var data = (frame.InvocationContext.Message?.Sender ?? frame.InvocationContext.Sender).ToBytes();
             Logger.LogInformation($"Data: {data.ToHex()}");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
                 throw new InvalidContractException("Bad call to GETSENDER");
@@ -1086,7 +1109,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetGasLeft({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETGASLEFT outside wasm frame");
-            frame.UseGas(GasMetering.GetGasLeftGasCost);
+            UseGas(frame, GasMetering.GetGasLeftGasCost, null);
             var data = (frame.GasLimit - frame.GasUsed).ToBytes().ToArray();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
@@ -1098,7 +1121,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetTxOrigin({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETTXORIGIN outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var data = frame.InvocationContext.Sender.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
@@ -1110,7 +1132,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetTxGasPrice({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETTXGASPRICE outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var data = frame.InvocationContext.Receipt.Transaction.GasPrice.ToBytes().ToArray();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
@@ -1122,6 +1143,7 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetBlockNumber({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETBLOCKNUMBER outside wasm frame");
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var data = frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight().ToBytes().ToArray();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
@@ -1187,7 +1209,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             bool useNewChainId =
                 HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
-            frame.UseGas(GasMetering.RecoverGasCost);
+            UseGas(frame, GasMetering.NewRecoverGasCost, GasMetering.RecoverGasCost);
             var hash = SafeCopyFromMemory(frame.Memory, hashOffset, 32) ??
                        throw new InvalidOperationException();
             var sig = new byte[SignatureUtils.Length(useNewChainId)];
@@ -1218,7 +1240,7 @@ namespace Lachain.Core.Blockchain.VM
         {
             bool useNewChainId =
                 HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
-            frame.UseGas(GasMetering.RecoverGasCost);
+            UseGas(frame, GasMetering.NewRecoverGasCost, GasMetering.RecoverGasCost);
             var hash = SafeCopyFromMemory(frame.Memory, hashOffset, 32) ??
                        throw new InvalidOperationException();
             var sigLength = SignatureUtils.Length(useNewChainId);
@@ -1267,7 +1289,7 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call ECVERIFY outside wasm frame");
             bool useNewChainId =
                 HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1);
-            frame.UseGas(GasMetering.VerifyGasCost);
+            UseGas(frame, GasMetering.NewVerifyGasCost, GasMetering.VerifyGasCost);
             var message = SafeCopyFromMemory(frame.Memory, messageOffset, messageLength) ??
                           throw new InvalidOperationException();
             var sig = SafeCopyFromMemory(frame.Memory, signatureOffset, SignatureUtils.Length(useNewChainId)) ??
@@ -1283,7 +1305,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetTransferredFunds({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GETCALLVALUE outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var data = frame.InvocationContext.Value.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
@@ -1295,7 +1316,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetTransactionHash({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call TXHASH outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var data = frame.InvocationContext.TransactionHash.ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
@@ -1331,7 +1351,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetAddress({resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetAddress outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var result = (frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress).ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, result, resultOffset);
             if (!ret)
@@ -1343,7 +1362,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetMsgValue({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetMsgValue outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var data = (frame.InvocationContext.Message?.Value ?? frame.InvocationContext.Value).ToBytes().Reverse().ToArray();
             var ret = SafeCopyToMemory(frame.Memory, data, dataOffset);
             if (!ret)
@@ -1355,7 +1373,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetBlockGasLimit({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetBlockGasLimit outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             const ulong defaultBlockGasLimit = GasMetering.DefaultBlockGasLimit;
             // Load `default block gasLimit` at given memory offset
             var ret = SafeCopyToMemory(frame.Memory, defaultBlockGasLimit.ToBytes().ToArray(), dataOffset);
@@ -1368,7 +1385,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetBlockCoinbase({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetBlockCoinbase outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             UInt160 coinbase = UInt160Utils.Zero;
             // Load `zero address` at given memory offset
             var ret = SafeCopyToMemory(frame.Memory, coinbase.ToBytes().ToArray(), dataOffset);
@@ -1381,7 +1397,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetBlockDifficulty({dataOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetBlockDifficulty outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
             var difficulty = 0;
             // Load `zero difficulty` at given memory offset
             var ret = SafeCopyToMemory(frame.Memory, difficulty.ToBytes().ToArray(), dataOffset);
@@ -1394,7 +1409,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetExternalBalance({addressOffset}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetExternalBalance outside wasm frame");
-            frame.UseGas(GasMetering.GetExternalBalanceGasCost);
             
             // Get the address from the given memory offset
             var snapshot = frame.InvocationContext.Snapshot;
@@ -1404,6 +1418,7 @@ namespace Lachain.Core.Blockchain.VM
             var address = addressBuffer.Take(20).ToArray().ToUInt160();
             
             // Get balance at the given addres
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var balance = snapshot.Balances.GetBalance(address);
             
             // Load balance at the given resultOffset
@@ -1418,7 +1433,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetExtcodesize({addressOffset}, {resultOffset})");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetExtcodesize outside wasm frame");
-            frame.UseGas(GasMetering.GetExternalCodeSizeGasCost);
             // Get the address from the given memory offset
             var snapshot = frame.InvocationContext.Snapshot;
             var addressBuffer = SafeCopyFromMemory(frame.Memory, addressOffset, 20);
@@ -1427,6 +1441,7 @@ namespace Lachain.Core.Blockchain.VM
             var address = addressBuffer.Take(20).ToArray().ToUInt160();
             
             // Get contract at the given address
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var contract = snapshot.Contracts.GetContractByHash(address);
             
             // Load contract size at the given resultOffset
@@ -1442,8 +1457,8 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetBlockTimestamp outside wasm frame");
 
-            frame.UseGas(GasMetering.GetBlockTimestampGasCost);
             // Get the TotalBlockHeight at the given Snapshot
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var snapshot = frame.InvocationContext.Snapshot;
             var blockHeight = snapshot.Blocks.GetTotalBlockHeight();
             
@@ -1461,7 +1476,6 @@ namespace Lachain.Core.Blockchain.VM
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call Handler_Env_GetBlockHash outside wasm frame");
 
-            frame.UseGas(GasMetering.GetBlockHashGasCost);
             var snapshot = frame.InvocationContext.Snapshot;
             var blockNumberBuffer = SafeCopyFromMemory(frame.Memory, numberOffset, 8);
             if (blockNumberBuffer is null)
@@ -1469,6 +1483,7 @@ namespace Lachain.Core.Blockchain.VM
             var blockNumber = BitConverter.ToUInt64(blockNumberBuffer, 0);
 
             // Get block at the given height
+            UseGas(frame, GasMetering.LoadStorageGasCost, null);
             var block = snapshot.Blocks.GetBlockByHeight(blockNumber);
             
             // Get block's hash
@@ -1487,7 +1502,6 @@ namespace Lachain.Core.Blockchain.VM
             Logger.LogInformation($"Handler_Env_GetChainId()");
             var frame = VirtualMachine.ExecutionFrames.Peek() as WasmExecutionFrame
                         ?? throw new InvalidOperationException("Cannot call GetChainId outside wasm frame");
-            frame.UseGas(GasMetering.GetSimpleDataGasCost);
 
             var chainId = TransactionUtils.ChainId(HardforkHeights.IsHardfork_9Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight() + 1));
             
@@ -1552,16 +1566,18 @@ namespace Lachain.Core.Blockchain.VM
             }
         }
         
-        private static void UseGas(IExecutionFrame frame, ulong newGasPrice, ulong oldGasPrice)
+        private static void UseGas(IExecutionFrame frame, ulong? newGasPrice, ulong? oldGasPrice)
         {
             var height = frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight();
             if (HardforkHeights.IsHardfork_15Active(height))
             {
-                frame.UseGas(newGasPrice);
+                if (newGasPrice.HasValue)
+                    frame.UseGas(newGasPrice.Value);
             }
             else
             {
-                frame.UseGas(oldGasPrice);
+                if (oldGasPrice.HasValue)
+                    frame.UseGas(oldGasPrice.Value);
             }
         }
 
@@ -1649,10 +1665,11 @@ namespace Lachain.Core.Blockchain.VM
             };
         }
         
-        private static void Emit(InvocationContext context, string eventSignature, params dynamic[] values)
+        private static void Emit(IExecutionFrame frame, string eventSignature, params dynamic[] values)
         {
             var eventData = ContractEncoder.Encode(null, values);
             EventObject eventObj;
+            var context = frame.InvocationContext;
             if (Lrc20Interface.EventTransfer == eventSignature &&
                 HardforkHeights.IsHardfork_6Active(context.Snapshot.Blocks.GetTotalBlockHeight()))
             {
@@ -1664,6 +1681,9 @@ namespace Lachain.Core.Blockchain.VM
                 Buffer.BlockCopy(eventData, 64, value, 0, 32);
                 topics.Add(from.ToUInt256());
                 topics.Add(to.ToUInt256());
+                UseGas(frame, GasMetering.WriteEventPerByteGas * ((ulong)value.Length + 32), null);
+                var topcisDataLength = topics.Count * 32;
+                UseGas(frame, GasMetering.WriteEventPerByteGas * (ulong) topcisDataLength, null);
 
                 eventObj = new EventObject(
                     new Event
