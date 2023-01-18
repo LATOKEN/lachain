@@ -110,9 +110,9 @@ namespace Lachain.Core.Blockchain.Hardfork
         }
         
         // adjust gas consumption
-        public static bool IsHardfork_15Active(ulong height)
+        public static bool IsHardfork_16Active(ulong height)
         {
-            return height >= Hardfork_15;
+            return height >= Hardfork_16;
         }
         
         public static void SetHardforkHeights(HardforkConfig hardforkConfig)
