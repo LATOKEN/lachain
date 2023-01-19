@@ -260,7 +260,6 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call COPYCALLVALUE outside wasm frame");
             if (from < 0 || to > frame.Input.Length || from > to)
                 throw new InvalidContractException("Copy to contract memory failed: bad range");
-            frame.UseGas(GasMetering.CopyCodeValueGasCost);
             if (!SafeCopyToMemory(frame.Memory, frame.Input.Skip(from).Take(to - from).ToArray(), offset))
                 throw new InvalidContractException("Copy to contract memory failed");
         }
@@ -331,7 +330,7 @@ namespace Lachain.Core.Blockchain.VM
                 },
                 topics
             );
-            frame.UseGas(GasMetering.WriteEventPerByteGas * ((ulong)data.Length + 1000UL));
+            UseGas(frame, GasMetering.WriteEventPerByteGas * ((ulong)data.Length + 32), null);
             var topcisDataLength = topics is null ? 0 : topics.Count * 32;
             UseGas(frame, GasMetering.WriteEventPerByteGas * (ulong) topcisDataLength, null);
             frame.InvocationContext.Snapshot.Events.AddEvent(eventObj);
@@ -383,7 +382,7 @@ namespace Lachain.Core.Blockchain.VM
                 var result = TransferBalance(transferFrom, address, value, frame);
                 if (!result)
                     throw new InsufficientFundsException();
-                Emit(frame, Lrc20Interface.EventTransfer, GetHardfork_5CurrentAddressOrDelegate(frame), address, value);
+                Emit(frame, Lrc20Interface.EventTransfer, transferFrom, address, value);
             }
 
             return 0;
@@ -1353,8 +1352,11 @@ namespace Lachain.Core.Blockchain.VM
                         ?? throw new InvalidOperationException("Cannot call GetAddress outside wasm frame");
             var result = (frame.InvocationContext.Message?.Delegate ?? frame.CurrentAddress).ToBytes();
             var ret = SafeCopyToMemory(frame.Memory, result, resultOffset);
-            if (!ret)
-                throw new InvalidContractException("Bad call to (get_address)");
+            if (HardforkHeights.IsHardfork_16Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
+            {
+                if (!ret)
+                    throw new InvalidContractException("Bad call to (get_address)");
+            }
         }
         
         public static void Handler_Env_GetMsgValue(int dataOffset)
@@ -1569,7 +1571,7 @@ namespace Lachain.Core.Blockchain.VM
         private static void UseGas(IExecutionFrame frame, ulong? newGasPrice, ulong? oldGasPrice)
         {
             var height = frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight();
-            if (HardforkHeights.IsHardfork_15Active(height))
+            if (HardforkHeights.IsHardfork_16Active(height))
             {
                 if (newGasPrice.HasValue)
                     frame.UseGas(newGasPrice.Value);
