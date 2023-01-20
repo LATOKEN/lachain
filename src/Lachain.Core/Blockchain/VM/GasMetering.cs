@@ -18,7 +18,7 @@
         public const ulong GetGasLeftGasCost = 100;
         public const ulong CopyCodeValueGasCost = 100;
         public const ulong GetCodeSizeGasCost = 10;
-        public const ulong InvokeContractGasCost = 7_000_000;
+        public const ulong InvokeContractGasCost = 200_000;
         public const ulong TransferFundsGasCost = 3_000_000;
         public const ulong LoadStorageGasCost = 500_000;
         public const ulong SaveStorageGasCost = 3_000_000;
