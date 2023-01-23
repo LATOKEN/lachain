@@ -337,8 +337,6 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             _blockManager.TryBuildGenesisBlock();
 
             
-            DeployAndTestContract("0x2e1d22");
-
             // after hardfork:
             while (!HardforkHeights.IsHardfork_16Active(_blockManager.GetHeight()))
                 GenerateBlocks(_blockManager.GetHeight() + 1, _blockManager.GetHeight() + 1);
