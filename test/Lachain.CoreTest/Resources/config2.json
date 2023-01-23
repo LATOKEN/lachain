@@ -58,7 +58,8 @@
     "hardfork_12": 0,
     "hardfork_13": 0,
     "hardfork_14": 0,
-    "hardfork_15": 0
+    "hardfork_15": 0,
+    "hardfork_16": 10
   },
   "storage": {
     "provider": "RocksDB",
