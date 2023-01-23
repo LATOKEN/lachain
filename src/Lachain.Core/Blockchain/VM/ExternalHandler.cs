@@ -68,6 +68,7 @@ namespace Lachain.Core.Blockchain.VM
             var callResult = DoInternalCall(
                 caller, ContractRegisterer.DeployContract, input, gasLimit, message
             );
+            UseGas(frame, callResult.GasUsed, null);
             var height = callResult.ReturnValue;
             Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
             if (HardforkHeights.IsHardfork_6Active(currentHeight))
@@ -76,7 +77,6 @@ namespace Lachain.Core.Blockchain.VM
                 if(height.Length < 1)
                     height = HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
             }
-            UseGas(frame, callResult.GasUsed, null);
             return BitConverter.ToUInt64(height, 0);
         }
 
@@ -93,6 +93,7 @@ namespace Lachain.Core.Blockchain.VM
                 var callResult = DoInternalCall(
                     caller, ContractRegisterer.DeployContract, input, gasLimit, message
                 );
+                UseGas(frame, callResult.GasUsed, null);
                 var height = callResult.ReturnValue;
                 Logger.LogInformation($"GetDeployHeight result :[{(height != null ? height.ToHex() : "null")}]");
                 if (HardforkHeights.IsHardfork_6Active(currentHeight))
@@ -102,7 +103,6 @@ namespace Lachain.Core.Blockchain.VM
                         height = HardforkHeights.IsHardfork_8Active(currentHeight) ? HardforkHeights.GetHardfork_3().ToBytes().ToArray() : new byte[64]; 
                 }
 
-                UseGas(frame, callResult.GasUsed, null);
                 return BitConverter.ToUInt64(height, 0);
             }
             catch (Exception ex)
@@ -237,6 +237,8 @@ namespace Lachain.Core.Blockchain.VM
             }
             Logger.LogInformation($"invocationMessage.Sender: {invocationMessage.Sender.ToHex()}");
             var callResult = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), address, inputBuffer, gasLimit, invocationMessage);
+            UseGas(frame, callResult.GasUsed, null);
+
             
             if (HardforkHeights.IsHardfork_12Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
             {
@@ -252,7 +254,7 @@ namespace Lachain.Core.Blockchain.VM
                 throw new InvalidContractException($"Cannot invoke call: {callResult.Status}, {callResult.ReturnValue}");
             }
 
-            frame.UseGas(callResult.GasUsed);
+            UseGas(frame, null, callResult.GasUsed);
             frame.LastChildReturnValue = callResult.ReturnValue ?? Array.Empty<byte>();
             return 0;
         }
@@ -572,6 +574,7 @@ namespace Lachain.Core.Blockchain.VM
                 gasLimit = frame.GasLimit - frame.GasUsed;
             }
             var status = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), hash, Array.Empty<byte>(), gasLimit, invocationMessage);
+            UseGas(frame, status.GasUsed, null);
 
             if (HardforkHeights.IsHardfork_12Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
             {
@@ -586,8 +589,6 @@ namespace Lachain.Core.Blockchain.VM
             {
                 throw new InvalidContractException("Failed to initialize contract");
             }
-
-            UseGas(frame, status.GasUsed, null);
 
             // runtime code
             var runtimeContract = new Contract(hash, status.ReturnValue);
@@ -787,6 +788,7 @@ namespace Lachain.Core.Blockchain.VM
                 gasLimit = frame.GasLimit - frame.GasUsed;
             }
             var status = DoInternalCall(GetHardfork_5CurrentAddressOrDelegate(frame), hash, Array.Empty<byte>(), gasLimit, invocationMessage);
+            UseGas(frame, status.GasUsed, null);
 
             if (HardforkHeights.IsHardfork_12Active(frame.InvocationContext.Snapshot.Blocks.GetTotalBlockHeight()))
             {
@@ -801,8 +803,6 @@ namespace Lachain.Core.Blockchain.VM
             {
                 throw new InvalidContractException("Failed to initialize contract");
             }
-
-            UseGas(frame, status.GasUsed, null);
 
             // runtime code
             var runtimeContract = new Contract(hash, status.ReturnValue);
