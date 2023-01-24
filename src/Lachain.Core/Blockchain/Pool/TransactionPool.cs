@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Lachain.Core.Blockchain.Error;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.Blockchain.Interface;
@@ -32,6 +33,7 @@ namespace Lachain.Core.Blockchain.Pool
         private readonly INonceCalculator _nonceCalculator;
         private readonly IStateManager _stateManager;
         private readonly ITransactionHashTrackerByNonce _transactionHashTracker;
+        private ulong TxResendPeriod = 10;
 
         private readonly ConcurrentDictionary<UInt256, TransactionReceipt> _transactions
             = new ConcurrentDictionary<UInt256, TransactionReceipt>();
@@ -51,7 +53,7 @@ namespace Lachain.Core.Blockchain.Pool
         private ulong _lastSanitized = 0;
         private ISet<TransactionReceipt> _transactionsQueue;
 
-        public event EventHandler<TransactionReceipt>? TransactionAdded;
+        public event EventHandler<TransactionReceipt[]>? TransactionAdded;
         public IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions => _transactions;
 
         public TransactionPool(
@@ -75,7 +77,34 @@ namespace Lachain.Core.Blockchain.Pool
             // set the block height at the beginning
             _lastSanitized = _blockManager.GetHeight();
         }
-        
+
+        private void ResendTransactions()
+        {
+            var maxTxToResend = 100;
+            var txsBySender = new Dictionary<UInt160, List<TransactionReceipt>>();
+            lock (_transactions)
+            {
+                txsBySender = _transactionsQueue
+                    .OrderBy(x => x, new ReceiptComparer())
+                    .GroupBy(receipt => receipt.Transaction.From)
+                    .ToDictionary(receipts => receipts.Key, receipts => receipts.Reverse().ToList());
+            }
+            var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
+            var txsToResend = new List<TransactionReceipt>();
+            for (var iter = 0; iter < maxTxToResend && txsBySender.Count > 0; iter++)
+            {
+                var key = rnd.SelectRandom(txsBySender.Keys);
+                var txsFrom = txsBySender[key];
+                var tx = txsFrom.Last();
+                txsToResend.Add(tx);
+                Logger.LogTrace($"Resending transaction {tx.Hash.ToHex()}");
+                txsFrom.RemoveAt(txsFrom.Count - 1);
+                if (txsFrom.Count == 0) txsBySender.Remove(key);
+            }
+            TransactionAdded?.Invoke(this, txsToResend.ToArray());
+            Logger.LogTrace($"Resent {txsToResend.Count} transactions");
+        }
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnBlockPersisted(object? sender, Block block)
         {
@@ -85,6 +114,13 @@ namespace Lachain.Core.Blockchain.Pool
                 // TODO: we should make this removal async for better performance
                 _poolRepository.RemoveTransactions(_toDeleteRepo.Select(receipt => receipt.Hash));
                 _toDeleteRepo.Clear();
+            }
+            if (block.Header.Index % TxResendPeriod == 0)
+            {
+                Task.Factory.StartNew(() =>
+                {
+                    ResendTransactions();
+                }, TaskCreationOptions.LongRunning);
             }
         }
 
@@ -260,7 +296,7 @@ namespace Lachain.Core.Blockchain.Pool
                 _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
             }
             Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
-            if (notify) TransactionAdded?.Invoke(this, receipt);
+            if (notify) TransactionAdded?.Invoke(this, new TransactionReceipt[] { receipt });
             return OperatingError.Ok;
         }
         private bool IsGovernanceTx(TransactionReceipt receipt)
@@ -320,7 +356,7 @@ namespace Lachain.Core.Blockchain.Pool
             var nextNonce = new Dictionary<UInt160, ulong>();
 
             // order the transactions 
-            var orderedTransactions = _transactionsQueue.OrderBy(x => x, new ReceiptComparer());
+            var orderedTransactions = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).ToList();
 
             foreach(var receipt in orderedTransactions)
             {
@@ -413,14 +449,14 @@ namespace Lachain.Core.Blockchain.Pool
 
             if(era <= _lastSanitized) return new List<TransactionReceipt>();
 
-            var rnd = new Random();
+            var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
             HashSet<UInt256> takenTxHashes = new HashSet<UInt256>();
 
             lock (_transactions)
             {
                 // txes are sorted by sender and then by nonce, in reverse order. So all txes of same sender
                 // are together sorted in descending order of nonce
-                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).Reverse();
+                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).Reverse().ToList();
                 // take governance transaction from transaction queue
                 TransactionReceipt? lastGovernanceTxTaken = null;
                 foreach (var receipt in orderedTransactionsQueue)

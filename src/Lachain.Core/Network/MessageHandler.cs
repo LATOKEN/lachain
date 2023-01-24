@@ -73,9 +73,9 @@ namespace Lachain.Core.Network
             _networkManager.OnConsensusMessage += OnConsensusMessage;
         }
 
-        private void TransactionPoolOnTransactionAdded(object sender, TransactionReceipt e)
+        private void TransactionPoolOnTransactionAdded(object sender, TransactionReceipt[] receipts)
         {
-            _networkManager.BroadcastLocalTransaction(e);
+            _networkManager.BroadcastLocalTransaction(receipts);
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
