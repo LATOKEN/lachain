@@ -25,5 +25,6 @@ namespace Lachain.Core.Blockchain.Pool
         /// <param name="hash">Hash of the transaction to search</param>
         /// <returns><c>True</c> if found such transaction, <c>False</c> otherwise</returns>
         bool TryGetTransactionHash(UInt160 address, ulong nonce, out UInt256? hash);
+        void Clear();
     }
 }

@@ -598,6 +598,7 @@ namespace Lachain.Core.Blockchain.Pool
             _transactions.Clear();
             _transactionsQueue.Clear();
             _nonceCalculator.Clear();
+            _transactionHashTracker.Clear();
         }
 
         // It totally clears all the transactions in the persistent storage
