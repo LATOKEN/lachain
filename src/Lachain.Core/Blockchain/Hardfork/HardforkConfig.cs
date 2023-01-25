@@ -19,5 +19,6 @@ namespace Lachain.Core.Blockchain.Hardfork
         [JsonProperty("hardfork_13")] public ulong? Hardfork_13 { get; set; }
         [JsonProperty("hardfork_14")] public ulong? Hardfork_14 { get; set; }
         [JsonProperty("hardfork_15")] public ulong? Hardfork_15 { get; set; }
+        [JsonProperty("hardfork_16")] public ulong? Hardfork_16 { get; set; }
     }
 }
