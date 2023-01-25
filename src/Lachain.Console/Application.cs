@@ -67,6 +67,7 @@ namespace Lachain.Console
         public void Start(RunOptions options)
         {
             // testing branch B
+            // testing branch C
             var configManager = _container.Resolve<IConfigManager>();
             var blockManager = _container.Resolve<IBlockManager>();
             var consensusManager = _container.Resolve<IConsensusManager>();
