@@ -1484,10 +1484,28 @@ namespace Lachain.Core.Blockchain.VM
             UInt160 from, UInt160 to, Money value, IExecutionFrame frame
         )
         {
+            Logger.LogTrace($"Transfer balance of {value.ToString()} is requested from {from.ToHex()} to {to.ToHex()}");
             var receipt = frame.InvocationContext.Receipt;
             var snapshot = frame.InvocationContext.Snapshot;
             var height = snapshot.Blocks.GetTotalBlockHeight();
-            if (HardforkHeights.IsHardfork_15Active(height))
+            if (HardforkHeights.IsHardfork_16Active(height))
+            {
+                var contract = snapshot.Contracts.GetContractByHash(from);
+                if (contract is null)
+                {
+                    // balance transfer from plain address
+                    return snapshot.Balances.TransferBalance(
+                        from, to, value, receipt,
+                        HardforkHeights.IsHardfork_15Active(height), HardforkHeights.IsHardfork_9Active(height)
+                    );
+                }
+                else
+                {
+                    // allow balance transfer from contract address
+                    return snapshot.Balances.TransferContractBalance(from, to, value);
+                }
+            }
+            else if (HardforkHeights.IsHardfork_15Active(height))
             {
                 var contract = snapshot.Contracts.GetContractByHash(from);
                 if (contract is null)
