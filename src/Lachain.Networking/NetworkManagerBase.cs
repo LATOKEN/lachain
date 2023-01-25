@@ -201,9 +201,9 @@ namespace Lachain.Networking
             }
         }
 
-        public void BroadcastLocalTransaction(TransactionReceipt e)
+        public void BroadcastLocalTransaction(TransactionReceipt[] receipts)
         {
-            Broadcast(MessageFactory.SyncPoolReply(new[] {e}), NetworkMessagePriority.PoolSyncMessage);
+            Broadcast(MessageFactory.SyncPoolReply(receipts), NetworkMessagePriority.PoolSyncMessage);
         }
 
         public void Broadcast(NetworkMessage networkMessage, NetworkMessagePriority priority)

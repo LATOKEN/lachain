@@ -51,6 +51,12 @@ namespace Lachain.Core.Blockchain.Pool
             }
             return false;
         }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Clear()
+        {
+            _hashPerAddressWithNonce.Clear();
+        }
     }
 
     

@@ -7,7 +7,7 @@ namespace Lachain.Core.Blockchain.Pool
 {
     public interface ITransactionPool
     {
-        event EventHandler<TransactionReceipt>? TransactionAdded;
+        event EventHandler<TransactionReceipt[]>? TransactionAdded;
 
         IReadOnlyDictionary<UInt256, TransactionReceipt> Transactions { get; }
 
