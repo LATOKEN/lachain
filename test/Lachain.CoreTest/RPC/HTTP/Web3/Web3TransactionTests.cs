@@ -336,10 +336,41 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
         {
             _blockManager.TryBuildGenesisBlock();
 
-            var keyPair = _privateWallet!.EcdsaKeyPair;
-            GenerateBlocks(1, 1);
+            
+            // after hardfork:
+            while (!HardforkHeights.IsHardfork_16Active(_blockManager.GetHeight()))
+                GenerateBlocks(_blockManager.GetHeight() + 1, _blockManager.GetHeight() + 1);
 
+            DeployAndTestContract("0x2e356e");
+
+            var receipt = TestUtils.GetRandomTransaction(false);
+            var opts = new JObject
+            {
+                ["from"] = receipt.Transaction.From.ToHex(),
+                ["to"] = receipt.Transaction.To.ToHex(),
+            };
+
+            var result = _apiService!.EstimateGas(opts);
+            Assert.AreNotEqual(result, "0x");
+        }
+
+        [Test]
+        /// Changed from private to public
+        [Ignore("fix it")]
+        public void Test_GetNetworkGasPrice()
+        {
+            var gasPrice_Expected = "0x1";
+
+            var gasPrice_Actual = _apiService!.GetNetworkGasPrice();
+
+            Assert.AreEqual(gasPrice_Expected, gasPrice_Actual);
+
+        }
+
+        private void DeployAndTestContract(string gasEstimate)
+        {
             // Deploy contract 
+            var keyPair = _privateWallet!.EcdsaKeyPair;
             var byteCode = ByteCodeHex.HexToBytes();
             Assert.That(VirtualMachine.VerifyContract(byteCode, true), "Unable to validate smart-contract code");
             var from = keyPair.PublicKey.GetAddress();
@@ -352,7 +383,7 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             var tx = _transactionBuilder.DeployTransaction(from, byteCode);
             var signedTx = _transactionSigner.Sign(tx, keyPair, HardforkHeights.IsHardfork_9Active(2));
             Assert.That(_transactionPool.Add(signedTx) == OperatingError.Ok, "Can't add deploy tx to pool");
-            GenerateBlocks(2, 2);
+            GenerateBlocks(_blockManager.GetHeight() + 1, _blockManager.GetHeight() + 1);
 
             // check contract is deployed
             var contract = _stateManager.LastApprovedSnapshot.Contracts.GetContractByHash(contractHash);
@@ -369,30 +400,8 @@ namespace Lachain.CoreTest.RPC.HTTP.Web3
             };
 
             var result = _apiService!.EstimateGas(opts);
-            Assert.AreEqual(result, "0x2e1d22");
-
-            var receipt = TestUtils.GetRandomTransaction(false);
-            opts = new JObject
-            {
-                ["from"] = receipt.Transaction.From.ToHex(),
-                ["to"] = receipt.Transaction.To.ToHex(),
-            };
-
-            result = _apiService!.EstimateGas(opts);
-            Assert.AreNotEqual(result, "0x");
-        }
-
-        [Test]
-        /// Changed from private to public
-        [Ignore("fix it")]
-        public void Test_GetNetworkGasPrice()
-        {
-            var gasPrice_Expected = "0x1";
-
-            var gasPrice_Actual = _apiService!.GetNetworkGasPrice();
-
-            Assert.AreEqual(gasPrice_Expected, gasPrice_Actual);
-
+            System.Console.WriteLine(HardforkHeights.IsHardfork_16Active(_blockManager.GetHeight()));
+            Assert.AreEqual(result, gasEstimate);
         }
 
         // Below methods Execute a Transaction

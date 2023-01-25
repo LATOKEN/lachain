@@ -7,13 +7,18 @@
         public const ulong InputDataGasPerByte = 10;
         
         public const ulong CopyFromMemoryGasPerByte = 10;
+        public const ulong NewCopyFromMemoryGasPerByte = 100;
         public const ulong CopyToMemoryGasPerByte = 10;
+        public const ulong NewCopyToMemoryGasPerByte = 100;
         public const ulong GetCallValueGasCost = 100;
         public const ulong GetCallSizeGasCost = 10;
         public const ulong GetReturnValueGasCost = 100;
         public const ulong GetReturnSizeGasCost = 10;
+        public const ulong SetReturnGasCost = 100;
+        public const ulong GetGasLeftGasCost = 100;
         public const ulong CopyCodeValueGasCost = 100;
         public const ulong GetCodeSizeGasCost = 10;
+        public const ulong InvokeContractGasCost = 200_000;
         public const ulong TransferFundsGasCost = 3_000_000;
         public const ulong LoadStorageGasCost = 500_000;
         public const ulong SaveStorageGasCost = 3_000_000;
@@ -25,7 +30,9 @@
         public const ulong Ripemd160GasCost = 0;
         public const ulong Ripemd160GasPerByte = 100_000;
         public const ulong RecoverGasCost = 100_000;
+        public const ulong NewRecoverGasCost = 1_000_000;
         public const ulong VerifyGasCost = 60_000;
+        public const ulong NewVerifyGasCost = 1_000_000;
         public const ulong WriteEventPerByteGas = SaveStorageGasCost / 32;
         public const ulong CallDataLoad = 1_000;
         public const ulong MLoad = 1_000;

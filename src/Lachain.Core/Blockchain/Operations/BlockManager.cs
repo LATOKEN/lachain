@@ -511,6 +511,7 @@ namespace Lachain.Core.Blockchain.Operations
                             throw new InvalidBlockException(OperatingError.BlockGasOverflow);
                         Logger.LogWarning(
                             $"Unable to take transaction {txHash.ToHex()} with gas {receipt.GasUsed}, block gas limit overflowed {gasUsed}/{GasMetering.DefaultBlockGasLimit}");
+                        gasUsed -= receipt.GasUsed;
                         continue;
                     }
                     else Logger.LogInformation($"Block gas limit after execution ok for tx : {txHash.ToHex()}");
