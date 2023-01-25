@@ -104,12 +104,8 @@ namespace Lachain.Core.Blockchain.Hardfork
             return height >= Hardfork_15;
         }
 
-        public static bool IsHardfork_16Active(ulong height)
-        {
-            return height >= Hardfork_16;
-        }
-        
         // adjust gas consumption
+        // allow contract balance transfer in ExternalHandler.cs
         public static bool IsHardfork_16Active(ulong height)
         {
             return height >= Hardfork_16;
