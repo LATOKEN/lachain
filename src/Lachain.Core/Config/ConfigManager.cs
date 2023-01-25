@@ -14,7 +14,7 @@ namespace Lachain.Core.Config
 {
     public class ConfigManager : IConfigManager
     {
-        private const ulong _CurrentVersion = 18;
+        private const ulong _CurrentVersion = 19;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
         public RunOptions CommandLineOptions { get; }
@@ -51,7 +51,7 @@ namespace Lachain.Core.Config
         private void _UpdateConfigVersion()
         {
             ulong version = 1;
-            version = GetConfig<VersionConfig>("version")?.Version ?? 1;
+            version = GetConfig<VersionConfig>("versionInfo")?.Version ?? 1;
             if (version > _CurrentVersion)
                 throw new ApplicationException("Unknown config version");
             if (version == _CurrentVersion)
@@ -90,6 +90,8 @@ namespace Lachain.Core.Config
                 _UpdateConfigToV17();
             if (version < 18)
                 _UpdateConfigToV18();
+            if (version < 19)
+                _UpdateConfigToV19();
             version = GetConfig<VersionConfig>("version")?.Version ??
                 throw new ApplicationException("No version section in config");
             if (version != _CurrentVersion)
@@ -543,6 +545,32 @@ namespace Lachain.Core.Config
                           throw new ApplicationException("No version section in config");
             
             version.Version = 18;
+            _config["version"] = JObject.FromObject(version);
+
+            _SaveCurrentConfig();
+        }
+
+        // version 19 of config should contain hardfork_16
+        private void _UpdateConfigToV19()
+        {   
+            var network = GetConfig<NetworkConfig>("network") ??
+                          throw new ApplicationException("No network section in config");
+            
+            var hardforks = GetConfig<HardforkConfig>("hardfork") ??
+                            throw new ApplicationException("No hardfork section in config");
+            hardforks.Hardfork_16 ??= network.NetworkName switch
+            {
+                "mainnet" => 8028800,
+                "testnet" => 7751300,
+                "devnet" => 7887130,
+                _ => 0
+            };
+            _config["hardfork"] = JObject.FromObject(hardforks);
+
+            var version = GetConfig<VersionConfig>("version") ??
+                          throw new ApplicationException("No version section in config");
+            
+            version.Version = 19;
             _config["version"] = JObject.FromObject(version);
 
             _SaveCurrentConfig();
