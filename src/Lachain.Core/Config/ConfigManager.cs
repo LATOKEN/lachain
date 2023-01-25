@@ -4,11 +4,11 @@ using System.IO;
 using Lachain.Core.Blockchain;
 using Lachain.Core.Blockchain.Hardfork;
 using Lachain.Core.CLI;
+using Lachain.Logger;
 using Lachain.Core.Vault;
 using Lachain.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
 
 namespace Lachain.Core.Config
 {
@@ -17,14 +17,42 @@ namespace Lachain.Core.Config
         private const ulong _CurrentVersion = 19;
         private IDictionary<string, object> _config;
         public string ConfigPath { get; }
+        public string ConfigBackupPath { get; }
         public RunOptions CommandLineOptions { get; }
+
+        private static readonly ILogger<ConfigManager> Logger = LoggerFactory.GetLoggerForClass<ConfigManager>();
+
+
         public ConfigManager(string filePath, RunOptions options)
         {
             CommandLineOptions = options;
-            var configLoader = new LocalConfigLoader(filePath);
-            _config = new Dictionary<string, object>(configLoader.LoadConfig());
             ConfigPath = filePath;
+            ConfigBackupPath = filePath + ".bak";
+            
+            try {
+                var configLoader = new LocalConfigLoader(ConfigPath);
+                _config = new Dictionary<string, object>(configLoader.LoadConfig());
+                Logger.LogInformation($"Loaded config from {ConfigPath}");
+            }
+            catch (Exception e) {   
+                // Config File is corrupted/missing. Try to restore from backup
+                try {
+                    Logger.LogWarning($"Could not load config from {ConfigPath}. Restoring config from backup ({ConfigBackupPath})");
+                    File.Copy(ConfigBackupPath, ConfigPath, true);
+                    var configLoader = new LocalConfigLoader(ConfigPath);
+                    _config = new Dictionary<string, object>(configLoader.LoadConfig());
+                    Logger.LogInformation($"Restored config to {ConfigPath} from backup ({ConfigBackupPath})");
+                }
+                catch (Exception e2) {
+                    Logger.LogError($"Could not restore config from backup ({ConfigBackupPath}). Aborting.");
+                    throw;
+                }
+
+            }
             _UpdateConfigVersion();
+            
+            // Copy config to backup in case it is missing.
+            File.Copy(ConfigPath, ConfigBackupPath, true);
         }
         
         public void UpdateWalletPassword(string password)
@@ -578,6 +606,7 @@ namespace Lachain.Core.Config
         
         private void _SaveCurrentConfig()
         {
+            File.Copy(ConfigPath, ConfigBackupPath, true);
             File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(_config, Formatting.Indented));
         }
     }
