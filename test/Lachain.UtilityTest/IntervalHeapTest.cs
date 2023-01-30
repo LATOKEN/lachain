@@ -27,21 +27,30 @@ namespace Lachain.UtilityTest
             
             var rnd = new Random((int) TimeUtils.CurrentTimeMillis());
             lists = lists.OrderBy(_ => rnd.Next()).ToList();
-            var heap = new C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)>(new NetworkMessageComparer());
+            var heap = new C5.IntervalHeap<HubMessage>();
             foreach (var item in lists)
             {
-                heap.Add(item);
+                var msg = new HubMessage(item.Item1, item.Item2);
+                heap.Add(msg);
             }
             Assert.AreEqual(element * types.Count, heap.Count);
 
             types = types.OrderBy(type => (byte) type).ToList();
+            ulong prevTime = 0;
+            int prevType = -1;
             for (int iter = 0; iter < types.Count; iter++)
             {
                 Assert.AreEqual(iter, (byte) types[iter]);
                 for (int i = 0; i < element; i++)
                 {
                     var msg = heap.DeleteMin();
-                    Assert.AreEqual(msg.Item1, types[iter]);
+                    Assert.AreEqual(msg.Priority, types[iter]);
+                    if (prevType == (int) msg.Priority)
+                    {
+                        Assert.That(prevTime <= msg.CreationTime);
+                    }
+                    prevType = (int) msg.Priority;
+                    prevTime = msg.CreationTime;
                 }
             }
         }
@@ -50,14 +59,15 @@ namespace Lachain.UtilityTest
         public void Test_DuplicateElement()
         {
             int element = 10;
-            var heap = new C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)>(new NetworkMessageComparer());
+            var heap = new C5.IntervalHeap<HubMessage>();
             var types = Enum.GetValues(typeof(NetworkMessagePriority)).Cast<NetworkMessagePriority>().ToList();
             foreach (var type in types)
             {
                 var msg = new NetworkMessage();
+                var hubMsg = new HubMessage(type, msg);
                 for (int iter = 0; iter < element; iter++)
                 {
-                    heap.Add((type, msg));
+                    heap.Add(hubMsg);
                 }
             }
             Assert.AreEqual(element * types.Count, heap.Count);

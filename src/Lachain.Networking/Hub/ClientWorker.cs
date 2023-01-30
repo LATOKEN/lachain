@@ -33,10 +33,10 @@ namespace Lachain.Networking.Hub
         private readonly HubConnector _hubConnector;
         private readonly Thread _worker;
         private bool _isConnected = false;
+        private ulong _totalMsgReceived = 0;
         private int _eraMsgCounter;
 
-        private readonly C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)> _messageQueue 
-            = new C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)>(new NetworkMessageComparer());
+        private readonly C5.IntervalHeap<HubMessage> _messageQueue = new C5.IntervalHeap<HubMessage>();
 
         public ClientWorker(ECDSAPublicKey peerPublicKey, IMessageFactory messageFactory, HubConnector hubConnector)
         {
@@ -74,7 +74,9 @@ namespace Lachain.Networking.Hub
         {
             lock (_messageQueue)
             {
-                _messageQueue.Add((priority, message));
+                var msg = new HubMessage(priority, message, _totalMsgReceived);
+                _totalMsgReceived++;
+                _messageQueue.Add(msg);
                 Monitor.PulseAll(_messageQueue);
             }
         }
@@ -99,8 +101,8 @@ namespace Lachain.Networking.Hub
 
                         while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                         {
-                            var message = _messageQueue.DeleteMin().Item2;
-                            toSend.Messages.Add(message);
+                            var message = _messageQueue.DeleteMin();
+                            toSend.Messages.Add(message.Msg);
                         }
                     }
 
