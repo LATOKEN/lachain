@@ -21,6 +21,7 @@ using Lachain.Core.Network.FastSynchronizerBatch;
 using Lachain.Crypto;
 using Lachain.Logger;
 using Lachain.Networking;
+using Lachain.Networking.PeerFault;
 using Lachain.Storage.Repositories;
 using Lachain.Storage.State;
 using Lachain.Storage.Trie;
@@ -85,6 +86,8 @@ namespace Lachain.Console
             var dbContext = _container.Resolve<IRocksDbContext>();
             var storageManager = _container.Resolve<IStorageManager>();
             var transactionPool = _container.Resolve<ITransactionPool>();
+            var bannedPeerTracker = _container.Resolve<IBannedPeerTracker>();
+            var peerBanManager = _container.Resolve<IPeerBanManager>();
 
             // check if compacting db was started but not finished
             var dbShrink = _container.Resolve<IDbShrink>();
@@ -171,6 +174,8 @@ namespace Lachain.Console
             networkManager.Start();
             transactionVerifier.Start();
             commandManager.Start(wallet.EcdsaKeyPair);
+            peerBanManager.RestoreState();
+            bannedPeerTracker.Start();
 
             // pending transactions are restored from pool repository to in-memory storage
             // it's important to restore pool after transactionVerifier and before blockSynchronizer starts

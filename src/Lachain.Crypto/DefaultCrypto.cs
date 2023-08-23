@@ -23,7 +23,7 @@ namespace Lachain.Crypto
         private static readonly TimeBenchmark EcRecover = new TimeBenchmark();
         private static readonly ILogger<DefaultCrypto> Logger = LoggerFactory.GetLoggerForClass<DefaultCrypto>();
 
-        private static int SignatureSize(bool useNewChainId)
+        public static int SignatureSize(bool useNewChainId)
         {
             return useNewChainId ? 66 : 65;
         }

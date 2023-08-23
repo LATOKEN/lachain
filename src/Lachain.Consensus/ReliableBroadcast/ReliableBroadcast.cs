@@ -130,6 +130,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (_sentValMessage[validator])
             {
                 Logger.LogWarning($"{Id}: validator {validator} ({validatorPubKey}) tried to send VAL message twice");
+                InvokeReceivedInvalidMsg(validator);
                 return;
             }
 
@@ -160,7 +161,9 @@ namespace Lachain.Consensus.ReliableBroadcast
                 Logger.LogWarning(
                     $"Faulty behaviour: val message with sender id: {val.SenderId} came from validator: " +
                     $"{validator} ({pubKey}), which should not happen. Val message for {val.SenderId} should come " +
-                    $"from {val.SenderId}. Not sending echo message for this val message");
+                    $"from {val.SenderId}. Not sending echo message for this val message"
+                );
+                InvokeReceivedInvalidMsg(validator);
             }
         }
 
@@ -172,12 +175,14 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (_echoMessages[validator] != null)
             {
                 Logger.LogWarning($"{Id} already received correct echo from {validator} ({validatorPubKey})");
+                InvokeReceivedInvalidMsg(validator);
                 return;
             }
 
             if (!CheckEchoMessage(echo, validator))
             {
                 Logger.LogWarning($"{Id}: validator {validator} ({validatorPubKey}) sent incorrect ECHO");
+                InvokeReceivedInvalidMsg(validator);
                 return;
             }
 
@@ -194,6 +199,7 @@ namespace Lachain.Consensus.ReliableBroadcast
             if (_readyMessages[validator] != null)
             {
                 Logger.LogWarning($"{Id} received duplicate ready from validator {validator} ({validatorPubKey})");
+                InvokeReceivedInvalidMsg(validator);
                 return;
             }
 

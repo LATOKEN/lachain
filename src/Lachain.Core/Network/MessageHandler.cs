@@ -3,12 +3,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf.Collections;
 using Lachain.Logger;
 using Lachain.Core.Blockchain.Interface;
 using Lachain.Core.Blockchain.Pool;
 using Lachain.Core.Consensus;
+using Lachain.Crypto;
 using Lachain.Networking;
 using Lachain.Proto;
 using Lachain.Storage.State;
@@ -68,7 +70,6 @@ namespace Lachain.Core.Network
             _networkManager.OnPingReply += OnPingReply;
             _networkManager.OnSyncBlocksRequest += OnSyncBlocksRequest;
             _networkManager.OnSyncBlocksReply += OnSyncBlocksReply;
-            _networkManager.OnSyncPoolRequest += OnSyncPoolRequest;
             _networkManager.OnSyncPoolReply += OnSyncPoolReply;
             _networkManager.OnConsensusMessage += OnConsensusMessage;
         }
@@ -101,80 +102,193 @@ namespace Lachain.Core.Network
             (SyncBlocksRequest request, Action<SyncBlocksReply> callback) @event
         )
         {
+            
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksRequest").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksRequest");
             var (request, callback) = @event;
-            if (request.ToHeight >= request.FromHeight)
-            {
-                var reply = new SyncBlocksReply
-                {
-                    Blocks =
-                    {
-                        _stateManager.LastApprovedSnapshot.Blocks
-                            .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
-                            .Select(block => new BlockInfo
-                            {
-                                Block = block,
-                                Transactions =
-                                {
-                                    block.TransactionHashes
-                                        .Select(txHash =>
-                                            _stateManager.LastApprovedSnapshot.Transactions
-                                                .GetTransactionByHash(txHash)?? new TransactionReceipt())
-                                }
-                            })
-                    }
-                };
-                callback(reply);
-            }
-            else
-            {
-                Logger.LogWarning($"Invalid height range in SyncBlockRequest: {request.FromHeight}-{request.ToHeight}");
-                var reply = new SyncBlocksReply { Blocks={}};
-                callback(reply);
-            }
 
+            // validate SyncBlocksRequest
+            ValidateSyncBlocksRequest(request,  _stateManager.LastApprovedSnapshot.Blocks);
+            
+            var reply = new SyncBlocksReply
+            {
+                Blocks =
+                {
+                    _stateManager.LastApprovedSnapshot.Blocks
+                        .GetBlocksByHeightRange(request.FromHeight, request.ToHeight - request.FromHeight + 1)
+                        .Select(block => new BlockInfo
+                        {
+                            Block = block,
+                            Transactions =
+                            {
+                                block.TransactionHashes
+                                    .Select(txHash =>
+                                        _stateManager.LastApprovedSnapshot.Transactions
+                                            .GetTransactionByHash(txHash)?? throw new Exception($"tx {txHash.ToHex()} not found"))
+                            }
+                        })
+                }
+            };
+            callback(reply);
+            
             Logger.LogTrace("Finished processing SyncBlocksRequest");
         }
+
+        //To do: put this constant in a better place, and document block init rule
+        //To do: encode error in reply
+        private const ulong SyncRequestBlockLimit = 10;
+        public void ValidateSyncBlocksRequest(SyncBlocksRequest request, IBlockSnapshot snapshot)
+        {
+            if (request.FromHeight > request.ToHeight)
+            {
+                throw new ArgumentException(
+                    $"Invalid height range in SyncBlockRequest: {request.FromHeight}-{request.ToHeight}");
+            }
+
+            var count = request.ToHeight - request.FromHeight + 1;
+            if (count > SyncRequestBlockLimit)
+            {
+                throw new ArgumentException(
+                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
+                    $"Has too many blocks {count}.");
+            }
+            if (request.FromHeight > snapshot.GetTotalBlockHeight() ||
+                request.ToHeight > snapshot.GetTotalBlockHeight())
+            {
+                throw new ArgumentException(
+                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
+                    $"greater than current block height {snapshot.GetTotalBlockHeight()}");
+            }
+
+            // check proof
+            var orderedBlocks = (request.Proof ?? Enumerable.Empty<BlockInfo>())
+                .Where(x => x.Block?.Header?.Index != null)
+                .OrderBy(x => x.Block.Header.Index)
+                .Reverse()
+                .ToArray();
+
+            if (orderedBlocks.Length != (int) count)
+            {
+                throw new ArgumentException(
+                    $"Height range ({request.FromHeight}-{request.ToHeight}) " +
+                    $"but proof count is {orderedBlocks.Length}");
+            }
+
+            var lastHeight = request.FromHeight;
+            foreach (var blockInfo in orderedBlocks)
+            {
+                var currentHeight = blockInfo.Block.Header.Index;
+                if (currentHeight + 1 != lastHeight)
+                {
+                    throw new Exception($"Invalid proof. Got block {currentHeight} after {lastHeight}");
+                }
+                var block = blockInfo.Block;
+                var receipts = blockInfo.Transactions ?? Enumerable.Empty<TransactionReceipt>();
+                if (!block.TransactionHashes.ToHashSet().SetEquals(receipts.Select(r => r.Hash)))
+                {
+                    throw new Exception($"Invalid proof. Receipt hash set mismatch for block {currentHeight}");
+                }
+                var validBlock = snapshot.GetBlockByHeight(currentHeight) ?? throw new Exception($"we don't have {currentHeight} block");
+                IsSameBlock(validBlock, block);
+                lastHeight = currentHeight;
+            }
+
+            Logger.LogTrace(
+                $"Got SyncBlocksRequest for ({request.FromHeight}-{request.ToHeight}) with proof of {orderedBlocks.Length} blocks"
+            );
+        }
+
+        private void IsSameBlock(Block validBlock, Block block)
+        {
+            var height = validBlock.Header.Index;
+            if (!block.Hash.Equals(validBlock.Hash))
+            {
+                throw new Exception(
+                    $"Invalid proof. Block hash for block {height} does not match"
+                );
+            }
+            if (!block.Header.Equals(validBlock.Header))
+            {
+                throw new Exception(
+                    $"Invalid proof. Block header for block {height} does not match"
+                );
+            }
+            if (!block.TransactionHashes.ToHashSet().SetEquals(validBlock.TransactionHashes.ToHashSet()))
+            {
+                throw new Exception(
+                    $"Invalid proof. Tx hashes for block {height} does not match"
+                );
+            }
+            if (height == 0)
+            {
+                // genesis block does not have multisig
+                return;
+            }
+            var validators = block.Multisig.Validators.ToHashSet();
+            if (!validators.SetEquals(validBlock.Multisig.Validators.ToHashSet()))
+            {
+                throw new Exception(
+                    $"Invalid proof. Validators set for block {height} does not match"
+                );
+            }
+            if (block.Multisig.Signatures.Count < validBlock.Multisig.Quorum)
+            {
+                throw new Exception(
+                    $"Found {block.Multisig.Signatures.Count} signatures in their block, Quorum {validBlock.Multisig.Quorum}"
+                );
+            }
+            // verifying signature is heavy, so we don't verify signature here as it could give spammer scope to attack
+            foreach (var signByValidator in block.Multisig.Signatures)
+            {
+                if (!validators.Contains(signByValidator.Key) || 
+                    signByValidator.Value.Buffer.Length < DefaultCrypto.SignatureSize(false))
+                {
+                    throw new Exception($"Invalid signature for block {height}");
+                }
+            }
+        }
+        
 
         private void OnSyncBlocksReply(object sender, (SyncBlocksReply reply, ECDSAPublicKey publicKey) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncBlocksReply").NewTimer();
             Logger.LogTrace("Start processing SyncBlocksReply");
             var (reply, publicKey) = @event;
-            var len = reply.Blocks?.Count ?? 0;
-            var orderedBlocks = (reply.Blocks ?? Enumerable.Empty<BlockInfo>())
-                .Where(x => x.Block?.Header?.Index != null)
-                .OrderBy(x => x.Block.Header.Index)
-                .ToArray();
-            Logger.LogTrace($"Blocks received: {orderedBlocks.Length} ({len})");
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    foreach (var block in orderedBlocks)
-                    {
-                        if (!_blockSynchronizer.HandleBlockFromPeer(block, publicKey))
-                            break;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError($"Error occured while handling blocks from peer: {e}");
-                }
-            }, TaskCreationOptions.LongRunning);
+
+            // validate SyncBlocksReply
+            ValidateSyncBlocksReply(reply);
+
+            _blockSynchronizer.BlockReceivedFromPeer(reply, publicKey);
+            
             Logger.LogTrace("Finished processing SyncBlocksReply");
         }
 
+        public void ValidateSyncBlocksReply(SyncBlocksReply reply)
+        {
+            if (reply.Blocks is null || reply.Blocks.Count > (int) SyncRequestBlockLimit)
+            {
+                throw new ArgumentException("Invalid SyncBlocksReply");
+            }
+        }
+        
+        // TODO:
+        // We don't need/support SyncPoolRequest yet
+        // If needed implement mechanism to prevent spamming
         private void OnSyncPoolRequest(object sender,
             (SyncPoolRequest request, Action<SyncPoolReply> callback) @event)
         {
+            
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncPoolRequest").NewTimer();
             var (request, callback) = @event;
             Logger.LogTrace($"Get request for {request.Hashes.Count} transactions");
-            var txs = request.Hashes
-                .Select(txHash => _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash) ??
-                                  _transactionPool.GetByHash(txHash))
+            
+            // validate SyncPoolRequest
+            ValidateSyncPoolRequest(request);
+            
+            List<TransactionReceipt> txs;
+            txs = request.Hashes
+                .Select(txHash => _transactionPool.GetByHash(txHash) ??
+                    _stateManager.LastApprovedSnapshot.Transactions.GetTransactionByHash(txHash))
                 .Where(tx => tx != null)
                 .Select(tx => tx!)
                 .ToList();
@@ -182,16 +296,50 @@ namespace Lachain.Core.Network
             if (txs.Count == 0) return;
             callback(new SyncPoolReply {Transactions = {txs}});
         }
+        
+        //To do: put this constant in a better place, and document block init rule
+        //To do: encode error in reply
+        private const int PoolSyncRequestTransactionLimit = 1000;
+        public void ValidateSyncPoolRequest(SyncPoolRequest request)
+        {
+            if (request.Hashes is null || request.Hashes.Count == 0)
+            {
+                throw new ArgumentException("No hashes provided in request");
+            }
+
+            if (PoolSyncRequestTransactionLimit > 0 && request.Hashes.Count > PoolSyncRequestTransactionLimit)
+            {
+                throw new ArgumentException("Too many hashes in request");
+            }
+            
+        }
 
         private void OnSyncPoolReply(object sender, (SyncPoolReply reply, ECDSAPublicKey publicKey) @event)
         {
             using var timer = IncomingMessageHandlingTime.WithLabels("SyncPoolReply").NewTimer();
             Logger.LogTrace("Start processing SyncPoolReply");
+            
+            
             var (reply, publicKey) = @event;
-            _blockSynchronizer.HandleTransactionsFromPeer(
-                reply.Transactions ?? Enumerable.Empty<TransactionReceipt>(), publicKey
-            );
+
+            // validate SyncPoolReply
+            ValidateSyncPoolReply(reply);
+            
+            _blockSynchronizer.TxReceivedFromPeer(reply, publicKey);
             Logger.LogTrace("Finished processing SyncPoolReply");
+        }
+
+        public void ValidateSyncPoolReply(SyncPoolReply syncPoolReply)
+        {
+            if (syncPoolReply.Transactions is null || syncPoolReply.Transactions.Count == 0)
+            {
+                throw new ArgumentException("Transaction list is null");
+            }
+
+            if (PoolSyncRequestTransactionLimit > 0 && syncPoolReply.Transactions.Count > PoolSyncRequestTransactionLimit)
+            {
+                throw new ArgumentException("Too many transactions in request");
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

@@ -61,7 +61,8 @@ namespace Lachain.Consensus
         {
             if (Started)
             {
-                throw new InvalidOperationException("StartThread() already called previously");
+                Logger.LogDebug($"StartThread() already called previously for protocol {Id}");
+                return;
             }
 
             _thread.Start();
@@ -212,11 +213,17 @@ namespace Lachain.Consensus
             _messageSent?.Invoke(this, (validator, msg));
         }
 
+        protected void InvokeReceivedInvalidMsg(int validatorId)
+        {
+            _receivedInvalidMsg?.Invoke(this, validatorId);
+        }
+
         public abstract void ProcessMessage(MessageEnvelope envelope);
 
         public event EventHandler<IProtocolIdentifier>? _protocolWaitingTooLong;
         public event EventHandler<(int from, ConsensusMessage msg)>? _receivedExternalMessage;
         public event EventHandler<ConsensusMessage>? _messageBroadcasted;
         public event EventHandler<(int validator, ConsensusMessage msg)>? _messageSent;
+        public event EventHandler<int>? _receivedInvalidMsg;
     }
 }

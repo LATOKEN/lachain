@@ -5,6 +5,7 @@ using Google.Protobuf;
 using Lachain.Consensus;
 using Lachain.Crypto;
 using Lachain.Logger;
+using Lachain.Networking.PeerFault;
 using Lachain.Proto;
 using Lachain.Utility;
 using Lachain.Utility.Utils;
@@ -28,12 +29,20 @@ namespace Lachain.Networking.Hub
             "peer", "message_type"
         );
 
+        private static readonly Counter PenaltyCounter = Metrics.CreateCounter(
+            "lachain_peer_penalty_count",
+            "Number of penalties done by peer",
+            "peer"
+        );
+
         public byte[] PeerPublicKey { get; }
         private readonly IMessageFactory _messageFactory;
         private readonly HubConnector _hubConnector;
+        public readonly PeerPenalty _penaltyHandler;
         private readonly Thread _worker;
         private bool _isConnected = false;
         private int _eraMsgCounter;
+        private bool _isBanned = false;
 
         private readonly C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)> _messageQueue 
             = new C5.IntervalHeap<(NetworkMessagePriority, NetworkMessage)>(new NetworkMessageComparer());
@@ -43,6 +52,7 @@ namespace Lachain.Networking.Hub
             _messageFactory = messageFactory;
             _hubConnector = hubConnector;
             PeerPublicKey = peerPublicKey.EncodeCompressed();
+            _penaltyHandler = new PeerPenalty(PeerPublicKey);
             _worker = new Thread(Worker);
         }
 
@@ -51,6 +61,7 @@ namespace Lachain.Networking.Hub
             _messageFactory = messageFactory;
             _hubConnector = hubConnector;
             PeerPublicKey = peerPublicKey;
+            _penaltyHandler = new PeerPenalty(PeerPublicKey);
             _worker = new Thread(Worker);
         }
 
@@ -66,12 +77,41 @@ namespace Lachain.Networking.Hub
                 return;
                 
             _isConnected = false;
+            lock (_messageQueue)
+            {
+                while (_messageQueue.Count > 0)
+                    _messageQueue.DeleteMin();
+
+                Monitor.PulseAll(_messageQueue);
+            }
             _worker.Join();
         }
 
+        public void BanPeer()
+        {
+            if (_isBanned)
+                return;
+            _isBanned = true;
+            Logger.LogTrace($"Peer {PeerPublicKey.ToHex()} is banned");
+            _hubConnector.BanPeer(PeerPublicKey);
+        }
+
+        public void RemoveFromBanList()
+        {
+            if (!_isBanned)
+                return;
+            _isBanned = false;
+            Logger.LogTrace($"Peer {PeerPublicKey.ToHex()} is unbanned");
+            _hubConnector.RemoveFromBanList(PeerPublicKey);
+        }
 
         public void AddMsgToQueue(NetworkMessage message, NetworkMessagePriority priority)
         {
+            if (_isBanned)
+            {
+                Logger.LogWarning($"Peer {PeerPublicKey.ToHex()} is banned, not sending msg with priority {priority}");
+                return;
+            }
             lock (_messageQueue)
             {
                 _messageQueue.Add((priority, message));
@@ -91,16 +131,18 @@ namespace Lachain.Networking.Hub
                 {
                     var now = TimeUtils.CurrentTimeMillis();
                     MessageBatchContent toSend = new MessageBatchContent();
+                    bool isConsensus = false;
 
                     lock (_messageQueue)
                     {
-                        while (_messageQueue.Count == 0)
+                        while (_messageQueue.Count == 0 && _isConnected)
                             Monitor.Wait(_messageQueue);
 
                         while (_messageQueue.Count > 0 && toSend.CalculateSize() < maxSendSize)
                         {
-                            var message = _messageQueue.DeleteMin().Item2;
+                            var (type, message) = _messageQueue.DeleteMin();
                             toSend.Messages.Add(message);
+                            isConsensus |= type == NetworkMessagePriority.ConsensusMessage;
                         }
                     }
 
@@ -128,7 +170,7 @@ namespace Lachain.Networking.Hub
                                 .Inc(message.CalculateSize());
                         }
 
-                        _hubConnector.Send(PeerPublicKey, megaBatchBytes);
+                        _hubConnector.Send(PeerPublicKey, megaBatchBytes, isConsensus);
                         _eraMsgCounter += 1;
                     }
                     
@@ -144,23 +186,23 @@ namespace Lachain.Networking.Hub
 
         public void Dispose()
         {
-            lock (_messageQueue)
-            {
-                while (_messageQueue.Count > 0)
-                    _messageQueue.DeleteMin();
-
-                Monitor.PulseAll(_messageQueue);
-            }
             Stop();
         }
 
         public int AdvanceEra(ulong era)
         {
+            _penaltyHandler.AdvanceEra(era);
             var sentBatches = _eraMsgCounter;
             _eraMsgCounter = 0;
             Logger.LogTrace($"Sent {sentBatches} msgBatches during era #{era - 1} for {PeerPublicKey.ToHex()}");
 
             return sentBatches;
+        }
+
+        public void IncPenalty()
+        {
+            PenaltyCounter.WithLabels(PeerPublicKey.ToHex()).Inc();
+            _penaltyHandler.IncPenalty();
         }
     }
 }

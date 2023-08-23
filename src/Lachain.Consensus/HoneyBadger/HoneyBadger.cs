@@ -223,6 +223,7 @@ namespace Lachain.Consensus.HoneyBadger
                 share = null;
                 var pubKey = Broadcaster.GetPublicKeyById(senderId)!.ToHex();
                 Logger.LogWarning($"Exception occured handling Decrypted message: {msg} from {senderId} ({pubKey}), exception: {ex}");
+                InvokeReceivedInvalidMsg(senderId);
             }
 
             if (!(share is null))

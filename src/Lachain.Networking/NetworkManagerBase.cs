@@ -11,6 +11,7 @@ using Lachain.Logger;
 using Lachain.Networking.Hub;
 using Lachain.Proto;
 using Lachain.Utility;
+using Lachain.Utility.Serialization;
 using Lachain.Utility.Utils;
 using PingReply = Lachain.Proto.PingReply;
 
@@ -18,6 +19,10 @@ namespace Lachain.Networking
 {
     public abstract class NetworkManagerBase : INetworkManager, INetworkBroadcaster, IConsensusMessageDeliverer
     {
+        public static ulong CycleDuration = 20; // in blocks
+        // MaxPenaltyTolerance should be cycle dependent
+        // lets say 100 per block
+        public static ulong MaxPenaltyTolerance => 100 * CycleDuration;
         private static readonly ICrypto Crypto = CryptoProvider.GetCrypto();
 
         private static readonly ILogger<NetworkManagerBase> Logger =
@@ -31,6 +36,11 @@ namespace Lachain.Networking
 
         private readonly IDictionary<ECDSAPublicKey, ClientWorker> _clientWorkers =
             new ConcurrentDictionary<ECDSAPublicKey, ClientWorker>();
+        
+        private readonly ConcurrentDictionary<ulong, ECDSAPublicKey> _requestIdentifier =
+            new ConcurrentDictionary<ulong, ECDSAPublicKey>();
+        private readonly ConcurrentDictionary<int, ECDSAPublicKey> _peerPubKeys = 
+            new ConcurrentDictionary<int, ECDSAPublicKey>();
 
         protected NetworkManagerBase(NetworkConfig networkConfig, EcdsaKeyPair keyPair, byte[] hubPrivateKey, 
             int version, int minPeerVersion)
@@ -55,17 +65,52 @@ namespace Lachain.Networking
             _hubConnector.OnMessage += _HandleMessage;
 
             _broadcaster = new ClientWorker(new byte[33], _messageFactory, _hubConnector);
+            if(networkConfig.CycleDuration is null)
+                throw new Exception("Cycle Duration is not provided");
+            CycleDuration = (ulong) networkConfig.CycleDuration;
         }
 
         public void AdvanceEra(ulong era)
         {
             var totalBatchesCount = _clientWorkers.Values.Sum(clientWorker => clientWorker.AdvanceEra(era));
             Logger.LogInformation($"Batches sent during era #{era - 1}: {totalBatchesCount}");
+            OnAdvanceEra?.Invoke(this, era);
         }
 
         public void SendTo(ECDSAPublicKey publicKey, NetworkMessage message, NetworkMessagePriority priority)
         {
-            GetClientWorker(publicKey)?.AddMsgToQueue(message, priority);
+            var worker = GetClientWorker(publicKey);
+            if (worker is null)
+            {
+                Logger.LogWarning($"No worker found for public key {publicKey.ToHex()}. Ignoring.");
+                return;
+            }
+            
+            var requestId = TrySaveRequest(publicKey, message);
+            message.RequestId = requestId;
+            worker.AddMsgToQueue(message, priority);
+        }
+
+        private ulong TrySaveRequest(ECDSAPublicKey publicKey, NetworkMessage message)
+        {
+            switch (message.MessageCase)
+            {
+                case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
+                    return SaveRequest(publicKey);
+                default:
+                    return 0;
+            }
+        }
+
+        private ulong SaveRequest(ECDSAPublicKey publicKey)
+        {
+            ulong requestId;
+            do
+            {
+                requestId = UInt64Utils.FromBytes(Crypto.GenerateRandomBytes(8));
+            } while (!_requestIdentifier.TryAdd(requestId, publicKey));
+            Logger.LogTrace($"Sent request with id {requestId} to peer {publicKey.ToHex()}");
+            return requestId;
         }
 
         public void Start()
@@ -96,12 +141,47 @@ namespace Lachain.Networking
             var worker = new ClientWorker(publicKey, _messageFactory, _hubConnector);
             _clientWorkers.Add(publicKey, worker);
             worker.Start();
+            OnWorkerCreated?.Invoke(this, worker);
             return worker;
         }
 
-        private void _HandleMessage(object sender, byte[] buffer)
+        public void IncPenalty(ECDSAPublicKey publicKey)
+        {
+            var worker = GetClientWorker(publicKey);
+            if (worker is null)
+            {
+                Logger.LogWarning($"Got request to increase penalty for peer {publicKey.ToHex()} but worker is null");
+                return;
+            }
+            worker.IncPenalty();
+        }
+
+        public void BanPeer(byte[] publicKey)
+        {
+            var worker = GetClientWorker(CryptoUtils.ToPublicKey(publicKey));
+            if (worker is null)
+            {
+                Logger.LogWarning($"Got request to ban peer {publicKey.ToHex()} but worker is null");
+                return;
+            }
+            worker.BanPeer();
+        }
+
+        public void RemoveFromBanList(byte[] publicKey)
+        {
+            var worker = GetClientWorker(CryptoUtils.ToPublicKey(publicKey));
+            if (worker is null)
+            {
+                Logger.LogWarning($"Got request to unban peer {publicKey.ToHex()} but worker is null");
+                return;
+            }
+            worker.RemoveFromBanList();
+        }
+
+        private void _HandleMessage(object? sender, (byte[] buffer, int peerId) @event)
         {
             MessageBatch? batch;
+            var (buffer, peerId) = @event;
             try
             {
                 batch = MessageBatch.Parser.ParseFrom(buffer);
@@ -134,6 +214,15 @@ namespace Lachain.Networking
                 return;
             }
 
+            if (peerId >= 0)
+            {
+                if (!TrySetPeerPublicKey(batch.Sender, peerId))
+                {
+                    Logger.LogWarning($"Peer sent msg with wrong public key");
+                    return;
+                }
+            }
+
             var envelope = new MessageEnvelope(batch.Sender, worker);
             var content = MessageBatchContent.Parser.ParseFrom(batch.Content);
             // if (content.Messages.Any(msg => msg.MessageCase == NetworkMessage.MessageOneofCase.ConsensusMessage))
@@ -146,22 +235,51 @@ namespace Lachain.Networking
                 }
                 catch (Exception e)
                 {
+                    // add penalty for peer
+                    envelope.RemotePeer.IncPenalty();
                     Logger.LogError($"Unexpected error occurred: {e}");
                 }
             }
         }
 
-        private Action<IMessage> SendTo(ClientWorker peer)
+        private bool TrySetPeerPublicKey(ECDSAPublicKey publicKey, int peerId)
+        {
+            if (_peerPubKeys.TryGetValue(peerId, out var actualPublicKey))
+            {
+                if (!publicKey.Equals(actualPublicKey))
+                {
+                    // this indicates malicious behavior
+                    // we will try to set publicKey for peer again,
+                    // it should be invalid and reset inbound stream
+                    Logger.LogWarning(
+                        $"Peer sent msg with public key {actualPublicKey.ToHex()} before, now sent msg with public key {publicKey.ToHex()}"
+                    );
+                    return _hubConnector.SetPeerPublicKey(publicKey.EncodeCompressed(), peerId);
+                }
+                return true;
+            }
+            var publicKeySet = _hubConnector.SetPeerPublicKey(publicKey.EncodeCompressed(), peerId);
+            if (publicKeySet)
+            {
+                _peerPubKeys.TryAdd(peerId, publicKey);
+            }
+            return publicKeySet;
+        }
+
+        private Action<IMessage> SendTo(ClientWorker peer, ulong requestId)
         {
             return x =>
             {
                 Logger.LogTrace($"Sending {x.GetType()} to {peer.PeerPublicKey.ToHex()}");
                 NetworkMessage msg = x switch
                 {
-                    PingReply pingReply => new NetworkMessage {PingReply = pingReply},
-                    SyncBlocksReply syncBlockReply => new NetworkMessage {SyncBlocksReply = syncBlockReply},
-                    SyncPoolReply syncPoolReply => new NetworkMessage {SyncPoolReply = syncPoolReply},
-                    GetPeersReply getPeersReply => new NetworkMessage {GetPeersReply = getPeersReply},
+                    PingReply pingReply => new NetworkMessage { RequestId = requestId, PingReply = pingReply },
+                    SyncBlocksReply syncBlockReply => new NetworkMessage
+                        { RequestId = requestId, SyncBlocksReply = syncBlockReply },
+                    SyncPoolReply syncPoolReply => new NetworkMessage
+                        { RequestId = requestId, SyncPoolReply = syncPoolReply },
+                    GetPeersReply getPeersReply => new NetworkMessage
+                        { RequestId = requestId, GetPeersReply = getPeersReply },
                     _ => throw new InvalidOperationException()
                 };
                 // we should never reply with priority, requests can be spammed
@@ -179,19 +297,29 @@ namespace Lachain.Networking
                     OnPingReply?.Invoke(this, (message.PingReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksRequest:
-                    OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer)));
+                    OnSyncBlocksRequest?.Invoke(this, (message.SyncBlocksRequest, SendTo(envelope.RemotePeer, message.RequestId)));
                     break;
                 case NetworkMessage.MessageOneofCase.SyncBlocksReply:
-                    OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    if (IsRequested(message.RequestId, envelope.PublicKey))
+                    {
+                        OnSyncBlocksReply?.Invoke(this, (message.SyncBlocksReply, envelope.PublicKey));
+                    }
+                    else
+                    {
+                        Logger.LogWarning(
+                            $"Got SyncBlocksReply from {envelope.PublicKey.ToHex()} with requestId {message.RequestId} "
+                            + "but we never requestd such reply"
+                        );
+                        throw new Exception("Got unwanted SyncBlocksReply");
+                    }
                     break;
                 case NetworkMessage.MessageOneofCase.SyncPoolRequest:
-                    OnSyncPoolRequest?.Invoke(this, (message.SyncPoolRequest, SendTo(envelope.RemotePeer)));
-                    break;
+                    throw new NotImplementedException("We do not support/need SyncPoolRequest yet");
                 case NetworkMessage.MessageOneofCase.SyncPoolReply:
                     OnSyncPoolReply?.Invoke(this, (message.SyncPoolReply, envelope.PublicKey));
                     break;
                 case NetworkMessage.MessageOneofCase.Ack:
-                    break;
+                    throw new NotImplementedException("We do not support/need Ack yet");
                 case NetworkMessage.MessageOneofCase.ConsensusMessage:
                     OnConsensusMessage?.Invoke(this, (message.ConsensusMessage, envelope.PublicKey));
                     break;
@@ -199,6 +327,18 @@ namespace Lachain.Networking
                     throw new ArgumentOutOfRangeException(nameof(message),
                         "Unable to resolve message type (" + message.MessageCase + ") from protobuf structure");
             }
+        }
+
+        private bool IsRequested(ulong requestId, ECDSAPublicKey peer)
+        {
+            if (_requestIdentifier.TryGetValue(requestId, out var publicKey))
+            {
+                if (peer.Equals(publicKey))
+                {
+                    return _requestIdentifier.TryRemove(requestId, out var _);
+                }
+            }
+            return false;
         }
 
         public void BroadcastLocalTransaction(TransactionReceipt e)
@@ -228,14 +368,25 @@ namespace Lachain.Networking
             _clientWorkers.Clear();
         }
 
+        public static ulong CycleNumber(ulong era)
+        {
+            return era / CycleDuration;
+        }
+
+        public static ulong BlockInCycle(ulong era)
+        {
+            return era % CycleDuration;
+        }
+
         public event EventHandler<(PingReply message, ECDSAPublicKey publicKey)>? OnPingReply;
 
         public event EventHandler<(SyncBlocksRequest message, Action<SyncBlocksReply> callback)>?
             OnSyncBlocksRequest;
 
         public event EventHandler<(SyncBlocksReply message, ECDSAPublicKey address)>? OnSyncBlocksReply;
-        public event EventHandler<(SyncPoolRequest message, Action<SyncPoolReply> callback)>? OnSyncPoolRequest;
         public event EventHandler<(SyncPoolReply message, ECDSAPublicKey address)>? OnSyncPoolReply;
         public event EventHandler<(ConsensusMessage message, ECDSAPublicKey publicKey)>? OnConsensusMessage;
+        public event EventHandler<ulong>? OnAdvanceEra;
+        public event EventHandler<ClientWorker>? OnWorkerCreated;
     }
 }

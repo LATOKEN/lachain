@@ -30,6 +30,7 @@ message GetPeersReply {
 message SyncBlocksRequest {
     uint64 from_height = 1;
     uint64 to_height = 2;
+    repeated BlockInfo proof = 3;
 }
 
 message BlockInfo {
@@ -43,7 +44,6 @@ message SyncBlocksReply {
 
 message SyncPoolRequest {
     repeated UInt256 hashes = 1;
-    // TODO: switch to sync entire pool?
 }
 
 message SyncPoolReply {
@@ -51,6 +51,7 @@ message SyncPoolReply {
 }
 
 message NetworkMessage {
+    uint64 request_id = 1;
     oneof message {
         PingReply ping_reply = 13;
         ConsensusMessage consensus_message = 21;
