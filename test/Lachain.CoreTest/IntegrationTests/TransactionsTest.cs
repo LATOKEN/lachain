@@ -172,10 +172,6 @@ namespace Lachain.CoreTest.IntegrationTests
                 var newTx = new Transaction(tx.Transaction);
                 // lower price
                 newTx.GasPrice = tx.Transaction.GasPrice - 1;
-                var randomTx = TestUtils.GetRandomTransaction(useNewChainId).Transaction;
-                newTx.To = randomTx.To;
-                newTx.Value = randomTx.Value;
-                newTx.GasLimit = randomTx.GasLimit;
                 var newTxReceipt = signer.Sign(newTx, keyPair, useNewChainId);
                 var result = _transactionPool.Add(newTxReceipt);
                 Console.WriteLine($"old gas price: {tx.Transaction.GasPrice}, new gas price: {newTxReceipt.Transaction.GasPrice}");
@@ -185,9 +181,13 @@ namespace Lachain.CoreTest.IntegrationTests
                 newTxReceipt = signer.Sign(newTx, keyPair, useNewChainId);
                 result = _transactionPool.Add(newTxReceipt);
                 Console.WriteLine($"old gas price: {tx.Transaction.GasPrice}, new gas price: {newTxReceipt.Transaction.GasPrice}");
-                Assert.AreEqual(OperatingError.Underpriced, result);
+                Assert.AreEqual(OperatingError.AlreadyExists, result);
                 // higher price
                 newTx.GasPrice = tx.Transaction.GasPrice + 1;
+                var randomTx = TestUtils.GetRandomTransaction(useNewChainId).Transaction;
+                newTx.To = randomTx.To;
+                newTx.Value = randomTx.Value;
+                newTx.GasLimit = randomTx.GasLimit;
                 newTxReceipt = signer.Sign(newTx, keyPair, useNewChainId);
                 result = _transactionPool.Add(newTxReceipt);
                 Console.WriteLine($"old gas price: {tx.Transaction.GasPrice}, new gas price: {newTxReceipt.Transaction.GasPrice}");
@@ -231,9 +231,13 @@ namespace Lachain.CoreTest.IntegrationTests
             result = _transactionPool.Add(tx);
             Assert.AreEqual(OperatingError.AlreadyExists, result);
 
-            var tx2 = TestUtils.GetRandomTransaction(useNewChainId);
-            tx2.Transaction.Nonce++;
-            result = _transactionPool.Add(tx2);
+            var tx2 = TestUtils.GetRandomTx(out var privateKey);
+            tx2.Nonce++;
+            var keyPair = new EcdsaKeyPair(privateKey.ToPrivateKey());
+            var signer = new TransactionSigner();
+            var receipt = signer.Sign(tx2, keyPair, useNewChainId);
+            _stateManager.LastApprovedSnapshot.Balances.AddBalance(tx2.From, Money.Parse("1000"));
+            result = _transactionPool.Add(receipt);
             Assert.AreEqual(OperatingError.InvalidNonce, result); 
 
             /* TODO: maybe we should fix this strange behaviour */

@@ -48,6 +48,26 @@ namespace Lachain.UtilityTest
             return signer.Sign(tx, keyPair, useNewChainId);
         }
 
+        public static Transaction GetRandomTx(out byte[] privateKey)
+        {
+            byte[] random = new byte[32];
+            RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(random);
+            privateKey = random;
+            var keyPair = new EcdsaKeyPair(random.ToPrivateKey());
+            var randomValue = new Random().Next(1, 100);
+            var tx = new Transaction
+            {
+                To = random.Slice(0, 20).ToUInt160(),
+                From = keyPair.PublicKey.GetAddress(),
+                GasPrice = (ulong) Money.Parse("0.0000001").ToWei(),
+                GasLimit = 100000000,
+                Nonce = 0,
+                Value = Money.Parse($"{randomValue}.0").ToUInt256()
+            };
+            return tx;
+        }
+
         public static TransactionReceipt GetRandomTransactionFromAddress(EcdsaKeyPair keyPair, ulong nonce, bool useNewChainId)
         {
             var signer = new TransactionSigner();

@@ -137,13 +137,11 @@ namespace Lachain.Core.Blockchain.Operations
             return OperatingError.Ok;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Verify(TransactionReceipt transaction,  bool useNewChainId)
         {
             return VerifyInternal(transaction, false, useNewChainId);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         private OperatingError VerifyInternal(
             TransactionReceipt acceptedTransaction,
             bool canTransactionMissVerification,
@@ -171,30 +169,37 @@ namespace Lachain.Core.Blockchain.Operations
             return _transactionExecuter.Verify(transaction);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, ECDSAPublicKey publicKey,  bool useNewChainId)
         {
-            if (!_processedTransactions.TryGetValue(transaction.Hash, out var status))
-                return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey, useNewChainId)
-                    ? OperatingError.Ok
-                    : OperatingError.InvalidSignature;
-
-            return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+            lock (_processedTransactions)
+            {
+                if (_processedTransactions.TryGetValue(transaction.Hash, out var status))
+                {
+                    return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+                }
+            }
+            
+            return _transactionVerifier.VerifyTransactionImmediately(transaction, publicKey, useNewChainId)
+                ? OperatingError.Ok
+                : OperatingError.InvalidSignature;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError VerifySignature(TransactionReceipt transaction, bool useNewChainId,  bool cacheEnabled)
         {
-            /* First search the cache to see if the transaction is verified, otherwise verify immediately */
-            if (!_processedTransactions.TryGetValue(transaction.Hash, out var status))
-                return _transactionVerifier.VerifyTransactionImmediately(transaction, useNewChainId, cacheEnabled)
-                    ? OperatingError.Ok
-                    : OperatingError.InvalidSignature;
+            /* First search the cache to see if the transaction is verified, otherwise verify immediately */         
+            lock (_processedTransactions)
+            {
+                if (_processedTransactions.TryGetValue(transaction.Hash, out var status))
+                {
+                    return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+                }
+            }
             
-            return status == TransactionStatus.Verified ? OperatingError.Ok : OperatingError.InvalidSignature;
+            return _transactionVerifier.VerifyTransactionImmediately(transaction, useNewChainId, cacheEnabled)
+                ? OperatingError.Ok
+                : OperatingError.InvalidSignature;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong CalcNextTxNonce(UInt160 from)
         {
             return _stateManager.LastApprovedSnapshot.Transactions.GetTotalTransactionCount(from);

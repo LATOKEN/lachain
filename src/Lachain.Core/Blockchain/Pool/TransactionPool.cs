@@ -39,8 +39,7 @@ namespace Lachain.Core.Blockchain.Pool
         // _proposed stores the list of proposed transactions that was proposed an era
         // _proposed should always contain at most one entry representing the last era and
         // the list of transactions proposed during that era
-        private readonly ConcurrentDictionary<ulong, List<TransactionReceipt>> _proposed 
-            = new ConcurrentDictionary<ulong, List<TransactionReceipt>>();
+        private readonly IList<TransactionReceipt> _proposed = new List<TransactionReceipt>();
 
         // _toDeleteRepo represents the transactions that have been removed from the in-memory pool, 
         // but have not been removed from the pool yet. 
@@ -88,10 +87,17 @@ namespace Lachain.Core.Blockchain.Pool
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public TransactionReceipt? GetByHash(UInt256 hash)
         {
-            return _transactions.TryGetValue(hash, out var tx) ? tx : _poolRepository.GetTransactionByHash(hash);
+            // all pool txes are in _transactions or _proposed.
+            // If not in any of them then must be in the state
+            if (_transactions.TryGetValue(hash, out var tx))
+                return tx;
+            
+            var txes = _proposed.Where(receipt => receipt.Hash.Equals(hash)).ToList();
+            if (txes.Count == 0)
+                return null;
+            else return txes[0];
         }
 
         // During the start of a node, it attempts to restore all the transactions
@@ -109,9 +115,7 @@ namespace Lachain.Core.Blockchain.Pool
                 Logger.LogTrace($"Tx from pool: {txHash.ToHex()}");
                 var tx = _poolRepository.GetTransactionByHash(txHash);
                 
-                if (tx is null)
-                    continue;
-                if(Add(tx, false) != OperatingError.Ok)
+                if(!(tx is null) && Add(tx, false) != OperatingError.Ok)
                     transactionsToRemove.Add(tx.Hash);
             }
             // if a transaction was not added to the pool, that means it's not a valid 
@@ -144,17 +148,30 @@ namespace Lachain.Core.Blockchain.Pool
         // Attempts to add a transaction to the pool
         // if notify = true, then if it can add to the pool, then also broadcasts this
         // transaction to all its peers
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public OperatingError Add(TransactionReceipt receipt, bool notify = true)
         {
-            if (receipt is null)
-                throw new ArgumentNullException(nameof(receipt));
+            var error = ValidateTransaction(receipt);
+            if (error != OperatingError.Ok)
+            {
+                Logger.LogDebug($"Tx verification failed with error {error}");
+                return error;
+            }
+            error = PersistTransaction(receipt, notify);
+            if (error != OperatingError.Ok)
+            {
+                Logger.LogDebug($"Transaction not added to pool with error {error}");
+            }
+            return error;
+        }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private OperatingError PersistTransaction(TransactionReceipt receipt, bool notify = true)
+        {
             /* don't add to transaction pool transactions with the same hashes */
             if (_transactions.ContainsKey(receipt.Hash))
                 return OperatingError.AlreadyExists;
-            /* verify transaction before adding */
-            if (GetNextNonceForAddress(receipt.Transaction.From) < receipt.Transaction.Nonce ||
+            var maxNonce = GetNextNonceForAddress(receipt.Transaction.From);
+            if (maxNonce < receipt.Transaction.Nonce ||
                 _transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
             {
                 return OperatingError.InvalidNonce;
@@ -165,13 +182,109 @@ namespace Lachain.Core.Blockchain.Pool
             {
                 // system transaction will not be replaced by same nonce
                 // do we need to check nonce for system txes???
-                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
+                if (maxNonce != receipt.Transaction.Nonce)
                     return OperatingError.InvalidNonce;
                 if (!_poolRepository.ContainsTransactionByHash(receipt.Hash))
                     _poolRepository.AddTransaction(receipt);
                 return OperatingError.Ok;
             }
 
+            bool oldTxExist = false;
+            TransactionReceipt? oldTx = null;
+            lock (_transactions)
+            {
+                if (maxNonce != receipt.Transaction.Nonce)
+                {
+                    /* this tx will try to replace an old one */
+                    oldTxExist = _transactionHashTracker.TryGetTransactionHash(receipt.Transaction.From,
+                        receipt.Transaction.Nonce, out var oldTxHash);
+                    if (!oldTxExist)
+                    {
+                        Logger.LogWarning($"Max nonce for address {receipt.Transaction.From} is "
+                              + $"{maxNonce}. But cannot find transaction "
+                              + $"for nonce {receipt.Transaction.Nonce}");
+                        return OperatingError.TransactionLost;
+                    }
+
+                    if (!_transactions.TryGetValue(oldTxHash!, out oldTx))
+                    {
+                        Logger.LogTrace(
+                            $"Transaction {receipt.Hash.ToHex()} cannot replace the old transaction {oldTxHash!.ToHex()}. "
+                            + $"Probable reason: old transaction is already proposed to block");
+                        return OperatingError.TransactionLost;
+                    }
+
+                    if (!IdenticalTransaction(oldTx.Transaction, receipt.Transaction))
+                    {
+                        Logger.LogTrace(
+                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
+                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
+                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to different value is some fields");
+                        return OperatingError.DuplicatedTransaction;
+                    }
+                    if (oldTx.Transaction.GasPrice >= receipt.Transaction.GasPrice)
+                    {
+                        // discard new transaction, it has less gas price than the old one
+                        Logger.LogTrace(
+                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
+                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
+                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to lower gasPrice");
+                        return OperatingError.Underpriced;
+                    }
+                    
+                    
+                    // remove the old transaction from pool
+                    _transactionsQueue.Remove(oldTx);
+                    _nonceCalculator.TryRemove(oldTx);
+                    _transactions.TryRemove(oldTxHash!, out var _);
+                    Logger.LogTrace(
+                        $"Transaction {oldTxHash!.ToHex()} with nonce: {oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice}" +
+                        $" in pool is replaced by transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
+                        $"{receipt.Transaction.GasPrice}");
+                }
+                
+                // db write could be slow, so sharing this tx with peers before persisting
+                // so peers can get it faster
+                if (notify) TransactionAdded?.Invoke(this, receipt);
+
+                /* put transaction to pool queue */
+                _transactions[receipt.Hash] = receipt;
+                _transactionsQueue.Add(receipt);
+
+                /* add to the _nonceCalculator to efficiently calculate nonce */
+                _nonceCalculator.TryAdd(receipt);
+            }
+
+            /* write transaction to persistence storage */
+            if (!oldTxExist && !_poolRepository.ContainsTransactionByHash(receipt.Hash))
+                _poolRepository.AddTransaction(receipt);
+            else if (oldTxExist)
+            {
+                _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
+            }
+            Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
+            return OperatingError.Ok;
+        }
+
+        private OperatingError ValidateTransaction(TransactionReceipt receipt)
+        {
+            if (receipt is null)
+                throw new ArgumentNullException(nameof(receipt));
+
+            /* don't add to transaction pool transactions with the same hashes */
+            if (_transactions.ContainsKey(receipt.Hash))
+                return OperatingError.AlreadyExists;
+            /* verify transaction before adding */
+            if (_transactionManager.CalcNextTxNonce(receipt.Transaction.From) > receipt.Transaction.Nonce)
+            {
+                return OperatingError.InvalidNonce;
+            }
+            /* special case for system transactions */
+            if (receipt.Transaction.From.IsZero())
+            {
+                return OperatingError.Ok;
+            }
+                
             /* check if the address has enough gas */
             if (!IsBalanceValid(receipt))
                 return OperatingError.InsufficientBalance;
@@ -192,77 +305,9 @@ namespace Lachain.Core.Blockchain.Pool
             if (result != OperatingError.Ok)
                 return result;
 
-            bool oldTxExist = false;
-            TransactionReceipt? oldTx = null;
-            lock (_transactions)
-            {
-                if (GetNextNonceForAddress(receipt.Transaction.From) != receipt.Transaction.Nonce)
-                {
-                    /* this tx will try to replace an old one */
-                    oldTxExist = _transactionHashTracker.TryGetTransactionHash(receipt.Transaction.From,
-                        receipt.Transaction.Nonce, out var oldTxHash);
-                    if (!oldTxExist)
-                    {
-                        Logger.LogWarning($"Max nonce for address {receipt.Transaction.From} is "
-                              + $"{GetNextNonceForAddress(receipt.Transaction.From)}. But cannot find transaction "
-                              + $"for nonce {receipt.Transaction.Nonce}");
-                        return OperatingError.TransactionLost;
-                    }
-
-                    if (!_transactions.TryGetValue(oldTxHash!, out oldTx))
-                    {
-                        Logger.LogTrace(
-                            $"Transaction {receipt.Hash.ToHex()} cannot replace the old transaction {oldTxHash!.ToHex()}. "
-                            + $"Probable reason: old transaction is already proposed to block");
-                        return OperatingError.TransactionLost;
-                    }
-                    if (oldTx.Transaction.GasPrice >= receipt.Transaction.GasPrice)
-                    {
-                        // discard new transaction, it has less gas price than the old one
-                        Logger.LogTrace(
-                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
-                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
-                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to lower gasPrice");
-                        return OperatingError.Underpriced;
-                    }
-                    
-                    if (!IdenticalTransaction(oldTx.Transaction, receipt.Transaction))
-                    {
-                        Logger.LogTrace(
-                            $"Transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
-                            $"{receipt.Transaction.GasPrice} trying to replace transaction {oldTx.Hash.ToHex()} with nonce: " +
-                            $"{oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice} but cannot due to different value is some fields");
-                        return OperatingError.DuplicatedTransaction;
-                    }
-                    
-                    // remove the old transaction from pool
-                    _transactionsQueue.Remove(oldTx);
-                    _nonceCalculator.TryRemove(oldTx);
-                    _transactions.TryRemove(oldTxHash!, out var _);
-                    Logger.LogTrace(
-                        $"Transaction {oldTxHash!.ToHex()} with nonce: {oldTx.Transaction.Nonce} and gasPrice: {oldTx.Transaction.GasPrice}" +
-                        $" in pool is replaced by transaction {receipt.Hash.ToHex()} with nonce: {receipt.Transaction.Nonce} and gasPrice: " +
-                        $"{receipt.Transaction.GasPrice}");
-                }
-                /* put transaction to pool queue */
-                _transactions[receipt.Hash] = receipt;
-                _transactionsQueue.Add(receipt);
-
-                /* add to the _nonceCalculator to efficiently calculate nonce */
-                _nonceCalculator.TryAdd(receipt);
-            }
-
-            /* write transaction to persistence storage */
-            if (!oldTxExist && !_poolRepository.ContainsTransactionByHash(receipt.Hash))
-                _poolRepository.AddTransaction(receipt);
-            else if (oldTxExist)
-            {
-                _poolRepository.AddAndRemoveTransaction(receipt, oldTx!);
-            }
-            Logger.LogTrace($"Added transaction {receipt.Hash.ToHex()} to pool");
-            if (notify) TransactionAdded?.Invoke(this, receipt);
             return OperatingError.Ok;
         }
+
         private bool IsGovernanceTx(TransactionReceipt receipt)
         {
             return receipt.Transaction.To.Equals(ContractRegisterer.GovernanceContract);
@@ -301,15 +346,12 @@ namespace Lachain.Core.Blockchain.Pool
             // this makes sure that the transactions that failed during
             // emulation is removed from _nonceCalculator
 
-            if(_proposed.TryGetValue(era, out var lastProposed))
+            foreach(var receipt in _proposed)
             {
-                foreach(var receipt in lastProposed)
-                {
-                    _nonceCalculator.TryRemove(receipt);
-                    _toDeleteRepo.Add(receipt);
-                }
-                _proposed.Remove(era, out var _);
+                _nonceCalculator.TryRemove(receipt);
+                _toDeleteRepo.Add(receipt);
             }
+            _proposed.Clear();
 
             // make sure that - transactions with bad nonces
             // and not enough balance are removed
@@ -356,30 +398,21 @@ namespace Lachain.Core.Blockchain.Pool
             CheckConsistency();
             return;
         }
-        private IReadOnlyCollection<TransactionReceipt> Take(HashSet<UInt256> txHashesTaken, ulong era)
+
+        private IReadOnlyCollection<TransactionReceipt> Take(List<UInt256> txHashesTaken, ulong era)
         {
             // Should we add lock (_transactions) here? Because old txes can be replaced by new ones
             lock (_transactions)
             {
-                List<TransactionReceipt> result = new List<TransactionReceipt>();
-                foreach (var hash in txHashesTaken)
+                if (_proposed.Count > 0)
                 {
-                    if (!_transactions.ContainsKey(hash))
-                        throw new Exception("Transaction does not exist in the _transaction hashset");
-
-                    result.Add(_transactions[hash]);
-                }
-
-                if (_proposed.ContainsKey(era))
-                {
-                    Logger.LogError($"Asking for transactions for era {era} more than once");
+                    Logger.LogError($"Asking for transactions for era {era}, but _proposed is not empty");
                     throw new Exception("Proposing transactions multiple times for same era");
                 }
-
-                _proposed.TryAdd(era, new List<TransactionReceipt>(result));
-
-                foreach (var tx in result)
+                foreach (var hash in txHashesTaken)
                 {
+                    var tx = _transactions[hash];
+                    _proposed.Add(tx);
                     _transactionsQueue.Remove(tx);
                     bool canErase = _transactions.TryRemove(tx.Hash, out var _);
                     if (canErase is false)
@@ -393,7 +426,7 @@ namespace Lachain.Core.Blockchain.Pool
                         $"_transaction.Count = {_transactions.Count} is not equal to _transactionsQueue.Count = {_transactionsQueue.Count}");
                 }
 
-                return result;
+                return new List<TransactionReceipt>(_proposed);
             }
         }
 
@@ -401,7 +434,7 @@ namespace Lachain.Core.Blockchain.Pool
         public IReadOnlyCollection<TransactionReceipt> Peek(int txsToLook, int txsToTake, ulong era)
         {
             // Should we add lock (_transactions) here? Because old txes can be replaced by new ones
-            Logger.LogTrace($"Proposing Transactions from pool");
+            Logger.LogTrace($"Proposing Transactions from pool  for era {era}");
             // try sanitizing mempool ...
             lock (_toDeleteRepo)
             {
@@ -414,29 +447,34 @@ namespace Lachain.Core.Blockchain.Pool
             if(era <= _lastSanitized) return new List<TransactionReceipt>();
 
             var rnd = new Random();
-            HashSet<UInt256> takenTxHashes = new HashSet<UInt256>();
+            var takenTxHashes = new List<UInt256>();
 
             lock (_transactions)
             {
                 // txes are sorted by sender and then by nonce, in reverse order. So all txes of same sender
                 // are together sorted in descending order of nonce
-                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).Reverse();
+                var orderedTransactionsQueue = _transactionsQueue.OrderBy(x => x, new ReceiptComparer()).ToList();
+                orderedTransactionsQueue.Reverse();
+                var remainingTxes = new List<TransactionReceipt>();
                 // take governance transaction from transaction queue
                 TransactionReceipt? lastGovernanceTxTaken = null;
                 foreach (var receipt in orderedTransactionsQueue)
                 {
+                    bool taken = true;
                     if (!IsGovernanceTx(receipt))
                     {
                         if (lastGovernanceTxTaken is null)
-                            continue;
-
-                        if (!receipt.Transaction.From.Equals(lastGovernanceTxTaken.Transaction.From))
+                        {
+                            taken = false;
+                        }
+                        else if (!receipt.Transaction.From.Equals(lastGovernanceTxTaken.Transaction.From))
                         {
                             lastGovernanceTxTaken = null;
-                            continue;
+                            taken = false;
                         }
                         else if (receipt.Transaction.Nonce >= lastGovernanceTxTaken.Transaction.Nonce)
                         {
+                            taken = false;
                             // there is something wrong with the ordering of transactions which is unknown. need to fix this
                             Logger.LogDebug(
                                 $"receipt {lastGovernanceTxTaken.Hash.ToHex()} with nonce {lastGovernanceTxTaken.Transaction.Nonce}"
@@ -448,13 +486,15 @@ namespace Lachain.Core.Blockchain.Pool
                     }
                     else lastGovernanceTxTaken = receipt;
 
+                    if (!taken)
+                    {
+                        remainingTxes.Add(receipt);
+                        continue;
+                    }
                     // this is a governance tx or it is a tx with same sender
                     // as the lastGovernanceTxTaken tx and this tx has less nonce
                     // so we have to take it
                     var hash = receipt.Hash;
-                    if (takenTxHashes.Contains(hash) || !_transactions.ContainsKey(hash) ||
-                        _transactionManager.GetByHash(hash) != null)
-                        continue;
                     takenTxHashes.Add(hash);
                 }
 
@@ -464,14 +504,9 @@ namespace Lachain.Core.Blockchain.Pool
                 // We first greedily take some most profitable transactions. Let's group by sender and
                 // peek the best by gas price (so we do not break nonce order)
                 var txsBySender = new Dictionary<UInt160, List<TransactionReceipt>>();
-                foreach (var receipt in orderedTransactionsQueue)
+                foreach (var receipt in remainingTxes)
                 {
-                    if (IsGovernanceTx(receipt))
-                        continue;
                     var hash = receipt.Hash;
-                    if (takenTxHashes.Contains(hash) || !_transactions.ContainsKey(hash) ||
-                        _transactionManager.GetByHash(hash) != null)
-                        continue;
 
                     if (txsBySender.ContainsKey(receipt.Transaction.From))
                         txsBySender[receipt.Transaction.From].Add(receipt);
@@ -498,6 +533,7 @@ namespace Lachain.Core.Blockchain.Pool
                         // If there are more txs from this sender, add them to heap 
                         heap.Add(txsFrom.Last());
                     }
+                    else txsBySender.Remove(tx.Transaction.From);
                 }
 
                 // Regroup transactions in order to take some random subset
@@ -531,24 +567,14 @@ namespace Lachain.Core.Blockchain.Pool
                 throw new Exception("transactions and transactionQueue should be of same size");
             }
 
-            // at this point nonce-calculator and transaction should have the 
-            // same set of transactions
-
-            if(_transactions.Count() != _nonceCalculator.Count())
-            {
-                Logger.LogError($"_transactions count: {_transactions.Count()} != _nonceCalculator: {_nonceCalculator.Count()}");
-                throw new Exception("transactions and nonceCalculator should be of same size");
-            }
-
             // Proposed should be empty
             if(_proposed.Count() != 0)
             {
                 Logger.LogError($"_proposed size: {_proposed.Count()} but should be empty.");
-                throw new Exception("proposed dict should be empty");
+                throw new Exception("proposed list should be empty");
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public uint Size()
         {
             return (uint) _transactionsQueue.Count;
@@ -574,7 +600,6 @@ namespace Lachain.Core.Blockchain.Pool
 
         // Depending on all the transactions already added to the block and the transactions
         // stored in the pool, this method calculates the next nonce for an address 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public ulong GetNextNonceForAddress(UInt160 address)
         {
             // poolNonce represents the max nonce of all the transactions by this address
